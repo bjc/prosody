@@ -61,6 +61,9 @@
 #if (LUA_VERSION_NUM == 501)
 #define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
 #endif
+#if (LUA_VERSION_NUM < 503)
+#define lua_isinteger(L, n) lua_isnumber(L, n)
+#endif
 
 #include <fcntl.h>
 #if defined(__linux__)
@@ -106,7 +109,7 @@ static int lc_daemonize(lua_State *L) {
 	} else if(pid != 0) {
 		/* We are the parent process */
 		lua_pushboolean(L, 1);
-		lua_pushnumber(L, pid);
+		lua_pushinteger(L, pid);
 		return 2;
 	}
 
@@ -295,7 +298,7 @@ static int lc_setuid(lua_State *L) {
 		return 0;
 	}
 
-	if(!lua_isnumber(L, 1) && lua_tostring(L, 1)) {
+	if(!lua_isinteger(L, 1) && lua_tostring(L, 1)) {
 		/* Passed UID is actually a string, so look up the UID */
 		struct passwd *p;
 		p = getpwnam(lua_tostring(L, 1));
@@ -308,7 +311,7 @@ static int lc_setuid(lua_State *L) {
 
 		uid = p->pw_uid;
 	} else {
-		uid = lua_tonumber(L, 1);
+		uid = lua_tointeger(L, 1);
 	}
 
 	if(uid > -1) {
@@ -353,7 +356,7 @@ static int lc_setgid(lua_State *L) {
 		return 0;
 	}
 
-	if(!lua_isnumber(L, 1) && lua_tostring(L, 1)) {
+	if(!lua_isinteger(L, 1) && lua_tostring(L, 1)) {
 		/* Passed GID is actually a string, so look up the GID */
 		struct group *g;
 		g = getgrnam(lua_tostring(L, 1));
@@ -366,7 +369,7 @@ static int lc_setgid(lua_State *L) {
 
 		gid = g->gr_gid;
 	} else {
-		gid = lua_tonumber(L, 1);
+		gid = lua_tointeger(L, 1);
 	}
 
 	if(gid > -1) {
@@ -647,13 +650,13 @@ static int lc_getrlimit(lua_State *L) {
 	if(lim.rlim_cur == RLIM_INFINITY) {
 		lua_pushstring(L, "unlimited");
 	} else {
-		lua_pushnumber(L, lim.rlim_cur);
+		lua_pushinteger(L, lim.rlim_cur);
 	}
 
 	if(lim.rlim_max == RLIM_INFINITY) {
 		lua_pushstring(L, "unlimited");
 	} else {
-		lua_pushnumber(L, lim.rlim_max);
+		lua_pushinteger(L, lim.rlim_max);
 	}
 
 	return 3;
