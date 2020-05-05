@@ -54,6 +54,7 @@ local archive_store = "muc_log";
 local archive = module:open_store(archive_store, "archive");
 
 local archive_item_limit = module:get_option_number("storage_archive_item_limit", archive.caps and archive.caps.quota or 1000);
+local archive_truncate = math.floor(archive_item_limit * 0.99);
 
 if archive.name == "null" or not archive.find then
 	if not archive.find then
@@ -397,7 +398,7 @@ local function save_to_history(self, stanza)
 		if not id and (archive.caps and archive.caps.truncate) then
 			module:log("debug", "User '%s' over quota, truncating archive", room_node);
 			local truncated = archive:delete(room_node, {
-				truncate = archive_item_limit - 1;
+				truncate = archive_truncate;
 			});
 			if truncated then
 				id, err = archive:append(room_node, nil, stored_stanza, time, with);
