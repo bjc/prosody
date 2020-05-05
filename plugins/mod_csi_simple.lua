@@ -28,17 +28,18 @@ module:hook("csi-is-stanza-important", function (event)
 	local st_name = stanza.name;
 	if not st_name then return false; end
 	local st_type = stanza.attr.type;
-	if st_type == "error" then
-		return true;
-	end
 	if st_name == "presence" then
-		if st_type == nil or st_type == "unavailable" then
+		if st_type == nil or st_type == "unavailable" or st_name == "error" then
 			return false;
 		end
+		-- TODO Some MUC awareness, e.g. check for the 'this relates to you' status code
 		return true;
 	elseif st_name == "message" then
 		if st_type == "headline" then
 			return false;
+		end
+		if st_type == "error" then
+			return true;
 		end
 		if stanza:get_child("sent", "urn:xmpp:carbons:2") then
 			return true;
