@@ -44,6 +44,8 @@ local archive = module:open_store(archive_store, "archive");
 local cleanup_after = module:get_option_string("archive_expires_after", "1w");
 local cleanup_interval = module:get_option_number("archive_cleanup_interval", 4 * 60 * 60);
 local archive_item_limit = module:get_option_number("storage_archive_item_limit", archive.caps and archive.caps.quota or 1000);
+local archive_truncate = math.floor(archive_item_limit * 0.99);
+
 if not archive.find then
 	error("mod_"..(archive._provided_by or archive.name and "storage_"..archive.name).." does not support archiving\n"
 		.."See https://prosody.im/doc/storage and https://prosody.im/doc/archiving for more information");
@@ -379,7 +381,7 @@ local function message_handler(event, c2s)
 			if not ok and (archive.caps and archive.caps.truncate) then
 				module:log("debug", "User '%s' over quota, truncating archive", store_user);
 				local truncated = archive:delete(store_user, {
-					truncate = archive_item_limit - 1;
+					truncate = archive_truncate;
 				});
 				if truncated then
 					ok, err = archive:append(store_user, nil, clone_for_storage, time, with);
