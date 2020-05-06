@@ -29,6 +29,7 @@ TRUNK
 -   Direct TLS support (c2s and incoming s2s)
 -   Offline messages aren't sent to MAM clients
 -   Network backend server_select deprecated
+-   Check connectivity via observe.jabber.network
 
 0.11.0
 ======

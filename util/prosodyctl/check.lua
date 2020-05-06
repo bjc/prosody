@@ -6,6 +6,56 @@ local socket = require "socket";
 local jid_split = require "util.jid".prepped_split;
 local modulemanager = require "core.modulemanager";
 
+local function check_api(check_type, target_host)
+	local async = require "util.async";
+	local wait, done = async.waiter();
+	local http = require "net.http"; -- .new({});
+	local urlencode = require "util.http".urlencode;
+	local json = require "util.json";
+
+	local ok = false;
+	local err = nil;
+	local decoded_body = nil;
+
+	http.request(
+		("https://observe.jabber.network/api/v1/check/%s"):format(urlencode(check_type)),
+		{
+			method="POST",
+			headers={["Accept"] = "application/json"; ["Content-Type"] = "application/json"},
+			body=json.encode({target=target_host}),
+		},
+		function (body, code)
+			if code ~= 200 then
+				err = ("API replied with non-200 code: %d"):format(code)
+			else
+				decoded_body, err = json.decode(body);
+				if decoded_body == nil then
+					err = ("Failed to parse API JSON: %s"):format(err)
+				else
+					ok = true
+				end
+			end
+			done();
+		end
+	);
+	wait();
+
+	if not ok then
+		return false, err
+	end
+
+	local success = decoded_body["success"];
+	return success == true, nil;
+end
+
+local function skip_bare_jid_hosts(host)
+	if jid_split(host) then
+		-- See issue #779
+		return false;
+	end
+	return true;
+end
+
 local function check(arg)
 	if arg[1] == "--help" then
 		show_usage([[check]], [[Perform basic checks on your Prosody installation]]);
@@ -17,8 +67,9 @@ local function check(arg)
 	local ok = true;
 	local function disabled_hosts(host, conf) return host ~= "*" and conf.enabled ~= false; end
 	local function enabled_hosts() return it.filter(disabled_hosts, pairs(configmanager.getconfig())); end
-	if not (what == nil or what == "disabled" or what == "config" or what == "dns" or what == "certs") then
-		show_warning("Don't know how to check '%s'. Try one of 'config', 'dns', 'certs' or 'disabled'.", what);
+	if not (what == nil or what == "disabled" or what == "config" or what == "dns" or what == "certs" or what == "connectivity") then
+		show_warning("Don't know how to check '%s'. Try one of 'config', 'dns', 'certs', 'disabled' or 'connectivity'.", what);
+		show_warning("Note: The connectivity check will connect to a remote server.");
 		return 1;
 	end
 	if not what or what == "disabled" then
@@ -606,13 +657,6 @@ local function check(arg)
 			print("This version of LuaSec (" .. ssl._VERSION .. ") does not support certificate checking");
 			cert_ok = false
 		else
-			local function skip_bare_jid_hosts(host)
-				if jid_split(host) then
-					-- See issue #779
-					return false;
-				end
-				return true;
-			end
 			for host in it.filter(skip_bare_jid_hosts, enabled_hosts()) do
 				print("Checking certificate for "..host);
 				-- First, let's find out what certificate this host uses.
@@ -676,6 +720,40 @@ local function check(arg)
 			ok = false
 		end
 		print("")
+	end
+	-- intentionally not doing this by default
+	if what == "connectivity" then
+		for host in it.filter(skip_bare_jid_hosts, enabled_hosts()) do
+			local modules, component_module = modulemanager.get_modules_for_host(host);
+			if component_module then
+				modules:add(component_module)
+			end
+
+			print("Checking external connectivity for "..host.." via observe.jabber.network")
+			local function check_connectivity(protocol)
+				local success, err = check_api(protocol, host);
+				if not success and err ~= nil then
+					print(("  %s: Failed to request check at API: %s"):format(protocol, err))
+				elseif success then
+					print(("  %s: Works"):format(protocol))
+				else
+					print(("  %s: Check service failed to establish (secure) connection"):format(protocol))
+					ok = false
+				end
+			end
+
+			if modules:contains("c2s") then
+				check_connectivity("xmpp-client")
+			end
+
+			if modules:contains("s2s") then
+				check_connectivity("xmpp-server")
+			end
+
+			print()
+		end
+		print("Note: The connectivity check only checks the reachability of the domain.")
+		print("Note: It does not ensure that the check actually reaches this specific prosody instance.")
 	end
 	if not ok then
 		print("Problems found, see above.");
