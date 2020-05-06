@@ -5,9 +5,14 @@
 
 local st = require "util.stanza";
 local jid_bare = require "util.jid".bare;
+local jid_resource = require "util.jid".resource;
 local xmlns_carbons = "urn:xmpp:carbons:2";
 local xmlns_forward = "urn:xmpp:forward:0";
 local full_sessions, bare_sessions = prosody.full_sessions, prosody.bare_sessions;
+
+local function is_bare(jid)
+	return not jid_resource(jid);
+end
 
 local function toggle_carbons(event)
 	local origin, stanza = event.origin, event.stanza;
@@ -43,7 +48,10 @@ local function should_copy(stanza, c2s, user_bare)
 		return true, "type";
 	end
 
-	if st_type == "error" and not c2s and not (stanza.attr.from or ""):find("/") then
+	-- Normal outgoing chat messages are sent to=bare JID. This clause should
+	-- match the error bounces from those, which would have from=bare JID and
+	-- be incoming (not c2s).
+	if st_type == "error" and not c2s and is_bare(stanza.attr.from) then
 		return true, "bounce";
 	end
 
