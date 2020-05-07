@@ -15,8 +15,7 @@ local queue_size = module:get_option_number("csi_queue_size", 256);
 
 local important_payloads = module:get_option_set("csi_important_payloads", { });
 
-module:hook("csi-is-stanza-important", function (event)
-	local stanza = event.stanza;
+function is_important(stanza) --> boolean, reason: string
 	if not st.is_stanza(stanza) then
 		-- whitespace pings etc
 		return true;
@@ -69,7 +68,22 @@ module:hook("csi-is-stanza-important", function (event)
 	elseif st_name == "iq" then
 		return true;
 	end
+end
+
+module:hook("csi-is-stanza-important", function (event)
+	local important, why = is_important(event.stanza);
+	event.reason = why;
+	return important;
 end, -1);
+
+local function should_flush(stanza, session, ctr) --> boolean, reason: string
+	if ctr >= queue_size then
+		return true, "queue size limit reached";
+	end
+	local event = { stanza = stanza, session = session };
+	local ret = module:fire_event("csi-is-stanza-important", event)
+	return ret, event.reason;
+end
 
 local function with_timestamp(stanza, from)
 	if st.is_stanza(stanza) and stanza.attr.xmlns == nil and stanza.name ~= "iq" then
@@ -81,11 +95,9 @@ end
 
 local function manage_buffer(stanza, session)
 	local ctr = session.csi_counter or 0;
-	if ctr >= queue_size then
-		session.log("debug", "Queue size limit hit, flushing buffer (queue size is %d)", session.csi_counter);
-		session.conn:resume_writes();
-	elseif module:fire_event("csi-is-stanza-important", { stanza = stanza, session = session }) then
-		session.log("debug", "Important stanza, flushing buffer (queue size is %d)", session.csi_counter);
+	local flush, why = should_flush(stanza, session, ctr);
+	if flush then
+		session.log("debug", "Flushing buffer (%s; queue size is %d)", why or "important", session.csi_counter);
 		session.conn:resume_writes();
 	else
 		stanza = with_timestamp(stanza, jid.join(session.username, session.host))
