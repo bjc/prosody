@@ -22,42 +22,46 @@ function is_important(stanza) --> boolean, reason: string
 	end
 	if stanza.attr.xmlns ~= nil then
 		-- stream errors, stream management etc
-		return true;
+		return true, "nonza";
 	end
 	local st_name = stanza.name;
 	if not st_name then return false; end
 	local st_type = stanza.attr.type;
 	if st_name == "presence" then
 		if st_type == nil or st_type == "unavailable" or st_name == "error" then
-			return false;
+			return false, "presence update";
 		end
 		-- TODO Some MUC awareness, e.g. check for the 'this relates to you' status code
-		return true;
+		return true, "subscription request";
 	elseif st_name == "message" then
 		if st_type == "headline" then
-			return false;
+			-- Headline messages are ephemeral by definition
+			return false, "headline";
 		end
 		if st_type == "error" then
-			return true;
+			return true, "delivery failure";
 		end
 		if stanza:get_child("sent", "urn:xmpp:carbons:2") then
-			return true;
+			return true, "carbon";
 		end
 		local forwarded = stanza:find("{urn:xmpp:carbons:2}received/{urn:xmpp:forward:0}/{jabber:client}message");
 		if forwarded then
 			stanza = forwarded;
 		end
 		if stanza:get_child("body") then
-			return true;
+			return true, "body";
 		end
 		if stanza:get_child("subject") then
-			return true;
+			-- Last step of a MUC join
+			return true, "subject";
 		end
 		if stanza:get_child("encryption", "urn:xmpp:eme:0") then
-			return true;
+			-- Since we can't know what an encrypted message contains, we assume it's important
+			-- XXX Experimental XEP
+			return true, "encrypted";
 		end
 		if stanza:get_child("x", "jabber:x:conference") or stanza:find("{http://jabber.org/protocol/muc#user}x/invite") then
-			return true;
+			return true, "invite";
 		end
 		for important in important_payloads do
 			if stanza:find(important) then
