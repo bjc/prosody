@@ -55,6 +55,11 @@ end);
 local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
 
 function stream_callbacks.streamopened(session, attr)
+	-- run _streamopened in async context
+	session.thread:run({ stream = "opened", attr = attr });
+end
+
+function stream_callbacks._streamopened(session, attr)
 	local send = session.send;
 	if not attr.to then
 		session:close{ condition = "improper-addressing",
@@ -121,7 +126,12 @@ function stream_callbacks.streamopened(session, attr)
 	end
 end
 
-function stream_callbacks.streamclosed(session)
+function stream_callbacks.streamclosed(session, attr)
+	-- run _streamclosed in async context
+	session.thread:run({ stream = "closed", attr = attr });
+end
+
+function stream_callbacks._streamclosed(session)
 	session.log("debug", "Received </stream:stream>");
 	session:close(false);
 end
@@ -280,7 +290,13 @@ function listener.onconnect(conn)
 	end
 
 	session.thread = runner(function (stanza)
-		core_process_stanza(session, stanza);
+		if st.is_stanza(stanza) then
+			core_process_stanza(session, stanza);
+		elseif stanza.stream == "opened" then
+			stream_callbacks._streamopened(session, stanza.attr);
+		elseif stanza.stream == "closed" then
+			stream_callbacks._streamclosed(session, stanza.attr);
+		end
 	end, runner_callbacks, session);
 
 	local filter = session.filter;
