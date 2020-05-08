@@ -455,9 +455,14 @@ function stream_callbacks._streamopened(session, attr)
 	end
 end
 
-function stream_callbacks.streamclosed(session)
+function stream_callbacks._streamclosed(session)
 	(session.log or log)("debug", "Received </stream:stream>");
 	session:close(false);
+end
+
+function stream_callbacks.streamclosed(session, attr)
+	-- run _streamclosed in async context
+	session.thread:run({ stream = "closed", attr = attr });
 end
 
 function stream_callbacks.error(session, error, data)
@@ -568,6 +573,8 @@ local function initialize_session(session)
 			core_process_stanza(session, stanza);
 		elseif stanza.stream == "opened" then
 			stream_callbacks._streamopened(session, stanza.attr);
+		elseif stanza.stream == "closed" then
+			stream_callbacks._streamclosed(session, stanza.attr);
 		end
 	end, runner_callbacks, session);
 
