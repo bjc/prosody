@@ -55,6 +55,11 @@ local function should_copy(stanza, c2s, user_bare) --> boolean, reason: string
 		return true, "bounce";
 	end
 
+	if stanza:get_child(nil, "urn:xmpp:jingle-message:0") then
+		-- XXX Experimental XEP stuck in Proposed for almost a year at the time of this comment
+		return true, "jingle call";
+	end
+
 	for archived in stanza:childtags("stanza-id", "urn:xmpp:sid:0") do
 		if archived and archived.attr.by == user_bare then
 			return true, "archived";
