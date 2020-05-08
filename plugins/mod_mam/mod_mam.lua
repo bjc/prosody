@@ -315,6 +315,10 @@ local function should_store(stanza, c2s) --> boolean, reason: string
 	or stanza:find("{http://jabber.org/protocol/muc#user}x/invite") then
 		return true, "invite";
 	end
+	if stanza:get_child(nil, "urn:xmpp:jingle-message:0") then
+		-- XXX Experimental XEP stuck in Proposed for almost a year at the time of this comment
+		return true, "jingle call";
+	end
 
 	 -- The IM-NG thing to do here would be to return `not st_to_full`
 	 -- One day ...
