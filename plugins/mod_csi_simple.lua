@@ -64,6 +64,7 @@ function is_important(stanza) --> boolean, reason: string
 			return true, "invite";
 		end
 		if stanza:get_child(nil, "urn:xmpp:jingle-message:0") then
+			-- XXX Experimental XEP stuck in Proposed for almost a year at the time of this comment
 			return true, "jingle call";
 		end
 		for important in important_payloads do
