@@ -68,6 +68,9 @@ function is_important(stanza) --> boolean, reason: string
 				return true;
 			end
 		end
+		if stanza:get_child(nil, "urn:xmpp:jingle-message:0") then
+			return true;
+		end
 		return false;
 	elseif st_name == "iq" then
 		return true;
