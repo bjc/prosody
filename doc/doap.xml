@@ -509,6 +509,14 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0353.html"/>
+        <xmpp:version>0.3</xmpp:version>
+        <xmpp:since>0.11.6</xmpp:since>
+        <xmpp:note>triggers buffer flush in mod_csi_simple since 0.11.6</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0368.html"/>
         <xmpp:version>1.1.0</xmpp:version>
         <xmpp:status>partial</xmpp:status>
