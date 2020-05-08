@@ -25,7 +25,7 @@ end
 module:hook("iq-set/self/"..xmlns_carbons..":disable", toggle_carbons);
 module:hook("iq-set/self/"..xmlns_carbons..":enable", toggle_carbons);
 
-local function should_copy(stanza, c2s, user_bare)
+local function should_copy(stanza, c2s, user_bare) --> boolean, reason: string
 	local st_type = stanza.attr.type or "normal";
 	if stanza:get_child("private", xmlns_carbons) then
 		return false, "private";
