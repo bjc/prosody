@@ -322,7 +322,7 @@ local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
 
 function stream_callbacks.streamopened(session, attr)
 	-- run _streamopened in async context
-	session.thread:run({ attr = attr });
+	session.thread:run({ stream = "opened", attr = attr });
 end
 
 function stream_callbacks._streamopened(session, attr)
@@ -564,10 +564,10 @@ local function initialize_session(session)
 	local stream = new_xmpp_stream(session, stream_callbacks);
 
 	session.thread = runner(function (stanza)
-		if stanza.name == nil then
-			stream_callbacks._streamopened(session, stanza.attr);
-		else
+		if st.is_stanza(stanza) then
 			core_process_stanza(session, stanza);
+		elseif stanza.stream == "opened" then
+			stream_callbacks._streamopened(session, stanza.attr);
 		end
 	end, runner_callbacks, session);
 
