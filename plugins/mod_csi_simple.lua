@@ -79,6 +79,9 @@ module:hook("csi-is-stanza-important", function (event)
 		if stanza:get_child("encryption", "urn:xmpp:eme:0") then
 			return true;
 		end
+		if stanza:get_child(nil, "urn:xmpp:jingle-message:0") then
+			return true;
+		end
 		return false;
 	end
 	return true;
