@@ -14,6 +14,7 @@ local s_find = string.find;
 local tonumber = tonumber;
 
 local core_post_stanza = prosody.core_post_stanza;
+local core_process_stanza = prosody.core_process_stanza;
 local st = require "util.stanza";
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
@@ -370,7 +371,7 @@ module:hook("resource-unbind", function(event)
 		if err then
 			pres:tag("status"):text("Disconnected: "..err):up();
 		end
-		session:dispatch_stanza(pres);
+		core_process_stanza(session, pres);
 	elseif session.directed then
 		local pres = st.presence{ type = "unavailable", from = session.full_jid };
 		if err then
