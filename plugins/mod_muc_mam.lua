@@ -336,7 +336,7 @@ module:hook("muc-get-history", function (event)
 	return true;
 end, 1);
 
-module:hook("muc-broadcast-messages", function (event)
+module:hook("muc-broadcast-message", function (event)
 	local room, stanza = event.room, event.stanza;
 
 	-- Filter out <stanza-id> that claim to be from us
@@ -446,6 +446,7 @@ module:hook("muc-disco#info", function(event)
 	if archiving_enabled(event.room) then
 		event.reply:tag("feature", {var=xmlns_mam}):up();
 	end
+	event.reply:tag("feature", {var=xmlns_st_id}):up();
 end);
 
 -- Cleanup
