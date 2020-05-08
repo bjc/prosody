@@ -395,6 +395,7 @@ module:add_feature(xmlns_mam);
 
 module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var=xmlns_mam}):up();
+	event.reply:tag("feature", {var=xmlns_st_id}):up();
 end);
 
 -- Cleanup
