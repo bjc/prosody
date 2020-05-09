@@ -124,6 +124,7 @@ end
 function enable_optimizations(session)
 	if session.conn and session.conn.pause_writes then
 		session.conn:pause_writes();
+		session.csi_counter = 0;
 		filters.add_filter(session, "stanzas/out", manage_buffer);
 		filters.add_filter(session, "bytes/in", flush_buffer);
 	else
