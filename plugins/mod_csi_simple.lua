@@ -28,7 +28,7 @@ function is_important(stanza) --> boolean, reason: string
 	if not st_name then return false; end
 	local st_type = stanza.attr.type;
 	if st_name == "presence" then
-		if st_type == nil or st_type == "unavailable" or st_name == "error" then
+		if st_type == nil or st_type == "unavailable" or st_type == "error" then
 			return false, "presence update";
 		end
 		-- TODO Some MUC awareness, e.g. check for the 'this relates to you' status code
