@@ -116,7 +116,7 @@ local function manage_buffer(stanza, session)
 end
 
 local function flush_buffer(data, session)
-	session.log("debug", "Client sent something, flushing buffer once (queue size is %d)", session.csi_counter);
+	session.log("debug", "Flushing buffer (%s; queue size is %d)", "client activity", session.csi_counter);
 	session.conn:resume_writes();
 	return data;
 end
