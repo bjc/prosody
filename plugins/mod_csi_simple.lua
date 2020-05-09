@@ -134,6 +134,7 @@ end
 function disable_optimizations(session)
 	filters.remove_filter(session, "stanzas/out", manage_buffer);
 	filters.remove_filter(session, "bytes/in", flush_buffer);
+	session.csi_counter = nil;
 	if session.conn and session.conn.resume_writes then
 		session.conn:resume_writes();
 	end
