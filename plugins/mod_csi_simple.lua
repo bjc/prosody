@@ -101,10 +101,16 @@ local function with_timestamp(stanza, from)
 	return stanza;
 end
 
+local measure_buffer_hold = module:measure("buffer_hold", "times");
+
 local function manage_buffer(stanza, session)
 	local ctr = session.csi_counter or 0;
 	local flush, why = should_flush(stanza, session, ctr);
 	if flush then
+		if session.csi_measure_buffer_hold then
+			session.csi_measure_buffer_hold();
+			session.csi_measure_buffer_hold = nil;
+		end
 		session.log("debug", "Flushing buffer (%s; queue size is %d)", why or "important", session.csi_counter);
 		session.conn:resume_writes();
 	else
@@ -117,6 +123,10 @@ end
 
 local function flush_buffer(data, session)
 	session.log("debug", "Flushing buffer (%s; queue size is %d)", "client activity", session.csi_counter);
+	if session.csi_measure_buffer_hold then
+		session.csi_measure_buffer_hold();
+		session.csi_measure_buffer_hold = nil;
+	end
 	session.conn:resume_writes();
 	return data;
 end
@@ -124,6 +134,7 @@ end
 function enable_optimizations(session)
 	if session.conn and session.conn.pause_writes then
 		session.conn:pause_writes();
+		session.csi_measure_buffer_hold = measure_buffer_hold();
 		session.csi_counter = 0;
 		filters.add_filter(session, "stanzas/out", manage_buffer);
 		filters.add_filter(session, "bytes/in", flush_buffer);
@@ -136,6 +147,10 @@ function disable_optimizations(session)
 	filters.remove_filter(session, "stanzas/out", manage_buffer);
 	filters.remove_filter(session, "bytes/in", flush_buffer);
 	session.csi_counter = nil;
+	if session.csi_measure_buffer_hold then
+		session.csi_measure_buffer_hold();
+		session.csi_measure_buffer_hold = nil;
+	end
 	if session.conn and session.conn.resume_writes then
 		session.conn:resume_writes();
 	end
@@ -160,6 +175,7 @@ module:hook("c2s-ondrain", function (event)
 	local session = event.session;
 	if session.state == "inactive" and session.conn and session.conn.pause_writes then
 		session.conn:pause_writes();
+		session.csi_measure_buffer_hold = measure_buffer_hold();
 		session.log("debug", "Buffer flushed, resuming inactive mode (queue size was %d)", session.csi_counter);
 		session.csi_counter = 0;
 	end
