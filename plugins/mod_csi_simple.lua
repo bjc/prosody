@@ -103,6 +103,15 @@ end
 
 local measure_buffer_hold = module:measure("buffer_hold", "times");
 
+local flush_reasons = setmetatable({}, {
+		__index = function (t, reason)
+			local m = module:measure("flush_reason."..reason:gsub("%W", "_"), "rate");
+			t[reason] = m;
+			return m;
+		end;
+	});
+
+
 local function manage_buffer(stanza, session)
 	local ctr = session.csi_counter or 0;
 	local flush, why = should_flush(stanza, session, ctr);
@@ -111,6 +120,7 @@ local function manage_buffer(stanza, session)
 			session.csi_measure_buffer_hold();
 			session.csi_measure_buffer_hold = nil;
 		end
+		flush_reasons[why or "important"]();
 		session.log("debug", "Flushing buffer (%s; queue size is %d)", why or "important", session.csi_counter);
 		session.conn:resume_writes();
 	else
@@ -123,6 +133,7 @@ end
 
 local function flush_buffer(data, session)
 	session.log("debug", "Flushing buffer (%s; queue size is %d)", "client activity", session.csi_counter);
+	flush_reasons["client activity"]();
 	if session.csi_measure_buffer_hold then
 		session.csi_measure_buffer_hold();
 		session.csi_measure_buffer_hold = nil;
