@@ -116,10 +116,6 @@ local function manage_buffer(stanza, session)
 end
 
 local function flush_buffer(data, session)
-	if session.csi_flushing then
-		return data;
-	end
-	session.csi_flushing = true;
 	session.log("debug", "Client sent something, flushing buffer once (queue size is %d)", session.csi_counter);
 	session.conn:resume_writes();
 	return data;
@@ -136,7 +132,6 @@ function enable_optimizations(session)
 end
 
 function disable_optimizations(session)
-	session.csi_flushing = nil;
 	filters.remove_filter(session, "stanzas/out", manage_buffer);
 	filters.remove_filter(session, "bytes/in", flush_buffer);
 	if session.conn and session.conn.resume_writes then
