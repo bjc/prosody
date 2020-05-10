@@ -16,8 +16,10 @@ local queue_size = module:get_option_number("csi_queue_size", 256);
 local important_payloads = module:get_option_set("csi_important_payloads", { });
 
 function is_important(stanza) --> boolean, reason: string
-	if not st.is_stanza(stanza) then
+	if type(stanza) == "string" then
 		-- whitespace pings etc
+		return true, "raw data";
+	elseif not st.is_stanza(stanza) then
 		return true;
 	end
 	if stanza.attr.xmlns ~= nil then
