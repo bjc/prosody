@@ -21,7 +21,8 @@ function is_important(stanza) --> boolean, reason: string
 	elseif type(stanza) == "string" then
 		return true, "raw data";
 	elseif not st.is_stanza(stanza) then
-		return true;
+		-- This should probably never happen
+		return true, type(stanza);
 	end
 	if stanza.attr.xmlns ~= nil then
 		-- stream errors, stream management etc
