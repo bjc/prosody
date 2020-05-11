@@ -50,6 +50,10 @@ interface archive_store
 
 	-- Map of counts per "with" field
 	summary : ( self, string?, archive_query? ) -> ( { string : integer } ) | (nil, string)
+
+	-- Map-store API
+	get    : ( self, string, string ) -> (stanza, number?, string?) | (nil, string)
+	set    : ( self, string, string, stanza, number?, string? ) -> (boolean) | (nil, string)
 end
 
 -- This represents moduleapi
