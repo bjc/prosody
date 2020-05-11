@@ -167,6 +167,37 @@ function archive_store:find(username, query)
 	end, count;
 end
 
+function archive_store:get(username, wanted_key)
+	local items = self.store[username or NULL];
+	if not items then return nil, "item-not-found"; end
+	local i = items[wanted_key];
+	if not i then return nil, "item-not-found"; end
+	local item = items[i];
+	return item.value(), item.when, item.with;
+end
+
+function archive_store:set(username, wanted_key, new_value, new_when, new_with)
+	local items = self.store[username or NULL];
+	if not items then return nil, "item-not-found"; end
+	local i = items[wanted_key];
+	if not i then return nil, "item-not-found"; end
+	local item = items[i];
+
+	if is_stanza(new_value) then
+		new_value = st.preserialize(new_value);
+		item.value = envload("return xml"..serialize(new_value), "=(stanza)", { xml = st.deserialize })
+	else
+		item.value = envload("return "..serialize(new_value), "=(data)", {});
+	end
+	if new_when then
+		item.when = new_when;
+	end
+	if new_with then
+		item.with = new_when;
+	end
+	return true;
+end
+
 function archive_store:summary(username, query)
 	local iter, err = self:find(username, query)
 	if not iter then return iter, err; end
