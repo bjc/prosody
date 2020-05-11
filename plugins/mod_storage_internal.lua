@@ -208,6 +208,46 @@ function archive:find(username, query)
 	end, count;
 end
 
+function archive:get(username, wanted_key)
+	local iter, err = self:find(username, { key = wanted_key })
+	if not iter then return iter, err; end
+	for key, stanza, when, with in iter do
+		if key == wanted_key then
+			return stanza, when, with;
+		end
+	end
+	return nil, "item-not-found";
+end
+
+function archive:set(username, key, new_value, new_when, new_with)
+	local items, err = datamanager.list_load(username, host, self.store);
+	if not items then
+		if err then
+			return items, err;
+		else
+			return nil, "item-not-found";
+		end
+	end
+
+	for i = 1, #items do
+		local old_item = items[i];
+		if old_item.key == key then
+			local item = st.preserialize(st.clone(new_value));
+
+			local when = new_when or item.when or datetime.parse(item.attr.stamp);
+			item.key = key;
+			item.when = when;
+			item.with = new_with or old_item.with;
+			item.attr.stamp = datetime.datetime(when);
+			item.attr.stamp_legacy = datetime.legacy(when);
+			items[i] = item;
+			return datamanager.list_store(username, host, self.store, items);
+		end
+	end
+
+	return nil, "item-not-found";
+end
+
 function archive:dates(username)
 	local items, err = datamanager.list_load(username, host, self.store);
 	if not items then return items, err; end

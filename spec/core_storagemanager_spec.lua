@@ -439,6 +439,21 @@ describe("storagemanager", function ()
 					assert.equal(2, count);
 					assert(archive:delete("user-issue1073"));
 				end);
+
+				it("can be treated as a map store", function ()
+					assert.falsy(archive:get("mapuser", "no-such-id"));
+					assert.falsy(archive:set("mapuser", "no-such-id", test_stanza));
+
+					local id = archive:append("mapuser", nil, test_stanza, test_time, "contact@example.com");
+					assert.same(test_stanza, archive:get("mapuser", id));
+
+					local replacement_stanza = st.stanza("test", { xmlns = "urn:example:foo" })
+						:tag("bar"):up()
+						:reset();
+					assert(archive:set("mapuser", id, replacement_stanza));
+					assert.same(replacement_stanza, archive:get("mapuser", id));
+				end);
+
 			end);
 		end);
 	end
