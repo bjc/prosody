@@ -324,7 +324,7 @@ module:hook("muc-broadcast-message", function (event)
 		return tag;
 	end);
 
-end, 0);
+end, 1);
 
 -- Handle messages
 local function save_to_history(self, stanza)
