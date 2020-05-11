@@ -206,7 +206,8 @@ describe("storagemanager", function ()
 
 				local test_stanza = st.stanza("test", { xmlns = "urn:example:foo" })
 					:tag("foo"):up()
-					:tag("foo"):up();
+					:tag("foo"):up()
+					:reset();
 				local test_time = 1539204123;
 
 				local test_data = {
