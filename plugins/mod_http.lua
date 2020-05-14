@@ -208,6 +208,7 @@ local function get_ip_from_request(request)
 	local ip = request.conn:ip();
 	local forwarded_for = request.headers.x_forwarded_for;
 	if forwarded_for then
+		-- luacheck: ignore 631
 		-- This logic looks weird at first, but it makes sense.
 		-- The for loop will take the last non-trusted-proxy IP from `forwarded_for`.
 		-- We append the original request IP to the header. Then, since the last IP wins, there are two cases:
