@@ -208,6 +208,13 @@ local function get_ip_from_request(request)
 	local ip = request.conn:ip();
 	local forwarded_for = request.headers.x_forwarded_for;
 	if forwarded_for then
+		-- This logic looks weird at first, but it makes sense.
+		-- The for loop will take the last non-trusted-proxy IP from `forwarded_for`.
+		-- We append the original request IP to the header. Then, since the last IP wins, there are two cases:
+		-- Case a) The original request IP is *not* in trusted proxies, in which case the X-Forwarded-For header will, effectively, be ineffective; the original request IP will win because it overrides any other IP in the header.
+		-- Case b) The original request IP is in trusted proxies. In that case, the if branch in the for loop will skip the last IP, causing it to be ignored. The second-to-last IP will be taken instead.
+		-- Case c) If the second-to-last IP is also a trusted proxy, it will also be ignored, iteratively, up to the last IP which isn’t in trusted proxies.
+		-- Case d) If all IPs are in trusted proxies, something went obviously wrong and the logic never overwrites `ip`, leaving it at the original request IP.
 		forwarded_for = forwarded_for..", "..ip;
 		for forwarded_ip in forwarded_for:gmatch("[^%s,]+") do
 			if not trusted_proxies[forwarded_ip] then
