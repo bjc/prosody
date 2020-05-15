@@ -445,13 +445,24 @@ describe("storagemanager", function ()
 					assert.falsy(archive:set("mapuser", "no-such-id", test_stanza));
 
 					local id = archive:append("mapuser", nil, test_stanza, test_time, "contact@example.com");
-					assert.same(test_stanza, archive:get("mapuser", id));
+					do
+						local stanza_roundtrip, when, with = archive:get("mapuser", id);
+						assert.same(test_stanza, stanza_roundtrip, "same stanza is returned");
+						assert.equal(test_time, when, "same 'when' is returned");
+						assert.equal("contact@example.com", with, "same 'with' is returned");
+					end
 
 					local replacement_stanza = st.stanza("test", { xmlns = "urn:example:foo" })
 						:tag("bar"):up()
 						:reset();
-					assert(archive:set("mapuser", id, replacement_stanza));
-					assert.same(replacement_stanza, archive:get("mapuser", id));
+					assert(archive:set("mapuser", id, replacement_stanza, test_time+1));
+
+					do
+						local replaced, when, with = archive:get("mapuser", id);
+						assert.same(replacement_stanza, replaced, "replaced stanza is returned");
+						assert.equal(test_time+1, when, "modified 'when' is returned");
+						assert.equal("contact@example.com", with, "original 'with' is returned");
+					end
 				end);
 
 			end);

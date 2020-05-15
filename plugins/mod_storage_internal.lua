@@ -234,7 +234,7 @@ function archive:set(username, key, new_value, new_when, new_with)
 		if old_item.key == key then
 			local item = st.preserialize(st.clone(new_value));
 
-			local when = new_when or item.when or datetime.parse(item.attr.stamp);
+			local when = new_when or old_item.when or datetime.parse(old_item.attr.stamp);
 			item.key = key;
 			item.when = when;
 			item.with = new_with or old_item.with;
