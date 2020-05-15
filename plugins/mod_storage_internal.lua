@@ -150,12 +150,14 @@ function archive:find(username, query)
 		end
 		if query.start then
 			items:filter(function (item)
-				return item.when >= query.start;
+				local when = item.when or datetime.parse(item.attr.stamp);
+				return when >= query.start;
 			end);
 		end
 		if query["end"] then
 			items:filter(function (item)
-				return item.when <= query["end"];
+				local when = item.when or datetime.parse(item.attr.stamp);
+				return when <= query["end"];
 			end);
 		end
 		if query.total then
