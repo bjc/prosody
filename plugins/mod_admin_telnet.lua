@@ -161,6 +161,20 @@ end
 
 local sessions = {};
 
+function module.save()
+	return { sessions = sessions }
+end
+
+function module.restore(data)
+	if data.sessions then
+		for conn in pairs(data.sessions) do
+			conn:setlistener(console_listener);
+			local session = console:new_session(conn);
+			sessions[conn] = session;
+		end
+	end
+end
+
 function console_listener.onconnect(conn)
 	-- Handle new connection
 	local session = console:new_session(conn);
