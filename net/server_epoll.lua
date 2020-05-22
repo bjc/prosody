@@ -519,14 +519,14 @@ function interface:starttls(tls_ctx)
 		if self.ondrain == interface.starttls then
 			self.ondrain = nil;
 		end
-		self.onwritable = interface.tlshandskake;
-		self.onreadable = interface.tlshandskake;
+		self.onwritable = interface.tlshandshake;
+		self.onreadable = interface.tlshandshake;
 		self:set(true, true);
 		self:debug("Prepared to start TLS");
 	end
 end
 
-function interface:tlshandskake()
+function interface:tlshandshake()
 	self:setwritetimeout(false);
 	self:setreadtimeout(false);
 	if not self._tls then
@@ -555,8 +555,8 @@ function interface:tlshandskake()
 		end
 		self:on("starttls");
 		self.ondrain = nil;
-		self.onwritable = interface.tlshandskake;
-		self.onreadable = interface.tlshandskake;
+		self.onwritable = interface.tlshandshake;
+		self.onreadable = interface.tlshandshake;
 		return self:init();
 	end
 	self:noise("Continuing TLS handshake");
