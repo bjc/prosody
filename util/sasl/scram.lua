@@ -106,6 +106,10 @@ local function getAuthenticationDatabaseSHA1(password, salt, iteration_count)
 	if iteration_count < 4096 then
 		log("warn", "Iteration count < 4096 which is the suggested minimum according to RFC 5802.")
 	end
+	password = saslprep(password);
+	if not password then
+		return false, "password fails SASLprep";
+	end
 	local salted_password = Hi(password, salt, iteration_count);
 	local stored_key = sha1(hmac_sha1(salted_password, "Client Key"))
 	local server_key = hmac_sha1(salted_password, "Server Key");
