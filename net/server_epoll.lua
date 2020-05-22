@@ -559,6 +559,7 @@ function interface:tlshandskake()
 		self.onreadable = interface.tlshandskake;
 		return self:init();
 	end
+	self:noise("Continuing TLS handshake");
 	local ok, err = self.conn:dohandshake();
 	if ok then
 		local info = self.conn.info and self.conn:info();
