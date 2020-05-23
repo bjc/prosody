@@ -8,6 +8,7 @@
 
 local usermanager = require "core.usermanager";
 local new_sasl = require "util.sasl".new;
+local saslprep = require "util.encodings".stringprep.saslprep;
 
 local log = module._log;
 local host = module.host;
@@ -20,8 +21,12 @@ local provider = {};
 function provider.test_password(username, password)
 	log("debug", "test password for user '%s'", username);
 	local credentials = accounts:get(username) or {};
+	password = saslprep(password);
+	if not password then
+		return nil, "Password fails SASLprep.";
+	end
 
-	if password == credentials.password then
+	if password == saslprep(credentials.password) then
 		return true;
 	else
 		return nil, "Auth failed. Invalid username or password.";
@@ -35,6 +40,10 @@ end
 
 function provider.set_password(username, password)
 	log("debug", "set_password for username '%s'", username);
+	password = saslprep(password);
+	if not password then
+		return nil, "Password fails SASLprep.";
+	end
 	local account = accounts:get(username);
 	if account then
 		account.password = password;
@@ -57,6 +66,10 @@ function provider.users()
 end
 
 function provider.create_user(username, password)
+	password = saslprep(password);
+	if not password then
+		return nil, "Password fails SASLprep.";
+	end
 	return accounts:set(username, {password = password});
 end
 
