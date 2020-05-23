@@ -9,6 +9,7 @@
 
 local datamanager = require "util.datamanager";
 local new_sasl = require "util.sasl".new;
+local saslprep = require "util.encodings".stringprep.saslprep;
 
 local host = module.host;
 local provider = { name = "insecure" };
@@ -21,6 +22,10 @@ end
 
 function provider.set_password(username, password)
 	local account = datamanager.load(username, host, "accounts");
+	password = saslprep(password);
+	if not password then
+		return nil, "Password fails SASLprep.";
+	end
 	if account then
 		account.password = password;
 		return datamanager.store(username, host, "accounts", account);
