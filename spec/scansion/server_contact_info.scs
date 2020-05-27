@@ -1,0 +1,53 @@
+# XEP-0157: Contact Addresses for XMPP Services
+# mod_server_contact_info
+
+[Client] Romeo
+	jid: romeo@localhost
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<iq type='get' id='lx2' to='localhost'>
+		<query xmlns='http://jabber.org/protocol/disco#info'/>
+	</iq>
+
+# Ignore other disco#info features, identities etc
+
+Romeo receives:
+	<iq from='localhost' id='lx2' type='result'>
+		<query xmlns='http://jabber.org/protocol/disco#info' scansion:strict='false'>
+			<x xmlns='jabber:x:data' type='result'>
+				<field type='hidden' var='FORM_TYPE'>
+					<value>http://jabber.org/network/serverinfo</value>
+				</field>
+				<field type='list-multi' var='abuse-addresses'>
+					<value>mailto:abuse@localhost</value>
+					<value>xmpp:abuse@localhost</value>
+				</field>
+				<field type='list-multi' var='admin-addresses'>
+					<value>mailto:admin@localhost</value>
+					<value>xmpp:admin@localhost</value>
+				</field>
+				<field type='list-multi' var='feedback-addresses'>
+					<value>http://localhost/feedback.html</value>
+					<value>mailto:feedback@localhost</value>
+					<value>xmpp:feedback@localhost</value>
+				</field>
+				<field type='list-multi' var='sales-addresses'>
+					<value>xmpp:sales@localhost</value>
+				</field>
+				<field type='list-multi' var='security-addresses'>
+					<value>xmpp:security@localhost</value>
+				</field>
+				<field type='list-multi' var='support-addresses'>
+					<value>https://localhost/support.html</value>
+					<value>xmpp:support@localhost</value>
+				</field>
+			</x>
+		</query>
+	</iq>
+
+Romeo disconnects

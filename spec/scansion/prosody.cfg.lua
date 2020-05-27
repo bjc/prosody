@@ -52,7 +52,7 @@ modules_enabled = {
 	-- Other specific functionality
 		--"limits"; -- Enable bandwidth limiting for XMPP connections
 		--"groups"; -- Shared roster support
-		--"server_contact_info"; -- Publish contact information for this service
+		"server_contact_info"; -- Publish contact information for this service
 		--"announce"; -- Send announcement to all online users
 		--"welcome"; -- Welcome users who register accounts
 		--"watchregistrations"; -- Alert admins of registrations
@@ -63,6 +63,15 @@ modules_enabled = {
 
 	-- Useful for testing
 		--"scansion_record"; -- Records things that happen in scansion test case format
+}
+
+contact_info = {
+	abuse = { "mailto:abuse@localhost", "xmpp:abuse@localhost" };
+	admin = { "mailto:admin@localhost", "xmpp:admin@localhost" };
+	feedback = { "http://localhost/feedback.html", "mailto:feedback@localhost", "xmpp:feedback@localhost" };
+	sales = { "xmpp:sales@localhost" };
+	security = { "xmpp:security@localhost" };
+	support = { "https://localhost/support.html", "xmpp:support@localhost" };
 }
 
 modules_disabled = {
