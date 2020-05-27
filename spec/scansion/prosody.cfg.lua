@@ -73,6 +73,7 @@ contact_info = {
 	feedback = { "http://localhost/feedback.html", "mailto:feedback@localhost", "xmpp:feedback@localhost" };
 	sales = { "xmpp:sales@localhost" };
 	security = { "xmpp:security@localhost" };
+	status = { "gopher://status.localhost" };
 	support = { "https://localhost/support.html", "xmpp:support@localhost" };
 }
 
