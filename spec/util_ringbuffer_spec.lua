@@ -7,6 +7,11 @@ describe("util.ringbuffer", function ()
 		it("can be created", function ()
 			assert.truthy(rb.new());
 		end);
+		it("won't create an empty buffer", function ()
+			assert.has_error(function ()
+				rb.new(0);
+			end);
+		end);
 	end);
 	describe(":write", function ()
 		local b = rb.new();
