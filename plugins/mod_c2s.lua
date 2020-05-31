@@ -26,6 +26,7 @@ local log = module._log;
 local c2s_timeout = module:get_option_number("c2s_timeout", 300);
 local stream_close_timeout = module:get_option_number("c2s_close_timeout", 5);
 local opt_keepalives = module:get_option_boolean("c2s_tcp_keepalives", module:get_option_boolean("tcp_keepalives", true));
+local stanza_size_limit = module:get_option_number("c2s_stanza_size_limit"); -- TODO come up with a sensible default (util.xmppstream defaults to 10M)
 
 local measure_connections = module:measure("connections", "amount");
 local measure_ipv6 = module:measure("ipv6", "amount");
@@ -262,7 +263,7 @@ function listener.onconnect(conn)
 
 	session.close = session_close;
 
-	local stream = new_xmpp_stream(session, stream_callbacks);
+	local stream = new_xmpp_stream(session, stream_callbacks, stanza_size_limit);
 	session.stream = stream;
 	session.notopen = true;
 
