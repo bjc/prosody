@@ -614,7 +614,11 @@ local function initialize_session(session)
 			local ok, err = stream:feed(data);
 			if ok then return; end
 			log("debug", "Received invalid XML (%s) %d bytes: %q", err, #data, data:sub(1, 300));
-			session:close("not-well-formed", nil, "Received invalid XML from remote server");
+			if err == "stanza-too-large" then
+				session:close({ condition = "policy-violation", text = "XML stanza is too big" }, nil, "Received invalid XML from remote server");
+			else
+				session:close("not-well-formed", nil, "Received invalid XML from remote server");
+			end
 		end
 	end
 

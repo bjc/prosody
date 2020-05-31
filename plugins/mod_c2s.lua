@@ -308,7 +308,11 @@ function listener.onconnect(conn)
 				local ok, err = stream:feed(data);
 				if not ok then
 					log("debug", "Received invalid XML (%s) %d bytes: %q", err, #data, data:sub(1, 300));
-					session:close("not-well-formed");
+					if err == "stanza-too-large" then
+						session:close({ condition = "policy-violation", text = "XML stanza is too big" });
+					else
+						session:close("not-well-formed");
+					end
 				end
 			end
 		end
