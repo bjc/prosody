@@ -619,11 +619,11 @@ function interface:updatenames()
 	local conn = self.conn;
 	local ok, peername, peerport = pcall(conn.getpeername, conn);
 	if ok and peername then
-		self.peername, self.peerport = peername, peerport;
+		self.peername, self.peerport = peername, peerport or 0;
 	end
 	local ok, sockname, sockport = pcall(conn.getsockname, conn);
 	if ok and sockname then
-		self.sockname, self.sockport = sockname, sockport;
+		self.sockname, self.sockport = sockname, sockport or 0;
 	end
 end
 
