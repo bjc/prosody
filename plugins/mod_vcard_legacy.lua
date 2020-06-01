@@ -276,12 +276,14 @@ function save_to_pep(pep_service, actor, vcard4, avatar)
 			pep_service:purge("urn:xmpp:avatar:data", actor);
 		end
 
-		local ok, err = pep_service:publish("urn:xmpp:avatar:data", actor, avatar.hash, avatar.data, node_defaults);
-		if ok then
-			ok, err = pep_service:publish("urn:xmpp:avatar:metadata", actor, avatar.hash, avatar.meta, node_defaults);
-		end
-		if not ok then
-			return ok, err;
+		if avatar.data and avatar.meta then
+			local ok, err = assert(pep_service:publish("urn:xmpp:avatar:data", actor, avatar.hash, avatar.data, node_defaults));
+			if ok then
+				ok, err = assert(pep_service:publish("urn:xmpp:avatar:metadata", actor, avatar.hash, avatar.meta, node_defaults));
+			end
+			if not ok then
+				return ok, err;
+			end
 		end
 	end
 
