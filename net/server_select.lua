@@ -289,6 +289,8 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 
 	local ssl
 
+	local pending
+
 	local dispatch = listeners.onincoming
 	local status = listeners.onstatus
 	local disconnect = listeners.ondisconnect
@@ -342,6 +344,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		if listeners.onattach then
 			listeners.onattach(self, data)
 		end
+	end
+	handler._setpending = function( )
+		pending = true
 	end
 	handler.getstats = function( )
 		return readtraffic, sendtraffic
@@ -525,6 +530,12 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			_readtraffic = _readtraffic + count
 			_readtimes[ handler ] = _currenttime
 			--out_put( "server.lua: read data '", buffer:gsub("[^%w%p ]", "."), "', error: ", err )
+			if pending then -- connection established
+				pending = nil
+				if listeners.onconnect then
+					listeners.onconnect(handler)
+				end
+			end
 			return dispatch( handler, buffer, err )
 		else	-- connections was closed or fatal error
 			out_put( "server.lua: client ", tostring(ip), ":", tostring(clientport), " read error: ", tostring(err) )
@@ -535,6 +546,12 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	local _sendbuffer = function( ) -- this function sends data
 		local succ, err, byte, buffer, count;
 		if socket then
+			if pending then
+				pending = nil
+				if listeners.onconnect then
+					listeners.onconnect(handler);
+				end
+			end
 			buffer = table_concat( bufferqueue, "", 1, bufferqueuelen )
 			succ, err, byte = send( socket, buffer, 1, bufferlen )
 			count = ( succ or byte or 0 ) * STAT_UNIT
@@ -1015,17 +1032,9 @@ local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx,
 	if not handler then return nil, err end
 	_socketlist[ socket ] = handler
 	if not sslctx then
+		handler._setpending()
 		_readlistlen = addsocket(_readlist, socket, _readlistlen)
 		_sendlistlen = addsocket(_sendlist, socket, _sendlistlen)
-		if listeners.onconnect then
-			-- When socket is writeable, call onconnect
-			local _sendbuffer = handler.sendbuffer;
-			handler.sendbuffer = function ()
-				handler.sendbuffer = _sendbuffer;
-				listeners.onconnect(handler);
-				return _sendbuffer(); -- Send any queued outgoing data
-			end
-		end
 	end
 	return handler, socket
 end
