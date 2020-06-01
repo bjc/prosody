@@ -384,7 +384,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		_readlistlen = removesocket( _readlist, socket, _readlistlen )
 		_readtimes[ handler ] = nil
 		if bufferqueuelen ~= 0 then
-			handler.sendbuffer() -- Try now to send any outstanding data
+			handler:sendbuffer() -- Try now to send any outstanding data
 			if bufferqueuelen ~= 0 then -- Still not empty, so we'll try again later
 				if handler then
 					handler.write = nil -- ... but no further writing allowed
@@ -752,7 +752,7 @@ local function link(sender, receiver, buffersize)
 	local sender_locked;
 	local _sendbuffer = receiver.sendbuffer;
 	function receiver.sendbuffer()
-		_sendbuffer();
+		_sendbuffer(receiver);
 		if sender_locked and receiver.bufferlen() < buffersize then
 			sender:lock_read(false); -- Unlock now
 			sender_locked = nil;
@@ -962,7 +962,7 @@ loop = function(once) -- this is the main loop of the program
 		for _, socket in ipairs( read ) do -- receive data
 			local handler = _socketlist[ socket ]
 			if handler then
-				handler.readbuffer( )
+				handler:readbuffer( )
 			else
 				closesocket( socket )
 				out_put "server.lua: found no handler and closed socket (readlist)" -- this can happen
@@ -971,7 +971,7 @@ loop = function(once) -- this is the main loop of the program
 		for _, socket in ipairs( write ) do -- send data waiting in writequeues
 			local handler = _socketlist[ socket ]
 			if handler then
-				handler.sendbuffer( )
+				handler:sendbuffer( )
 			else
 				closesocket( socket )
 				out_put "server.lua: found no handler and closed socket (writelist)"	-- this should not happen
