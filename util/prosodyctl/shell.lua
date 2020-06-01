@@ -6,6 +6,7 @@ if not have_unix or type(unix) ~= "table" then
 	os.exit(1);
 end
 
+local config = require "core.configmanager";
 local server = require "net.server";
 local st = require "util.stanza";
 local path = require "util.paths";
@@ -113,7 +114,7 @@ local function start(arg) --luacheck: ignore 212/arg
 		end
 	end);
 
-	local socket_path = path.join(prosody.paths.data, "prosody.sock");
+	local socket_path = path.resolve_relative_path(prosody.paths.data, config.get("*", "admin_socket") or "prosody.sock");
 	local conn = connection(socket_path, client.listeners);
 	local ok, err = conn:connect();
 	if not ok then
