@@ -263,7 +263,6 @@ function commands.help(session, data)
 		print [[you can prefix a command with > to escape the console sandbox, and access everything in]]
 		print [[the running server. Great fun, but be careful not to break anything :)]]
 	end
-	print [[]]
 end
 
 -- Session environment --
