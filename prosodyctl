@@ -1356,6 +1356,10 @@ function commands.check(arg)
 	return ok and 0 or 2;
 end
 
+function commands.shell(arg)
+	require "util.prosodyctl.shell".start(arg);
+end
+
 ---------------------
 
 local async = require "util.async";
