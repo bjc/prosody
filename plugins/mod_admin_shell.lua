@@ -148,8 +148,6 @@ local function handle_line(event)
 
 	local taskok, message = chunk();
 
-	local result = st.stanza("repl-result");
-
 	if not message then
 		if type(taskok) ~= "string" and useglobalenv then
 			taskok = session.serialize(taskok);
