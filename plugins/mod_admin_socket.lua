@@ -55,7 +55,11 @@ function module.load()
 	os.remove(socket_path);
 	assert(sock:bind(socket_path));
 	assert(sock:listen());
-	conn = server.watchfd(sock:getfd(), accept_connection);
+	if server.wrapserver then
+		conn = server.wrapserver(sock, socket_path, 0, listeners);
+	else
+		conn = server.watchfd(sock:getfd(), accept_connection);
+	end
 end
 
 function module.unload()
