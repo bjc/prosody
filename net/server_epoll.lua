@@ -719,10 +719,7 @@ function interface:onconnect()
 	self:on("connect");
 end
 
-local function listen(addr, port, listeners, config)
-	local conn, err = socket.bind(addr, port, cfg.tcp_backlog);
-	if not conn then return conn, err; end
-	conn:settimeout(0);
+local function wrapserver(conn, addr, port, listeners, config)
 	local server = setmetatable({
 		conn = conn;
 		created = realtime();
@@ -739,6 +736,13 @@ local function listen(addr, port, listeners, config)
 	server:debug("Server %s created", server);
 	server:add(true, false);
 	return server;
+end
+
+local function listen(addr, port, listeners, config)
+	local conn, err = socket.bind(addr, port, cfg.tcp_backlog);
+	if not conn then return conn, err; end
+	conn:settimeout(0);
+	return wrapserver(conn, addr, port, listeners, config);
 end
 
 -- COMPAT
@@ -897,6 +901,7 @@ return {
 	closeall = closeall;
 	setquitting = setquitting;
 	wrapclient = wrapclient;
+	wrapserver = wrapserver;
 	watchfd = watchfd;
 	link = link;
 	set_config = function (newconfig)
