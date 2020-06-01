@@ -11,7 +11,7 @@ local server = require "net.server";
 
 local adminstream = require "util.adminstream";
 
-local socket_path = module:get_option_string("admin_socket", prosody.paths.data.."/prosody.sock");
+local socket_path = module:get_option_path("admin_socket", "prosody.sock", "data");
 
 local sessions = module:shared("sessions");
 
