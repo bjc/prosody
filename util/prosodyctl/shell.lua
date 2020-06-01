@@ -8,6 +8,7 @@ end
 
 local server = require "net.server";
 local st = require "util.stanza";
+local path = require "util.paths";
 
 local have_readline, readline = pcall(require, "readline");
 
@@ -112,7 +113,8 @@ local function start(arg) --luacheck: ignore 212/arg
 		end
 	end);
 
-	local conn = connection("data/prosody.sock", client.listeners);
+	local socket_path = path.join(prosody.paths.data, "prosody.sock");
+	local conn = connection(socket_path, client.listeners);
 	local ok, err = conn:connect();
 	if not ok then
 		print("** Unable to connect to server - is it running? Is mod_admin_shell enabled?");
