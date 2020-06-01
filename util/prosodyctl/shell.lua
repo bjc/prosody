@@ -27,7 +27,7 @@ local function read_line()
 end
 
 local function send_line(client, line)
-	client.send(st.stanza("repl-line"):text(line));
+	client.send(st.stanza("repl-input"):text(line));
 end
 
 local function repl(client)
@@ -103,9 +103,11 @@ local function start(arg) --luacheck: ignore 212/arg
 	end);
 
 	client.events.add_handler("received", function (stanza)
-		if stanza.name == "repl-result" then
+		if stanza.name == "repl-output" or stanza.name == "repl-result" then
 			local result_prefix = stanza.attr.type == "error" and "!" or "|";
 			print(result_prefix.." "..stanza:get_text());
+		end
+		if stanza.name == "repl-result" then
 			repl(client);
 		end
 	end);

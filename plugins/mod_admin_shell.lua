@@ -61,21 +61,21 @@ function runner_callbacks:error(err)
 	self.data.print("Error: "..tostring(err));
 end
 
-local function send_repl_result(session, line)
-	return session.send(st.stanza("repl-result"):text(tostring(line)));
+local function send_repl_output(session, line)
+	return session.send(st.stanza("repl-output"):text(tostring(line)));
 end
 
 function console:new_session(admin_session)
 	local session = {
 			send = function (t)
-				return send_repl_result(admin_session, t);
+				return send_repl_output(admin_session, t);
 			end;
 			print = function (...)
 				local t = {};
 				for i=1,select("#", ...) do
 					t[i] = tostring(select(i, ...));
 				end
-				return send_repl_result(admin_session, table.concat(t, "\t"));
+				return send_repl_output(admin_session, table.concat(t, "\t"));
 			end;
 			serialize = tostring;
 			disconnect = function () admin_session:close(); end;
@@ -107,8 +107,8 @@ local function handle_line(event)
 	local line = event.stanza:get_text();
 	local useglobalenv;
 
+	local result = st.stanza("repl-result");
 
-		module:log("debug", "HELLO: %s", line)
 	if line:match("^>") then
 		line = line:gsub("^>", "");
 		useglobalenv = true;
@@ -116,6 +116,7 @@ local function handle_line(event)
 		local command = line:match("^%w+") or line:match("%p");
 		if commands[command] then
 			commands[command](session, line);
+			event.origin.send(result);
 			return;
 		end
 	end
@@ -124,6 +125,7 @@ local function handle_line(event)
 
 	if not useglobalenv and commands[line:lower()] then
 		commands[line:lower()](session, line);
+		event.origin.send(result);
 		return;
 	end
 
@@ -137,29 +139,33 @@ local function handle_line(event)
 			err = err:gsub("^%[string .-%]:%d+: ", "");
 			err = err:gsub("^:%d+: ", "");
 			err = err:gsub("'<eof>'", "the end of the line");
-			session.print("Sorry, I couldn't understand that... "..err);
+			result.attr.type = "error";
+			result:text("Sorry, I couldn't understand that... "..err);
+			event.origin.send(result);
 			return;
 		end
 	end
 
 	local taskok, message = chunk();
 
+	local result = st.stanza("repl-result");
+
 	if not message then
 		if type(taskok) ~= "string" and useglobalenv then
 			taskok = session.serialize(taskok);
 		end
-		session.print("Result: "..tostring(taskok));
-		return;
+		result:text("Result: "..tostring(taskok));
 	elseif (not taskok) and message then
-		session.print("Command completed with a problem");
-		session.print("Message: "..tostring(message));
-		return;
+		result.attr.type = "error";
+		result:text("Error: "..tostring(message));
+	else
+		result:text("OK: "..tostring(message));
 	end
 
-	session.print("OK: "..tostring(message));
+	event.origin.send(result);
 end
 
-module:hook("admin/repl-line", function (event)
+module:hook("admin/repl-input", function (event)
 	local ok, err = pcall(handle_line, event);
 	if not ok then
 		event.origin.send(st.stanza("repl-result", { type = "error" }):text(err));

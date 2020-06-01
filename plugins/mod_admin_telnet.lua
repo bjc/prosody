@@ -65,7 +65,7 @@ function console:new_session(conn)
 	local w = function(s) conn:write(s:gsub("\n", "\r\n")); end;
 	local session = { conn = conn;
 			send = function (t)
-				if st.is_stanza(t) and t.name == "repl-result" then
+				if st.is_stanza(t) and (t.name == "repl-result" or t.name == "repl-output") then
 					t = "| "..t:get_text().."\n";
 				end
 				w(tostring(t));
@@ -106,7 +106,7 @@ function console:process_line(session, line)
 		session:disconnect();
 		return;
 	end
-	return module:fire_event("admin/repl-line", { origin = session, stanza = st.stanza("repl"):text(line) });
+	return module:fire_event("admin/repl-input", { origin = session, stanza = st.stanza("repl-input"):text(line) });
 end
 
 local sessions = {};
