@@ -10,6 +10,10 @@ local adminstream = require "util.adminstream";
 
 if have_readline then
 	readline.set_readline_name("prosody");
+	readline.set_options({
+			histfile = path.join(prosody.paths.data, ".shell_history");
+			ignoredups = true;
+		});
 end
 
 local function read_line()
@@ -30,6 +34,9 @@ local function repl(client)
 	if not line or line == "quit" or line == "exit" or line == "bye" then
 		if not line then
 			print("");
+		end
+		if have_readline then
+			readline.save_history();
 		end
 		os.exit();
 	end
