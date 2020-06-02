@@ -126,5 +126,5 @@ local function start(arg) --luacheck: ignore 212/arg
 end
 
 return {
-	start = start;
+	shell = start;
 };
