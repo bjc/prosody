@@ -5,6 +5,7 @@ local gettime = require "util.time".now;
 local runner = require "util.async".runner;
 local add_task = require "util.timer".add_task;
 local events = require "util.events";
+local server = require "net.server";
 
 local stream_close_timeout = 5;
 
