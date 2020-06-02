@@ -10,6 +10,7 @@ local config = require "core.configmanager";
 local server = require "net.server";
 local st = require "util.stanza";
 local path = require "util.paths";
+local parse_args = require "util.argparse".parse;
 
 local have_readline, readline = pcall(require, "readline");
 
@@ -91,6 +92,7 @@ end
 
 local function start(arg) --luacheck: ignore 212/arg
 	local client = adminstream.client();
+	local opts = parse_args(arg);
 
 	client.events.add_handler("connected", function ()
 		if not arg.quiet then
@@ -114,7 +116,7 @@ local function start(arg) --luacheck: ignore 212/arg
 		end
 	end);
 
-	local socket_path = path.resolve_relative_path(prosody.paths.data, prosody.opts.socket or config.get("*", "admin_socket") or "prosody.sock");
+	local socket_path = path.resolve_relative_path(prosody.paths.data, opts.socket or config.get("*", "admin_socket") or "prosody.sock");
 	local conn = connection(socket_path, client.listeners);
 	local ok, err = conn:connect();
 	if not ok then
