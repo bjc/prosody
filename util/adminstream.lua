@@ -136,6 +136,44 @@ end
 
 --- Public methods
 
+local function new_connection(socket_path, listeners)
+	local have_unix, unix = pcall(require, "socket.unix");
+	if type(unix) ~= "table" then
+		have_unix = false;
+	end
+	local conn, sock;
+
+	return {
+		connect = function ()
+			if not have_unix then
+				return nil, "no unix socket support";
+			end
+			if sock or conn then
+				return nil, "already connected";
+			end
+			sock = unix.stream();
+			sock:settimeout(0);
+			local ok, err = sock:connect(socket_path);
+			if not ok then
+				return nil, err;
+			end
+			conn = server.wrapclient(sock, nil, nil, listeners, "*a");
+			return true;
+		end;
+		disconnect = function ()
+			if conn then
+				conn:close();
+				conn = nil;
+			end
+			if sock then
+				sock:close();
+				sock = nil;
+			end
+			return true;
+		end;
+	};
+end
+
 local function new_server(sessions, stanza_handler)
 	local listeners = {};
 
@@ -280,6 +318,7 @@ local function new_client()
 end
 
 return {
+	connection = new_connection;
 	server = new_server;
 	client = new_client;
 };

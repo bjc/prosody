@@ -1,11 +1,3 @@
-local have_unix, unix = pcall(require, "socket.unix");
-
-if not have_unix or type(unix) ~= "table" then
-	print("** LuaSocket unix socket support not available or incompatible, ensure your");
-	print("** version is up to date.");
-	os.exit(1);
-end
-
 local config = require "core.configmanager";
 local server = require "net.server";
 local st = require "util.stanza";
@@ -42,37 +34,6 @@ local function repl(client)
 		os.exit();
 	end
 	send_line(client, line);
-end
-
-local function connection(socket_path, listeners)
-	local conn, sock;
-
-	return {
-		connect = function ()
-			if sock or conn then
-				return nil, "already connected";
-			end
-			sock = unix.stream();
-			sock:settimeout(0);
-			local ok, err = sock:connect(socket_path);
-			if not ok then
-				return nil, err;
-			end
-			conn = server.wrapclient(sock, nil, nil, listeners, "*a");
-			return true;
-		end;
-		disconnect = function ()
-			if conn then
-				conn:close();
-				conn = nil;
-			end
-			if sock then
-				sock:close();
-				sock = nil;
-			end
-			return true;
-		end;
-	};
 end
 
 local function printbanner()
@@ -117,11 +78,16 @@ local function start(arg) --luacheck: ignore 212/arg
 	end);
 
 	local socket_path = path.resolve_relative_path(prosody.paths.data, opts.socket or config.get("*", "admin_socket") or "prosody.sock");
-	local conn = connection(socket_path, client.listeners);
+	local conn = adminstream.connection(socket_path, client.listeners);
 	local ok, err = conn:connect();
 	if not ok then
-		print("** Unable to connect to server - is it running? Is mod_admin_shell enabled?");
-		print("** Connection error: "..err);
+		if err == "no unix socket support" then
+			print("** LuaSocket unix socket support not available or incompatible, ensure your");
+			print("** version is up to date.");
+		else
+			print("** Unable to connect to server - is it running? Is mod_admin_shell enabled?");
+			print("** Connection error: "..err);
+		end
 		os.exit(1);
 	end
 	server.loop();
