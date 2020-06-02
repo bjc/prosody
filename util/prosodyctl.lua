@@ -15,7 +15,6 @@ local usermanager = require "core.usermanager";
 local signal = require "util.signal";
 local set = require "util.set";
 local lfs = require "lfs";
-local pcall = pcall;
 local type = type;
 
 local nodeprep, nameprep = stringprep.nodeprep, stringprep.nameprep;
@@ -27,10 +26,22 @@ local tonumber = tonumber;
 local _G = _G;
 local prosody = prosody;
 
+local error_messages = setmetatable({
+		["invalid-username"] = "The given username is invalid in a Jabber ID";
+		["invalid-hostname"] = "The given hostname is invalid";
+		["no-password"] = "No password was supplied";
+		["no-such-user"] = "The given user does not exist on the server";
+		["no-such-host"] = "The given hostname does not exist in the config";
+		["unable-to-save-data"] = "Unable to store, perhaps you don't have permission?";
+		["no-pidfile"] = "There is no 'pidfile' option in the configuration file, see https://prosody.im/doc/prosodyctl#pidfile for help";
+		["invalid-pidfile"] = "The 'pidfile' option in the configuration file is not a string, see https://prosody.im/doc/prosodyctl#pidfile for help";
+		["no-posix"] = "The mod_posix module is not enabled in the Prosody config file, see https://prosody.im/doc/prosodyctl for more info";
+		["no-such-method"] = "This module has no commands";
+		["not-running"] = "Prosody is not running";
+		}, { __index = function (_,k) return "Error: "..(tostring(k):gsub("%-", " "):gsub("^.", string.upper)); end });
+
 -- UI helpers
-local function show_message(msg, ...)
-	print(msg:format(...));
-end
+local show_message = require "util.human.io".printf;
 
 local function show_usage(usage, desc)
 	print("Usage: ".._G.arg[0].." "..usage);
@@ -47,89 +58,6 @@ local function show_module_configuration_help(mod_name)
 	print("More info about: ")
 	print("	modules_enabled: https://prosody.im/doc/modules_enabled")
 	print("	"..mod_name..": https://modules.prosody.im/"..mod_name..".html")
-end
-
-local function getchar(n)
-	local stty_ret = os.execute("stty raw -echo 2>/dev/null");
-	local ok, char;
-	if stty_ret == true or stty_ret == 0 then
-		ok, char = pcall(io.read, n or 1);
-		os.execute("stty sane");
-	else
-		ok, char = pcall(io.read, "*l");
-		if ok then
-			char = char:sub(1, n or 1);
-		end
-	end
-	if ok then
-		return char;
-	end
-end
-
-local function getline()
-	local ok, line = pcall(io.read, "*l");
-	if ok then
-		return line;
-	end
-end
-
-local function getpass()
-	local stty_ret, _, status_code = os.execute("stty -echo 2>/dev/null");
-	if status_code then -- COMPAT w/ Lua 5.1
-		stty_ret = status_code;
-	end
-	if stty_ret ~= 0 then
-		io.write("\027[08m"); -- ANSI 'hidden' text attribute
-	end
-	local ok, pass = pcall(io.read, "*l");
-	if stty_ret == 0 then
-		os.execute("stty sane");
-	else
-		io.write("\027[00m");
-	end
-	io.write("\n");
-	if ok then
-		return pass;
-	end
-end
-
-local function show_yesno(prompt)
-	io.write(prompt, " ");
-	local choice = getchar():lower();
-	io.write("\n");
-	if not choice:match("%a") then
-		choice = prompt:match("%[.-(%U).-%]$");
-		if not choice then return nil; end
-	end
-	return (choice == "y");
-end
-
-local function read_password()
-	local password;
-	while true do
-		io.write("Enter new password: ");
-		password = getpass();
-		if not password then
-			show_message("No password - cancelled");
-			return;
-		end
-		io.write("Retype new password: ");
-		if getpass() ~= password then
-			if not show_yesno [=[Passwords did not match, try again? [Y/n]]=] then
-				return;
-			end
-		else
-			break;
-		end
-	end
-	return password;
-end
-
-local function show_prompt(prompt)
-	io.write(prompt, " ");
-	local line = getline();
-	line = line and line:gsub("\n$","");
-	return (line and #line > 0) and line or nil;
 end
 
 -- Server control
@@ -318,12 +246,6 @@ return {
 	show_warning = show_message;
 	show_usage = show_usage;
 	show_module_configuration_help = show_module_configuration_help;
-	getchar = getchar;
-	getline = getline;
-	getpass = getpass;
-	show_yesno = show_yesno;
-	read_password = read_password;
-	show_prompt = show_prompt;
 	adduser = adduser;
 	user_exists = user_exists;
 	passwd = passwd;
@@ -335,4 +257,5 @@ return {
 	reload = reload;
 	get_path_custom_plugins = get_path_custom_plugins;
 	call_luarocks = call_luarocks;
+	error_messages = error_messages;
 };
