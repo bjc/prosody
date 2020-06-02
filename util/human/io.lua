@@ -82,7 +82,7 @@ local function show_prompt(prompt)
 end
 
 local function printf(fmt, ...)
-	print(msg:format(...));
+	print(fmt:format(...));
 end
 
 return {
