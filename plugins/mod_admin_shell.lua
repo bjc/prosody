@@ -1273,11 +1273,11 @@ function def_env.debug:timers()
 		print("-- util.timer");
 		for i, id in ipairs(h.ids) do
 			if not params[id] then
-				print(os.date("%F %T", h.priorities[i]), h.items[id]);
+				print(os.date("%F %T", math.floor(h.priorities[i])), h.items[id]);
 			elseif not params[id].callback then
-				print(os.date("%F %T", h.priorities[i]), h.items[id], unpack(params[id]));
+				print(os.date("%F %T", math.floor(h.priorities[i])), h.items[id], unpack(params[id]));
 			else
-				print(os.date("%F %T", h.priorities[i]), params[id].callback, unpack(params[id]));
+				print(os.date("%F %T", math.floor(h.priorities[i])), params[id].callback, unpack(params[id]));
 			end
 		end
 	end
@@ -1293,7 +1293,7 @@ function def_env.debug:timers()
 	if h then
 		local next_time = h:peek();
 		if next_time then
-			return true, os.date("Next event at %F %T (in %%.6fs)", next_time):format(next_time - time.now());
+			return true, os.date("Next event at %F %T (in %%.6fs)", math.floor(next_time)):format(next_time - time.now());
 		end
 	end
 	return true;
