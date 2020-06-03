@@ -85,6 +85,56 @@ local function printf(fmt, ...)
 	print(fmt:format(...));
 end
 
+local function padright(s, width)
+	return s..string.rep(" ", width-#s);
+end
+
+local function padleft(s, width)
+	return string.rep(" ", width-#s)..s;
+end
+
+local function table(col_specs, max_width, padding)
+	max_width = max_width or 80;
+	padding = padding or 4;
+
+	local widths = {};
+	local total_width = max_width - padding;
+	local free_width = total_width;
+	-- Calculate width of fixed-size columns
+	for i = 1, #col_specs do
+		local width = col_specs[i].width or "0";
+		if not(type(width) == "string" and width:sub(-1) == "%") then
+			local title = col_specs[i].title;
+			width = math.max(tonumber(width), title and (#title+1) or 0);
+			widths[i] = width;
+			free_width = free_width - width;
+		end
+	end
+	-- Calculate width of %-based columns
+	for i = 1, #col_specs do
+		if not widths[i] then
+			local pc_width = tonumber((col_specs[i].width:gsub("%%$", "")));
+			widths[i] = math.floor(free_width*(pc_width/100));
+		end
+	end
+
+	return function (row, f)
+		for i, column in ipairs(col_specs) do
+			local width = widths[i];
+			local v = tostring(row[column.key or i] or ""):sub(1, width);
+			if #v < width then
+				if column.align == "right" then
+					v = padleft(v, width-1).." ";
+				else
+					v = padright(v, width);
+				end
+			end
+			(f or io.stdout):write(v);
+		end
+		(f or io.stdout):write("\n");
+	end;
+end
+
 return {
 	getchar = getchar;
 	getline = getline;
@@ -93,4 +143,7 @@ return {
 	read_password = read_password;
 	show_prompt = show_prompt;
 	printf = printf;
+	padleft = padleft;
+	padright = padright;
+	table = table;
 };
