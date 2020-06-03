@@ -271,7 +271,9 @@ local function new_client()
 
 		client.thread = runner(function (stanza)
 			if st.is_stanza(stanza) then
-				client.events.fire_event("received", stanza);
+				if not client.events.fire_event("received", stanza) and not stanza.attr.xmlns then
+					client.events.fire_event("received/"..stanza.name, stanza);
+				end
 			elseif stanza.stream == "opened" then
 				stream_callbacks._streamopened(client, stanza.attr);
 				client.events.fire_event("connected");
