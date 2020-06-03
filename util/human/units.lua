@@ -1,3 +1,9 @@
+local math_abs = math.abs;
+local math_ceil = math.ceil;
+local math_floor = math.floor;
+local math_log = math.log;
+local math_max = math.max;
+local math_min = math.min;
 local unpack = table.unpack or unpack; --luacheck: ignore 113
 
 local large = {
@@ -36,7 +42,7 @@ local binary = {
 -- unit: string, the base unit
 -- b: optional enum 'b', thousands base
 local function format(n, unit, b) --> string
-	local round = math.floor;
+	local round = math_floor;
 	local prefixes = large;
 	local logbase = 1000;
 	local fmt = "%.3g %s%s";
@@ -48,9 +54,9 @@ local function format(n, unit, b) --> string
 		logbase = 1024;
 	elseif n < 1 then
 		prefixes = small;
-		round = math.ceil;
+		round = math_ceil;
 	end
-	local m = math.max(0, math.min(8, round(math.abs(math.log(math.abs(n), logbase)))));
+	local m = math_max(0, math_min(8, round(math_abs(math_log(math_abs(n), logbase)))));
 	local prefix, multiplier = unpack(prefixes, m * 2-1, m*2);
 	return fmt:format(n / (multiplier or 1), prefix or "", unit);
 end
