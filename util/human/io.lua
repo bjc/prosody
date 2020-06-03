@@ -1,3 +1,5 @@
+local array = require "util.array";
+
 local function getchar(n)
 	local stty_ret = os.execute("stty raw -echo 2>/dev/null");
 	local ok, char;
@@ -119,6 +121,9 @@ local function new_table(col_specs, max_width, padding)
 	end
 
 	return function (row)
+		if not row then
+			row = array.pluck(col_specs, "title");
+		end
 		local output = {};
 		for i, column in ipairs(col_specs) do
 			local width = widths[i];
