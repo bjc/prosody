@@ -93,7 +93,7 @@ local function padleft(s, width)
 	return string.rep(" ", width-#s)..s;
 end
 
-local function table(col_specs, max_width, padding)
+local function new_table(col_specs, max_width, padding)
 	max_width = max_width or 80;
 	padding = padding or 4;
 
@@ -118,7 +118,8 @@ local function table(col_specs, max_width, padding)
 		end
 	end
 
-	return function (row, f)
+	return function (row)
+		local output = {};
 		for i, column in ipairs(col_specs) do
 			local width = widths[i];
 			local v = tostring(row[column.key or i] or ""):sub(1, width);
@@ -129,9 +130,9 @@ local function table(col_specs, max_width, padding)
 					v = padright(v, width);
 				end
 			end
-			(f or io.stdout):write(v);
+			table.insert(output, v);
 		end
-		(f or io.stdout):write("\n");
+		return table.concat(output);
 	end;
 end
 
@@ -145,5 +146,5 @@ return {
 	printf = printf;
 	padleft = padleft;
 	padright = padright;
-	table = table;
+	table = new_table;
 };
