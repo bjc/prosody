@@ -36,6 +36,8 @@ local serialization = require "util.serialization";
 local serialize_config = serialization.new ({ fatal = false, unquoted = true});
 local time = require "util.time";
 
+local format_number = require "util.human.units".format;
+
 local commands = module:shared("commands")
 local def_env = module:shared("env");
 local default_env_mt = { __index = def_env };
@@ -319,11 +321,7 @@ function def_env.server:shutdown(reason)
 end
 
 local function human(kb)
-	local unit = "K";
-	if kb > 1024 then
-		kb, unit = kb/1024, "M";
-	end
-	return ("%0.2f%sB"):format(kb, unit);
+	return format_number(kb*1024, "B", "b");
 end
 
 function def_env.server:memory()
@@ -1304,30 +1302,32 @@ def_env.timer = { info = def_env.debug.timers };
 
 def_env.stats = {};
 
-local function format_stat(type, value, ref_value)
+local short_units = {
+	seconds = "s",
+	bytes = "B",
+};
+
+local function format_stat(type, unit, value, ref_value)
 	ref_value = ref_value or value;
 	--do return tostring(value) end
-	if type == "duration" then
-		if ref_value < 0.001 then
-			return ("%g µs"):format(value*1000000);
-		elseif ref_value < 0.9 then
-			return ("%0.2f ms"):format(value*1000);
+	if not unit then
+		if type == "duration" then
+			unit = "seconds"
+		elseif type == "size" then
+			unit = "bytes";
+		elseif type == "rate" then
+			unit = " events/sec"
+			if ref_value < 0.9 then
+				unit = " events/min"
+				value = value*60;
+				if ref_value < 0.6/60 then
+					unit = " events/h"
+					value = value*60;
+				end
+			end
 		end
-		return ("%0.2f"):format(value);
-	elseif type == "size" then
-		if ref_value > 1048576 then
-			return ("%d MB"):format(value/1048576);
-		elseif ref_value > 1024 then
-			return ("%d KB"):format(value/1024);
-		end
-		return ("%d bytes"):format(value);
-	elseif type == "rate" then
-		if ref_value < 0.9 then
-			return ("%0.2f/min"):format(value*60);
-		end
-		return ("%0.2f/sec"):format(value);
 	end
-	return tostring(value);
+	return format_number(value, short_units[unit] or unit or "", unit == "bytes" and 'b' or nil);
 end
 
 local stats_methods = {};
@@ -1412,14 +1412,14 @@ function stats_methods:summary()
 				data.sample_count
 			));
 			table.insert(stat_info.output, string.format("Min: %s  Mean: %s  Max: %s",
-				format_stat(type, data.min),
-				format_stat(type, value),
-				format_stat(type, data.max)
+				format_stat(type, data.units, data.min),
+				format_stat(type, data.units, value),
+				format_stat(type, data.units, data.max)
 			));
 			table.insert(stat_info.output, string.format("Q1: %s  Median: %s  Q3: %s",
-				format_stat(type, statistics.get_percentile(data, 25)),
-				format_stat(type, statistics.get_percentile(data, 50)),
-				format_stat(type, statistics.get_percentile(data, 75))
+				format_stat(type, data.units, statistics.get_percentile(data, 25)),
+				format_stat(type, data.units, statistics.get_percentile(data, 50)),
+				format_stat(type, data.units, statistics.get_percentile(data, 75))
 			));
 		end
 	end
@@ -1449,7 +1449,7 @@ function stats_methods:cfgraph()
 				end
 
 				print("");
-				print(("_"):rep(52)..format_stat(type, data.max));
+				print(("_"):rep(52)..format_stat(type, data.units, data.max));
 				for row = graph_height, 1, -1 do
 					local row_chars = {};
 					local min_eighths, max_eighths = 8, 0;
@@ -1468,7 +1468,7 @@ function stats_methods:cfgraph()
 							row_chars[i] = char;
 						end
 					end
-					print(table.concat(row_chars).."|-"..format_stat(type, data.max/(graph_height/(row-0.5))));
+					print(table.concat(row_chars).."|-"..format_stat(type, data.units, data.max/(graph_height/(row-0.5))));
 				end
 				print(("\\    "):rep(11));
 				local x_labels = {};
@@ -1553,14 +1553,14 @@ function stats_methods:histogram()
 			print(("\\    "):rep(11));
 			local x_labels = {};
 			for i = 1, 11 do
-				local s = ("%-4s"):format(format_stat(type, data.min+range*i/11, data.min):match("^%S+"));
+				local s = ("%-4s"):format(format_stat(type, data.units, data.min+range*i/11, data.min):match("^%S+"));
 				if #s > 4 then
 					s = s:sub(1, 3).."…";
 				end
 				x_labels[i] = s;
 			end
 			print(" "..table.concat(x_labels, " "));
-			local units = format_stat(type, data.min):match("%s+(.+)$") or data.units or "";
+			local units = format_stat(type, data.units, data.min):match("%s+(.+)$") or data.units or "";
 			local margin = math.floor((graph_width-#units)/2);
 			print((" "):rep(margin)..units);
 		else
@@ -1582,7 +1582,7 @@ local function stats_tostring(stats)
 			end
 			print("");
 		else
-			print(("%-50s %s"):format(stat_info[1], format_stat(stat_info[2], stat_info[3])));
+			print(("%-50s %s"):format(stat_info[1], format_stat(stat_info[2], (stat_info[4] or {}).unit, stat_info[3])));
 		end
 	end
 	return #stats.." statistics displayed";
