@@ -1,3 +1,5 @@
+local unpack = table.unpack or unpack; --luacheck: ignore 113
+
 local large = {
 	"k", 1000,
 	"M", 1000000,
@@ -49,7 +51,7 @@ local function format(n, unit, b) --> string
 		round = math.ceil;
 	end
 	local m = math.max(0, math.min(8, round(math.abs(math.log(math.abs(n), logbase)))));
-	local prefix, multiplier = table.unpack(prefixes, m * 2-1, m*2);
+	local prefix, multiplier = unpack(prefixes, m * 2-1, m*2);
 	return fmt:format(n / (multiplier or 1), prefix or "", unit);
 end
 
