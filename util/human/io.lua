@@ -136,7 +136,7 @@ local function new_table(col_specs, max_width)
 					v = padright(v, width);
 				end
 			elseif #v > width then
-				v = v:sub(1, width-1) .. "\u{2026}";
+				v = v:sub(1, width-1) .. "…";
 			end
 			table.insert(output, v);
 		end
