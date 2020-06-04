@@ -197,7 +197,7 @@ static int rb_free(lua_State *L) {
 }
 
 static int rb_new(lua_State *L) {
-	size_t size = luaL_optinteger(L, 1, sysconf(_SC_PAGESIZE));
+	lua_Integer size = luaL_optinteger(L, 1, sysconf(_SC_PAGESIZE));
 	luaL_argcheck(L, size > 0, 1, "positive integer expected");
 	ringbuffer *b = lua_newuserdata(L, sizeof(ringbuffer) + size);
 
