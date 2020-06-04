@@ -247,6 +247,11 @@ local function new_server(sessions, stanza_handler)
 			sessions[conn]  = nil;
 		end
 	end
+
+	function listeners.onreadtimeout(conn)
+		conn:send(" ");
+	end
+
 	return {
 		listeners = listeners;
 	};
@@ -313,6 +318,10 @@ local function new_client()
 	function listeners.ondisconnect(conn, err) --luacheck: ignore 212/conn
 		client.log("info", "Admin client disconnected: %s", err or "connection closed");
 		client.conn = nil;
+	end
+
+	function listeners.onreadtimeout(conn)
+		conn:send(" ");
 	end
 
 	client.listeners = listeners;
