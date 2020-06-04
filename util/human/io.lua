@@ -131,7 +131,7 @@ local function new_table(col_specs, max_width)
 		local output = {};
 		for i, column in ipairs(col_specs) do
 			local width = widths[i];
-			local v = tostring(row[not titles and column.key or i] or "");
+			local v = (not titles and column.mapper or tostring)(row[not titles and column.key or i] or "", row);
 			if #v < width then
 				if column.align == "right" then
 					v = padleft(v, width-1).." ";
