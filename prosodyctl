@@ -587,7 +587,7 @@ local command_runner = async.runner(function ()
 		end
 	end
 
-	if not commands[command] then
+	if command and not commands[command] then
 		local ok, command_module = pcall(require, "util.prosodyctl."..command);
 		if ok and command_module[command] then
 			commands[command] = command_module[command];
