@@ -121,13 +121,14 @@ local function new_table(col_specs, max_width, padding)
 	end
 
 	return function (row)
+		local titles;
 		if not row then
-			row = array.pluck(col_specs, "title");
+			titles, row = true, array.pluck(col_specs, "title", "");
 		end
 		local output = {};
 		for i, column in ipairs(col_specs) do
 			local width = widths[i];
-			local v = tostring(row[column.key or i] or ""):sub(1, width);
+			local v = tostring(row[not titles and column.key or i] or ""):sub(1, width);
 			if #v < width then
 				if column.align == "right" then
 					v = padleft(v, width-1).." ";
