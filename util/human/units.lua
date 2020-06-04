@@ -46,17 +46,10 @@ local binary = {
 	"Yi", 2^80,
 }
 
--- n: number, the number to format
--- unit: string, the base unit
--- b: optional enum 'b', thousands base
-local function format(n, unit, b) --> string
+local function adjusted_unit(n, b)
 	local round = math_floor;
 	local prefixes = large;
 	local logbase = 1000;
-	local fmt = "%.3g %s%s";
-	if n == 0 then
-		return fmt:format(n, "", unit);
-	end
 	if b == 'b' then
 		prefixes = binary;
 		logbase = 1024;
@@ -66,9 +59,22 @@ local function format(n, unit, b) --> string
 	end
 	local m = math_max(0, math_min(8, round(math_abs(math_log(math_abs(n), logbase)))));
 	local prefix, multiplier = unpack(prefixes, m * 2-1, m*2);
-	return fmt:format(n / (multiplier or 1), prefix or "", unit);
+	return multiplier or 1, prefix;
+end
+
+-- n: number, the number to format
+-- unit: string, the base unit
+-- b: optional enum 'b', thousands base
+local function format(n, unit, b) --> string
+	local fmt = "%.3g %s%s";
+	if n == 0 then
+		return fmt:format(n, "", unit);
+	end
+	local multiplier, prefix = adjusted_unit(n, b);
+	return fmt:format(n / multiplier, prefix or "", unit);
 end
 
 return {
+	adjust = adjusted_unit;
 	format = format;
 };
