@@ -1318,13 +1318,14 @@ local function format_stat(type, unit, value, ref_value)
 		elseif type == "rate" then
 			unit = " events/sec"
 			if ref_value < 0.9 then
-				unit = " events/min"
+				unit = "events/min"
 				value = value*60;
 				if ref_value < 0.6/60 then
-					unit = " events/h"
+					unit = "events/h"
 					value = value*60;
 				end
 			end
+			return ("%.3g %s"):format(value, unit);
 		end
 	end
 	return format_number(value, short_units[unit] or unit or "", unit == "bytes" and 'b' or nil);
