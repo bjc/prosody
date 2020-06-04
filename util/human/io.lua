@@ -97,9 +97,10 @@ end
 
 local function new_table(col_specs, max_width)
 	max_width = max_width or tonumber(os.getenv("COLUMNS")) or 80;
+	local separator = " | ";
 
 	local widths = {};
-	local total_width = max_width;
+	local total_width = max_width - #separator * (#col_specs-1);
 	local free_width = total_width;
 	-- Calculate width of fixed-size columns
 	for i = 1, #col_specs do
@@ -137,7 +138,7 @@ local function new_table(col_specs, max_width)
 			end
 			table.insert(output, v);
 		end
-		return table.concat(output);
+		return table.concat(output, separator);
 	end;
 end
 
