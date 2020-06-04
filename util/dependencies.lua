@@ -7,6 +7,7 @@
 --
 
 local function softreq(...) local ok, lib =  pcall(require, ...); if ok then return lib; else return nil, lib; end end
+local platform_table = require "util.human.io".table({ { width = 15, align = "right" }, { width = "100%" } });
 
 -- Required to be able to find packages installed with luarocks
 if not softreq "luarocks.loader" then -- LuaRocks 2.x
@@ -20,12 +21,8 @@ local function missingdep(name, sources, msg, err) -- luacheck: ignore err
 	print("Prosody was unable to find "..tostring(name));
 	print("This package can be obtained in the following ways:");
 	print("");
-	local longest_platform = 0;
-	for platform in pairs(sources) do
-		longest_platform = math.max(longest_platform, #platform);
-	end
-	for platform, source in pairs(sources) do
-		print("", platform..":"..(" "):rep(4+longest_platform-#platform)..source);
+	for _, row in ipairs(sources) do
+		print(platform_table(row));
 	end
 	print("");
 	print(msg or (name.." is required for Prosody to run, so we will now exit."));
@@ -49,9 +46,9 @@ local function check_dependencies()
 
 	if not lxp then
 		missingdep("luaexpat", {
-				["Debian/Ubuntu"] = "sudo apt-get install lua-expat";
-				["luarocks"] = "luarocks install luaexpat";
-				["Source"] = "http://matthewwild.co.uk/projects/luaexpat/";
+				{ "Debian/Ubuntu", "sudo apt-get install lua-expat" };
+				{ "luarocks", "luarocks install luaexpat" };
+				{ "Source", "http://matthewwild.co.uk/projects/luaexpat/" };
 			}, nil, err);
 		fatal = true;
 	end
@@ -60,9 +57,9 @@ local function check_dependencies()
 
 	if not socket then
 		missingdep("luasocket", {
-				["Debian/Ubuntu"] = "sudo apt-get install lua-socket";
-				["luarocks"] = "luarocks install luasocket";
-				["Source"] = "http://www.tecgraf.puc-rio.br/~diego/professional/luasocket/";
+				{ "Debian/Ubuntu", "sudo apt-get install lua-socket" };
+				{ "luarocks", "luarocks install luasocket" };
+				{ "Source", "http://www.tecgraf.puc-rio.br/~diego/professional/luasocket/" };
 			}, nil, err);
 		fatal = true;
 	elseif not socket.tcp4 then
@@ -74,9 +71,9 @@ local function check_dependencies()
 	local lfs, err = softreq "lfs"
 	if not lfs then
 		missingdep("luafilesystem", {
-			["luarocks"] = "luarocks install luafilesystem";
-			["Debian/Ubuntu"] = "sudo apt-get install lua-filesystem";
-			["Source"] = "http://www.keplerproject.org/luafilesystem/";
+			{ "luarocks", "luarocks install luafilesystem" };
+			{ "Debian/Ubuntu", "sudo apt-get install lua-filesystem" };
+			{ "Source", "http://www.keplerproject.org/luafilesystem/" };
 		}, nil, err);
 		fatal = true;
 	end
@@ -85,9 +82,9 @@ local function check_dependencies()
 
 	if not ssl then
 		missingdep("LuaSec", {
-				["Debian/Ubuntu"] = "sudo apt-get install lua-sec";
-				["luarocks"] = "luarocks install luasec";
-				["Source"] = "https://github.com/brunoos/luasec";
+				{ "Debian/Ubuntu", "sudo apt-get install lua-sec" };
+				{ "luarocks", "luarocks install luasec" };
+				{ "Source", "https://github.com/brunoos/luasec" };
 			}, "SSL/TLS support will not be available", err);
 	end
 
@@ -95,9 +92,9 @@ local function check_dependencies()
 
 	if not bit then
 		missingdep("lua-bitops", {
-			["Debian/Ubuntu"] = "sudo apt-get install lua-bitop";
-			["luarocks"] = "luarocks install luabitop";
-			["Source"] = "http://bitop.luajit.org/";
+			{ "Debian/Ubuntu", "sudo apt-get install lua-bitop" };
+			{ "luarocks", "luarocks install luabitop" };
+			{ "Source", "http://bitop.luajit.org/" };
 		}, "WebSocket support will not be available", err);
 	end
 
@@ -105,8 +102,8 @@ local function check_dependencies()
 	if not encodings then
 		if err:match("module '[^']*' not found") then
 			missingdep("util.encodings", {
-				["Windows"] = "Make sure you have encodings.dll from the Prosody distribution in util/";
-				["GNU/Linux"] = "Run './configure' and 'make' in the Prosody source directory to build util/encodings.so";
+				{ "Windows", "Make sure you have encodings.dll from the Prosody distribution in util/" };
+				{ "GNU/Linux", "Run './configure' and 'make' in the Prosody source directory to build util/encodings.so" };
 			});
 		else
 			print "***********************************"
@@ -123,8 +120,8 @@ local function check_dependencies()
 	if not hashes then
 		if err:match("module '[^']*' not found") then
 			missingdep("util.hashes", {
-				["Windows"] = "Make sure you have hashes.dll from the Prosody distribution in util/";
-				["GNU/Linux"] = "Run './configure' and 'make' in the Prosody source directory to build util/hashes.so";
+				{ "Windows", "Make sure you have hashes.dll from the Prosody distribution in util/" };
+				{ "GNU/Linux", "Run './configure' and 'make' in the Prosody source directory to build util/hashes.so" };
 			});
 		else
 			print "***********************************"
