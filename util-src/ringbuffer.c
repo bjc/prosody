@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <stdio.h>
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -14,6 +13,55 @@ typedef struct {
 	size_t blen; /* current content size */
 	char buffer[];
 } ringbuffer;
+
+/* Translate absolute idx to a wrapped index within the buffer,
+   based on current read position */
+static int wrap_pos(const ringbuffer *b, const long idx, long *pos) {
+	if(idx > (long)b->blen) {
+		return 0;
+	}
+	if(idx + (long)b->rpos > (long)b->alen) {
+		*pos = idx - (b->alen - b->rpos);
+	} else {
+		*pos = b->rpos + idx;
+	}
+	return 1;
+}
+
+static int calc_splice_positions(const ringbuffer *b, long start, long end, long *out_start, long *out_end) {
+	if(start < 0) {
+		start = 1 + start + b->blen;
+	}
+	if(start <= 0) {
+		start = 1;
+	}
+
+	if(end < 0) {
+		end = 1 + end + b->blen;
+	}
+
+	if(end > (long)b->blen) {
+		end = b->blen;
+	}
+	if(start < 1) {
+		start = 1;
+	}
+
+	if(start > end) {
+		return 0;
+	}
+
+	start = start - 1;
+
+	if(!wrap_pos(b, start, out_start)) {
+		return 0;
+	}
+	if(!wrap_pos(b, end, out_end)) {
+		return 0;
+	}
+
+	return 1;
+}
 
 static void writechar(ringbuffer *b, char c) {
 	b->blen++;
@@ -178,6 +226,55 @@ static int rb_tostring(lua_State *L) {
 	return 1;
 }
 
+static int rb_sub(lua_State *L) {
+	ringbuffer *b = luaL_checkudata(L, 1, "ringbuffer_mt");
+
+	long start = luaL_checkinteger(L, 2);
+	long end = luaL_optinteger(L, 3, -1);
+
+	long wrapped_start, wrapped_end;
+	if(!calc_splice_positions(b, start, end, &wrapped_start, &wrapped_end)) {
+		lua_pushstring(L, "");
+	} else if(wrapped_end <= wrapped_start) {
+		lua_pushlstring(L, &b->buffer[wrapped_start], b->alen - wrapped_start);
+		lua_pushlstring(L, b->buffer, wrapped_end);
+		lua_concat(L, 2);
+	} else {
+		lua_pushlstring(L, &b->buffer[wrapped_start], (wrapped_end - wrapped_start));
+	}
+
+	return 1;
+}
+
+static int rb_byte(lua_State *L) {
+	ringbuffer *b = luaL_checkudata(L, 1, "ringbuffer_mt");
+
+	long start = luaL_optinteger(L, 2, 1);
+	long end = luaL_optinteger(L, 3, start);
+
+	long i;
+
+	long wrapped_start, wrapped_end;
+	if(calc_splice_positions(b, start, end, &wrapped_start, &wrapped_end)) {
+		if(wrapped_end <= wrapped_start) {
+			for(i = wrapped_start; i < (long)b->alen; i++) {
+				lua_pushinteger(L, b->buffer[i]);
+			}
+			for(i = 0; i < wrapped_end; i++) {
+				lua_pushinteger(L, b->buffer[i]);
+			}
+			return wrapped_end + (b->alen - wrapped_start);
+		} else {
+			for(i = wrapped_start; i < wrapped_end; i++) {
+				lua_pushinteger(L, b->buffer[i]);
+			}
+			return wrapped_end - wrapped_start;
+		}
+	}
+
+	return 0;
+}
+
 static int rb_length(lua_State *L) {
 	ringbuffer *b = luaL_checkudata(L, 1, "ringbuffer_mt");
 	lua_pushinteger(L, b->blen);
@@ -239,6 +336,10 @@ int luaopen_util_ringbuffer(lua_State *L) {
 			lua_setfield(L, -2, "size");
 			lua_pushcfunction(L, rb_length);
 			lua_setfield(L, -2, "length");
+			lua_pushcfunction(L, rb_sub);
+			lua_setfield(L, -2, "sub");
+			lua_pushcfunction(L, rb_byte);
+			lua_setfield(L, -2, "byte");
 			lua_pushcfunction(L, rb_free);
 			lua_setfield(L, -2, "free");
 		}
