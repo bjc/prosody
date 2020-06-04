@@ -12,6 +12,11 @@ describe("util.ringbuffer", function ()
 				rb.new(0);
 			end);
 		end);
+		it("won't create a negatively sized buffer", function ()
+			assert.has_error(function ()
+				rb.new(-1);
+			end);
+		end);
 	end);
 	describe(":write", function ()
 		local b = rb.new();
