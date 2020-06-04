@@ -128,13 +128,15 @@ local function new_table(col_specs, max_width)
 		local output = {};
 		for i, column in ipairs(col_specs) do
 			local width = widths[i];
-			local v = tostring(row[not titles and column.key or i] or ""):sub(1, width);
+			local v = tostring(row[not titles and column.key or i] or "");
 			if #v < width then
 				if column.align == "right" then
 					v = padleft(v, width-1).." ";
 				else
 					v = padright(v, width);
 				end
+			elseif #v > width then
+				v = v:sub(1, width-1) .. "\u{2026}";
 			end
 			table.insert(output, v);
 		end
