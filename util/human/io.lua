@@ -95,12 +95,11 @@ local function padleft(s, width)
 	return string.rep(" ", width-#s)..s;
 end
 
-local function new_table(col_specs, max_width, padding)
-	max_width = max_width or 80;
-	padding = padding or 4;
+local function new_table(col_specs, max_width)
+	max_width = max_width or tonumber(os.getenv("COLUMNS")) or 80;
 
 	local widths = {};
-	local total_width = max_width - padding;
+	local total_width = max_width;
 	local free_width = total_width;
 	-- Calculate width of fixed-size columns
 	for i = 1, #col_specs do
