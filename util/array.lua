@@ -134,9 +134,13 @@ function array_base.unique(outa, ina)
 	end);
 end
 
-function array_base.pluck(outa, ina, key)
+function array_base.pluck(outa, ina, key, default)
 	for i = 1, #ina do
-		outa[i] = ina[i][key];
+		local v = ina[i][key];
+		if v == nil then
+			v = default;
+		end
+		outa[i] = v;
 	end
 	return outa;
 end
