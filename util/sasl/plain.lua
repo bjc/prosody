@@ -70,7 +70,7 @@ local function plain(self, message)
 	if self.profile.plain then
 		local correct_password;
 		correct_password, state = self.profile.plain(self, authentication, self.realm);
-		correct = (correct_password == password);
+		correct = (saslprep(correct_password) == password);
 	elseif self.profile.plain_test then
 		correct, state = self.profile.plain_test(self, authentication, password, self.realm);
 	end

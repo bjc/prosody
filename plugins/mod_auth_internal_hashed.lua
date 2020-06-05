@@ -15,6 +15,7 @@ local generate_uuid = require "util.uuid".generate;
 local new_sasl = require "util.sasl".new;
 local hex = require"util.hex";
 local to_hex, from_hex = hex.to, hex.from;
+local saslprep = require "util.encodings".stringprep.saslprep;
 
 local log = module._log;
 local host = module.host;
@@ -34,9 +35,13 @@ local provider = {};
 function provider.test_password(username, password)
 	log("debug", "test password for user '%s'", username);
 	local credentials = accounts:get(username) or {};
+	password = saslprep(password);
+	if not password then
+		return nil, "Password fails SASLprep.";
+	end
 
 	if credentials.password ~= nil and string.len(credentials.password) ~= 0 then
-		if credentials.password ~= password then
+		if saslprep(credentials.password) ~= password then
 			return nil, "Auth failed. Provided password is incorrect.";
 		end
 

@@ -105,6 +105,10 @@ local function get_scram_hasher(H, HMAC, Hi)
 		if iteration_count < 4096 then
 			log("warn", "Iteration count < 4096 which is the suggested minimum according to RFC 5802.")
 		end
+		password = saslprep(password);
+		if not password then
+			return false, "password fails SASLprep";
+		end
 		local salted_password = Hi(password, salt, iteration_count);
 		local stored_key = H(HMAC(salted_password, "Client Key"))
 		local server_key = HMAC(salted_password, "Server Key");
