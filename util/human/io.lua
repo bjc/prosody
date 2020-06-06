@@ -134,7 +134,7 @@ local function new_table(col_specs, max_width)
 			local v = (not titles and column.mapper or tostring)(row[not titles and column.key or i] or "", row);
 			if #v < width then
 				if column.align == "right" then
-					v = padleft(v, width-1).." ";
+					v = padleft(v, width);
 				else
 					v = padright(v, width);
 				end
