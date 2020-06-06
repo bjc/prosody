@@ -13,7 +13,9 @@ end
 
 admins = { "admin@localhost" }
 
-use_libevent = true
+network_backend = "epoll"
+network_settings = {
+}
 
 modules_enabled = {
 	-- Generally required
@@ -99,7 +101,7 @@ mam_smart_enable = true
 
 -- Logging configuration
 -- For advanced logging see https://prosody.im/doc/logging
-log = "*console"
+log = {debug = "*console" }
 
 pidfile = "prosody.pid"
 
