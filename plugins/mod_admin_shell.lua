@@ -1583,7 +1583,7 @@ local function stats_tostring(stats)
 			end
 			print("");
 		else
-			print(("%-50s %s"):format(stat_info[1], format_stat(stat_info[2], (stat_info[4] or {}).unit, stat_info[3])));
+			print(("%-50s %s"):format(stat_info[1], format_stat(stat_info[2], (stat_info[4] or {}).units, stat_info[3])));
 		end
 	end
 	return #stats.." statistics displayed";
