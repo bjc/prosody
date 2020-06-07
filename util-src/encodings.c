@@ -24,6 +24,9 @@
 #if (LUA_VERSION_NUM == 501)
 #define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
 #endif
+#if (LUA_VERSION_NUM < 504)
+#define luaL_pushfail lua_pushnil
+#endif
 
 /***************** BASE64 *****************/
 
@@ -247,7 +250,7 @@ static int Lutf8_length(lua_State *L) {
 	size_t len;
 
 	if(!check_utf8(L, 1, &len)) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushliteral(L, "invalid utf8");
 		return 2;
 	}
@@ -286,7 +289,7 @@ static int icu_stringprep_prep(lua_State *L, const UStringPrepProfile *profile) 
 	input = luaL_checklstring(L, 1, &input_len);
 
 	if(input_len >= 1024) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		return 1;
 	}
 
@@ -301,14 +304,14 @@ static int icu_stringprep_prep(lua_State *L, const UStringPrepProfile *profile) 
 	u_strFromUTF8(unprepped, 1024, &unprepped_len, input, input_len, &err);
 
 	if(U_FAILURE(err)) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		return 1;
 	}
 
 	prepped_len = usprep_prepare(profile, unprepped, unprepped_len, prepped, 1024, flags, NULL, &err);
 
 	if(U_FAILURE(err)) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		return 1;
 	} else {
 		u_strToUTF8(output, 1024, &output_len, prepped, prepped_len, &err);
@@ -316,7 +319,7 @@ static int icu_stringprep_prep(lua_State *L, const UStringPrepProfile *profile) 
 		if(U_SUCCESS(err) && output_len < 1024) {
 			lua_pushlstring(L, output, output_len);
 		} else {
-			lua_pushnil(L);
+			luaL_pushfail(L);
 		}
 
 		return 1;
@@ -414,7 +417,7 @@ static int stringprep_prep(lua_State *L, const Stringprep_profile *profile) {
 	}
 
 	if(s == NULL || len >= 1024 || len != strlen(s)) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		return 1; /* TODO return error message */
 	}
 
@@ -425,7 +428,7 @@ static int stringprep_prep(lua_State *L, const Stringprep_profile *profile) {
 		lua_pushstring(L, string);
 		return 1;
 	} else {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		return 1; /* TODO return error message */
 	}
 }
@@ -464,7 +467,7 @@ static int Lidna_to_ascii(lua_State *L) {	/** idna.to_ascii(s) */
 	u_strFromUTF8(ustr, 1024, &ulen, s, len, &err);
 
 	if(U_FAILURE(err)) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		return 1;
 	}
 
@@ -472,7 +475,7 @@ static int Lidna_to_ascii(lua_State *L) {	/** idna.to_ascii(s) */
 	dest_len = uidna_nameToASCII(icu_idna2008, ustr, ulen, dest, 256, &info, &err);
 
 	if(U_FAILURE(err) || info.errors) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		return 1;
 	} else {
 		u_strToUTF8(output, 1024, &output_len, dest, dest_len, &err);
@@ -480,7 +483,7 @@ static int Lidna_to_ascii(lua_State *L) {	/** idna.to_ascii(s) */
 		if(U_SUCCESS(err) && output_len < 1024) {
 			lua_pushlstring(L, output, output_len);
 		} else {
-			lua_pushnil(L);
+			luaL_pushfail(L);
 		}
 
 		return 1;
@@ -499,7 +502,7 @@ static int Lidna_to_unicode(lua_State *L) {	/** idna.to_unicode(s) */
 	u_strFromUTF8(ustr, 1024, &ulen, s, len, &err);
 
 	if(U_FAILURE(err)) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		return 1;
 	}
 
@@ -507,7 +510,7 @@ static int Lidna_to_unicode(lua_State *L) {	/** idna.to_unicode(s) */
 	dest_len = uidna_nameToUnicode(icu_idna2008, ustr, ulen, dest, 1024, &info, &err);
 
 	if(U_FAILURE(err) || info.errors) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		return 1;
 	} else {
 		u_strToUTF8(output, 1024, &output_len, dest, dest_len, &err);
@@ -515,7 +518,7 @@ static int Lidna_to_unicode(lua_State *L) {	/** idna.to_unicode(s) */
 		if(U_SUCCESS(err) && output_len < 1024) {
 			lua_pushlstring(L, output, output_len);
 		} else {
-			lua_pushnil(L);
+			luaL_pushfail(L);
 		}
 
 		return 1;
@@ -534,14 +537,14 @@ static int Lskeleton(lua_State *L) {
 	u_strFromUTF8(ustr, 1024, &ulen, s, len, &err);
 
 	if(U_FAILURE(err)) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		return 1;
 	}
 
 	dest_len = uspoof_getSkeleton(icu_spoofcheck, 0, ustr, ulen, dest, 1024, &err);
 
 	if(U_FAILURE(err)) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		return 1;
 	}
 
@@ -552,7 +555,7 @@ static int Lskeleton(lua_State *L) {
 		return 1;
 	}
 
-	lua_pushnil(L);
+	luaL_pushfail(L);
 	return 1;
 }
 
@@ -569,7 +572,7 @@ static int Lidna_to_ascii(lua_State *L) {	/** idna.to_ascii(s) */
 	int ret;
 
 	if(s == NULL || len != strlen(s)) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		return 1; /* TODO return error message */
 	}
 
@@ -580,7 +583,7 @@ static int Lidna_to_ascii(lua_State *L) {	/** idna.to_ascii(s) */
 		idn_free(output);
 		return 1;
 	} else {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		idn_free(output);
 		return 1; /* TODO return error message */
 	}
@@ -597,7 +600,7 @@ static int Lidna_to_unicode(lua_State *L) {	/** idna.to_unicode(s) */
 		idn_free(output);
 		return 1;
 	} else {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		idn_free(output);
 		return 1; /* TODO return error message */
 	}

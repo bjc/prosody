@@ -37,6 +37,9 @@
 #if (LUA_VERSION_NUM == 501)
 #define luaL_setmetatable(L, tname) luaL_getmetatable(L, tname); lua_setmetatable(L, -2)
 #endif
+#if (LUA_VERSION_NUM < 504)
+#define luaL_pushfail lua_pushnil
+#endif
 
 /*
  * Structure to keep state for each type of API
@@ -67,7 +70,7 @@ static int Ladd(lua_State *L) {
 	int wantwrite = lua_toboolean(L, 4);
 
 	if(fd < 0) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(EBADF));
 		lua_pushinteger(L, EBADF);
 		return 3;
@@ -84,7 +87,7 @@ static int Ladd(lua_State *L) {
 
 	if(ret < 0) {
 		ret = errno;
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(ret));
 		lua_pushinteger(L, ret);
 		return 3;
@@ -96,14 +99,14 @@ static int Ladd(lua_State *L) {
 #else
 
 	if(fd > FD_SETSIZE) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(EBADF));
 		lua_pushinteger(L, EBADF);
 		return 3;
 	}
 
 	if(FD_ISSET(fd, &state->all)) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(EEXIST));
 		lua_pushinteger(L, EEXIST);
 		return 3;
@@ -160,7 +163,7 @@ static int Lset(lua_State *L) {
 	}
 	else {
 		ret = errno;
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(ret));
 		lua_pushinteger(L, ret);
 		return 3;
@@ -169,7 +172,7 @@ static int Lset(lua_State *L) {
 #else
 
 	if(!FD_ISSET(fd, &state->all)) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(ENOENT));
 		lua_pushinteger(L, ENOENT);
 		return 3;
@@ -218,7 +221,7 @@ static int Ldel(lua_State *L) {
 	}
 	else {
 		ret = errno;
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(ret));
 		lua_pushinteger(L, ret);
 		return 3;
@@ -227,7 +230,7 @@ static int Ldel(lua_State *L) {
 #else
 
 	if(!FD_ISSET(fd, &state->all)) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(ENOENT));
 		lua_pushinteger(L, ENOENT);
 		return 3;
@@ -314,18 +317,20 @@ static int Lwait(lua_State *L) {
 #endif
 
 	if(ret == 0) {
+		/* Is this an error? */
 		lua_pushnil(L);
 		lua_pushstring(L, "timeout");
 		return 2;
 	}
 	else if(ret < 0 && errno == EINTR) {
+		/* Is this an error? */
 		lua_pushnil(L);
 		lua_pushstring(L, "signal");
 		return 2;
 	}
 	else if(ret < 0) {
 		ret = errno;
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(ret));
 		lua_pushinteger(L, ret);
 		return 3;
@@ -399,7 +404,7 @@ static int Lnew(lua_State *L) {
 	int epoll_fd = epoll_create1(EPOLL_CLOEXEC);
 
 	if(epoll_fd <= 0) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(errno));
 		lua_pushinteger(L, errno);
 		return 3;

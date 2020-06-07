@@ -6,6 +6,10 @@
 #include <lua.h>
 #include <lauxlib.h>
 
+#if (LUA_VERSION_NUM < 504)
+#define luaL_pushfail lua_pushnil
+#endif
+
 typedef struct {
 	size_t rpos; /* read position */
 	size_t wpos; /* write position */
@@ -152,7 +156,7 @@ static int rb_read(lua_State *L) {
 	int peek = lua_toboolean(L, 3);
 
 	if(r > b->blen) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		return 1;
 	}
 
@@ -204,7 +208,7 @@ static int rb_write(lua_State *L) {
 
 	/* Does `l` bytes fit? */
 	if((l + b->blen) > b->alen) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		return 1;
 	}
 

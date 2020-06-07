@@ -64,6 +64,9 @@
 #if (LUA_VERSION_NUM < 503)
 #define lua_isinteger(L, n) lua_isnumber(L, n)
 #endif
+#if (LUA_VERSION_NUM < 504)
+#define luaL_pushfail lua_pushnil
+#endif
 
 #include <fcntl.h>
 #if defined(__linux__)
@@ -413,7 +416,7 @@ static int lc_initgroups(lua_State *L) {
 	struct passwd *p;
 
 	if(!lua_isstring(L, 1)) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, "invalid-username");
 		return 2;
 	}
@@ -421,7 +424,7 @@ static int lc_initgroups(lua_State *L) {
 	p = getpwnam(lua_tostring(L, 1));
 
 	if(!p) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, "no-such-user");
 		return 2;
 	}
@@ -440,7 +443,7 @@ static int lc_initgroups(lua_State *L) {
 			break;
 
 		default:
-			lua_pushnil(L);
+			luaL_pushfail(L);
 			lua_pushstring(L, "invalid-gid");
 			return 2;
 	}
@@ -450,17 +453,17 @@ static int lc_initgroups(lua_State *L) {
 	if(ret) {
 		switch(errno) {
 			case ENOMEM:
-				lua_pushnil(L);
+				luaL_pushfail(L);
 				lua_pushstring(L, "no-memory");
 				break;
 
 			case EPERM:
-				lua_pushnil(L);
+				luaL_pushfail(L);
 				lua_pushstring(L, "permission-denied");
 				break;
 
 			default:
-				lua_pushnil(L);
+				luaL_pushfail(L);
 				lua_pushstring(L, "unknown-error");
 		}
 	} else {
@@ -672,7 +675,7 @@ static int lc_uname(lua_State *L) {
 	struct utsname uname_info;
 
 	if(uname(&uname_info) != 0) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(errno));
 		return 2;
 	}
@@ -702,7 +705,7 @@ static int lc_setenv(lua_State *L) {
 	/* If the second argument is nil or nothing, unset the var */
 	if(lua_isnoneornil(L, 2)) {
 		if(unsetenv(var) != 0) {
-			lua_pushnil(L);
+			luaL_pushfail(L);
 			lua_pushstring(L, strerror(errno));
 			return 2;
 		}
@@ -714,7 +717,7 @@ static int lc_setenv(lua_State *L) {
 	value = luaL_checkstring(L, 2);
 
 	if(setenv(var, value, 1) != 0) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(errno));
 		return 2;
 	}
@@ -776,7 +779,7 @@ static int lc_atomic_append(lua_State *L) {
 
 			case ENOSPC: /* No space left */
 			default: /* Other issues */
-				lua_pushnil(L);
+				luaL_pushfail(L);
 				lua_pushstring(L, strerror(err));
 				lua_pushinteger(L, err);
 				return 3;
@@ -803,7 +806,7 @@ static int lc_atomic_append(lua_State *L) {
 		return luaL_error(L, "atomic_append() failed in ftruncate(): %s", strerror(errno));
 	}
 
-	lua_pushnil(L);
+	luaL_pushfail(L);
 	lua_pushstring(L, strerror(err));
 	lua_pushinteger(L, err);
 	return 3;
