@@ -67,6 +67,9 @@ end
 -- Curve list too
 finalisers.curveslist = finalisers.ciphers;
 
+-- TLS 1.3 ciphers
+finalisers.ciphersuites = finalisers.ciphers;
+
 -- protocol = "x" should enable only that protocol
 -- protocol = "x+" should enable x and later versions
 
