@@ -37,6 +37,9 @@ local config_path = prosody.paths.config or ".";
 
 local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
 local luasec_version = tonumber(luasec_major) * 100 + tonumber(luasec_minor);
+-- TODO Use ssl.config instead of require here once we are sure that the fix
+-- in LuaSec has been widely distributed
+-- https://github.com/brunoos/luasec/issues/149
 local luasec_has = softreq"ssl.config" or {
 	algorithms = {
 		ec = luasec_version >= 5;
