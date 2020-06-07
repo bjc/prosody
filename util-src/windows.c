@@ -22,6 +22,9 @@
 #if (LUA_VERSION_NUM == 501)
 #define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
 #endif
+#if (LUA_VERSION_NUM < 504)
+#define luaL_pushfail lua_pushnil
+#endif
 
 static int Lget_nameservers(lua_State *L) {
 	char stack_buffer[1024]; // stack allocated buffer
@@ -45,14 +48,14 @@ static int Lget_nameservers(lua_State *L) {
 
 		return 1;
 	} else {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushfstring(L, "DnsQueryConfig returned %d", status);
 		return 2;
 	}
 }
 
 static int lerror(lua_State *L, char *string) {
-	lua_pushnil(L);
+	luaL_pushfail(L);
 	lua_pushfstring(L, "%s: %d", string, GetLastError());
 	return 2;
 }
