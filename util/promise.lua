@@ -104,6 +104,27 @@ local function all(promises)
 	end);
 end
 
+local function all_settled(promises)
+	return new(function (resolve)
+		local count, total, results = 0, #promises, {};
+		for i = 1, total do
+			promises[i]:next(function (v)
+				results[i] = { status = "fulfilled", value = v };
+				count = count + 1;
+				if count == total then
+					resolve(results);
+				end
+			end, function (e)
+				results[i] = { status = "rejected", reason = e };
+				count = count + 1;
+				if count == total then
+					resolve(results);
+				end
+			end);
+		end
+	end);
+end
+
 local function race(promises)
 	return new(function (resolve, reject)
 		for i = 1, #promises do
@@ -149,6 +170,7 @@ return {
 	resolve = resolve;
 	reject = reject;
 	all = all;
+	all_settled = all_settled;
 	race = race;
 	try = try;
 	is_promise = is_promise;
