@@ -18,6 +18,11 @@ local url_build = require "socket.url".build;
 local normalize_path = require "util.http".normalize_path;
 local set = require "util.set";
 
+local ip_util = require "util.ip";
+local new_ip = ip_util.new_ip;
+local match_ip = ip_util.match;
+local parse_cidr = ip_util.parse_cidr;
+
 local server = require "net.http.server";
 
 server.set_default_host(module:get_option_string("http_default_host"));
@@ -204,6 +209,16 @@ module.add_host(module); -- set up handling on global context too
 
 local trusted_proxies = module:get_option_set("trusted_proxies", { "127.0.0.1", "::1" })._items;
 
+local function is_trusted_proxy(ip)
+	local parsed_ip = new_ip(ip)
+	for trusted_proxy in trusted_proxies do
+		if match_ip(parsed_ip, parse_cidr(trusted_proxy)) then
+			return true;
+		end
+	end
+	return false
+end
+
 local function get_ip_from_request(request)
 	local ip = request.conn:ip();
 	local forwarded_for = request.headers.x_forwarded_for;
@@ -218,7 +233,7 @@ local function get_ip_from_request(request)
 		-- Case d) If all IPs are in trusted proxies, something went obviously wrong and the logic never overwrites `ip`, leaving it at the original request IP.
 		forwarded_for = forwarded_for..", "..ip;
 		for forwarded_ip in forwarded_for:gmatch("[^%s,]+") do
-			if not trusted_proxies[forwarded_ip] then
+			if not is_trusted_proxy(forwarded_ip) then
 				ip = forwarded_ip;
 			end
 		end
