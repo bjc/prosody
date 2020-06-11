@@ -38,13 +38,13 @@ local function new(config)
 
 	local methods;
 	methods = {
-		amount = function (name, initial)
-			if initial then
-				send_gauge(name, initial);
+		amount = function (name, conf)
+			if conf and conf.initial then
+				send_gauge(name, conf.initial);
 			end
 			return function (new_v) send_gauge(name, new_v); end
 		end;
-		counter = function (name, initial) --luacheck: ignore 212/initial
+		counter = function (name, conf) --luacheck: ignore 212/conf
 			return function (delta)
 				send_gauge(name, delta, true);
 			end;
@@ -54,7 +54,7 @@ local function new(config)
 				send_counter(name, 1);
 			end;
 		end;
-		distribution = function (name, unit, type) --luacheck: ignore 212/unit 212/type
+		distribution = function (name, conf) --luacheck: ignore 212/conf
 			return function (value)
 				send_histogram_sample(name, value);
 			end;
