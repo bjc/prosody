@@ -391,7 +391,7 @@ local function archive_where_id_range(query, args, where)
 	end
 	if query.before then
 		local before_id = nil;
-		for row in engine:select(id_lookup_sql, query.after, args[1], args[2], args[3]) do
+		for row in engine:select(id_lookup_sql, query.before, args[1], args[2], args[3]) do
 			before_id = row[1];
 		end
 		if not before_id then
