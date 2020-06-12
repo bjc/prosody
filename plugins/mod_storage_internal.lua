@@ -135,7 +135,7 @@ function archive:find(username, query)
 		return function () end;
 	end
 	local count = nil;
-	local i = 0;
+	local i, last_key = 0;
 	if query then
 		items = array(items);
 		if query.key then
@@ -178,6 +178,8 @@ function archive:find(username, query)
 					return nil, "item-not-found";
 				end
 			end
+		elseif query.before then
+			last_key = query.before;
 		elseif query.after then
 			local found = false;
 			for j = 1, #items do
@@ -198,7 +200,9 @@ function archive:find(username, query)
 	return function ()
 		i = i + 1;
 		local item = items[i];
-		if not item then return; end
+		if not item or (last_key and item.key == last_key) then
+			return;
+		end
 		local key = item.key or tostring(i);
 		local when = item.when or datetime.parse(item.attr.stamp);
 		local with = item.with;
