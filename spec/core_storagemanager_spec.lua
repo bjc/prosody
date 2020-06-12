@@ -215,12 +215,16 @@ describe("storagemanager", function ()
 					{ nil, test_stanza, test_time+1, "contact2@example.com" };
 					{ nil, test_stanza, test_time+2, "contact2@example.com" };
 					{ nil, test_stanza, test_time-1, "contact2@example.com" };
+					{ nil, test_stanza, test_time-1, "contact3@example.com" };
+					{ nil, test_stanza, test_time+0, "contact3@example.com" };
+					{ nil, test_stanza, test_time+1, "contact3@example.com" };
 				};
 
 				it("can be added to", function ()
 					for _, data_item in ipairs(test_data) do
-						local ok = archive:append("user", unpack(data_item, 1, 4));
-						assert.truthy(ok);
+						local id = archive:append("user", unpack(data_item, 1, 4));
+						assert.truthy(id);
+						data_item[1] = id;
 					end
 				end);
 
@@ -277,7 +281,7 @@ describe("storagemanager", function ()
 							assert.equal(2, #item.tags);
 							assert(test_time >= when);
 						end
-						assert.equal(2, count);
+						assert.equal(4, count);
 					end);
 
 					it("by time (start)", function ()
@@ -296,7 +300,7 @@ describe("storagemanager", function ()
 							assert.equal(2, #item.tags);
 							assert(test_time <= when);
 						end
-						assert.equal(#test_data -1, count);
+						assert.equal(#test_data - 2, count);
 					end);
 
 					it("by time (start+end)", function ()
@@ -317,7 +321,45 @@ describe("storagemanager", function ()
 							assert(when >= test_time, ("%d >= %d"):format(when, test_time));
 							assert(when <= test_time+1, ("%d <= %d"):format(when, test_time+1));
 						end
-						assert.equal(2, count);
+						assert.equal(4, count);
+					end);
+
+					it("by id (after)", function ()
+						-- luacheck: ignore 211/err
+						local data, err = archive:find("user", {
+							["after"] = test_data[2][1];
+						});
+						assert.truthy(data);
+						local count = 0;
+						for id, item in data do
+							count = count + 1;
+							assert.truthy(id);
+							assert.equal(test_data[2+count][1], id);
+							assert(st.is_stanza(item));
+							assert.equal("test", item.name);
+							assert.equal("urn:example:foo", item.attr.xmlns);
+							assert.equal(2, #item.tags);
+						end
+						assert.equal(5, count);
+					end);
+
+					it("by id (before)", function ()
+						-- luacheck: ignore 211/err
+						local data, err = archive:find("user", {
+							["before"] = test_data[4][1];
+						});
+						assert.truthy(data);
+						local count = 0;
+						for id, item in data do
+							count = count + 1;
+							assert.truthy(id);
+							assert.equal(test_data[count][1], id);
+							assert(st.is_stanza(item));
+							assert.equal("test", item.name);
+							assert.equal("urn:example:foo", item.attr.xmlns);
+							assert.equal(2, #item.tags);
+						end
+						assert.equal(3, count);
 					end);
 				end);
 
