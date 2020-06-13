@@ -1160,7 +1160,7 @@ function def_env.xmpp:ping(localhost, remotehost, timeout)
 	local iq = st.iq{ from=localhost, to=remotehost, type="get", id=new_id()}
 			:tag("ping", {xmlns="urn:xmpp:ping"});
 	local time_start = time.now();
-	local ret, err = async.wait(module:context(localhost):send_iq(iq, nil, timeout));
+	local ret, err = async.wait_for(module:context(localhost):send_iq(iq, nil, timeout));
 	if ret then
 		return true, ("pong from %s in %gs"):format(ret.stanza.attr.from, time.now() - time_start);
 	else
@@ -1182,7 +1182,7 @@ end
 
 function def_env.dns:lookup(name, typ, class)
 	local resolver = get_resolver(self.session);
-	local ret, err = async.wait(resolver:lookup_promise(name, typ, class));
+	local ret, err = async.wait_for(resolver:lookup_promise(name, typ, class));
 	if ret then
 		return true, ret;
 	elseif err then
