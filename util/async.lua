@@ -246,7 +246,7 @@ local function ready()
 	return pcall(checkthread);
 end
 
-local function wait(promise)
+local function wait_for(promise)
 	local async_wait, async_done = waiter();
 	local ret, err = nil, nil;
 	promise:next(
@@ -266,5 +266,6 @@ return {
 	waiter = waiter;
 	guarder = guarder;
 	runner = runner;
-	wait = wait;
+	wait = wait_for; -- COMPAT w/trunk pre-0.12
+	wait_for = wait_for;
 };
