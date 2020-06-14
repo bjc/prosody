@@ -53,7 +53,7 @@ local function runner_continue(thread)
 			return false;
 		end
 		call_watcher(runner, "error", debug.traceback(thread, err));
-		runner.state, runner.thread = "ready", nil;
+		runner.state = "ready";
 		return runner:run();
 	elseif state == "ready" then
 		-- If state is 'ready', it is our responsibility to update runner.state from 'waiting'.
@@ -159,6 +159,10 @@ function runner_mt:run(input)
 
 	local q, thread = self.queue, self.thread;
 	if not thread or coroutine.status(thread) == "dead" then
+		--luacheck: ignore 143/coroutine
+		if coroutine.close then
+			coroutine.close(thread);
+		end
 		self:log("debug", "creating new coroutine");
 		-- Create a new coroutine for this runner
 		thread = runner_create_thread(self.func, self);
