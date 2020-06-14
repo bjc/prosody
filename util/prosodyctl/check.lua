@@ -299,6 +299,10 @@ local function check(arg)
 				local res = dns.lookup("_xmpp-client._tcp."..idna.to_ascii(host)..".", "SRV");
 				if res then
 					for _, record in ipairs(res) do
+						if record.srv.target == "." then -- TODO is this an error if mod_c2s is enabled?
+							print("    'xmpp-client' service disabled by pointing to '.'"); -- FIXME Explain better what this is
+							break;
+						end
 						target_hosts:add(record.srv.target);
 						if not c2s_ports:contains(record.srv.port) then
 							print("    SRV target "..record.srv.target.." contains unknown client port: "..record.srv.port);
@@ -317,6 +321,10 @@ local function check(arg)
 				local res = dns.lookup("_xmpp-server._tcp."..idna.to_ascii(host)..".", "SRV");
 				if res then
 					for _, record in ipairs(res) do
+						if record.srv.target == "." then -- TODO Is this an error if mod_s2s is enabled?
+							print("    'xmpp-server' service disabled by pointing to '.'"); -- FIXME Explain better what this is
+							break;
+						end
 						target_hosts:add(record.srv.target);
 						if not s2s_ports:contains(record.srv.port) then
 							print("    SRV target "..record.srv.target.." contains unknown server port: "..record.srv.port);
