@@ -160,7 +160,7 @@ function runner_mt:run(input)
 	local q, thread = self.queue, self.thread;
 	if not thread or coroutine.status(thread) == "dead" then
 		--luacheck: ignore 143/coroutine
-		if coroutine.close then
+		if thread and coroutine.close then
 			coroutine.close(thread);
 		end
 		self:log("debug", "creating new coroutine");
