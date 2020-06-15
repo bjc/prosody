@@ -1,4 +1,3 @@
-local array = require "util.array";
 local set = require "util.set";
 
 local known_options = {
@@ -41,7 +40,7 @@ local function configure(user, defaults)
 			user.minor_threshold or defaults.minor_threshold,
 			user.major_threshold or defaults.major_threshold
 		);
-	end	
+	end
 	return true;
 end
 
