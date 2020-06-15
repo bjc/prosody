@@ -14,6 +14,8 @@ local dependencies = require "util.dependencies";
 
 local original_logging_config;
 
+local default_gc_params = { mode = "incremental", threshold = 105, speed = 250 };
+
 local short_params = { D = "daemonize", F = "no-daemonize" };
 local value_params = { config = true };
 
@@ -521,6 +523,19 @@ function startup.check_unwriteable()
 	end
 end
 
+function startup.init_gc()
+	-- Apply garbage collector settings from the config file
+	local gc = require "util.gc";
+	local gc_settings = config.get("*", "gc") or { mode = default_gc_params.mode };
+
+	local ok, err = gc.configure(gc_settings, default_gc_params);
+	if not ok then
+		log("error", "Failed to apply GC configuration: %s", err);
+		return nil, err;
+	end
+	return true;
+end
+
 function startup.make_host(hostname)
 	return {
 		type = "local",
@@ -551,6 +566,7 @@ function startup.prosodyctl()
 	startup.read_config();
 	startup.force_console_logging();
 	startup.init_logging();
+	startup.init_gc();
 	startup.setup_plugindir();
 	-- startup.setup_plugin_install_path();
 	startup.setup_datadir();
@@ -573,6 +589,7 @@ function startup.prosody()
 	startup.init_global_state();
 	startup.read_config();
 	startup.init_logging();
+	startup.init_gc();
 	startup.sanity_check();
 	startup.sandbox_require();
 	startup.set_function_metatable();
