@@ -62,6 +62,15 @@ local function start(arg) --luacheck: ignore 212/arg
 	local client = adminstream.client();
 	local opts = parse_args(arg);
 
+	if not opts then
+		if err == "param-not-found" then
+			print("Unknown command-line option: "..tostring(where));
+		elseif err == "missing-value" then
+			print("Expected a value to follow command-line option: "..where);
+		end
+		os.exit(1);
+	end
+
 	client.events.add_handler("connected", function ()
 		if not arg.quiet then
 			printbanner();
