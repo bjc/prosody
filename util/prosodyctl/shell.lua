@@ -60,7 +60,7 @@ end
 
 local function start(arg) --luacheck: ignore 212/arg
 	local client = adminstream.client();
-	local opts = parse_args(arg);
+	local opts, err, where = parse_args(arg);
 
 	if not opts then
 		if err == "param-not-found" then
