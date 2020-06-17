@@ -20,10 +20,20 @@ local short_params = { D = "daemonize", F = "no-daemonize" };
 local value_params = { config = true };
 
 function startup.parse_args()
-	prosody.opts = parse_args(arg, {
+	local opts, err, where = parse_args(arg, {
 			short_params = short_params,
 			value_params = value_params,
 		});
+	if not opts then
+		if err == "param-not-found" then
+			print("Unknown command-line option: "..tostring(where));
+			print("Perhaps you meant to use prosodyctl instead?");
+		elseif err == "missing-value" then
+			print("Expected a value to follow command-line option: "..where);
+		end
+		os.exit(1);
+	end
+	prosody.opts = opts;
 end
 
 function startup.read_config()

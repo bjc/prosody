@@ -26,17 +26,14 @@ local function parse(arg, config)
 		end
 
 		if not param then
-			print("Unknown command-line option: "..tostring(param));
-			print("Perhaps you meant to use prosodyctl instead?");
-			os.exit(1);
+			return nil, "param-not-found", param;
 		end
 
 		local param_k, param_v;
 		if value_params[param] then
 			param_k, param_v = param, table.remove(arg, 1);
 			if not param_v then
-				print("Expected a value to follow command-line option: "..raw_param);
-				os.exit(1);
+				return nil, "missing-value", raw_param;
 			end
 		else
 			param_k, param_v = param:match("^([^=]+)=(.+)$");
