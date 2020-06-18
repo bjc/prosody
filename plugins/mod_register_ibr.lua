@@ -9,10 +9,12 @@
 
 local st = require "util.stanza";
 local dataform_new = require "util.dataforms".new;
-local usermanager_user_exists = require "core.usermanager".user_exists;
-local usermanager_create_user = require "core.usermanager".create_user;
-local usermanager_delete_user = require "core.usermanager".delete_user;
+local usermanager_user_exists  = require "core.usermanager".user_exists;
+local usermanager_create_user  = require "core.usermanager".create_user;
+local usermanager_set_password = require "core.usermanager".create_user;
+local usermanager_delete_user  = require "core.usermanager".delete_user;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
+local util_error = require "util.error";
 
 local additional_fields = module:get_option("additional_registration_fields", {});
 local require_encryption = module:get_option_boolean("c2s_require_encryption",
@@ -181,9 +183,20 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 	end
 
 	if usermanager_user_exists(username, host) then
-		log("debug", "Attempt to register with existing username");
-		session.send(st.error_reply(stanza, "cancel", "conflict", "The requested username already exists."));
-		return true;
+		if user.allow_reset == username then
+			local ok, err = util_error.coerce(usermanager_set_password(username, password, host));
+			if ok then
+				session.send(st.reply(stanza)); -- reset ok!
+			else
+				session.log("error", "Unable to reset password for %s@%s: %s", username, host, err);
+				session.send(st.error_reply(stanza, err.type, err.condition, err.text));
+			end
+			return true;
+		else
+			log("debug", "Attempt to register with existing username");
+			session.send(st.error_reply(stanza, "cancel", "conflict", "The requested username already exists."));
+			return true;
+		end
 	end
 
 	local created, err = usermanager_create_user(username, password, host);
