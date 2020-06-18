@@ -249,7 +249,7 @@ local function new_server(sessions, stanza_handler)
 	end
 
 	function listeners.onreadtimeout(conn)
-		conn:send(" ");
+		return conn:send(" ");
 	end
 
 	return {
