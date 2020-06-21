@@ -90,7 +90,6 @@ Juliet receives:
 	<message from="garden@conference.localhost/romeo" id="rm1" type="groupchat">
 		<body>Where are thou my Juliet?</body>
 		<delay stamp="{scansion:any}" xmlns="urn:xmpp:delay" from="garden@conference.localhost"/>
-		<x stamp="{scansion:any}" xmlns="jabber:x:delay" from="garden@conference.localhost"/>
 	</message>
 
 Juliet receives:
