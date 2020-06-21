@@ -345,9 +345,6 @@ module:hook("muc-broadcast-message", function (event)
 		and jid_prep(tag.attr.by) == room.jid then
 			return nil;
 		end
-		if tag.name == "x" and tag.attr.xmlns == xmlns_muc_user then
-			return nil;
-		end
 		return tag;
 	end);
 
