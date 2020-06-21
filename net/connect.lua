@@ -2,7 +2,6 @@ local server = require "net.server";
 local log = require "util.logger".init("net.connect");
 local new_id = require "util.id".short;
 
--- TODO Respect use_ipv4, use_ipv6
 -- TODO #1246 Happy Eyeballs
 -- FIXME RFC 6724
 -- FIXME Error propagation from resolvers doesn't work
