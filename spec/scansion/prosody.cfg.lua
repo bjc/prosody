@@ -111,6 +111,10 @@ hide_os_type = true -- absense tested for in version.scs
 
 Component "conference.localhost" "muc"
 	storage = "memory"
+	modules_enabled = {
+		"muc_mam";
+	}
+
 
 Component "pubsub.localhost" "pubsub"
 	storage = "memory"
