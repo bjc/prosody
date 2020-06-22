@@ -186,6 +186,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 		if user.allow_reset == username then
 			local ok, err = util_error.coerce(usermanager_set_password(username, password, host));
 			if ok then
+				module:fire_event("user-password-reset", user);
 				session.send(st.reply(stanza)); -- reset ok!
 			else
 				session.log("error", "Unable to reset password for %s@%s: %s", username, host, err);
