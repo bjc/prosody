@@ -604,7 +604,6 @@ function startup.prosody()
 	startup.sandbox_require();
 	startup.set_function_metatable();
 	startup.check_dependencies();
-	startup.init_logging();
 	startup.load_libraries();
 	startup.setup_plugindir();
 	-- startup.setup_plugin_install_path();
