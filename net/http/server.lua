@@ -207,7 +207,8 @@ function handle_request(conn, request, finish_cb)
 	};
 	conn._http_open_response = response;
 
-	local host = (request.headers.host or ""):gsub(":%d+$","");
+	local host = request.headers.host;
+	if host then host = host:gsub(":%d+$",""); end
 
 	-- Some sanity checking
 	local err_code, err;
