@@ -24,6 +24,17 @@ describe("util.ringbuffer", function ()
 			assert.truthy(b:write("hi"));
 		end);
 	end);
+
+	describe(":discard", function ()
+		local b = rb.new();
+		it("works", function ()
+			assert.truthy(b:write("hello world"));
+			assert.truthy(b:discard(6));
+			assert.equal(5, #b);
+			assert.equal("world", b:read(5));
+		end);
+	end);
+
 	describe(":sub", function ()
 		-- Helper function to compare buffer:sub() with string:sub()
 		local function test_sub(b, x, y)
