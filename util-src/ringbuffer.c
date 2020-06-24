@@ -262,15 +262,15 @@ static int rb_byte(lua_State *L) {
 	if(calc_splice_positions(b, start, end, &wrapped_start, &wrapped_end)) {
 		if(wrapped_end <= wrapped_start) {
 			for(i = wrapped_start; i < (long)b->alen; i++) {
-				lua_pushinteger(L, b->buffer[i]);
+				lua_pushinteger(L, (unsigned char)b->buffer[i]);
 			}
 			for(i = 0; i < wrapped_end; i++) {
-				lua_pushinteger(L, b->buffer[i]);
+				lua_pushinteger(L, (unsigned char)b->buffer[i]);
 			}
 			return wrapped_end + (b->alen - wrapped_start);
 		} else {
 			for(i = wrapped_start; i < wrapped_end; i++) {
-				lua_pushinteger(L, b->buffer[i]);
+				lua_pushinteger(L, (unsigned char)b->buffer[i]);
 			}
 			return wrapped_end - wrapped_start;
 		}
