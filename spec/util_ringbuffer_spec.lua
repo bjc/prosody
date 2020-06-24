@@ -92,5 +92,12 @@ describe("util.ringbuffer", function ()
 				end
 			end
 		end);
+
+		it("works with characters > 127", function ()
+			local b = rb.new();
+			b:write(string.char(0, 140));
+			local r = { b:byte(1, 2) };
+			assert.same({ 0, 140 }, r);
+		end);
 	end);
 end);
