@@ -45,20 +45,20 @@ describe("util.ringbuffer", function ()
 
 		it("works", function ()
 			local b = rb.new();
-			b:write("hello world");
+			assert.truthy(b:write("hello world"));
 			assert.equals("hello", b:sub(1, 5));
 		end);
 
 		it("supports optional end parameter", function ()
 			local b = rb.new();
-			b:write("hello world");
+			assert.truthy(b:write("hello world"));
 			assert.equals("hello world", b:sub(1));
 			assert.equals("world", b:sub(-5));
 		end);
 
 		it("is equivalent to string:sub", function ()
 			local b = rb.new(6);
-			b:write("foobar");
+			assert.truthy(b:write("foobar"));
 			b:read(3);
 			b:write("foo");
 			for i = -13, 13 do
@@ -79,7 +79,7 @@ describe("util.ringbuffer", function ()
 
 		it("is equivalent to string:byte", function ()
 			local b = rb.new(6);
-			b:write("foobar");
+			assert.truthy(b:write("foo"..string.char(0, 140).."obar"));
 			b:read(3);
 			b:write("foo");
 			test_byte(b, 1);
