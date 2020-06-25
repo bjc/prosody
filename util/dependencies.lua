@@ -104,6 +104,11 @@ local function check_dependencies()
 				{ "luarocks", "luarocks install luaunbound" };
 				{ "Source", "https://www.zash.se/luaunbound.html" };
 			}, "Old DNS resolver library will be used", err);
+	else
+		package.preload["net.adns"] = function ()
+			local ub = require "net.unbound";
+			return ub;
+		end
 	end
 
 	local encodings, err = softreq "util.encodings"
