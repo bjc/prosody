@@ -16,7 +16,7 @@ local noop = function() end;
 local log = require "util.logger".init("unbound");
 local net_server = require "net.server";
 local libunbound = require"lunbound";
-local have_promise, promise = pcall(require, "util.promise");
+local promise = require"util.promise";
 
 local gettime = require"socket".gettime;
 local dns_utils = require"util.dns";
@@ -178,21 +178,18 @@ local _M = {
 	};
 };
 
-local lookup_promise;
-if have_promise then
-	function lookup_promise(_, qname, qtype, qclass)
-		return promise.new(function (resolve, reject)
-			local function callback(answer, err)
-				if err then
-					return reject(err);
-				else
-					return resolve(answer);
-				end
+local function lookup_promise(_, qname, qtype, qclass)
+	return promise.new(function (resolve, reject)
+		local function callback(answer, err)
+			if err then
+				return reject(err);
+			else
+				return resolve(answer);
 			end
-			local ret, err = lookup(callback, qname, qtype, qclass)
-			if not ret then reject(err); end
-		end);
-	end
+		end
+		local ret, err = lookup(callback, qname, qtype, qclass)
+		if not ret then reject(err); end
+	end);
 end
 
 local wrapper = {
