@@ -72,6 +72,8 @@ local ztact = { -- public domain 20080404 lua@ztact.com
 local get, set = ztact.get, ztact.set;
 
 local default_timeout = 15;
+local default_jitter = 1;
+local default_retry_jitter = 2;
 
 -------------------------------------------------- module dns
 local _ENV = nil;
@@ -668,6 +670,8 @@ end
 
 resolver.delays = { 1, 3 };
 
+resolver.jitter = have_timer and default_jitter or nil;
+resolver.retry_jitter = have_timer and default_retry_jitter or nil;
 
 function resolver:addnameserver(address)    -- - - - - - - - - - addnameserver
 	self.server = self.server or {};
@@ -855,7 +859,7 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 		packet = header..question,
 		server = self.best_server,
 		delay  = 1,
-		retry  = socket.gettime() + self.delays[1]
+		retry  = socket.gettime() + self.delays[1];
 		qclass = qclass;
 		qtype  = qtype;
 		qname  = qname;
@@ -869,7 +873,13 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 	if not conn then
 		return nil, err;
 	end
-	conn:send (o.packet)
+	if self.jitter then
+		timer.add_task(math.random()*self.jitter, function ()
+			conn:send(o.packet);
+		end);
+	else
+		conn:send(o.packet);
+	end
 
 	-- remember which coroutine wants the answer
 	if co then
@@ -920,8 +930,16 @@ function resolver:servfail(sock, err)
 					sock, err = self:getsocket(o.server);
 					if sock then
 						retried = true;
+						if self.retry_jitter then
+							local delay = self.delays[((o.retries-1)%#self.delays)+1] + (math.random()*self.retry_jitter);
+							log("debug", "retry %d in %0.2fs", o.retries, delay);
+							timer.add_task(delay, function ()
+								sock:send(o.packet);
+							end);
+						else
 							log("debug", "retry %d (immediate)", o.retries);
 							sock:send(o.packet);
+						end
 					end
 				end	
 				if not retried then
