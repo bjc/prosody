@@ -12,6 +12,8 @@ local promise = require "util.promise";
 
 local log = require "util.logger".init("adns");
 
+log("warn", "Old async DNS library used, lua-unbound missing?"); -- TODO write docs about luaunbound
+
 local coroutine, pcall = coroutine, pcall;
 local setmetatable = setmetatable;
 
