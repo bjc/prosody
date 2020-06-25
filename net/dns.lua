@@ -856,6 +856,9 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 		server = self.best_server,
 		delay  = 1,
 		retry  = socket.gettime() + self.delays[1]
+		qclass = qclass;
+		qtype  = qtype;
+		qname  = qname;
 	};
 
 	-- remember the query
@@ -878,19 +881,14 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 		local i = 1;
 		timer.add_task(self.timeout, function ()
 			if get(self.wanted, qclass, qtype, qname, co) then
-				if i < num_servers then
 				log("debug", "DNS request timeout %d/%d", i, num_servers)
 					i = i + 1;
-					self:servfail(conn);
-					o.server = self.best_server;
-					conn, err = self:getsocket(o.server);
-					if conn then
-						conn:send(o.packet);
-						return self.timeout;
-					end
-				end
-				-- Tried everything, failed
-				self:cancel(qclass, qtype, qname);
+					self:servfail(self.socket[o.server]);
+--				end
+			end
+			-- Still outstanding? (i.e. retried)
+			if get(self.wanted, qclass, qtype, qname, co) then
+				return self.timeout; -- Then wait
 			end
 		end)
 	end
@@ -917,12 +915,19 @@ function resolver:servfail(sock, err)
 				end
 
 				o.retries = (o.retries or 0) + 1;
-				if o.retries >= #self.server then
-					--print('timeout');
-					queries[question] = nil;
-				else
+				local retried;
+				if o.retries < #self.server then
 					sock, err = self:getsocket(o.server);
-					if sock then sock:send(o.packet); end
+					if sock then
+						retried = true;
+							log("debug", "retry %d (immediate)", o.retries);
+							sock:send(o.packet);
+					end
+				end	
+				if not retried then
+					log("debug", 'tried all servers, giving up');
+					self:cancel(o.qclass, o.qtype, o.qname);
+					queries[question] = nil;
 				end
 			end
 		end
