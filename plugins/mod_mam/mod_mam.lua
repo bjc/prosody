@@ -474,6 +474,13 @@ end
 module:hook("pre-message/bare", strip_stanza_id_after_other_events, -1);
 module:hook("pre-message/full", strip_stanza_id_after_other_events, -1);
 
+module:hook("message/offline/handle", function(event)
+	local stanza = event.stanza;
+	if stanza:get_child("stanza-id", xmlns_st_id) then
+		return true;
+	end
+end, -2);
+
 if cleanup_after ~= "never" then
 	local cleanup_storage = module:open_store("archive_cleanup");
 	local cleanup_map = module:open_store("archive_cleanup", "map");
