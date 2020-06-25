@@ -668,7 +668,7 @@ end
 -- socket layer -------------------------------------------------- socket layer
 
 
-resolver.delays = { 1, 3 };
+resolver.delays = { 1, 2, 3, 5 };
 
 resolver.jitter = have_timer and default_jitter or nil;
 resolver.retry_jitter = have_timer and default_retry_jitter or nil;
