@@ -79,7 +79,7 @@ describe("util.ringbuffer", function ()
 
 		it("is equivalent to string:byte", function ()
 			local b = rb.new(6);
-			assert.truthy(b:write("foo"..string.char(0, 140).."obar"));
+			assert.truthy(b:write("foobar"));
 			b:read(3);
 			b:write("foo");
 			test_byte(b, 1);
