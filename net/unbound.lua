@@ -12,8 +12,6 @@ local s_format = string.format;
 local s_lower = string.lower;
 local s_upper = string.upper;
 local noop = function() end;
-local zero = function() return 0 end;
-local truop = function() return true; end;
 
 local log = require "util.logger".init("unbound");
 local net_server = require "net.server";
@@ -47,41 +45,9 @@ end
 -- Note: libunbound will default to using root hints if resolvconf is unset
 
 local function connect_server(unbound, server)
-	if server.watchfd then
-		return server.watchfd(unbound, function ()
-			unbound:process()
-		end);
-	elseif server.event and server.addevent then
-		local EV_READ = server.event.EV_READ;
-		local function event_callback()
-			unbound:process();
-			return EV_READ;
-		end
-		return server.addevent(unbound:getfd(), EV_READ, event_callback)
-	elseif server.wrapclient then
-		local conn = {
-			getfd = function()
-				return unbound:getfd();
-			end,
-
-			send = zero,
-			receive = noop,
-			settimeout = noop,
-			close = truop,
-		}
-
-		local function process()
-			unbound:process();
-		end
-		local listener = {
-			onincoming = process,
-
-			onconnect = noop,
-			ondisconnect = noop,
-			onreadtimeout = truop,
-		};
-		return server.wrapclient(conn, "dns", 0, listener, "*a" );
-	end
+	return server.watchfd(unbound, function ()
+		unbound:process()
+	end);
 end
 
 local unbound = libunbound.new(unbound_config);
