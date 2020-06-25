@@ -442,6 +442,7 @@ function commands.about(arg)
 	local luaevent =dependencies.softreq"luaevent";
 	dependencies.softreq"ssl";
 	dependencies.softreq"DBI";
+	local lunbound = dependencies.softreq"lunbound";
 	for name, module in pairs(package.loaded) do
 		if type(module) == "table" and rawget(module, "_VERSION")
 		and name ~= "_G" and not name:match("%.") then
@@ -453,6 +454,12 @@ function commands.about(arg)
 	end
 	if luaevent then
 		module_versions["libevent"] = luaevent.core.libevent_version();
+	end
+	if lunbound then
+		if not module_versions["lunbound"] then
+			module_versions["lunbound"] = "<= 0.5";
+		end
+		module_versions["libunbound"] = lunbound._LIBVER;
 	end
 	local sorted_keys = array.collect(keys(module_versions)):sort();
 	for _, name in ipairs(sorted_keys) do
