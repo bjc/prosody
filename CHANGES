@@ -16,6 +16,7 @@ TRUNK
 -   ALPN support in mod\_net\_multiplex
 -   `daemonize` option deprecated
 -   SASL DIGEST-MD5 removed
+-   Switch to libunbound for DNS queries
 
 0.11.0
 ======
