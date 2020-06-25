@@ -17,6 +17,8 @@ local have_timer, timer = pcall(require, "util.timer");
 local new_ip = require "util.ip".new_ip;
 local have_util_net, util_net = pcall(require, "util.net");
 
+local log = require "util.logger".init("dns");
+
 local _, windows = pcall(require, "util.windows");
 local is_windows = (_ and windows) or os.getenv("WINDIR");
 
@@ -877,6 +879,7 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 		timer.add_task(self.timeout, function ()
 			if get(self.wanted, qclass, qtype, qname, co) then
 				if i < num_servers then
+				log("debug", "DNS request timeout %d/%d", i, num_servers)
 					i = i + 1;
 					self:servfail(conn);
 					o.server = self.best_server;
@@ -904,6 +907,7 @@ function resolver:servfail(sock, err)
 
 	-- Find all requests to the down server, and retry on the next server
 	self.time = socket.gettime();
+	log("debug", "servfail %d (of %d)", num, #self.server);
 	for id,queries in pairs(self.active) do
 		for question,o in pairs(queries) do
 			if o.server == num then -- This request was to the broken server
