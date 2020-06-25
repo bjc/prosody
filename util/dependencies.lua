@@ -98,6 +98,14 @@ local function check_dependencies()
 		}, "WebSocket support will not be available", err);
 	end
 
+	local unbound, err = softreq"lunbound";
+	if not unbound then
+		missingdep("lua-unbound", {
+				{ "luarocks", "luarocks install luaunbound" };
+				{ "Source", "https://www.zash.se/luaunbound.html" };
+			}, "Old DNS resolver library will be used", err);
+	end
+
 	local encodings, err = softreq "util.encodings"
 	if not encodings then
 		if err:match("module '[^']*' not found") then
