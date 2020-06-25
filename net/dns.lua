@@ -71,7 +71,7 @@ local ztact = { -- public domain 20080404 lua@ztact.com
 };
 local get, set = ztact.get, ztact.set;
 
-local default_timeout = 15;
+local default_timeout = 5;
 local default_jitter = 1;
 local default_retry_jitter = 2;
 
