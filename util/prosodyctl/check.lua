@@ -225,6 +225,9 @@ local function check(arg)
 	end
 	if not what or what == "dns" then
 		local dns = require "net.dns";
+		pcall(function ()
+			dns = require"net.unbound".dns;
+		end)
 		local idna = require "util.encodings".idna;
 		local ip = require "util.ip";
 		local c2s_ports = set.new(configmanager.get("*", "c2s_ports") or {5222});
