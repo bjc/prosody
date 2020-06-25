@@ -8,8 +8,6 @@ local methods = {};
 local resolver_mt = { __index = methods };
 
 -- FIXME RFC 6724
--- FIXME #1428 Reuse DNS resolver object (from service resolver)
--- FIXME #1429 Close DNS resolver object when done
 
 -- Find the next target to connect to, and
 -- pass it to cb()
