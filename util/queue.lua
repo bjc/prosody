@@ -51,6 +51,13 @@ local function new(size, allow_wrapping)
 			end
 			return t[tail];
 		end;
+		replace = function (self, data)
+			if items == 0 then
+				return self:push(data);
+			end
+			t[tail] = data;
+			return true;
+		end;
 		items = function (self)
 			--luacheck: ignore 431/t
 			return function (t, pos)
