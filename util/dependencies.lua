@@ -100,10 +100,12 @@ local function check_dependencies()
 
 	local unbound, err = softreq"lunbound";
 	if not unbound then
+		--[[ TODO Re-enable once packages are available
 		missingdep("lua-unbound", {
 				{ "luarocks", "luarocks install luaunbound" };
 				{ "Source", "https://www.zash.se/luaunbound.html" };
 			}, "Old DNS resolver library will be used", err);
+		--]]
 	else
 		package.preload["net.adns"] = function ()
 			local ub = require "net.unbound";
