@@ -98,8 +98,8 @@ local function check_dependencies()
 		}, "WebSocket support will not be available", err);
 	end
 
-	local unbound, err = softreq"lunbound";
-	if not unbound then
+	local unbound, err = softreq"lunbound"; -- luacheck: ignore 211/err
+	if not unbound then -- luacheck: ignore 542
 		--[[ TODO Re-enable once packages are available
 		missingdep("lua-unbound", {
 				{ "luarocks", "luarocks install luaunbound" };
