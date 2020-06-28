@@ -1191,6 +1191,7 @@ end
 
 local _resolver = dns.resolver();
 dns._resolver = _resolver;
+_resolver.jitter, _resolver.retry_jitter = false, false;
 
 function dns.lookup(...)    -- - - - - - - - - - - - - - - - - - - - -  lookup
 	return _resolver:lookup(...);
