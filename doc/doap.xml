@@ -179,6 +179,9 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0090.html"/>
+        <xmpp:version>1.1</xmpp:version>
+        <xmpp:since>0.1</xmpp:since>
+        <xmpp:note>mod_time</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
@@ -387,7 +390,9 @@
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0202.html"/>
         <xmpp:version>2.0</xmpp:version>
+        <xmpp:status>complete</xmpp:status>
         <xmpp:since>0.1</xmpp:since>
+        <xmpp:note>mod_time</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
