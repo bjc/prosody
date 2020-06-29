@@ -1269,14 +1269,24 @@ function def_env.debug:timers()
 	local h, params = add_task.h, add_task.params;
 	if h then
 		print("-- util.timer");
+	elseif server.timer then
+		print("-- net.server.timer");
+		h = server.timer.add_task.timers;
+	end
+	if h then
 		for i, id in ipairs(h.ids) do
-			if not params[id] then
-				print(os.date("%F %T", math.floor(h.priorities[i])), h.items[id]);
-			elseif not params[id].callback then
-				print(os.date("%F %T", math.floor(h.priorities[i])), h.items[id], unpack(params[id]));
-			else
-				print(os.date("%F %T", math.floor(h.priorities[i])), params[id].callback, unpack(params[id]));
+			local t, cb = h.priorities[i], h.items[id];
+			if not params then
+				local param = cb.param;
+				if param then
+					cb = param.callback;
+				else
+					cb = cb.timer_callback or cb;
+				end
+			elseif params[id] then
+				cb = params[id].callback or cb;
 			end
+			print(os.date("%F %T", math.floor(t)), cb);
 		end
 	end
 	if server.event_base then
