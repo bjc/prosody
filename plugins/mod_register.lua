@@ -11,6 +11,7 @@ local allow_registration = module:get_option_boolean("allow_registration", false
 
 if allow_registration then
 	module:depends("register_ibr");
+	module:depends("watchregistrations");
 end
 
 module:depends("user_account_management");
