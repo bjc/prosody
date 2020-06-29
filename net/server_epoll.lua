@@ -896,6 +896,12 @@ return {
 	addserver = addserver;
 	addclient = addclient;
 	add_task = addtimer;
+	timer = {
+		-- API-compatible with util.timer
+		add_task = addtimer;
+		stop = closetimer;
+		reschedule = reschedule;
+	};
 	listen = listen;
 	loop = loop;
 	closeall = closeall;
