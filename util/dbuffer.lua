@@ -24,6 +24,9 @@ function dbuffer_methods:read_chunk(requested_bytes)
 	if not chunk then return; end
 	local chunk_length = #chunk;
 	local remaining_chunk_length = chunk_length - consumed;
+	if not requested_bytes then
+		requested_bytes = remaining_chunk_length;
+	end
 	if remaining_chunk_length <= requested_bytes then
 		self.front_consumed = 0;
 		self._length = self._length - remaining_chunk_length;
@@ -41,12 +44,14 @@ end
 function dbuffer_methods:read(requested_bytes)
 	local chunks;
 
-	if requested_bytes > self._length then
+	if requested_bytes and requested_bytes > self._length then
 		return nil;
 	end
 
 	local chunk, read_bytes = self:read_chunk(requested_bytes);
-	if chunk then
+	if not requested_bytes then
+		return chunk;
+	elseif chunk then
 		requested_bytes = requested_bytes - read_bytes;
 		if requested_bytes == 0 then -- Already read everything we need
 			return chunk;
