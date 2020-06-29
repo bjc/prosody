@@ -87,21 +87,19 @@ local timers = indexedbheap.create();
 
 local function noop() end
 local function closetimer(t)
-	t[1] = 0;
-	t[2] = noop;
+	t[1] = noop;
 	timers:remove(t.id);
 end
 
 local function reschedule(t, time)
 	time = monotonic() + time;
-	t[1] = time;
 	timers:reprioritize(t.id, time);
 end
 
 -- Add relative timer
 local function addtimer(timeout, f, param)
 	local time = monotonic() + timeout;
-	local timer = { time, f, param, close = closetimer, reschedule = reschedule, id = nil };
+	local timer = { f, param, close = closetimer, reschedule = reschedule, id = nil };
 	timer.id = timers:insert(timer, time);
 	return timer;
 end
@@ -121,10 +119,9 @@ local function runtimers(next_delay, min_wait)
 		end
 
 		local _, timer = timers:pop();
-		local ok, ret = pcall(timer[2], now, timer, timer[3]);
+		local ok, ret = pcall(timer[1], now, timer, timer[2]);
 		if ok and type(ret) == "number"  then
 			local next_time = elapsed+ret;
-			timer[1] = next_time;
 			timers:insert(timer, next_time);
 		end
 
