@@ -21,6 +21,21 @@ describe("util.dbuffer", function ()
 		end);
 	end);
 
+	describe(":read", function ()
+		it("supports optional bytes parameter", function ()
+			-- should return the frontmost chunk
+			local b = dbuffer.new();
+			assert.truthy(b:write("hello"));
+			assert.truthy(b:write(" "));
+			assert.truthy(b:write("world"));
+			assert.equal("h", b:read(1));
+
+			assert.equal("ello", b:read());
+			assert.equal(" ", b:read());
+			assert.equal("world", b:read());
+		end);
+	end);
+
 	describe(":discard", function ()
 		local b = dbuffer.new();
 		it("works", function ()
