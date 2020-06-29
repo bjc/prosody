@@ -99,9 +99,9 @@ local function reschedule(t, time)
 end
 
 -- Add relative timer
-local function addtimer(timeout, f)
+local function addtimer(timeout, f, param)
 	local time = monotonic() + timeout;
-	local timer = { time, f, close = closetimer, reschedule = reschedule, id = nil };
+	local timer = { time, f, param, close = closetimer, reschedule = reschedule, id = nil };
 	timer.id = timers:insert(timer, time);
 	return timer;
 end
@@ -121,7 +121,7 @@ local function runtimers(next_delay, min_wait)
 		end
 
 		local _, timer = timers:pop();
-		local ok, ret = pcall(timer[2], now);
+		local ok, ret = pcall(timer[2], now, timer, timer[3]);
 		if ok and type(ret) == "number"  then
 			local next_time = elapsed+ret;
 			timer[1] = next_time;
