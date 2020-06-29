@@ -86,22 +86,27 @@ local fds = createtable(10, 0); -- FD -> conn
 local timers = indexedbheap.create();
 
 local function noop() end
-local function closetimer(t)
-	t[1] = noop;
-	timers:remove(t.id);
+local function closetimer(id)
+	timers:remove(id);
 end
 
-local function reschedule(t, time)
+local function reschedule(id, time)
 	time = monotonic() + time;
-	timers:reprioritize(t.id, time);
+	timers:reprioritize(id, time);
 end
 
 -- Add relative timer
 local function addtimer(timeout, f, param)
 	local time = monotonic() + timeout;
-	local timer = { f, param, close = closetimer, reschedule = reschedule, id = nil };
-	timer.id = timers:insert(timer, time);
-	return timer;
+	if param ~= nil then
+		local timer_callback = f
+		function f(current_time, timer_id)
+			local t = timer_callback(current_time, timer_id, param)
+			return t;
+		end
+	end
+	local id = timers:insert(f, time);
+	return id;
 end
 
 -- Run callbacks of expired timers
@@ -118,8 +123,8 @@ local function runtimers(next_delay, min_wait)
 			break;
 		end
 
-		local _, timer = timers:pop();
-		local ok, ret = pcall(timer[1], now, timer, timer[2]);
+		local _, timer, id = timers:pop();
+		local ok, ret = pcall(timer, now, id);
 		if ok and type(ret) == "number"  then
 			local next_time = elapsed+ret;
 			timers:insert(timer, next_time);
@@ -259,14 +264,14 @@ end
 function interface:setreadtimeout(t)
 	if t == false then
 		if self._readtimeout then
-			self._readtimeout:close();
+			closetimer(self._readtimeout);
 			self._readtimeout = nil;
 		end
 		return
 	end
 	t = t or cfg.read_timeout;
 	if self._readtimeout then
-		self._readtimeout:reschedule(t);
+		reschedule(self._readtimeout, t);
 	else
 		self._readtimeout = addtimer(t, function ()
 			if self:on("readtimeout") then
@@ -285,14 +290,14 @@ end
 function interface:setwritetimeout(t)
 	if t == false then
 		if self._writetimeout then
-			self._writetimeout:close();
+			closetimer(self._writetimeout);
 			self._writetimeout = nil;
 		end
 		return
 	end
 	t = t or cfg.send_timeout;
 	if self._writetimeout then
-		self._writetimeout:reschedule(t);
+		reschedule(self._writetimeout, t);
 	else
 		self._writetimeout = addtimer(t, function ()
 			self:noise("Write timeout");
@@ -663,7 +668,8 @@ end
 function interface:pausefor(t)
 	self:noise("Pause for %fs", t);
 	if self._pausefor then
-		self._pausefor:close();
+		closetimer(self._pausefor);
+		self._pausefor = nil;
 	end
 	if t == false then return; end
 	self:set(false);
