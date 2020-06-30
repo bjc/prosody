@@ -128,6 +128,8 @@ local function runtimers(next_delay, min_wait)
 		if ok and type(ret) == "number"  then
 			local next_time = elapsed+ret;
 			timers:insert(timer, next_time);
+		elseif not ok then
+			log("error", "Error in timer: %s", ret);
 		end
 
 		peek = timers:peek();
