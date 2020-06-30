@@ -1267,11 +1267,18 @@ function def_env.debug:timers()
 	local print = self.session.print;
 	local add_task = require"util.timer".add_task;
 	local h, params = add_task.h, add_task.params;
+	local function normalize_time(t)
+		return t;
+	end
+	local function format_time(t)
+		return os.date("%F %T", math.floor(normalize_time(t)));
+	end
 	if h then
 		print("-- util.timer");
 	elseif server.timer then
 		print("-- net.server.timer");
 		h = server.timer.add_task.timers;
+		normalize_time = server.timer.to_absolute_time or normalize_time;
 	end
 	if h then
 		for i, id in ipairs(h.ids) do
@@ -1286,7 +1293,7 @@ function def_env.debug:timers()
 			elseif params[id] then
 				cb = params[id].callback or cb;
 			end
-			print(os.date("%F %T", math.floor(t)), cb);
+			print(format_time(t), cb);
 		end
 	end
 	if server.event_base then
@@ -1301,7 +1308,7 @@ function def_env.debug:timers()
 	if h then
 		local next_time = h:peek();
 		if next_time then
-			return true, os.date("Next event at %F %T (in %%.6fs)", math.floor(next_time)):format(next_time - time.now());
+			return true, ("Next event at %s (in %.6fs)"):format(format_time(next_time), normalize_time(next_time) - time.now());
 		end
 	end
 	return true;
