@@ -904,6 +904,9 @@ return {
 		add_task = addtimer;
 		stop = closetimer;
 		reschedule = reschedule;
+		to_absolute_time = function (t)
+			return t-monotonic()+realtime();
+		end;
 	};
 	listen = listen;
 	loop = loop;
