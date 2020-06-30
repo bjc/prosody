@@ -192,7 +192,8 @@ function interface:on(what, ...)
 		self:noise("Missing listener 'on%s'", what); -- uncomment for development and debugging
 		return;
 	end
-	local ok, err = xpcall(listener, traceback, self, ...);
+	local onerror = self.listeners.onerror or traceback;
+	local ok, err = xpcall(listener, onerror, self, ...);
 	if not ok then
 		if cfg.fatal_errors then
 			self:error("Closing due to error calling on%s: %s", what, err);
