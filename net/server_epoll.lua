@@ -74,6 +74,9 @@ local default_config = { __index = {
 	-- Whether to kill connections in case of callback errors.
 	fatal_errors = false;
 
+	-- Or disable protection (like server_select) for potential performance gains
+	protect_listeners = true;
+
 	-- Attempt writes instantly
 	opportunistic_writes = false;
 }};
@@ -191,6 +194,9 @@ function interface:on(what, ...)
 	if not listener then
 		self:noise("Missing listener 'on%s'", what); -- uncomment for development and debugging
 		return;
+	end
+	if not cfg.protect_listeners then
+		return listener(self, ...);
 	end
 	local onerror = self.listeners.onerror or traceback;
 	local ok, err = xpcall(listener, onerror, self, ...);
