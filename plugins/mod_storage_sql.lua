@@ -153,6 +153,9 @@ end
 local archive_item_limit = module:get_option_number("storage_archive_item_limit");
 local archive_item_count_cache = cache.new(module:get_option("storage_archive_item_limit_cache_size", 1000));
 
+local item_count_cache_hit = module:measure("item_count_cache_hit", "rate");
+local item_count_cache_miss = module:measure("item_count_cache_miss", "rate")
+
 -- luacheck: ignore 512 431/user 431/store 431/err
 local map_store = {};
 map_store.__index = map_store;
@@ -286,6 +289,7 @@ function archive_store:append(username, key, value, when, with)
 	local cache_key = jid_join(username, host, store);
 	local item_count = archive_item_count_cache:get(cache_key);
 	if not item_count then
+		item_count_cache_miss();
 		local ok, ret = engine:transaction(function()
 			local count_sql = [[
 			SELECT COUNT(*) FROM "prosodyarchive"
@@ -303,6 +307,8 @@ function archive_store:append(username, key, value, when, with)
 			return nil, "Failure while checking quota";
 		end
 		archive_item_count_cache:set(cache_key, item_count);
+	else
+		item_count_cache_hit();
 	end
 
 	if archive_item_limit then
@@ -408,6 +414,7 @@ function archive_store:find(username, query)
 	local user,store = username,self.store;
 	local cache_key = jid_join(username, host, self.store);
 	local total = archive_item_count_cache:get(cache_key);
+	(total and item_count_cache_hit or item_count_cache_miss)();
 	if total ~= nil and query.limit == 0 and query.start == nil and query.with == nil and query["end"] == nil and query.key == nil then
 		return noop, total;
 	end
