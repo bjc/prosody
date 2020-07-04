@@ -184,6 +184,8 @@ module:hook("iq-get/bare/http://jabber.org/protocol/disco#info:query", function(
 		if not reply.attr.from then reply.attr.from = origin.username.."@"..origin.host; end -- COMPAT To satisfy Psi when querying own account
 		if um_is_admin(stanza.attr.to or origin.full_jid, module.host) then
 			reply:tag('identity', {category='account', type='admin'}):up();
+		elseif prosody.hosts[module.host].users.name == "anonymous" then
+			reply:tag('identity', {category='account', type='anonymous'}):up();
 		else
 			reply:tag('identity', {category='account', type='registered'}):up();
 		end
