@@ -8,6 +8,7 @@
 
 local get_children = require "core.hostmanager".get_children;
 local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed;
+local um_is_admin = require "core.usermanager".is_admin;
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza"
@@ -181,7 +182,11 @@ module:hook("iq-get/bare/http://jabber.org/protocol/disco#info:query", function(
 		end
 		local reply = st.reply(stanza):tag('query', {xmlns='http://jabber.org/protocol/disco#info'});
 		if not reply.attr.from then reply.attr.from = origin.username.."@"..origin.host; end -- COMPAT To satisfy Psi when querying own account
-		reply:tag('identity', {category='account', type='registered'}):up();
+		if um_is_admin(stanza.attr.to or origin.full_jid, module.host) then
+			reply:tag('identity', {category='account', type='admin'}):up();
+		else
+			reply:tag('identity', {category='account', type='registered'}):up();
+		end
 		module:fire_event("account-disco-info", { origin = origin, reply = reply });
 		origin.send(reply);
 		return true;
