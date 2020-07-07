@@ -183,13 +183,14 @@ end
 
 local function request(self, u, ex, callback)
 	local req = url.parse(u);
-	req.url = u;
-	req.http = self;
 
 	if not (req and req.host) then
 		callback("invalid-url", 0, req);
 		return nil, "invalid-url";
 	end
+
+	req.url = u;
+	req.http = self;
 
 	if not req.path then
 		req.path = "/";
