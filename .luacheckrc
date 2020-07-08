@@ -135,7 +135,6 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 		"fallbacks/bit.lua";
 		"fallbacks/lxp.lua";
 
-		"net/cqueues.lua";
 		"net/dns.lua";
 		"net/server_select.lua";
 
