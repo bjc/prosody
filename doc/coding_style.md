@@ -586,7 +586,7 @@ local a = 1;
 local long_identifier = 2;
 ```
 
-> **Rationale:** This produces extra diffs which add noise to `git blame`.
+> **Rationale:** This produces extra diffs which add noise to `hg annotate`.
 
 * Alignment is occasionally useful when logical correspondence is to be highlighted:
 
