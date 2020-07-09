@@ -107,7 +107,7 @@ pidfile = "prosody.pid"
 
 VirtualHost "localhost"
 
-hide_os_type = true -- absense tested for in version.scs
+hide_os_type = true -- absence tested for in version.scs
 
 Component "conference.localhost" "muc"
 	storage = "memory"
