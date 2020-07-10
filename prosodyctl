@@ -438,7 +438,7 @@ function commands.about(arg)
 	print("");
 	print("# Lua module versions");
 	local module_versions, longest_name = {}, 8;
-	local luaevent =dependencies.softreq"luaevent";
+	local library_versions = {};
 	dependencies.softreq"ssl";
 	dependencies.softreq"DBI";
 	local lunbound = dependencies.softreq"lunbound";
@@ -451,16 +451,21 @@ function commands.about(arg)
 			module_versions[name] = module._VERSION;
 		end
 	end
-	if luaevent then
-		module_versions["libevent"] = luaevent.core.libevent_version();
-	end
 	if lunbound then
 		if not module_versions["lunbound"] then
 			module_versions["lunbound"] = "<= 0.5";
 		end
-		module_versions["libunbound"] = lunbound._LIBVER;
+		library_versions["libunbound"] = lunbound._LIBVER;
 	end
 	for name, version in sorted_pairs(module_versions) do
+		print(name..":"..string.rep(" ", longest_name-#name), version);
+	end
+	print("");
+	print("# library versions");
+	if require "net.server".event_base then
+		library_versions["libevent"] = require"luaevent".core.libevent_version();
+	end
+	for name, version in sorted_pairs(library_versions) do
 		print(name..":"..string.rep(" ", longest_name-#name), version);
 	end
 	print("");
