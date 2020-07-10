@@ -70,6 +70,7 @@ end
 local function new(hostname, port, conn_type, extra)
 	local ascii_host = idna_to_ascii(hostname);
 	local targets = nil;
+	conn_type = conn_type or "tcp";
 
 	local is_ip = inet_pton(hostname);
 	if not is_ip and hostname:sub(1,1) == '[' then
@@ -87,7 +88,7 @@ local function new(hostname, port, conn_type, extra)
 	return setmetatable({
 		hostname = ascii_host;
 		port = port;
-		conn_type = conn_type or "tcp";
+		conn_type = conn_type;
 		extra = extra;
 		targets = targets;
 	}, resolver_mt);
