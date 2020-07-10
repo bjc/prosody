@@ -378,8 +378,7 @@ function commands.about(arg)
 	end
 
 	local pwd = ".";
-	local array = require "util.array";
-	local keys = require "util.iterators".keys;
+	local sorted_pairs = require "util.iterators".sorted_pairs;
 	local hg = require"util.mercurial";
 	local relpath = configmanager.resolve_relative_path;
 
@@ -461,9 +460,8 @@ function commands.about(arg)
 		end
 		module_versions["libunbound"] = lunbound._LIBVER;
 	end
-	local sorted_keys = array.collect(keys(module_versions)):sort();
-	for _, name in ipairs(sorted_keys) do
-		print(name..":"..string.rep(" ", longest_name-#name), module_versions[name]);
+	for name, version in sorted_pairs(module_versions) do
+		print(name..":"..string.rep(" ", longest_name-#name), version);
 	end
 	print("");
 end
