@@ -465,8 +465,8 @@ function commands.about(arg)
 		end
 	end
 	if lunbound then
-		if not module_versions["lunbound"] then
-			module_versions["lunbound"] = "<= 0.5";
+		if not module_versions["luaunbound"] then
+			module_versions["luaunbound"] = "0.5 (?)";
 		end
 		library_versions["libunbound"] = lunbound._LIBVER;
 	end
