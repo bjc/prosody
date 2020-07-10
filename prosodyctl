@@ -441,10 +441,19 @@ function commands.about(arg)
 	local library_versions = {};
 	dependencies.softreq"ssl";
 	dependencies.softreq"DBI";
+	local friendly_names = {
+		DBI = "LuaDBI";
+		lfs = "LuaFileSystem";
+		lunbound = "luaunbound";
+		lxp = "LuaExpat";
+		socket = "LuaSocket";
+		ssl = "LuaSec";
+	};
 	local lunbound = dependencies.softreq"lunbound";
 	for name, module in pairs(package.loaded) do
 		if type(module) == "table" and rawget(module, "_VERSION")
-		and name ~= "_G" and not name:match("%.") then
+			and name ~= "_G" and not name:match("%.") then
+			name = friendly_names[name] or name;
 			if #name > longest_name then
 				longest_name = #name;
 			end
