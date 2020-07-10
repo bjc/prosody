@@ -457,7 +457,11 @@ function commands.about(arg)
 			if #name > longest_name then
 				longest_name = #name;
 			end
-			module_versions[name] = module._VERSION;
+			local mod_version = module._VERSION;
+			if tostring(mod_version):sub(1, #name+1) == name .. " " then
+				mod_version = mod_version:sub(#name+2);
+			end
+			module_versions[name] = mod_version;
 		end
 	end
 	if lunbound then
