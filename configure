@@ -27,7 +27,7 @@ CFLAGS="-fPIC -std=c99"
 CFLAGS="$CFLAGS -Wall -pedantic -Wextra -Wshadow -Wformat=2"
 LDFLAGS="-shared"
 
-IDN_LIBRARY="idn"
+IDN_LIBRARY="icu"
 # Help
 
 show_help() {
@@ -63,8 +63,8 @@ Configure $APP_NAME prior to building.
 --with-idn=LIB              The name of the IDN library to link with.
                             Default is $IDN_LIB
 --idn-library=(idn|icu)     Select library to use for IDNA functionality.
-                            idn: use GNU libidn (default)
-                            icu: use ICU from IBM
+                            idn: use GNU libidn
+                            icu: use ICU from IBM (default)
 --with-ssl=LIB              The name of the SSL to link with.
                             Default is $OPENSSL_LIB
 --with-random=METHOD        CSPRNG backend to use. One of
