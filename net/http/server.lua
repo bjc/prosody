@@ -1,5 +1,5 @@
 
-local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
+local t_insert, t_concat = table.insert, table.concat;
 local parser_new = require "net.http.parser".new;
 local events = require "util.events".new();
 local addserver = require "net.server".addserver;
@@ -8,14 +8,12 @@ local os_date = os.date;
 local pairs = pairs;
 local s_upper = string.upper;
 local setmetatable = setmetatable;
-local xpcall = require "util.xpcall".xpcall;
-local traceback = debug.traceback;
-local tostring = tostring;
 local cache = require "util.cache";
 local codes = require "net.http.codes";
 local promise = require "util.promise";
 local errors = require "util.error";
 local blocksize = 2^16;
+local async = require "util.async";
 
 local _M = {};
 
@@ -91,39 +89,36 @@ setmetatable(events._handlers, {
 
 local handle_request;
 
-local last_err;
-local function _traceback_handler(err) last_err = err; log("error", "Traceback[httpserver]: %s", traceback(tostring(err), 2)); end
 events.add_handler("http-error", function (error)
 	return "Error processing request: "..codes[error.code]..". Check your error log for more information.";
 end, -1);
 
+local runner_callbacks = {};
+
+function runner_callbacks:ready()
+	self.data:resume();
+end
+
+function runner_callbacks:waiting()
+	self.data:pause();
+end
+
+function runner_callbacks:error(err)
+	log("error", "Traceback[httpserver]: %s", err);
+	self.data:write("HTTP/1.0 500 Internal Server Error\r\n\r\n"..events.fire_event("http-error", { code = 500, private_message = err }));
+	self.data:close();
+end
+
 function listener.onconnect(conn)
 	local secure = conn:ssl() and true or nil;
-	local pending = {};
-	local waiting = false;
-	local function process_next()
-		if waiting then return; end -- log("debug", "can't process_next, waiting");
-		waiting = true;
-		while sessions[conn] and #pending > 0 do
-			local request = t_remove(pending);
-			--log("debug", "process_next: %s", request.path);
-			if not xpcall(handle_request, _traceback_handler, conn, request, process_next) then
-				conn:write("HTTP/1.0 500 Internal Server Error\r\n\r\n"..events.fire_event("http-error", { code = 500, private_message = last_err }));
-				conn:close();
-			end
-		end
-		--log("debug", "ready for more");
-		waiting = false;
-	end
+	conn._thread = async.runner(function (request)
+		local wait, done = async.waiter();
+		handle_request(conn, request, done); wait();
+	end, runner_callbacks, conn);
 	local function success_cb(request)
 		--log("debug", "success_cb: %s", request.path);
-		if waiting then
-			log("error", "http connection handler is not reentrant: %s", request.path);
-			assert(false, "http connection handler is not reentrant");
-		end
 		request.secure = secure;
-		t_insert(pending, request);
-		process_next();
+		conn._thread:run(request);
 	end
 	local function error_cb(err)
 		log("debug", "error_cb: %s", err or "<nil>");
