@@ -12,7 +12,6 @@ module:set_global();
 local jid_compare, jid_prep = require "util.jid".compare, require "util.jid".prep;
 local st = require "util.stanza";
 local sha1 = require "util.hashes".sha1;
-local b64 = require "util.encodings".base64.encode;
 local server = require "net.server";
 local portmanager = require "core.portmanager";
 
@@ -45,7 +44,7 @@ function listener.onincoming(conn, data)
 		end -- else error, unexpected input
 		conn:write("\5\255"); -- send (SOCKS version 5, no acceptable method)
 		conn:close();
-		module:log("debug", "Invalid SOCKS5 greeting received: '%s'", b64(data));
+		module:log("debug", "Invalid SOCKS5 greeting received: %q", data);
 	else -- connection request
 		--local head = string.char( 0x05, 0x01, 0x00, 0x03, 40 ); -- ( VER=5=SOCKS5, CMD=1=CONNECT, RSV=0=RESERVED, ATYP=3=DOMAIMNAME, SHA-1 size )
 		if #data == 47 and data:sub(1,5) == "\5\1\0\3\40" and data:sub(-2) == "\0\0" then
@@ -67,7 +66,7 @@ function listener.onincoming(conn, data)
 		else -- error, unexpected input
 			conn:write("\5\1\0\3\0\0\0"); -- VER, REP, RSV, ATYP, BND.ADDR (sha), BND.PORT (2 Byte)
 			conn:close();
-			module:log("debug", "Invalid SOCKS5 negotiation received: '%s'", b64(data));
+			module:log("debug", "Invalid SOCKS5 negotiation received: %q", data);
 		end
 	end
 end
