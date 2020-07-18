@@ -416,6 +416,15 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0215.html"/>
+        <xmpp:version>0.7</xmpp:version>
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:since>0.12</xmpp:since>
+        <xmpp:note>mod_external_services</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0220.html"/>
         <xmpp:since>0.1</xmpp:since>
       </xmpp:SupportedXep>

@@ -62,6 +62,7 @@ modules_enabled = {
 		--"legacyauth"; -- Legacy authentication. Only used by some old clients and bots.
 		--"proxy65"; -- Enables a file transfer proxy service which clients behind NAT can use
 		"lastactivity";
+		"external_services";
 
 	-- Useful for testing
 		--"scansion_record"; -- Records things that happen in scansion test case format
@@ -75,6 +76,17 @@ contact_info = {
 	security = { "xmpp:security@localhost" };
 	status = { "gopher://status.localhost" };
 	support = { "https://localhost/support.html", "xmpp:support@localhost" };
+}
+
+external_service_host = "default.example"
+external_service_port = 9876
+external_service_secret = "<secret>"
+external_services = {
+	{type = "stun"; transport = "udp"};
+	{type = "turn"; transport = "udp"; secret = true};
+	{type = "turn"; transport = "udp"; secret = "foo"};
+	{type = "ftp"; transport = "tcp"; port = 2121; username = "john"; password = "password"};
+	{type = "ftp"; transport = "tcp"; host = "ftp.example.com"; port = 21; username = "john"; password = "password"};
 }
 
 modules_disabled = {
