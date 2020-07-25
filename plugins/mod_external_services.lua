@@ -14,6 +14,27 @@ local configured_services = module:get_option_array("external_services", {});
 
 local access = module:get_option_set("external_service_access", {});
 
+-- https://tools.ietf.org/html/draft-uberti-behave-turn-rest-00
+local function behave_turn_rest_credentials(srv, item, secret)
+	local ttl = default_ttl;
+	if type(item.ttl) == "number" then
+		ttl = item.ttl;
+	end
+	local expires = srv.expires or os.time() + ttl;
+	local username;
+	if type(item.username) == "string" then
+		username = string.format("%d:%s", expires, item.username);
+	else
+		username = string.format("%d", expires);
+	end
+	srv.username = username;
+	srv.password = base64.encode(hashes.hmac_sha1(secret, srv.username));
+end
+
+local algorithms = {
+	turn = behave_turn_rest_credentials;
+}
+
 -- filter config into well-defined service records
 local function prepare(item)
 	if type(item) ~= "table" then
@@ -63,24 +84,15 @@ local function prepare(item)
 		srv.expires = os.time() + item.ttl;
 	end
 	if (item.secret == true and default_secret) or type(item.secret) == "string" then
-		local ttl = default_ttl;
-		if type(item.ttl) == "number" then
-			ttl = item.ttl;
-		end
-		local expires = os.time() + ttl;
+		local secret_cb = algorithms[item.algorithm] or algorithms[srv.type];
 		local secret = item.secret;
 		if secret == true then
 			secret = default_secret;
 		end
-		local username;
-		if type(item.username) == "string" then
-			username = string.format("%d:%s", expires, item.username);
-		else
-			username = string.format("%d", expires);
+		if secret_cb then
+			secret_cb(srv, item, secret);
+			srv.restricted = true;
 		end
-		srv.username = username;
-		srv.password = base64.encode(hashes.hmac_sha1(secret, srv.username));
-		srv.restricted = true;
 	end
 	return srv;
 end
