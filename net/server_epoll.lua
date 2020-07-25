@@ -405,6 +405,11 @@ function interface:onreadable()
 			self:onincoming(partial, err);
 		end
 		if err ~= "timeout" then
+			if err == "closed" then
+				self:debug("Connection closed by remote");
+			else
+				self:debug("Read error, closing (%s)", err);
+			end
 			self:on("disconnect", err);
 			self:destroy()
 			return;
