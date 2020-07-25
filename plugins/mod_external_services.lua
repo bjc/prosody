@@ -105,7 +105,8 @@ local function handle_services(event)
 	end
 
 	local reply = st.reply(stanza):tag("services", { xmlns = action.attr.xmlns });
-	local services = configured_services / prepare;
+	local extras = module:get_host_items("external_service");
+	local services = ( configured_services + extras ) / prepare;
 
 	local requested_type = action.attr.type;
 	if requested_type then
@@ -149,7 +150,8 @@ local function handle_credentials(event)
 	end
 
 	local reply = st.reply(stanza):tag("credentials", { xmlns = action.attr.xmlns });
-	local services = configured_services / prepare;
+	local extras = module:get_host_items("external_service");
+	local services = ( configured_services + extras ) / prepare;
 	services:filter(function (item)
 		return item.restricted;
 	end)
