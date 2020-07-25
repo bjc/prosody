@@ -84,7 +84,7 @@ local function prepare(item)
 		srv.expires = os.time() + item.ttl;
 	end
 	if (item.secret == true and default_secret) or type(item.secret) == "string" then
-		local secret_cb = algorithms[item.algorithm] or algorithms[srv.type];
+		local secret_cb = item.credentials_cb or algorithms[item.algorithm] or algorithms[srv.type];
 		local secret = item.secret;
 		if secret == true then
 			secret = default_secret;
