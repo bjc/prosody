@@ -41,7 +41,7 @@ end
 
 local buffers = {};
 
-local listener = { default_mode = "*a" };
+local listener = { default_mode = max_buffer_len };
 
 function listener.onconnect(conn)
 	local sock = conn:socket();
