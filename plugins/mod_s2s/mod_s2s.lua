@@ -595,8 +595,7 @@ local function initialize_session(session)
 		if data then
 			local ok, err = stream:feed(data);
 			if ok then return; end
-			log("warn", "Received invalid XML: %s", data);
-			log("warn", "Problem was: %s", err);
+			log("debug", "Received invalid XML (%s) %d bytes: %s", tostring(err), #data, data:sub(1, 300):gsub("[\r\n]+", " "):gsub("[%z\1-\31]", "_"));
 			session:close("not-well-formed");
 		end
 	end
