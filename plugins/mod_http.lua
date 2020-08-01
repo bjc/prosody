@@ -160,6 +160,15 @@ function module.add_host(module)
 				elseif event_name:sub(-1, -1) == "/" then
 					module:hook_object_event(server, event_name:sub(1, -2), redir_handler, -1);
 				end
+				do
+					-- COMPAT Modules not compatible with streaming uploads behave as before.
+					local _handler = handler;
+					function handler(event) -- luacheck: ignore 432/event
+						if event.request.body ~= false then
+							return _handler(event);
+						end
+					end
+				end
 				if not app_handlers[event_name] then
 					app_handlers[event_name] = {
 						main = handler;

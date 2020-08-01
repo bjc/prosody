@@ -3,7 +3,9 @@ local http_parser = require "net.http.parser";
 local function test_stream(stream, expect)
 	local success_cb = spy.new(function (packet)
 		assert.is_table(packet);
-		assert.is_equal(expect.body, packet.body);
+		if packet.body ~= false then
+			assert.is_equal(expect.body, packet.body);
+		end
 	end);
 
 	stream = stream:gsub("\n", "\r\n");
@@ -79,7 +81,7 @@ o
 
 ]],
 				{
-					body = "Hello", count = 1;
+					body = "Hello", count = 2;
 				}
 			);
 		end);
@@ -108,7 +110,7 @@ o
 
 ]],
 				{
-					body = "Hello", count = 2;
+					body = "Hello", count = 3;
 				}
 			);
 		end);
