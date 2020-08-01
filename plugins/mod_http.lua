@@ -138,6 +138,8 @@ function module.add_host(module)
 			return "";
 		end
 
+		local streaming = event.item.streaming_uploads;
+
 		for key, handler in pairs(event.item.route or {}) do
 			local event_name = get_http_event(host, app_path, key);
 			if event_name then
@@ -160,7 +162,7 @@ function module.add_host(module)
 				elseif event_name:sub(-1, -1) == "/" then
 					module:hook_object_event(server, event_name:sub(1, -2), redir_handler, -1);
 				end
-				do
+				if not streaming then
 					-- COMPAT Modules not compatible with streaming uploads behave as before.
 					local _handler = handler;
 					function handler(event) -- luacheck: ignore 432/event
