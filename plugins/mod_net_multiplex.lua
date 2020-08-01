@@ -2,6 +2,7 @@ module:set_global();
 
 local array = require "util.array";
 local max_buffer_len = module:get_option_number("multiplex_buffer_size", 1024);
+local default_mode = module:get_option_number("network_default_read_size", 4096);
 
 local portmanager = require "core.portmanager";
 
@@ -52,6 +53,7 @@ function listener.onconnect(conn)
 			module:log("debug", "Routing incoming connection to %s based on ALPN %q", service.name, selected_proto);
 			local next_listener = service.listener;
 			conn:setlistener(next_listener);
+			conn:set_mode(next_listener.default_mode or default_mode);
 			local onconnect = next_listener.onconnect;
 			if onconnect then return onconnect(conn) end
 		end
@@ -67,6 +69,7 @@ function listener.onincoming(conn, data)
 			module:log("debug", "Routing incoming connection to %s", service.name);
 			local next_listener = service.listener;
 			conn:setlistener(next_listener);
+			conn:set_mode(next_listener.default_mode or default_mode);
 			local onconnect = next_listener.onconnect;
 			if onconnect then onconnect(conn) end
 			return next_listener.onincoming(conn, buf);
