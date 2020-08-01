@@ -88,8 +88,6 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 					if not first_line then error = true; return error_cb("invalid-status-line"); end
 					chunked = have_body and headers["transfer-encoding"] == "chunked";
 					len = tonumber(headers["content-length"]); -- TODO check for invalid len
-					if len and len > bodylimit then error = true; return error_cb("content-length-limit-exceeded"); end
-					-- TODO ask a callback whether to proceed in case of large requests or Expect: 100-continue
 					if client then
 						-- FIXME handle '100 Continue' response (by skipping it)
 						if not have_body then len = 0; end
@@ -126,8 +124,16 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							body_sink = nil;
 						};
 					end
-					if chunked then
+					if len and len > bodylimit then
+						-- Early notification, for redirection
+						success_cb(packet);
+						if not packet.body_sink then error = true; return error_cb("content-length-limit-exceeded"); end
+					end
+					if chunked and not packet.body_sink then
+						success_cb(packet);
+						if not packet.body_sink then
 						packet.body_buffer = dbuffer.new(buflimit);
+					end
 					end
 					state = true;
 				end
@@ -154,11 +160,23 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							success_cb(packet);
 						elseif buffer:length() - chunk_start - 2 >= chunk_size then -- we have a chunk
 							buffer:discard(chunk_start - 1); -- TODO verify that it's not off-by-one
-							packet.body_buffer:write(buffer:read(chunk_size));
+							(packet.body_sink or packet.body_buffer):write(buffer:read(chunk_size));
 							buffer:discard(2); -- CRLF
 						else -- Partial chunk remaining
 							break;
 						end
+					elseif packet.body_sink then
+						local chunk = buffer:read_chunk(len);
+						while chunk and len > 0 do
+							if packet.body_sink:write(chunk) then
+								len = len - #chunk;
+								chunk = buffer:read_chunk(len);
+							else
+								error = true;
+								return error_cb("body-sink-write-failure");
+							end
+						end
+						if len == 0 then state = nil; success_cb(packet); end
 					elseif buffer:length() >= len then
 						assert(not chunked)
 						packet.body = buffer:read(len) or "";
