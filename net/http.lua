@@ -302,4 +302,5 @@ return {
 	urldecode = util_http.urldecode;
 	formencode = util_http.formencode;
 	formdecode = util_http.formdecode;
+	destroy_request = destroy_request;
 };
