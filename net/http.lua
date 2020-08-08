@@ -58,6 +58,16 @@ local function destroy_request(request)
 	end
 end
 
+local function cancel_request(request, reason)
+	if request.callback then
+		request.callback(reason or "cancelled", 0, request);
+		request.callback = nil;
+	end
+	if request.conn then
+		destroy_request(request);
+	end
+end
+
 local function request_reader(request, data, err)
 	if not request.parser then
 		local function error_cb(reason)
@@ -107,6 +117,7 @@ function listener.onconnect(conn)
 	end
 	req.reader = request_reader;
 	req.state = "status";
+	req.cancel = cancel_request;
 
 	requests[req.conn] = req;
 
@@ -318,4 +329,5 @@ return {
 	urldecode = util_http.urldecode;
 	formencode = util_http.formencode;
 	formdecode = util_http.formdecode;
+	destroy_request = destroy_request;
 };
