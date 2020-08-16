@@ -106,6 +106,21 @@ describe("util.dataforms", function ()
 				name = "text-single-field",
 				value = "text-single-value",
 			},
+			{
+				-- XEP-0221
+				-- TODO Validate the XML produced by this.
+				type = "text-single",
+				label = "text-single-with-media-label",
+				name = "text-single-with-media-field",
+				media = {
+					height = 24,
+					width = 32,
+					{
+						type = "image/png",
+						uri = "data:",
+					},
+				},
+			},
 		});
 		xform = some_form:form();
 	end);
