@@ -136,7 +136,7 @@ function form_t.form(layout, data, formtype)
 
 		local media = field.media;
 		if media then
-			form:tag("media", { xmlns = "urn:xmpp:media-element", height = media.height, width = media.width });
+			form:tag("media", { xmlns = "urn:xmpp:media-element", height = ("%g"):format(media.height), width = ("%g"):format(media.width) });
 			for _, val in ipairs(media) do
 				form:tag("uri", { type = val.type }):text(val.uri):up()
 			end
