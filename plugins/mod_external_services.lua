@@ -4,6 +4,7 @@ local base64 = require "util.encodings".base64;
 local hashes = require "util.hashes";
 local st = require "util.stanza";
 local jid = require "util.jid";
+local array = require "util.array";
 
 local default_host = module:get_option_string("external_service_host", module.host);
 local default_port = module:get_option_number("external_service_port");
@@ -105,6 +106,14 @@ function module.load()
 	end
 end
 
+-- Ensure only valid items are added in events
+local services_mt = {
+	__index = getmetatable(array()).__index;
+	__newindex = function (self, i, v)
+		rawset(self, i, assert(prepare(v), "Invalid service entry added"));
+	end;
+}
+
 local function handle_services(event)
 	local origin, stanza = event.origin, event.stanza;
 	local action = stanza.tags[1];
@@ -126,6 +135,8 @@ local function handle_services(event)
 			return item.type == requested_type;
 		end);
 	end
+
+	setmetatable(services, services_mt);
 
 	module:fire_event("external_service/services", {
 			origin = origin;
@@ -176,6 +187,9 @@ local function handle_credentials(event)
 				port = tonumber(service.attr.port);
 			});
 	end
+
+	setmetatable(services, services_mt);
+	setmetatable(requested_credentials, services_mt);
 
 	module:fire_event("external_service/credentials", {
 			origin = origin;
