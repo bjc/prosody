@@ -438,5 +438,33 @@ describe("util.dataforms", function ()
 			assert.string(e.number);
 		end);
 	end);
+	describe("media element", function ()
+		it("produced media element correctly", function ()
+			local f;
+			for field in xform:childtags("field") do
+				if field.attr.var == "text-single-with-media-field" then
+					f = field;
+					break;
+				end
+			end
+
+			assert.truthy(st.is_stanza(f));
+			assert.equal("text-single-with-media-field", f.attr.var);
+			assert.equal("text-single", f.attr.type);
+			assert.equal("text-single-with-media-label", f.attr.label);
+			assert.equal(0, iter.count(f:childtags("value")));
+
+			local m = f:get_child("media", "urn:xmpp:media-element");
+			assert.truthy(st.is_stanza(m));
+			assert.equal("24", m.attr.height);
+			assert.equal("32", m.attr.width);
+			assert.equal(1, iter.count(m:childtags("uri")));
+
+			local u = m:get_child("uri");
+			assert.truthy(st.is_stanza(u));
+			assert.equal("image/png", u.attr.type);
+			assert.equal("data:", u:get_text());
+		end);
+	end);
 end);
 
