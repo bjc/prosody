@@ -264,7 +264,7 @@ wrapserver = function( listeners, socket, ip, serverport, pattern, sslctx ) -- t
 	return handler
 end
 
-wrapconnection = function( server, listeners, socket, ip, serverport, clientport, pattern, sslctx ) -- this function wraps a client to a handler object
+wrapconnection = function( server, listeners, socket, ip, serverport, clientport, pattern, sslctx, extra ) -- this function wraps a client to a handler object
 
 	if socket:getfd() >= _maxfd then
 		out_error("server.lua: Disallowed FD number: "..socket:getfd()) -- PROTIP: Switch to libevent
@@ -313,6 +313,11 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	--// public methods of the object //--
 
 	local handler = bufferqueue -- saves a table ^_^
+
+	handler.extra = extra
+	if extra then
+		handler.servername = extra.servername
+	end
 
 	handler.dispatch = function( )
 		return dispatch
@@ -622,6 +627,10 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			if not socket then
 				out_put( "server.lua: error while starting tls on client: ", tostring(err or "unknown error") )
 				return nil, err -- fatal error
+			end
+
+			if socket.sni and self.servername then
+				socket:sni(self.servername);
 			end
 
 			socket:settimeout( 0 )
@@ -977,8 +986,8 @@ end
 
 --// EXPERIMENTAL //--
 
-local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx )
-	local handler, socket, err = wrapconnection( nil, listeners, socket, ip, serverport, "clientport", pattern, sslctx )
+local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx, extra )
+	local handler, socket, err = wrapconnection( nil, listeners, socket, ip, serverport, "clientport", pattern, sslctx, extra)
 	if not handler then return nil, err end
 	_socketlist[ socket ] = handler
 	if not sslctx then
@@ -997,7 +1006,7 @@ local wrapclient = function( socket, ip, serverport, listeners, pattern, sslctx 
 	return handler, socket
 end
 
-local addclient = function( address, port, listeners, pattern, sslctx, typ )
+local addclient = function( address, port, listeners, pattern, sslctx, typ, extra )
 	local err
 	if type( listeners ) ~= "table" then
 		err = "invalid listener table"
@@ -1034,7 +1043,7 @@ local addclient = function( address, port, listeners, pattern, sslctx, typ )
 	client:settimeout( 0 )
 	local ok, err = client:setpeername( address, port )
 	if ok or err == "timeout" or err == "Operation already in progress" then
-		return wrapclient( client, address, port, listeners, pattern, sslctx )
+		return wrapclient( client, address, port, listeners, pattern, sslctx, extra )
 	else
 		return nil, err
 	end
