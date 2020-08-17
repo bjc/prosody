@@ -272,7 +272,7 @@ local function request(self, u, ex, callback)
 		sslctx = ex and ex.sslctx or self.options and self.options.sslctx;
 	end
 
-	local http_service = basic_resolver.new(host, port_number);
+	local http_service = basic_resolver.new(host, port_number, "tcp", { servername = req.host });
 	connect(http_service, listener, { sslctx = sslctx }, req);
 
 	self.events.fire_event("request", { http = self, request = req, url = u });
