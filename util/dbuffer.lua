@@ -142,7 +142,7 @@ function dbuffer_methods:collapse(bytes)
 
 	local front_chunk = self.items:peek();
 
-	if #front_chunk - self.front_consumed >= bytes then
+	if not front_chunk or #front_chunk - self.front_consumed >= bytes then
 		return;
 	end
 
