@@ -132,8 +132,8 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 					if chunked and not packet.body_sink then
 						success_cb(packet);
 						if not packet.body_sink then
-						packet.body_buffer = dbuffer.new(buflimit);
-					end
+							packet.body_buffer = dbuffer.new(buflimit);
+						end
 					end
 					state = true;
 				end
