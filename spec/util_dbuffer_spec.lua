@@ -46,6 +46,13 @@ describe("util.dbuffer", function ()
 		end);
 	end);
 
+	describe(":collapse()", function ()
+		it("works on an empty buffer", function ()
+			local b = dbuffer.new();
+			b:collapse();
+		end);
+	end);
+
 	describe(":sub", function ()
 		-- Helper function to compare buffer:sub() with string:sub()
 		local s = "hello world";
@@ -105,6 +112,11 @@ describe("util.dbuffer", function ()
 			b:write(string.char(0, 140));
 			local r = { b:byte(1, 2) };
 			assert.same({ 0, 140 }, r);
+		end);
+
+		it("works on an empty buffer", function ()
+			local b = dbuffer.new();
+			assert.equal("", b:sub(1,1));
 		end);
 	end);
 end);
