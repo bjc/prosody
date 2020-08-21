@@ -1,6 +1,10 @@
 local http_parser = require "net.http.parser";
 local sha1 = require "util.hashes".sha1;
 
+local function CRLF(s)
+	return (s:gsub("\n", "\r\n"));
+end
+
 local function test_stream(stream, expect)
 	local success_cb = spy.new(function (packet)
 		assert.is_table(packet);
@@ -9,7 +13,6 @@ local function test_stream(stream, expect)
 		end
 	end);
 
-	stream = stream:gsub("\n", "\r\n");
 	local parser = http_parser.new(success_cb, error, stream:sub(1,4) == "HTTP" and "client" or "server")
 	for chunk in stream:gmatch("..?.?") do
 		parser:feed(chunk);
@@ -23,7 +26,7 @@ describe("net.http.parser", function()
 	describe("parser", function()
 		it("should handle requests with no content-length or body", function ()
 			test_stream(
-[[
+CRLF[[
 GET / HTTP/1.1
 Host: example.com
 
@@ -36,7 +39,7 @@ Host: example.com
 
 		it("should handle responses with empty body", function ()
 			test_stream(
-[[
+CRLF[[
 HTTP/1.1 200 OK
 Content-Length: 0
 
@@ -50,7 +53,7 @@ Content-Length: 0
 		it("should handle simple responses", function ()
 			test_stream(
 
-[[
+CRLF[[
 HTTP/1.1 200 OK
 Content-Length: 7
 
@@ -65,7 +68,7 @@ Hello
 		it("should handle chunked encoding in responses", function ()
 			test_stream(
 
-[[
+CRLF[[
 HTTP/1.1 200 OK
 Transfer-Encoding: chunked
 
@@ -90,7 +93,7 @@ o
 		it("should handle a stream of responses", function ()
 			test_stream(
 
-[[
+CRLF[[
 HTTP/1.1 200 OK
 Content-Length: 5
 
@@ -117,7 +120,7 @@ o
 		end);
 	end);
 
-	pending("should handle large chunked responses", function ()
+	it("should handle large chunked responses", function ()
 		local data = io.open("spec/inputs/http/httpstream-chunked-test.txt", "rb"):read("*a");
 
 		-- Just a sanity check... text editors and things may mess with line endings, etc.
