@@ -1,4 +1,5 @@
 local http_parser = require "net.http.parser";
+local sha1 = require "util.hashes".sha1;
 
 local function test_stream(stream, expect)
 	local success_cb = spy.new(function (packet)
@@ -114,5 +115,16 @@ o
 				}
 			);
 		end);
+	end);
+
+	pending("should handle large chunked responses", function ()
+		local data = io.open("spec/inputs/httpstream-chunked-test.txt", "rb"):read("*a");
+
+		-- Just a sanity check... text editors and things may mess with line endings, etc.
+		assert.equal("25930f021785ae14053a322c2dbc1897c3769720", sha1(data, true), "test data malformed");
+
+		test_stream(data, {
+			body = string.rep("~", 11085), count = 2;
+		});
 	end);
 end);
