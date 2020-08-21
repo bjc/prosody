@@ -118,7 +118,7 @@ o
 	end);
 
 	pending("should handle large chunked responses", function ()
-		local data = io.open("spec/inputs/httpstream-chunked-test.txt", "rb"):read("*a");
+		local data = io.open("spec/inputs/http/httpstream-chunked-test.txt", "rb"):read("*a");
 
 		-- Just a sanity check... text editors and things may mess with line endings, etc.
 		assert.equal("25930f021785ae14053a322c2dbc1897c3769720", sha1(data, true), "test data malformed");
