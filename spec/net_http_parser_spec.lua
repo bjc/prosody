@@ -1,6 +1,8 @@
 local http_parser = require "net.http.parser";
 local sha1 = require "util.hashes".sha1;
 
+local parser_input_bytes = 3;
+
 local function CRLF(s)
 	return (s:gsub("\n", "\r\n"));
 end
@@ -14,7 +16,7 @@ local function test_stream(stream, expect)
 	end);
 
 	local parser = http_parser.new(success_cb, error, stream:sub(1,4) == "HTTP" and "client" or "server")
-	for chunk in stream:gmatch("..?.?") do
+	for chunk in stream:gmatch("."..string.rep(".?", parser_input_bytes-1)) do
 		parser:feed(chunk);
 	end
 
