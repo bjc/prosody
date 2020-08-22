@@ -544,7 +544,11 @@ local function session_flags(session, line)
 		line[#line+1] = "(sm)";
 	end
 	if session.state then
-		line[#line+1] = string.format("(csi:%s)", session.state);
+		if type(session.csi_counter) == "number" then
+			line[#line+1] = string.format("(csi:%s queue #%d)", session.state, session.csi_counter);
+		else
+			line[#line+1] = string.format("(csi:%s)", session.state);
+		end
 	end
 	if session.ip and session.ip:match(":") then
 		line[#line+1] = "(IPv6)";
