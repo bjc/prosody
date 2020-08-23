@@ -511,7 +511,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	end
 	handler.resume_writes = function (self)
 		nosend = false
-		if bufferlen > 0 then
+		if bufferlen > 0 and socket then
 			_sendlistlen = addsocket(_sendlist, socket, _sendlistlen)
 		end
 	end
