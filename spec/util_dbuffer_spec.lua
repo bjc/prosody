@@ -67,6 +67,15 @@ describe("util.dbuffer", function ()
 			assert.equals("hello", b:sub(1, 5));
 		end);
 
+		pending("works after discard", function ()
+			local b = dbuffer.new(256);
+			assert.truthy(b:write("foo"));
+			assert.truthy(b:write("bar"));
+			assert.equals("foobar", b:sub(1, 6));
+			assert.truthy(b:discard(3)) -- until the space
+			assert.equals("bar", b:sub(1, 3));
+		end);
+
 		it("supports optional end parameter", function ()
 			local b = dbuffer.new();
 			assert.truthy(b:write("hello world"));
