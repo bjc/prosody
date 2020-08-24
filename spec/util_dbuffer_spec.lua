@@ -69,10 +69,9 @@ describe("util.dbuffer", function ()
 
 		it("works after discard", function ()
 			local b = dbuffer.new(256);
-			assert.truthy(b:write("foo"));
-			assert.truthy(b:write("bar"));
+			assert.truthy(b:write("foobar"));
 			assert.equals("foobar", b:sub(1, 6));
-			assert.truthy(b:discard(3)) -- until the space
+			assert.truthy(b:discard(3)); -- consume "foo"
 			assert.equals("bar", b:sub(1, 3));
 		end);
 
