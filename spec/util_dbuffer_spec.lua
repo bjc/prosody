@@ -67,7 +67,7 @@ describe("util.dbuffer", function ()
 			assert.equals("hello", b:sub(1, 5));
 		end);
 
-		pending("works after discard", function ()
+		it("works after discard", function ()
 			local b = dbuffer.new(256);
 			assert.truthy(b:write("foo"));
 			assert.truthy(b:write("bar"));

@@ -123,7 +123,7 @@ function dbuffer_methods:sub(i, j)
 
 	self:collapse(j);
 
-	return self.items:peek():sub(i, j);
+	return self.items:peek():sub(self.front_consumed+1):sub(i, j);
 end
 
 function dbuffer_methods:byte(i, j)
