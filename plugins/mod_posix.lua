@@ -30,39 +30,12 @@ module:set_global(); -- we're a global module
 local umask = module:get_option_string("umask", "027");
 pposix.umask(umask);
 
--- Allow switching away from root, some people like strange ports.
-module:hook("server-started", function ()
-	local uid = module:get_option("setuid");
-	local gid = module:get_option("setgid");
-	if gid then
-		local success, msg = pposix.setgid(gid);
-		if success then
-			module:log("debug", "Changed group to %s successfully.", gid);
-		else
-			module:log("error", "Failed to change group to %s. Error: %s", gid, msg);
-			prosody.shutdown("Failed to change group to %s", gid);
-		end
-	end
-	if uid then
-		local success, msg = pposix.setuid(uid);
-		if success then
-			module:log("debug", "Changed user to %s successfully.", uid);
-		else
-			module:log("error", "Failed to change user to %s. Error: %s", uid, msg);
-			prosody.shutdown("Failed to change user to %s", uid);
-		end
-	end
-end);
-
 -- Don't even think about it!
 if not prosody.start_time then -- server-starting
-	local suid = module:get_option("setuid");
-	if not suid or suid == 0 or suid == "root" then
-		if pposix.getuid() == 0 and not module:get_option_boolean("run_as_root") then
-			module:log("error", "Danger, Will Robinson! Prosody doesn't need to be run as root, so don't do it!");
-			module:log("error", "For more information on running Prosody as root, see https://prosody.im/doc/root");
-			prosody.shutdown("Refusing to run as root");
-		end
+	if pposix.getuid() == 0 and not module:get_option_boolean("run_as_root") then
+		module:log("error", "Danger, Will Robinson! Prosody doesn't need to be run as root, so don't do it!");
+		module:log("error", "For more information on running Prosody as root, see https://prosody.im/doc/root");
+		prosody.shutdown("Refusing to run as root");
 	end
 end
 
