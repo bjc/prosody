@@ -13,7 +13,7 @@ local util_http = require "util.http";
 local events = require "util.events";
 local verify_identity = require"util.x509".verify_identity;
 local promise = require "util.promise";
-local errors = require "util.error";
+local http_errors = require "net.http.errors";
 
 local basic_resolver = require "net.resolvers.basic";
 local connect = require "net.connect".connect;
@@ -291,7 +291,7 @@ local function new(options)
 				return promise.new(function (resolve, reject)
 					request(self, u, ex, function (body, code, a, b)
 						if code == 0 then
-							reject(errors.new(body, { request = a }));
+							reject(http_errors.new(body, { request = a }));
 						else
 							resolve({ request = b, response = a });
 						end
