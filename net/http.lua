@@ -293,7 +293,8 @@ local function new(options)
 						if code == 0 then
 							reject(http_errors.new(body, { request = a }));
 						else
-							resolve({ request = b, response = a });
+							a.request = b;
+							resolve(a);
 						end
 					end);
 				end);
