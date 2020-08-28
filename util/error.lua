@@ -52,6 +52,12 @@ local function new(e, context, registry, source)
 	}, error_mt);
 end
 
+local function init(source, registry)
+	return function (e, context)
+		return new(e, context, registry, source);
+	end
+end
+
 local function coerce(ok, err, ...)
 	if ok or is_err(err) then
 		return ok, err, ...;
@@ -79,6 +85,7 @@ end
 
 return {
 	new = new;
+	init = init;
 	coerce = coerce;
 	is_err = is_err;
 	from_stanza = from_stanza;
