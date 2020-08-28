@@ -33,7 +33,7 @@ end
 -- Should the `type` be restricted to the stanza error types or free-form?
 -- What to set `type` to for stream errors or SASL errors? Those don't have a 'type' attr.
 
-local function new(e, context, registry)
+local function new(e, context, registry, source)
 	local template = (registry and registry[e]) or e or {};
 	context = context or template.context or { _error_id = e };
 
@@ -48,6 +48,7 @@ local function new(e, context, registry)
 		code = template.code;
 
 		context = context or template.context or { _error_id = e };
+		source = source;
 	}, error_mt);
 end
 
