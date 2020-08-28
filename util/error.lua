@@ -1,6 +1,15 @@
+
+-- Library configuration (see configure())
+local auto_inject_traceback = false;
+local display_tracebacks = false;
+
+
 local error_mt = { __name = "error" };
 
 function error_mt:__tostring()
+	if display_tracebacks and self.context.traceback then
+		return ("error<%s:%s:%s:%s>"):format(self.type, self.condition, self.text or "", self.context.traceback);
+	end
 	return ("error<%s:%s:%s>"):format(self.type, self.condition, self.text or "");
 end
 
@@ -8,9 +17,10 @@ local function is_err(e)
 	return getmetatable(e) == error_mt;
 end
 
-local auto_inject_traceback = false;
-
 local function configure(opt)
+	if opt.display_tracebacks ~= nil then
+		display_tracebacks = opt.display_tracebacks;
+	end
 	if opt.auto_inject_traceback ~= nil then
 		auto_inject_traceback = opt.auto_inject_traceback;
 	end
