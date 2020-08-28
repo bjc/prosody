@@ -75,6 +75,56 @@ describe("util.jid", function()
 		end);
 	end);
 
+	local jid_escaping_test_vectors = {
+		-- From https://xmpp.org/extensions/xep-0106.xml#examples sans @example.com
+		[[space cadet]], [[space\20cadet]],
+		[[call me "ishmael"]], [[call\20me\20\22ishmael\22]],
+		[[at&t guy]], [[at\26t\20guy]],
+		[[d'artagnan]], [[d\27artagnan]],
+		[[/.fanboy]], [[\2f.fanboy]],
+		[[::foo::]], [[\3a\3afoo\3a\3a]],
+		[[<foo>]], [[\3cfoo\3e]],
+		[[user@host]], [[user\40host]],
+		[[c:\net]], [[c\3a\net]],
+		[[c:\\net]], [[c\3a\\net]],
+		[[c:\cool stuff]], [[c\3a\cool\20stuff]],
+		[[c:\5commas]], [[c\3a\5c5commas]],
+
+		-- Section 4.2
+		[[\3and\2is\5cool]], [[\5c3and\2is\5c5cool]],
+
+		-- From aioxmpp
+		[[\5c]], [[\5c5c]],
+    -- [[\5C]], [[\5C]],
+    [[\2plus\2is\4]], [[\2plus\2is\4]],
+    [[foo\bar]], [[foo\bar]],
+    [[foo\41r]], [[foo\41r]],
+    -- additional test vectors
+    [[call\20me]], [[call\5c20me]],
+	};
+
+	describe("#escape()", function ()
+		it("should work", function ()
+			for i = 1, #jid_escaping_test_vectors, 2 do
+				local original = jid_escaping_test_vectors[i];
+				local escaped = jid_escaping_test_vectors[i+1];
+
+				assert.are.equal(escaped, jid.escape(original), ("Escapes '%s' -> '%s'"):format(original, escaped));
+			end
+		end);
+	end)
+
+	describe("#unescape()", function ()
+		it("should work", function ()
+			for i = 1, #jid_escaping_test_vectors, 2 do
+				local original = jid_escaping_test_vectors[i];
+				local escaped = jid_escaping_test_vectors[i+1];
+
+				assert.are.equal(original, jid.unescape(escaped), ("Unescapes '%s' -> '%s'"):format(escaped, original));
+			end
+		end);
+	end)
+
 	it("should work with nodes", function()
 		local function test(_jid, expected_node)
 			assert.are.equal(jid.node(_jid), expected_node, "Unexpected node for "..tostring(_jid));
