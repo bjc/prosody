@@ -8,6 +8,14 @@ local function is_err(e)
 	return getmetatable(e) == error_mt;
 end
 
+local auto_inject_traceback = false;
+
+local function configure(opt)
+	if opt.auto_inject_traceback ~= nil then
+		auto_inject_traceback = opt.auto_inject_traceback;
+	end
+end
+
 -- Do we want any more well-known fields?
 -- Or could we just copy all fields from `e`?
 -- Sometimes you want variable details in the `text`, how to handle that?
@@ -17,6 +25,12 @@ end
 
 local function new(e, context, registry)
 	local template = (registry and registry[e]) or e or {};
+	context = context or template.context or { _error_id = e };
+
+	if auto_inject_traceback then
+		context.traceback = debug.traceback("error stack", 2);
+	end
+
 	return setmetatable({
 		type = template.type or "cancel";
 		condition = template.condition or "undefined-condition";
@@ -57,4 +71,5 @@ return {
 	coerce = coerce;
 	is_err = is_err;
 	from_stanza = from_stanza;
+	configure = configure;
 }
