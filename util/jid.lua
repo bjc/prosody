@@ -22,7 +22,11 @@ local escapes = {
 	["@"] = "\\40"; ["\\"] = "\\5c";
 };
 local unescapes = {};
-for k,v in pairs(escapes) do unescapes[v] = k; end
+local backslash_escapes = {};
+for k,v in pairs(escapes) do
+	unescapes[v] = k;
+	backslash_escapes[v] = v:gsub("\\", escapes)
+end
 
 local _ENV = nil;
 -- luacheck: std none
@@ -107,7 +111,7 @@ local function resource(jid)
 	return (select(3, split(jid)));
 end
 
-local function escape(s) return s and (s:gsub(".", escapes)); end
+local function escape(s) return s and (s:gsub("\\%x%x", backslash_escapes):gsub("[\"&'/:<>@ ]", escapes)); end
 local function unescape(s) return s and (s:gsub("\\%x%x", unescapes)); end
 
 return {
