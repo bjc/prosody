@@ -546,6 +546,10 @@ function startup.init_gc()
 	return true;
 end
 
+function startup.init_errors()
+	require "util.error".configure(config.get("*", "error_library"));
+end
+
 function startup.make_host(hostname)
 	return {
 		type = "local",
@@ -577,6 +581,7 @@ function startup.prosodyctl()
 	startup.force_console_logging();
 	startup.init_logging();
 	startup.init_gc();
+	startup.init_errors();
 	startup.setup_plugindir();
 	-- startup.setup_plugin_install_path();
 	startup.setup_datadir();
@@ -600,6 +605,7 @@ function startup.prosody()
 	startup.read_config();
 	startup.init_logging();
 	startup.init_gc();
+	startup.init_errors();
 	startup.sanity_check();
 	startup.sandbox_require();
 	startup.set_function_metatable();
