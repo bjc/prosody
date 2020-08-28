@@ -547,7 +547,7 @@ function startup.init_gc()
 end
 
 function startup.init_errors()
-	require "util.error".configure(config.get("*", "error_library"));
+	require "util.error".configure(config.get("*", "error_library") or {});
 end
 
 function startup.make_host(hostname)
