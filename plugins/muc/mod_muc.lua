@@ -137,7 +137,12 @@ local room_items_cache = {};
 local function room_save(room, forced, savestate)
 	local node = jid_split(room.jid);
 	local is_persistent = persistent.get(room);
-	room_items_cache[room.jid] = room:get_public() and room:get_name() or nil;
+	if room:get_public() then
+		room_items_cache[room.jid] = room:get_name() or "";
+	else
+		room_items_cache[room.jid] = nil;
+	end
+
 	if is_persistent or savestate then
 		persistent_rooms:set(nil, room.jid, true);
 		local data, state = room:freeze(savestate);
@@ -163,7 +168,11 @@ local rooms = cache.new(max_rooms or max_live_rooms, function (jid, room)
 	end
 	module:log("debug", "Evicting room %s", jid);
 	room_eviction();
-	room_items_cache[room.jid] = room:get_public() and room:get_name() or nil;
+	if room:get_public() then
+		room_items_cache[room.jid] = room:get_name() or "";
+	else
+		room_items_cache[room.jid] = nil;
+	end
 	local ok, err = room_save(room, nil, true); -- Force to disk
 	if not ok then
 		module:log("error", "Failed to swap inactive room %s to disk: %s", jid, err);
@@ -337,13 +346,14 @@ module:hook("host-disco-items", function(event)
 	module:log("debug", "host-disco-items called");
 	if next(room_items_cache) ~= nil then
 		for jid, room_name in pairs(room_items_cache) do
+			if room_name == "" then room_name = nil; end
 			reply:tag("item", { jid = jid, name = room_name }):up();
 		end
 	else
 		for room in all_rooms() do
 			if not room:get_hidden() then
 				local jid, room_name = room.jid, room:get_name();
-				room_items_cache[jid] = room_name;
+				room_items_cache[jid] = room_name or "";
 				reply:tag("item", { jid = jid, name = room_name }):up();
 			end
 		end
