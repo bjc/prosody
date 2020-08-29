@@ -7,10 +7,8 @@
 -- COPYING file in the source package for more information.
 --
 
-local jid_split = require "util.jid".split;
-
 local function get_name(room)
-	return room._data.name or jid_split(room.jid);
+	return room._data.name;
 end
 
 local function set_name(room, name)
