@@ -211,7 +211,7 @@ describe("util.events", function ()
 
 		describe("debug hooks", function ()
 			it("should get called", function ()
-				local d = spy.new(function (handler, event_name, event_data)
+				local d = spy.new(function (handler, event_name, event_data) --luacheck: ignore 212/event_name
 					return handler(event_data);
 				end);
 
