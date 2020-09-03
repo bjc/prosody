@@ -26,6 +26,8 @@ local function new()
 	local wrappers = {};
 	-- Event map: event_map[handler_function] = priority_number
 	local event_map = {};
+	-- Debug hook, if any
+	local active_debug_hook = nil;
 	-- Called on-demand to build handlers entries
 	local function _rebuild_index(self, event)
 		local _handlers = event_map[event];
@@ -74,9 +76,14 @@ local function new()
 	end;
 	local function _fire_event(event_name, event_data)
 		local h = handlers[event_name];
-		if h then
+		if h and not active_debug_hook then
 			for i=1,#h do
 				local ret = h[i](event_data);
+				if ret ~= nil then return ret; end
+			end
+		elseif h and active_debug_hook then
+			for i=1,#h do
+				local ret = active_debug_hook(h[i], event_name, event_data);
 				if ret ~= nil then return ret; end
 			end
 		end
@@ -140,6 +147,13 @@ local function new()
 			end
 		end
 	end
+
+	local function set_debug_hook(new_hook)
+		local old_hook = active_debug_hook;
+		active_debug_hook = new_hook;
+		return old_hook;
+	end
+
 	return {
 		add_handler = add_handler;
 		remove_handler = remove_handler;
@@ -150,8 +164,12 @@ local function new()
 			add_handler = add_wrapper;
 			remove_handler = remove_wrapper;
 		};
+
 		add_wrapper = add_wrapper;
 		remove_wrapper = remove_wrapper;
+
+		set_debug_hook = set_debug_hook;
+
 		fire_event = fire_event;
 		_handlers = handlers;
 		_event_map = event_map;
