@@ -117,9 +117,7 @@ if daemonize then
 			write_pidfile();
 		end
 	end
-	if not prosody.start_time then -- server-starting
-		daemonize_server();
-	end
+	module:hook("server-started", daemonize_server)
 else
 	-- Not going to daemonize, so write the pid of this process
 	write_pidfile();
