@@ -32,7 +32,15 @@ local template_map = [[
 local expect_map = [[
 FOO: bar
 ]]
-
+local template_not = [[
+{thing~Thing is nil}{thing&Thing is not nil}
+]]
+local expect_not_true = [[
+Thing is not nil
+]]
+local expect_not_nil = [[
+Thing is nil
+]]
 describe("util.interpolation", function ()
 	it("renders", function ()
 		local render = require "util.interpolation".new("%b{}", string.upper, { sort = function (t) table.sort(t) return t end });
@@ -43,5 +51,7 @@ describe("util.interpolation", function ()
 		assert.equal(expect_func_pipe, render(template_func_pipe, { foo = { "c", "a", "d", "b", } }));
 		-- assert.equal("", render(template_func_pipe, { foo = nil })); -- FIXME
 		assert.equal(expect_map, render(template_map, { foo = { foo = "bar" } }));
+		assert.equal(expect_not_true, render(template_not, { thing = true }));
+		assert.equal(expect_not_nil, render(template_not, { thing = nil }));
 	end);
 end);
