@@ -33,13 +33,16 @@ local expect_map = [[
 FOO: bar
 ]]
 local template_not = [[
-{thing~Thing is nil}{thing&Thing is not nil}
+{thing~Thing is falsy}{thing&Thing is truthy}
 ]]
 local expect_not_true = [[
-Thing is not nil
+Thing is truthy
 ]]
 local expect_not_nil = [[
-Thing is nil
+Thing is falsy
+]]
+local expect_not_false = [[
+Thing is falsy
 ]]
 describe("util.interpolation", function ()
 	it("renders", function ()
@@ -53,5 +56,6 @@ describe("util.interpolation", function ()
 		assert.equal(expect_map, render(template_map, { foo = { foo = "bar" } }));
 		assert.equal(expect_not_true, render(template_not, { thing = true }));
 		assert.equal(expect_not_nil, render(template_not, { thing = nil }));
+		assert.equal(expect_not_false, render(template_not, { thing = false }));
 	end);
 end);
