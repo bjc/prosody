@@ -46,28 +46,71 @@ static void toHex(const unsigned char *in, int length, unsigned char *out) {
 	}
 }
 
-#define MAKE_HASH_FUNCTION(myFunc, func, size) \
-static int myFunc(lua_State *L) { \
-	size_t len; \
-	const char *s = luaL_checklstring(L, 1, &len); \
-	int hex_out = lua_toboolean(L, 2); \
-	unsigned char hash[size], result[size*2]; \
-	func((const unsigned char*)s, len, hash);  \
-	if (hex_out) { \
-		toHex(hash, size, result); \
-		lua_pushlstring(L, (char*)result, size*2); \
-	} else { \
-		lua_pushlstring(L, (char*)hash, size);\
-	} \
-	return 1; \
+static int Levp_hash(lua_State *L, const EVP_MD *evp) {
+	size_t len;
+	unsigned int size = EVP_MAX_MD_SIZE;
+	const char *s = luaL_checklstring(L, 1, &len);
+	int hex_out = lua_toboolean(L, 2);
+
+	unsigned char hash[EVP_MAX_MD_SIZE], result[EVP_MAX_MD_SIZE * 2];
+
+	EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+
+	if(ctx == NULL) {
+		goto fail;
+	}
+
+	if(!EVP_DigestInit_ex(ctx, evp, NULL)) {
+		goto fail;
+	}
+
+	if(!EVP_DigestUpdate(ctx, s, len)) {
+		goto fail;
+	}
+
+	if(!EVP_DigestFinal_ex(ctx, hash, &size)) {
+		goto fail;
+	}
+
+	EVP_MD_CTX_free(ctx);
+
+	if(hex_out) {
+		toHex(hash, size, result);
+		lua_pushlstring(L, (char *)result, size * 2);
+	} else {
+		lua_pushlstring(L, (char *)hash, size);
+	}
+
+	return 1;
+
+fail:
+	EVP_MD_CTX_free(ctx);
+	return luaL_error(L, "hash function failed");
 }
 
-MAKE_HASH_FUNCTION(Lsha1, SHA1, SHA_DIGEST_LENGTH)
-MAKE_HASH_FUNCTION(Lsha224, SHA224, SHA224_DIGEST_LENGTH)
-MAKE_HASH_FUNCTION(Lsha256, SHA256, SHA256_DIGEST_LENGTH)
-MAKE_HASH_FUNCTION(Lsha384, SHA384, SHA384_DIGEST_LENGTH)
-MAKE_HASH_FUNCTION(Lsha512, SHA512, SHA512_DIGEST_LENGTH)
-MAKE_HASH_FUNCTION(Lmd5, MD5, MD5_DIGEST_LENGTH)
+static int Lsha1(lua_State *L) {
+	return Levp_hash(L, EVP_sha1());
+}
+
+static int Lsha224(lua_State *L) {
+	return Levp_hash(L, EVP_sha224());
+}
+
+static int Lsha256(lua_State *L) {
+	return Levp_hash(L, EVP_sha256());
+}
+
+static int Lsha384(lua_State *L) {
+	return Levp_hash(L, EVP_sha384());
+}
+
+static int Lsha512(lua_State *L) {
+	return Levp_hash(L, EVP_sha512());
+}
+
+static int Lmd5(lua_State *L) {
+	return Levp_hash(L, EVP_md5());
+}
 
 struct hash_desc {
 	int (*Init)(void *);
