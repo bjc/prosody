@@ -9,6 +9,8 @@ local record lib
 	sha384 : hash
 	sha512 : hash
 	md5 : hash
+	blake2s256 : hash
+	blake2b512 : hash
 	hmac_sha1 : hmac
 	hmac_sha256 : hmac
 	hmac_sha224 : hmac

@@ -17,4 +17,6 @@ return {
 	sha256 = hashes.hmac_sha256,
 	sha384 = hashes.hmac_sha384,
 	sha512 = hashes.hmac_sha512,
+	blake2s256 = hashes.hmac_blake2s256,
+	blake2b512 = hashes.hmac_blake2b512,
 };

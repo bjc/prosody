@@ -112,6 +112,15 @@ static int Lmd5(lua_State *L) {
 	return Levp_hash(L, EVP_md5());
 }
 
+static int Lblake2s256(lua_State *L) {
+	return Levp_hash(L, EVP_blake2s256());
+}
+
+static int Lblake2b512(lua_State *L) {
+	return Levp_hash(L, EVP_blake2b512());
+}
+
+
 struct hash_desc {
 	int (*Init)(void *);
 	int (*Update)(void *, const void *, size_t);
@@ -189,6 +198,14 @@ static int Lhmac_md5(lua_State *L) {
 	return Levp_hmac(L, EVP_md5());
 }
 
+static int Lhmac_blake2s256(lua_State *L) {
+	return Levp_hmac(L, EVP_blake2s256());
+}
+
+static int Lhmac_blake2b512(lua_State *L) {
+	return Levp_hmac(L, EVP_blake2b512());
+}
+
 
 static int Levp_pbkdf2(lua_State *L, const EVP_MD *evp, size_t out_len) {
 	unsigned char out[EVP_MAX_MD_SIZE];
@@ -234,12 +251,16 @@ static const luaL_Reg Reg[] = {
 	{ "sha384",		Lsha384		},
 	{ "sha512",		Lsha512		},
 	{ "md5",		Lmd5		},
+	{ "blake2s256",		Lblake2s256	},
+	{ "blake2b512",		Lblake2b512	},
 	{ "hmac_sha1",		Lhmac_sha1	},
 	{ "hmac_sha224",	Lhmac_sha224	},
 	{ "hmac_sha256",	Lhmac_sha256	},
 	{ "hmac_sha384",	Lhmac_sha384	},
 	{ "hmac_sha512",	Lhmac_sha512	},
 	{ "hmac_md5",		Lhmac_md5	},
+	{ "hmac_blake2s256",	Lhmac_blake2s256	},
+	{ "hmac_blake2b512",	Lhmac_blake2b512	},
 	{ "scram_Hi_sha1",	Lpbkdf2_sha1	}, /* COMPAT */
 	{ "pbkdf2_hmac_sha1",	Lpbkdf2_sha1	},
 	{ "pbkdf2_hmac_sha256",	Lpbkdf2_sha256	},
