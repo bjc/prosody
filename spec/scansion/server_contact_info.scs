@@ -53,4 +53,29 @@ Romeo receives:
 		</query>
 	</iq>
 
+
+Romeo sends:
+	<iq type='get' id='lx2' to='conference.localhost'>
+		<query xmlns='http://jabber.org/protocol/disco#info'/>
+	</iq>
+
+	<iq from='localhost' id='lx2' type='result'>
+		<query xmlns='http://jabber.org/protocol/disco#info' scansion:strict='false'>
+			<x xmlns='jabber:x:data' type='result'>
+				<field type='hidden' var='FORM_TYPE'>
+					<value>http://jabber.org/network/serverinfo</value>
+				</field>
+				<field type='list-multi' var='abuse-addresses'/>
+				<field type='list-multi' var='admin-addresses'>
+					<value>xmpp:admin@localhost</value>
+				</field>
+				<field type='list-multi' var='feedback-addresses'/>
+				<field type='list-multi' var='sales-addresses'/>
+				<field type='list-multi' var='security-addresses'/>
+				<field type='list-multi' var='status-addresses'/>
+				<field type='list-multi' var='support-addresses'/>
+			</x>
+		</query>
+	</iq>
+
 Romeo disconnects

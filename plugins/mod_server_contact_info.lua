@@ -7,6 +7,7 @@
 --
 
 local array = require "util.array";
+local jid = require "util.jid";
 
 -- Source: http://xmpp.org/registrar/formtypes.html#http:--jabber.org-network-serverinfo
 local form_layout = require "util.dataforms".new({
@@ -24,7 +25,7 @@ local form_layout = require "util.dataforms".new({
 local admins = module:get_option_inherited_set("admins", {});
 
 local contact_config = module:get_option("contact_info", {
-	admin = array.collect( admins / function(admin) return "xmpp:" .. admin; end);
+	admin = array.collect( admins / jid.prep / function(admin) return "xmpp:" .. admin; end);
 });
 
 module:add_extension(form_layout:form(contact_config, "result"));

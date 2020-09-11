@@ -124,8 +124,10 @@ hide_os_type = true -- absence tested for in version.scs
 
 Component "conference.localhost" "muc"
 	storage = "memory"
+	admins = { "Admin@localhost" }
 	modules_enabled = {
 		"muc_mam";
+		"server_contact_info";
 	}
 
 
