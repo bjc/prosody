@@ -93,7 +93,9 @@ function moduleapi.http_url(module, app_name, default_path)
 			return url_build(url);
 		end
 	end
-	module:log("warn", "No http ports enabled, can't generate an external URL");
+	if prosody.process_type == "prosody" then
+		module:log("warn", "No http ports enabled, can't generate an external URL");
+	end
 	return "http://disabled.invalid/";
 end
 
@@ -190,7 +192,7 @@ function module.add_host(module)
 		local services = portmanager.get_active_services();
 		if services:get("https") or services:get("http") then
 			module:log("info", "Serving '%s' at %s", app_name, module:http_url(app_name, app_path));
-		else
+		elseif prosody.process_type == "prosody" then
 			module:log("warn", "Not listening on any ports, '%s' will be unreachable", app_name);
 		end
 	end
