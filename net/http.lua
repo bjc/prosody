@@ -331,4 +331,7 @@ return {
 	formencode = util_http.formencode;
 	formdecode = util_http.formdecode;
 	destroy_request = destroy_request;
+	features = {
+		sni = true;
+	};
 };
