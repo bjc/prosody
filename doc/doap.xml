@@ -491,6 +491,15 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0307.html"/>
+        <xmpp:version>0.1</xmpp:version>
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:since>0.6</xmpp:since>
+        <xmpp:note>Moved into mod_muc_unique in 0.11</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0313.html"/>
         <xmpp:version>0.6.3</xmpp:version>
         <xmpp:since>0.10</xmpp:since>
