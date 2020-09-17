@@ -18,6 +18,7 @@ local contains_token = require "util.http".contains_token;
 local portmanager = require "core.portmanager";
 local sm_destroy_session = require"core.sessionmanager".destroy_session;
 local log = module._log;
+local dbuffer = require "util.dbuffer";
 
 local websocket_frames = require"net.websocket.frames";
 local parse_frame = websocket_frames.parse;
@@ -27,6 +28,8 @@ local parse_close = websocket_frames.parse_close;
 
 local t_concat = table.concat;
 
+local stanza_size_limit = module:get_option_number("c2s_stanza_size_limit", 10 * 1024 * 1024);
+local frame_fragment_limit = module:get_option_number("websocket_frame_fragment_limit", 8);
 local stream_close_timeout = module:get_option_number("c2s_close_timeout", 5);
 local consider_websocket_secure = module:get_option_boolean("consider_websocket_secure");
 local cross_domain = module:get_option_set("cross_domain_websocket", {});
@@ -269,14 +272,16 @@ function handle_request(event)
 	session.open_stream = session_open_stream;
 	session.close = session_close;
 
-	local frameBuffer = "";
+	-- max frame header is 22 bytes
+	local frameBuffer = dbuffer.new(stanza_size_limit + 22, frame_fragment_limit);
 	add_filter(session, "bytes/in", function(data)
+		frameBuffer:write(data);
+
 		local cache = {};
-		frameBuffer = frameBuffer .. data;
 		local frame, length = parse_frame(frameBuffer);
 
 		while frame do
-			frameBuffer = frameBuffer:sub(length + 1);
+			frameBuffer:discard(length);
 			local result = handle_frame(frame);
 			if not result then return; end
 			cache[#cache+1] = filter_open_close(result);
