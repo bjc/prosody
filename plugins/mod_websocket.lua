@@ -29,6 +29,7 @@ local parse_close = websocket_frames.parse_close;
 local t_concat = table.concat;
 
 local stanza_size_limit = module:get_option_number("c2s_stanza_size_limit", 10 * 1024 * 1024);
+local frame_buffer_limit = module:get_option_number("websocket_frame_buffer_limit", 2 * stanza_size_limit);
 local frame_fragment_limit = module:get_option_number("websocket_frame_fragment_limit", 8);
 local stream_close_timeout = module:get_option_number("c2s_close_timeout", 5);
 local consider_websocket_secure = module:get_option_boolean("consider_websocket_secure");
@@ -272,8 +273,7 @@ function handle_request(event)
 	session.open_stream = session_open_stream;
 	session.close = session_close;
 
-	-- max frame header is 22 bytes
-	local frameBuffer = dbuffer.new(stanza_size_limit + 22, frame_fragment_limit);
+	local frameBuffer = dbuffer.new(frame_buffer_limit, frame_fragment_limit);
 	add_filter(session, "bytes/in", function(data)
 		if not frameBuffer:write(data) then
 			session.log("warn", "websocket frame buffer full - terminating session");
