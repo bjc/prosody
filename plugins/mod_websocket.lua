@@ -285,6 +285,10 @@ function handle_request(event)
 		local frame, length = parse_frame(frameBuffer);
 
 		while frame do
+			if length > stanza_size_limit then
+				session:close({ condition = "policy-violation", text = "stanza too large" });
+				return;
+			end
 			frameBuffer:discard(length);
 			local result = handle_frame(frame);
 			if not result then return; end
