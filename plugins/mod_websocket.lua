@@ -275,7 +275,11 @@ function handle_request(event)
 	-- max frame header is 22 bytes
 	local frameBuffer = dbuffer.new(stanza_size_limit + 22, frame_fragment_limit);
 	add_filter(session, "bytes/in", function(data)
-		frameBuffer:write(data);
+		if not frameBuffer:write(data) then
+			session.log("warn", "websocket frame buffer full - terminating session");
+			session:close({ condition = "resource-constraint", text = "frame buffer exceeded" });
+			return;
+		end
 
 		local cache = {};
 		local frame, length = parse_frame(frameBuffer);
