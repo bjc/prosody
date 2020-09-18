@@ -312,6 +312,15 @@ data_validators["xs:integer"] =
 		return true, n;
 	end
 
+data_validators["pubsub:integer-or-max"] =
+	function (data, field)
+		if data == "max" then
+			return true, data;
+		else
+			return data_validators["xs:integer"](data, field);
+		end
+	end
+
 
 local function get_form_type(form)
 	if not st.is_stanza(form) then
