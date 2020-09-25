@@ -36,7 +36,7 @@ end
 
 local function new(e, context, registry, source)
 	local template = (registry and registry[e]) or e or {};
-	context = context or template.context or { _error_id = e };
+	context = context or {};
 
 	if auto_inject_traceback then
 		context.traceback = debug.traceback("error stack", 2);
