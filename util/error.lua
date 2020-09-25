@@ -70,12 +70,10 @@ local function coerce(ok, err, ...)
 		return ok, err, ...;
 	end
 
-	local new_err = setmetatable({
-		native = err;
+	local new_err = new({
+		type = "cancel", condition = "undefined-condition"
+	}, { wrapped_error = err });
 
-		type = "cancel";
-		condition = "undefined-condition";
-	}, error_mt);
 	return ok, new_err, ...;
 end
 
