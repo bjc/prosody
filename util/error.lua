@@ -1,3 +1,4 @@
+local id = require "util.id";
 
 -- Library configuration (see configure())
 local auto_inject_traceback = false;
@@ -42,6 +43,7 @@ local function new(e, context, registry, source)
 	end
 
 	return setmetatable({
+		instance_id = id.short();
 		type = template.type or "cancel";
 		condition = template.condition or "undefined-condition";
 		text = template.text;
