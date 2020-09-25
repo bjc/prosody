@@ -58,9 +58,11 @@ local function new(e, context, registry, source)
 end
 
 local function init(source, registry)
-	return function (e, context)
-		return new(e, context, registry, source);
-	end
+	return {
+		new = function (e, context)
+			return new(e, context, registry, source);
+		end;
+	};
 end
 
 local function coerce(ok, err, ...)
