@@ -42,16 +42,19 @@ local function new(e, context, registry, source)
 		context.traceback = debug.traceback("error stack", 2);
 	end
 
-	return setmetatable({
+	local error_instance = setmetatable({
 		instance_id = id.short();
+
 		type = template.type or "cancel";
 		condition = template.condition or "undefined-condition";
 		text = template.text;
 		code = template.code;
 
-		context = context or template.context or { _error_id = e };
+		context = context;
 		source = source;
 	}, error_mt);
+
+	return error_instance;
 end
 
 local function init(source, registry)
