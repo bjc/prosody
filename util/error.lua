@@ -35,7 +35,19 @@ end
 -- What to set `type` to for stream errors or SASL errors? Those don't have a 'type' attr.
 
 local function new(e, context, registry, source)
-	local template = (registry and registry[e]) or e or {};
+	local template = registry and registry[e];
+	if not template then
+		if type(e) == "table" then
+			template = {
+				code = e.code;
+				type = e.type;
+				condition = e.condition;
+				text = e.text;
+			};
+		else
+			template = {};
+		end
+	end
 	context = context or {};
 
 	if auto_inject_traceback then
