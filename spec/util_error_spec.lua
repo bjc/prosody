@@ -66,5 +66,13 @@ describe("util.error", function ()
 		end);
 	end);
 
+	describe("extra", function ()
+		it("keeps some extra fields", function ()
+			local err = errors.new({condition="gone",text="Sorry mate, it's all gone",extra={uri="file:///dev/null"}});
+			assert.is_table(err.extra);
+			assert.equal("file:///dev/null", err.extra.uri);
+		end);
+	end)
+
 end);
 

@@ -43,6 +43,7 @@ local function new(e, context, registry, source)
 				type = e.type;
 				condition = e.condition;
 				text = e.text;
+				extra = e.extra;
 			};
 		else
 			template = {};
@@ -61,6 +62,7 @@ local function new(e, context, registry, source)
 		condition = template.condition or "undefined-condition";
 		text = template.text;
 		code = template.code;
+		extra = template.extra;
 
 		context = context;
 		source = source;
