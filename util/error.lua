@@ -93,12 +93,17 @@ end
 
 local function from_stanza(stanza, context)
 	local error_type, condition, text = stanza:get_error();
+	local error_tag = stanza:get_child("error");
+	context = context or {};
+	context.stanza = stanza;
+	context.by = error_tag.attr.by;
 	return setmetatable({
 		type = error_type or "cancel";
 		condition = condition or "undefined-condition";
 		text = text;
 
-		context = context or { stanza = stanza };
+		context = context;
+
 	}, error_mt);
 end
 

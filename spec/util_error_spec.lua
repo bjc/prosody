@@ -48,12 +48,13 @@ describe("util.error", function ()
 		it("works", function ()
 			local st = require "util.stanza";
 			local m = st.message({ type = "chat" });
-			local e = st.error_reply(m, "modify", "bad-request");
+			local e = st.error_reply(m, "modify", "bad-request", nil, "error.example");
 			local err = errors.from_stanza(e);
 			assert.truthy(errors.is_err(err));
 			assert.equal("modify", err.type);
 			assert.equal("bad-request", err.condition);
 			assert.equal(e, err.context.stanza);
+			assert.equal("error.example", err.context.by);
 		end);
 	end);
 
