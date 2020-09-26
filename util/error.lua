@@ -102,6 +102,9 @@ local function from_stanza(stanza, context)
 		type = error_type or "cancel";
 		condition = condition or "undefined-condition";
 		text = text;
+		extra = condition == "gone" and {
+			uri = error_tag:get_child_text("gone", "urn:ietf:params:xml:ns:xmpp-stanzas");
+		} or nil;
 
 		context = context;
 
