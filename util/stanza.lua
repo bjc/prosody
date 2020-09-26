@@ -456,6 +456,9 @@ local function error_reply(orig, error_type, condition, error_message, error_by)
 	local t = reply(orig);
 	t.attr.type = "error";
 	if type(error_type) == "table" then -- an util.error or similar object
+		if type(error_type.extra) == "table" then
+			if type(error_type.extra.by) == "string" then error_by = error_type.extra.by; end
+		end
 		error_type, condition, error_message = error_type.type, error_type.condition, error_type.text;
 	end
 	if t.attr.from == error_by then
