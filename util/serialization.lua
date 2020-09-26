@@ -150,6 +150,10 @@ local function new(opt)
 
 				if type(fr) == "function" then
 					t = fr(t);
+					if type(t) == "string" then
+						o[l], l = t, l + 1;
+						return l;
+					end
 					if type(tag) == "string" then
 						o[l], l = tag, l + 1;
 					end
