@@ -455,9 +455,11 @@ local function error_reply(orig, error_type, condition, error_message, error_by)
 	end
 	local t = reply(orig);
 	t.attr.type = "error";
+	local extra;
 	if type(error_type) == "table" then -- an util.error or similar object
 		if type(error_type.extra) == "table" then
-			if type(error_type.extra.by) == "string" then error_by = error_type.extra.by; end
+			extra = error_type.extra;
+			if type(extra.by) == "string" then error_by = extra.by; end
 		end
 		error_type, condition, error_message = error_type.type, error_type.condition, error_type.text;
 	end
@@ -465,7 +467,11 @@ local function error_reply(orig, error_type, condition, error_message, error_by)
 		error_by = nil;
 	end
 	t:tag("error", {type = error_type, by = error_by}) --COMPAT: Some day xmlns:stanzas goes here
-	:tag(condition, xmpp_stanzas_attr):up();
+	:tag(condition, xmpp_stanzas_attr);
+	if extra and condition == "gone" and type(extra.uri) == "string" then
+		t:text(extra.uri);
+	end
+	t:up();
 	if error_message then t:text_tag("text", error_message, xmpp_stanzas_attr); end
 	return t; -- stanza ready for adding app-specific errors
 end

@@ -247,6 +247,11 @@ describe("util.stanza", function()
 			assert.are.equal(r.tags[1].tags[1].name, e.condition);
 			assert.are.equal(r.tags[1].tags[2]:get_text(), e.text);
 			assert.are.equal("this.test", r.tags[1].attr.by);
+
+			local gone = errors.new({ condition = "gone", extra = { uri = "file:///dev/null" } })
+			local gonner = st.error_reply(s, gone);
+			assert.are.equal("gone", gonner.tags[1].tags[1].name);
+			assert.are.equal("file:///dev/null", gonner.tags[1].tags[1][1]);
 		end);
 
 	end);
