@@ -232,6 +232,7 @@ describe("util.stanza", function()
 			end, "got stanza of type error");
 		end);
 
+		describe("util.error integration", function ()
 		it("should accept util.error objects", function ()
 			local s = st.message({ to = "touser", from = "fromuser", id = "123", type = "chat" }, "Hello");
 			local e = errors.new({ type = "modify", condition = "not-acceptable", text = "Bork bork bork" }, { by = "this.test" });
@@ -247,12 +248,18 @@ describe("util.stanza", function()
 			assert.are.equal(r.tags[1].tags[1].name, e.condition);
 			assert.are.equal(r.tags[1].tags[2]:get_text(), e.text);
 			assert.are.equal("this.test", r.tags[1].attr.by);
+		end);
 
+		it("should accept util.error objects with an URI", function ()
+			local s = st.message({ to = "touser", from = "fromuser", id = "123", type = "chat" }, "Hello");
 			local gone = errors.new({ condition = "gone", extra = { uri = "file:///dev/null" } })
 			local gonner = st.error_reply(s, gone);
 			assert.are.equal("gone", gonner.tags[1].tags[1].name);
 			assert.are.equal("file:///dev/null", gonner.tags[1].tags[1][1]);
+		end);
 
+		it("should accept util.error objects with application specific error", function ()
+			local s = st.message({ to = "touser", from = "fromuser", id = "123", type = "chat" }, "Hello");
 			local e = errors.new({ condition = "internal-server-error", text = "Namespaced thing happened",
 				extra = {namespace="xmpp:example.test", condition="this-happened"} })
 			local r = st.error_reply(s, e);
@@ -265,6 +272,7 @@ describe("util.stanza", function()
 			assert.are.equal("xmpp:example.test", r2.tags[1].tags[3].attr.xmlns);
 			assert.are.equal("that-happened", r2.tags[1].tags[3].name);
 			assert.are.equal("here", r2.tags[1].tags[3].attr["another-attribute"]);
+		end);
 		end);
 	end);
 
