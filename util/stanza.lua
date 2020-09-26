@@ -455,11 +455,11 @@ local function error_reply(orig, error_type, condition, error_message, error_by)
 	end
 	local t = reply(orig);
 	t.attr.type = "error";
-	if t.attr.from == error_by then
-		error_by = nil;
-	end
 	if type(error_type) == "table" then -- an util.error or similar object
 		error_type, condition, error_message = error_type.type, error_type.condition, error_type.text;
+	end
+	if t.attr.from == error_by then
+		error_by = nil;
 	end
 	t:tag("error", {type = error_type, by = error_by}) --COMPAT: Some day xmlns:stanzas goes here
 	:tag(condition, xmpp_stanzas_attr):up();
