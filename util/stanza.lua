@@ -473,6 +473,11 @@ local function error_reply(orig, error_type, condition, error_message, error_by)
 	end
 	t:up();
 	if error_message then t:text_tag("text", error_message, xmpp_stanzas_attr); end
+	if extra and is_stanza(extra.tag) then
+		t:add_child(extra.tag);
+	elseif extra and extra.namespace and extra.condition then
+		t:tag(extra.condition, { xmlns = extra.namespace }):up();
+	end
 	return t; -- stanza ready for adding app-specific errors
 end
 

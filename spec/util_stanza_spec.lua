@@ -252,8 +252,20 @@ describe("util.stanza", function()
 			local gonner = st.error_reply(s, gone);
 			assert.are.equal("gone", gonner.tags[1].tags[1].name);
 			assert.are.equal("file:///dev/null", gonner.tags[1].tags[1][1]);
-		end);
 
+			local e = errors.new({ condition = "internal-server-error", text = "Namespaced thing happened",
+				extra = {namespace="xmpp:example.test", condition="this-happened"} })
+			local r = st.error_reply(s, e);
+			assert.are.equal("xmpp:example.test", r.tags[1].tags[3].attr.xmlns);
+			assert.are.equal("this-happened", r.tags[1].tags[3].name);
+
+			local e2 = errors.new({ condition = "internal-server-error", text = "Namespaced thing happened",
+				extra = {tag=st.stanza("that-happened", { xmlns = "xmpp:example.test", ["another-attribute"] = "here" })} })
+			local r2 = st.error_reply(s, e2);
+			assert.are.equal("xmpp:example.test", r2.tags[1].tags[3].attr.xmlns);
+			assert.are.equal("that-happened", r2.tags[1].tags[3].name);
+			assert.are.equal("here", r2.tags[1].tags[3].attr["another-attribute"]);
+		end);
 	end);
 
 	describe("should reject #invalid", function ()
