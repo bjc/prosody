@@ -48,13 +48,14 @@ describe("util.error", function ()
 		it("works", function ()
 			local st = require "util.stanza";
 			local m = st.message({ type = "chat" });
-			local e = st.error_reply(m, "modify", "bad-request", nil, "error.example");
+			local e = st.error_reply(m, "modify", "bad-request", nil, "error.example"):tag("extra", { xmlns = "xmpp:example.test" });
 			local err = errors.from_stanza(e);
 			assert.truthy(errors.is_err(err));
 			assert.equal("modify", err.type);
 			assert.equal("bad-request", err.condition);
 			assert.equal(e, err.context.stanza);
 			assert.equal("error.example", err.context.by);
+			assert.not_nil(err.extra.tag);
 		end);
 	end);
 

@@ -92,7 +92,7 @@ local function coerce(ok, err, ...)
 end
 
 local function from_stanza(stanza, context)
-	local error_type, condition, text = stanza:get_error();
+	local error_type, condition, text, extra_tag = stanza:get_error();
 	local error_tag = stanza:get_child("error");
 	context = context or {};
 	context.stanza = stanza;
@@ -102,8 +102,9 @@ local function from_stanza(stanza, context)
 		type = error_type or "cancel";
 		condition = condition or "undefined-condition";
 		text = text;
-		extra = condition == "gone" and {
+		extra = (extra_tag or condition == "gone") and {
 			uri = error_tag:get_child_text("gone", "urn:ietf:params:xml:ns:xmpp-stanzas");
+			tag = extra_tag;
 		} or nil;
 
 		context = context;
