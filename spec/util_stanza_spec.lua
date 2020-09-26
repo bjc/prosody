@@ -234,7 +234,7 @@ describe("util.stanza", function()
 
 		it("should accept util.error objects", function ()
 			local s = st.message({ to = "touser", from = "fromuser", id = "123", type = "chat" }, "Hello");
-			local e = errors.new({ type = "modify", condition = "not-acceptable", text = "Bork bork bork" });
+			local e = errors.new({ type = "modify", condition = "not-acceptable", text = "Bork bork bork", extra = { by = "this.test" } });
 			local r = st.error_reply(s, e);
 
 			assert.are.equal(r.name, s.name);
@@ -246,6 +246,7 @@ describe("util.stanza", function()
 			assert.are.equal(r.tags[1].attr.type, e.type);
 			assert.are.equal(r.tags[1].tags[1].name, e.condition);
 			assert.are.equal(r.tags[1].tags[2]:get_text(), e.text);
+			assert.are.equal("this.test", r.tags[1].attr.by);
 		end);
 
 	end);
