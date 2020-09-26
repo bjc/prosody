@@ -349,11 +349,11 @@ function stanza_mt.get_text(t)
 end
 
 function stanza_mt.get_error(stanza)
-	local error_type, condition, text;
+	local error_type, condition, text, extra_tag;
 
 	local error_tag = stanza:get_child("error");
 	if not error_tag then
-		return nil, nil, nil;
+		return nil, nil, nil, nil;
 	end
 	error_type = error_tag.attr.type;
 
@@ -364,12 +364,14 @@ function stanza_mt.get_error(stanza)
 			elseif not condition then
 				condition = child.name;
 			end
-			if condition and text then
-				break;
-			end
+		else
+			extra_tag = child;
+		end
+		if condition and text and extra_tag then
+			break;
 		end
 	end
-	return error_type, condition or "undefined-condition", text;
+	return error_type, condition or "undefined-condition", text, extra_tag;
 end
 
 local function preserialize(stanza)
