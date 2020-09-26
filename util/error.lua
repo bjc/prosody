@@ -96,7 +96,8 @@ local function from_stanza(stanza, context)
 	local error_tag = stanza:get_child("error");
 	context = context or {};
 	context.stanza = stanza;
-	context.by = error_tag.attr.by;
+	context.by = error_tag.attr.by or stanza.attr.from;
+
 	return setmetatable({
 		type = error_type or "cancel";
 		condition = condition or "undefined-condition";
