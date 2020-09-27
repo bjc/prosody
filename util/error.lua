@@ -98,12 +98,17 @@ local function from_stanza(stanza, context, source)
 	context.stanza = stanza;
 	context.by = error_tag.attr.by or stanza.attr.from;
 
+	local uri;
+	if condition == "gone" or condition == "redirect" then
+		uri = error_tag:get_child_text(condition, "urn:ietf:params:xml:ns:xmpp-stanzas");
+	end
+
 	return new({
 		type = error_type or "cancel";
 		condition = condition or "undefined-condition";
 		text = text;
-		extra = (extra_tag or condition == "gone") and {
-			uri = error_tag:get_child_text("gone", "urn:ietf:params:xml:ns:xmpp-stanzas");
+		extra = (extra_tag or uri) and {
+			uri = uri;
 			tag = extra_tag;
 		} or nil;
 	}, context, nil, source);
