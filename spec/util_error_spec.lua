@@ -94,6 +94,27 @@ describe("util.error", function ()
 			assert.equal("not-authorized", nope.condition);
 			assert.equal("Can't let you do that Dave", nope.text);
 		end);
+
+		it("compact mode works", function()
+			local reg = errors.init("test", {
+				namespace = "spec";
+				broke = {"cancel"; "internal-server-error"; "It broke :("};
+				nope = {"auth"; "not-authorized"; "Can't let you do that Dave"; "sorry-dave"};
+			});
+
+			local broke = reg.new("broke");
+			assert.equal("cancel", broke.type);
+			assert.equal("internal-server-error", broke.condition);
+			assert.equal("It broke :(", broke.text);
+			assert.is_nil(broke.extra);
+
+			local nope = reg.new("nope");
+			assert.equal("auth", nope.type);
+			assert.equal("not-authorized", nope.condition);
+			assert.equal("Can't let you do that Dave", nope.text);
+			assert.equal("spec", nope.extra.namespace);
+			assert.equal("sorry-dave", nope.extra.condition);
+		end);
 	end);
 
 end);
