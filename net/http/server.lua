@@ -197,6 +197,7 @@ local function handle_result(request, response, result)
 		result:next(function (ret)
 			handle_result(request, response, ret);
 		end, function (err)
+			response.status_code = 500;
 			handle_result(request, response, err or 500);
 		end);
 		return true;
