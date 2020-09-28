@@ -58,14 +58,11 @@ local function new(e, context, registry, source)
 	local error_instance = setmetatable({
 		instance_id = id.short();
 
-		type = template.type or template[1] or "cancel";
-		condition = template.condition or template[2] or "undefined-condition";
-		text = template.text or template[3];
+		type = template.type or "cancel";
+		condition = template.condition or "undefined-condition";
+		text = template.text;
 		code = template.code;
-		extra = template.extra or (registry and registry.namespace and template[4] and {
-				namespace = registry.namespace;
-				condition = template[4]
-			});
+		extra = template.extra;
 
 		context = context;
 		source = source;
@@ -74,7 +71,36 @@ local function new(e, context, registry, source)
 	return error_instance;
 end
 
-local function init(source, registry)
+-- compact --> normal form
+local function expand_registry(namespace, registry)
+	local mapped = {}
+	for err,template in pairs(registry) do
+		local e = {
+			type = template[1];
+			condition = template[2];
+			text = template[3];
+		};
+		if namespace and template[4] then
+			e.extra = { namespace = namespace, condition = template[4] };
+		end
+		mapped[err] = e;
+	end
+	return mapped;
+end
+
+local function init(source, namespace, registry)
+	if type(namespace) == "table" then
+		-- registry can be given as second argument if namespace is either not used
+		registry, namespace = namespace, nil;
+		if type(registry.namespace) == "string" then
+			-- error templates are always type table, so this can't be one
+			namespace, registry.namespace = registry.namespace, nil;
+		end
+	end
+	local _, protoerr = next(registry, nil);
+	if protoerr and type(next(protoerr)) == "number" then
+		registry = expand_registry(namespace, registry);
+	end
 	return {
 		source = source;
 		registry = registry;
