@@ -73,6 +73,8 @@ end
 
 local function init(source, registry)
 	return {
+		source = source;
+		registry = registry;
 		new = function (e, context)
 			return new(e, context, registry, source);
 		end;
