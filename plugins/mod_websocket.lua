@@ -291,7 +291,7 @@ function handle_request(event)
 			end
 			frameBuffer:discard(length);
 			local result = handle_frame(frame);
-			if not result then return; end
+			if not result then break; end
 			cache[#cache+1] = filter_open_close(result);
 			frame, length = parse_frame(frameBuffer);
 		end
