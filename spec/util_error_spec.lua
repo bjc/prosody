@@ -76,5 +76,25 @@ describe("util.error", function ()
 		end);
 	end)
 
+	describe("init", function()
+		it("basics works", function()
+			local reg = errors.init("test", {
+				broke = {type = "cancel"; condition = "internal-server-error"; text = "It broke :("};
+				nope = {type = "auth"; condition = "not-authorized"; text = "Can't let you do that Dave"};
+			});
+
+			local broke = reg.new("broke");
+			assert.equal("cancel", broke.type);
+			assert.equal("internal-server-error", broke.condition);
+			assert.equal("It broke :(", broke.text);
+			assert.equal("test", broke.source);
+
+			local nope = reg.new("nope");
+			assert.equal("auth", nope.type);
+			assert.equal("not-authorized", nope.condition);
+			assert.equal("Can't let you do that Dave", nope.text);
+		end);
+	end);
+
 end);
 
