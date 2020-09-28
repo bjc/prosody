@@ -58,11 +58,14 @@ local function new(e, context, registry, source)
 	local error_instance = setmetatable({
 		instance_id = id.short();
 
-		type = template.type or "cancel";
-		condition = template.condition or "undefined-condition";
-		text = template.text;
+		type = template.type or template[1] or "cancel";
+		condition = template.condition or template[2] or "undefined-condition";
+		text = template.text or template[3];
 		code = template.code;
-		extra = template.extra;
+		extra = template.extra or (registry and registry.namespace and template[4] and {
+				namespace = registry.namespace;
+				condition = template[4]
+			});
 
 		context = context;
 		source = source;
