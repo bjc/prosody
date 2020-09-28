@@ -115,6 +115,38 @@ describe("util.error", function ()
 			assert.equal("spec", nope.extra.namespace);
 			assert.equal("sorry-dave", nope.extra.condition);
 		end);
+
+		it("registry looks the same regardless of syntax", function()
+			local normal = errors.init("test", {
+				broke = {type = "cancel"; condition = "internal-server-error"; text = "It broke :("};
+				nope = {
+					type = "auth";
+					condition = "not-authorized";
+					text = "Can't let you do that Dave";
+					extra = {namespace = "spec"; condition = "sorry-dave"};
+				};
+			});
+			local compact1 = errors.init("test", {
+				namespace = "spec";
+				broke = {"cancel"; "internal-server-error"; "It broke :("};
+				nope = {"auth"; "not-authorized"; "Can't let you do that Dave"; "sorry-dave"};
+			});
+			local compact2 = errors.init("test", "spec", {
+				broke = {"cancel"; "internal-server-error"; "It broke :("};
+				nope = {"auth"; "not-authorized"; "Can't let you do that Dave"; "sorry-dave"};
+			});
+			local compact3 = errors.init("test", {
+				broke = {"cancel"; "internal-server-error"; "It broke :("};
+				nope = {"auth"; "not-authorized"; "Can't let you do that Dave"};
+			});
+			assert.same(normal.registry, compact1.registry);
+			assert.same(normal.registry, compact2.registry);
+
+			assert.same({
+				broke = {type = "cancel"; condition = "internal-server-error"; text = "It broke :("};
+				nope = {type = "auth"; condition = "not-authorized"; text = "Can't let you do that Dave"};
+			}, compact3.registry);
+		end);
 	end);
 
 end);
