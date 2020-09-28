@@ -92,10 +92,6 @@ local function init(source, namespace, registry)
 	if type(namespace) == "table" then
 		-- registry can be given as second argument if namespace is either not used
 		registry, namespace = namespace, nil;
-		if type(registry.namespace) == "string" then
-			-- error templates are always type table, so this can't be one
-			namespace, registry.namespace = registry.namespace, nil;
-		end
 	end
 	local _, protoerr = next(registry, nil);
 	if protoerr and type(next(protoerr)) == "number" then
