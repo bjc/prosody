@@ -18,6 +18,7 @@ local contains_token = require "util.http".contains_token;
 local portmanager = require "core.portmanager";
 local sm_destroy_session = require"core.sessionmanager".destroy_session;
 local log = module._log;
+local dbuffer = require "util.dbuffer";
 
 local websocket_frames = require"net.websocket.frames";
 local parse_frame = websocket_frames.parse;
@@ -27,6 +28,9 @@ local parse_close = websocket_frames.parse_close;
 
 local t_concat = table.concat;
 
+local stanza_size_limit = module:get_option_number("c2s_stanza_size_limit", 10 * 1024 * 1024);
+local frame_buffer_limit = module:get_option_number("websocket_frame_buffer_limit", 2 * stanza_size_limit);
+local frame_fragment_limit = module:get_option_number("websocket_frame_fragment_limit", 8);
 local stream_close_timeout = module:get_option_number("c2s_close_timeout", 5);
 local consider_websocket_secure = module:get_option_boolean("consider_websocket_secure");
 local cross_domain = module:get_option("cross_domain_websocket");
@@ -136,6 +140,64 @@ local default_get_response_body = [[<!DOCTYPE html><html><head><title>Websocket<
 </body></html>]]
 local websocket_get_response_body = module:get_option_string("websocket_get_response_body", default_get_response_body)
 
+local function validate_frame(frame, max_length)
+	local opcode, length = frame.opcode, frame.length;
+
+	if max_length and length > max_length then
+		return false, 1009, "Payload too large";
+	end
+
+	-- Error cases
+	if frame.RSV1 or frame.RSV2 or frame.RSV3 then -- Reserved bits non zero
+		return false, 1002, "Reserved bits not zero";
+	end
+
+	if opcode == 0x8 and frame.data then -- close frame
+		if length == 1 then
+			return false, 1002, "Close frame with payload, but too short for status code";
+		elseif length >= 2 then
+			local status_code = parse_close(frame.data)
+			if status_code < 1000 then
+				return false, 1002, "Closed with invalid status code";
+			elseif ((status_code > 1003 and status_code < 1007) or status_code > 1011) and status_code < 3000 then
+				return false, 1002, "Closed with reserved status code";
+			end
+		end
+	end
+
+	if opcode >= 0x8 then
+		if length > 125 then -- Control frame with too much payload
+			return false, 1002, "Payload too large";
+		end
+
+		if not frame.FIN then -- Fragmented control frame
+			return false, 1002, "Fragmented control frame";
+		end
+	end
+
+	if (opcode > 0x2 and opcode < 0x8) or (opcode > 0xA) then
+		return false, 1002, "Reserved opcode";
+	end
+
+	-- Check opcode
+	if opcode == 0x2 then -- Binary frame
+		return false, 1003, "Only text frames are supported, RFC 7395 3.2";
+	elseif opcode == 0x8 then -- Close request
+		return false, 1000, "Goodbye";
+	end
+
+	-- Other (XMPP-specific) validity checks
+	if not frame.FIN then
+		return false, 1003, "Continuation frames are not supported, RFC 7395 3.3.3";
+	end
+	if opcode == 0x01 and frame.data and frame.data:byte(1, 1) ~= 60 then
+		return false, 1007, "Invalid payload start character, RFC 7395 3.3.3";
+	end
+
+	return true;
+end
+
+
 function handle_request(event)
 	local request, response = event.request, event.response;
 	local conn = response.conn;
@@ -159,90 +221,40 @@ function handle_request(event)
 		conn:close();
 	end
 
-	local dataBuffer;
+	local function websocket_handle_error(session, code, message)
+		if code == 1009 then -- stanza size limit exceeded
+			-- we close the session, rather than the connection,
+			-- otherwise a resuming client will simply resend the
+			-- offending stanza
+			session:close({ condition = "policy-violation", text = "stanza too large" });
+		else
+			websocket_close(code, message);
+		end
+	end
+
 	local function handle_frame(frame)
-		local opcode = frame.opcode;
-		local length = frame.length;
 		module:log("debug", "Websocket received frame: opcode=%0x, %i bytes", frame.opcode, #frame.data);
 
-		-- Error cases
-		if frame.RSV1 or frame.RSV2 or frame.RSV3 then -- Reserved bits non zero
-			websocket_close(1002, "Reserved bits not zero");
-			return false;
+		-- Check frame makes sense
+		local frame_ok, err_status, err_text = validate_frame(frame, stanza_size_limit);
+		if not frame_ok then
+			return frame_ok, err_status, err_text;
 		end
 
-		if opcode == 0x8 then -- close frame
-			if length == 1 then
-				websocket_close(1002, "Close frame with payload, but too short for status code");
-				return false;
-			elseif length >= 2 then
-				local status_code = parse_close(frame.data)
-				if status_code < 1000 then
-					websocket_close(1002, "Closed with invalid status code");
-					return false;
-				elseif ((status_code > 1003 and status_code < 1007) or status_code > 1011) and status_code < 3000 then
-					websocket_close(1002, "Closed with reserved status code");
-					return false;
-				end
-			end
-		end
-
-		if opcode >= 0x8 then
-			if length > 125 then -- Control frame with too much payload
-				websocket_close(1002, "Payload too large");
-				return false;
-			end
-
-			if not frame.FIN then -- Fragmented control frame
-				websocket_close(1002, "Fragmented control frame");
-				return false;
-			end
-		end
-
-		if (opcode > 0x2 and opcode < 0x8) or (opcode > 0xA) then
-			websocket_close(1002, "Reserved opcode");
-			return false;
-		end
-
-		if opcode == 0x0 and not dataBuffer then
-			websocket_close(1002, "Unexpected continuation frame");
-			return false;
-		end
-
-		if (opcode == 0x1 or opcode == 0x2) and dataBuffer then
-			websocket_close(1002, "Continuation frame expected");
-			return false;
-		end
-
-		-- Valid cases
-		if opcode == 0x0 then -- Continuation frame
-			dataBuffer[#dataBuffer+1] = frame.data;
-		elseif opcode == 0x1 then -- Text frame
-			dataBuffer = {frame.data};
-		elseif opcode == 0x2 then -- Binary frame
-			websocket_close(1003, "Only text frames are supported");
-			return;
-		elseif opcode == 0x8 then -- Close request
-			websocket_close(1000, "Goodbye");
-			return;
-		elseif opcode == 0x9 then -- Ping frame
+		local opcode = frame.opcode;
+		if opcode == 0x9 then -- Ping frame
 			frame.opcode = 0xA;
 			frame.MASK = false; -- Clients send masked frames, servers don't, see #1484
 			conn:write(build_frame(frame));
 			return "";
 		elseif opcode == 0xA then -- Pong frame, MAY be sent unsolicited, eg as keepalive
 			return "";
-		else
+		elseif opcode ~= 0x1 then -- Not text frame (which is all we support)
 			log("warn", "Received frame with unsupported opcode %i", opcode);
 			return "";
 		end
 
-		if frame.FIN then
-			local data = t_concat(dataBuffer, "");
-			dataBuffer = nil;
-			return data;
-		end
-		return "";
+		return frame.data;
 	end
 
 	conn:setlistener(c2s_listener);
@@ -260,19 +272,37 @@ function handle_request(event)
 	session.open_stream = session_open_stream;
 	session.close = session_close;
 
-	local frameBuffer = "";
+	local frameBuffer = dbuffer.new(frame_buffer_limit, frame_fragment_limit);
 	add_filter(session, "bytes/in", function(data)
+		if not frameBuffer:write(data) then
+			session.log("warn", "websocket frame buffer full - terminating session");
+			session:close({ condition = "resource-constraint", text = "frame buffer exceeded" });
+			return;
+		end
+
 		local cache = {};
-		frameBuffer = frameBuffer .. data;
-		local frame, length = parse_frame(frameBuffer);
+		local frame, length, partial = parse_frame(frameBuffer);
 
 		while frame do
-			frameBuffer = frameBuffer:sub(length + 1);
-			local result = handle_frame(frame);
-			if not result then return; end
+			frameBuffer:discard(length);
+			local result, err_status, err_text = handle_frame(frame);
+			if not result then
+				websocket_handle_error(session, err_status, err_text);
+				break;
+			end
 			cache[#cache+1] = filter_open_close(result);
-			frame, length = parse_frame(frameBuffer);
+			frame, length, partial = parse_frame(frameBuffer);
 		end
+
+		if partial then
+			-- The header of the next frame is already in the buffer, run
+			-- some early validation here
+			local frame_ok, err_status, err_text = validate_frame(partial, stanza_size_limit);
+			if not frame_ok then
+				websocket_handle_error(session, err_status, err_text);
+			end
+		end
+
 		return t_concat(cache, "");
 	end);
 
