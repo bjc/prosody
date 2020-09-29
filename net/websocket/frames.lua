@@ -141,7 +141,7 @@ end
 
 local function parse_frame(frame)
 	local result, pos = parse_frame_header(frame);
-	if result == nil or #frame < (pos + result.length) then return; end
+	if result == nil or #frame < (pos + result.length) then return nil, nil, result; end
 	result.data = parse_frame_body(frame, result, pos+1);
 	return result, pos + result.length;
 end
