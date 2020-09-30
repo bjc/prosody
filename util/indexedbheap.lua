@@ -23,7 +23,7 @@ local function _percolate_up(self, k, sync, index)
 	local tmp_sync = sync[k];
 	while k ~= 1 do
 		local parent = math_floor(k/2);
-		if tmp < self[parent] then break; end
+		if tmp >= self[parent] then break; end
 		self[k] = self[parent];
 		sync[k] = sync[parent];
 		index[sync[k]] = k;
