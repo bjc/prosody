@@ -1,0 +1,45 @@
+# XEP-0012: Last Activity / mod_lastactivity
+
+[Client] Romeo
+	jid: romeo@localhost
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<presence>
+		<status>Hello</status>
+	</presence>
+
+Romeo receives:
+	<presence from="${Romeo's full JID}">
+		<status>Hello</status>
+	</presence>
+
+Romeo sends:
+	<presence type="unavailable">
+		<status>Goodbye</status>
+	</presence>
+
+Romeo receives:
+	<presence from="${Romeo's full JID}" type="unavailable">
+		<status>Goodbye</status>
+	</presence>
+
+# mod_lastlog saves time + status message from the last unavailable presence
+
+Romeo sends:
+	<iq id='a' type='get'>
+		<query xmlns='jabber:iq:last'/>
+	</iq>
+
+Romeo receives:
+	<iq type='result' id='a'>
+		<query xmlns='jabber:iq:last' seconds='0'>Goodbye</query>
+	</iq>
+
+Romeo disconnects
+
+# recording ended on 2020-04-20T14:39:47Z

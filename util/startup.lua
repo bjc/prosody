@@ -5,8 +5,10 @@ local startup = {};
 local prosody = { events = require "util.events".new() };
 local logger = require "util.logger";
 local log = logger.init("startup");
+local parse_args = require "util.argparse".parse;
 
 local config = require "core.configmanager";
+local config_warnings;
 
 local dependencies = require "util.dependencies";
 
@@ -18,55 +20,20 @@ local short_params = { D = "daemonize", F = "no-daemonize" };
 local value_params = { config = true };
 
 function startup.parse_args()
-	local parsed_opts = {};
-	prosody.opts = parsed_opts;
-
-	if #arg == 0 then
-		return;
-	end
-	while true do
-		local raw_param = arg[1];
-		if not raw_param then
-			break;
-		end
-
-		local prefix = raw_param:match("^%-%-?");
-		if not prefix then
-			break;
-		elseif prefix == "--" and raw_param == "--" then
-			table.remove(arg, 1);
-			break;
-		end
-		local param = table.remove(arg, 1):sub(#prefix+1);
-		if #param == 1 then
-			param = short_params[param];
-		end
-
-		if not param then
-			print("Unknown command-line option: "..tostring(param));
+	local opts, err, where = parse_args(arg, {
+			short_params = short_params,
+			value_params = value_params,
+		});
+	if not opts then
+		if err == "param-not-found" then
+			print("Unknown command-line option: "..tostring(where));
 			print("Perhaps you meant to use prosodyctl instead?");
-			os.exit(1);
+		elseif err == "missing-value" then
+			print("Expected a value to follow command-line option: "..where);
 		end
-
-		local param_k, param_v;
-		if value_params[param] then
-			param_k, param_v = param, table.remove(arg, 1);
-			if not param_v then
-				print("Expected a value to follow command-line option: "..raw_param);
-				os.exit(1);
-			end
-		else
-			param_k, param_v = param:match("^([^=]+)=(.+)$");
-			if not param_k then
-				if param:match("^no%-") then
-					param_k, param_v = param:sub(4), false;
-				else
-					param_k, param_v = param, true;
-				end
-			end
-		end
-		parsed_opts[param_k] = param_v;
+		os.exit(1);
 	end
+	prosody.opts = opts;
 end
 
 function startup.read_config()
@@ -121,6 +88,8 @@ function startup.read_config()
 		print("**************************");
 		print("");
 		os.exit(1);
+	elseif err and #err > 0 then
+		config_warnings = err;
 	end
 	prosody.config_loaded = true;
 end
@@ -153,8 +122,13 @@ function startup.init_logging()
 	end);
 end
 
-function startup.log_dependency_warnings()
+function startup.log_startup_warnings()
 	dependencies.log_warnings();
+	if config_warnings then
+		for _, warning in ipairs(config_warnings) do
+			log("warn", "Configuration warning: %s", warning);
+		end
+	end
 end
 
 function startup.sanity_check()
@@ -276,13 +250,26 @@ end
 
 function startup.setup_plugindir()
 	local custom_plugin_paths = config.get("*", "plugin_paths");
+	local path_sep = package.config:sub(3,3);
 	if custom_plugin_paths then
-		local path_sep = package.config:sub(3,3);
 		-- path1;path2;path3;defaultpath...
 		-- luacheck: ignore 111
 		CFG_PLUGINDIR = table.concat(custom_plugin_paths, path_sep)..path_sep..(CFG_PLUGINDIR or "plugins");
 		prosody.paths.plugins = CFG_PLUGINDIR;
 	end
+end
+
+function startup.setup_plugin_install_path()
+	local installer_plugin_path = config.get("*", "installer_plugin_path") or "custom_plugins";
+	local path_sep = package.config:sub(3,3);
+	-- TODO Figure out what this should be relative to, because CWD could be anywhere
+	installer_plugin_path = config.resolve_relative_path(require "lfs".currentdir(), installer_plugin_path);
+	-- TODO Can probably move directory creation to the install command
+	require "lfs".mkdir(installer_plugin_path);
+	require"util.paths".complement_lua_path(installer_plugin_path);
+	-- luacheck: ignore 111
+	CFG_PLUGINDIR = installer_plugin_path..path_sep..(CFG_PLUGINDIR or "plugins");
+	prosody.paths.plugins = CFG_PLUGINDIR;
 end
 
 function startup.chdir()
@@ -306,9 +293,9 @@ function startup.add_global_prosody_functions()
 		local ok, level, err = config.load(prosody.config_file);
 		if not ok then
 			if level == "parser" then
-				log("error", "There was an error parsing the configuration file: %s", tostring(err));
+				log("error", "There was an error parsing the configuration file: %s", err);
 			elseif level == "file" then
-				log("error", "Couldn't read the config file when trying to reload: %s", tostring(err));
+				log("error", "Couldn't read the config file when trying to reload: %s", err);
 			end
 		else
 			prosody.events.fire_event("config-reloaded", {
@@ -482,7 +469,7 @@ function startup.switch_user()
 				print("Warning: Couldn't switch to Prosody user/group '"..tostring(desired_user).."'/'"..tostring(desired_group).."': "..tostring(err));
 			else
 				-- Make sure the Prosody user can read the config
-				local conf, err, errno = io.open(prosody.config_file);
+				local conf, err, errno = io.open(prosody.config_file); --luacheck: ignore 211/errno
 				if conf then
 					conf:close();
 				else
@@ -559,6 +546,10 @@ function startup.init_gc()
 	return true;
 end
 
+function startup.init_errors()
+	require "util.error".configure(config.get("*", "error_library") or {});
+end
+
 function startup.make_host(hostname)
 	return {
 		type = "local",
@@ -583,19 +574,22 @@ end
 
 -- prosodyctl only
 function startup.prosodyctl()
+	prosody.process_type = "prosodyctl";
 	startup.parse_args();
 	startup.init_global_state();
 	startup.read_config();
 	startup.force_console_logging();
 	startup.init_logging();
 	startup.init_gc();
+	startup.init_errors();
 	startup.setup_plugindir();
+	-- startup.setup_plugin_install_path();
 	startup.setup_datadir();
 	startup.chdir();
 	startup.read_version();
 	startup.switch_user();
 	startup.check_dependencies();
-	startup.log_dependency_warnings();
+	startup.log_startup_warnings();
 	startup.check_unwriteable();
 	startup.load_libraries();
 	startup.init_http_client();
@@ -605,23 +599,26 @@ end
 function startup.prosody()
 	-- These actions are in a strict order, as many depend on
 	-- previous steps to have already been performed
+	prosody.process_type = "prosody";
 	startup.parse_args();
 	startup.init_global_state();
 	startup.read_config();
 	startup.init_logging();
 	startup.init_gc();
+	startup.init_errors();
 	startup.sanity_check();
 	startup.sandbox_require();
 	startup.set_function_metatable();
 	startup.check_dependencies();
 	startup.load_libraries();
 	startup.setup_plugindir();
+	-- startup.setup_plugin_install_path();
 	startup.setup_datadir();
 	startup.chdir();
 	startup.add_global_prosody_functions();
 	startup.read_version();
 	startup.log_greeting();
-	startup.log_dependency_warnings();
+	startup.log_startup_warnings();
 	startup.load_secondary_libraries();
 	startup.init_http_client();
 	startup.init_data_store();

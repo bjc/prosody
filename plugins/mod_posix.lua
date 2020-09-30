@@ -20,7 +20,6 @@ if not have_signal then
 	module:log("warn", "Couldn't load signal library, won't respond to SIGTERM");
 end
 
-local format = require "util.format".format;
 local lfs = require "lfs";
 local stat = lfs.attributes;
 
@@ -31,39 +30,12 @@ module:set_global(); -- we're a global module
 local umask = module:get_option_string("umask", "027");
 pposix.umask(umask);
 
--- Allow switching away from root, some people like strange ports.
-module:hook("server-started", function ()
-	local uid = module:get_option("setuid");
-	local gid = module:get_option("setgid");
-	if gid then
-		local success, msg = pposix.setgid(gid);
-		if success then
-			module:log("debug", "Changed group to %s successfully.", gid);
-		else
-			module:log("error", "Failed to change group to %s. Error: %s", gid, msg);
-			prosody.shutdown("Failed to change group to %s", gid);
-		end
-	end
-	if uid then
-		local success, msg = pposix.setuid(uid);
-		if success then
-			module:log("debug", "Changed user to %s successfully.", uid);
-		else
-			module:log("error", "Failed to change user to %s. Error: %s", uid, msg);
-			prosody.shutdown("Failed to change user to %s", uid);
-		end
-	end
-end);
-
 -- Don't even think about it!
 if not prosody.start_time then -- server-starting
-	local suid = module:get_option("setuid");
-	if not suid or suid == 0 or suid == "root" then
-		if pposix.getuid() == 0 and not module:get_option_boolean("run_as_root") then
-			module:log("error", "Danger, Will Robinson! Prosody doesn't need to be run as root, so don't do it!");
-			module:log("error", "For more information on running Prosody as root, see https://prosody.im/doc/root");
-			prosody.shutdown("Refusing to run as root");
-		end
+	if pposix.getuid() == 0 and not module:get_option_boolean("run_as_root") then
+		module:log("error", "Danger, Will Robinson! Prosody doesn't need to be run as root, so don't do it!");
+		module:log("error", "For more information on running Prosody as root, see https://prosody.im/doc/root");
+		prosody.shutdown("Refusing to run as root");
 	end
 end
 
@@ -113,24 +85,15 @@ local function write_pidfile()
 	end
 end
 
-local syslog_opened;
-function syslog_sink_maker(config) -- luacheck: ignore 212/config
-	if not syslog_opened then
-		pposix.syslog_open("prosody", module:get_option_string("syslog_facility"));
-		syslog_opened = true;
-	end
-	local syslog = pposix.syslog_log;
-	return function (name, level, message, ...)
-		syslog(level, name, format(message, ...));
-	end;
-end
-require "core.loggingmanager".register_sink_type("syslog", syslog_sink_maker);
-
 local daemonize = prosody.opts.daemonize;
 
 if daemonize == nil then
 	-- Fall back to config file if not specified on command-line
-	daemonize = module:get_option("daemonize", prosody.installed);
+	daemonize = module:get_option_boolean("daemonize", nil);
+	if daemonize ~= nil then
+		module:log("warn", "The 'daemonize' option has been deprecated, specify -D or -F on the command line instead.");
+		-- TODO: Write some docs and include a link in the warning.
+	end
 end
 
 local function remove_log_sinks()
@@ -154,9 +117,7 @@ if daemonize then
 			write_pidfile();
 		end
 	end
-	if not prosody.start_time then -- server-starting
-		daemonize_server();
-	end
+	module:hook("server-started", daemonize_server)
 else
 	-- Not going to daemonize, so write the pid of this process
 	write_pidfile();

@@ -1,5 +1,6 @@
 
 local st = require "util.stanza";
+local errors = require "util.error";
 
 describe("util.stanza", function()
 	describe("#preserialize()", function()
@@ -95,19 +96,30 @@ describe("util.stanza", function()
 
 	describe("#iq()", function()
 		it("should create an iq stanza", function()
-			local i = st.iq({ id = "foo" });
+			local i = st.iq({ type = "get", id = "foo" });
 			assert.are.equal("iq", i.name);
 			assert.are.equal("foo", i.attr.id);
+			assert.are.equal("get", i.attr.type);
 		end);
+
+		it("should reject stanzas with no attributes", function ()
+			assert.has.error_match(function ()
+				st.iq();
+			end, "attributes");
+		end);
+
 
 		it("should reject stanzas with no id", function ()
 			assert.has.error_match(function ()
-				st.iq();
+				st.iq({ type = "get" });
 			end, "id attribute");
+		end);
 
+		it("should reject stanzas with no type", function ()
 			assert.has.error_match(function ()
-				st.iq({ foo = "bar" });
-			end, "id attribute");
+				st.iq({ id = "foo" });
+			end, "type attribute");
+
 		end);
 	end);
 
@@ -159,6 +171,19 @@ describe("util.stanza", function()
 			assert.are.equal(r.attr.type, "result");
 			assert.are.equal(#r.tags, 0, "A reply should not include children of the original stanza");
 		end);
+
+		it("should reject not-stanzas", function ()
+			assert.has.error_match(function ()
+				st.reply(not "a stanza");
+			end, "expected stanza");
+		end);
+
+		it("should reject not-stanzas", function ()
+			assert.has.error_match(function ()
+				st.reply({name="x"});
+			end, "expected stanza");
+		end);
+
 	end);
 
 	describe("#error_reply()", function()
@@ -167,13 +192,14 @@ describe("util.stanza", function()
 			local s = st.stanza("s", { to = "touser", from = "fromuser", id = "123" })
 				:tag("child1");
 			-- Make reply stanza
-			local r = st.error_reply(s, "cancel", "service-unavailable");
+			local r = st.error_reply(s, "cancel", "service-unavailable", nil, "host");
 			assert.are.equal(r.name, s.name);
 			assert.are.equal(r.id, s.id);
 			assert.are.equal(r.attr.to, s.attr.from);
 			assert.are.equal(r.attr.from, s.attr.to);
 			assert.are.equal(#r.tags, 1);
 			assert.are.equal(r.tags[1].tags[1].name, "service-unavailable");
+			assert.are.equal(r.tags[1].attr.by, "host");
 		end);
 
 		it("should work for <iq get>", function()
@@ -190,7 +216,78 @@ describe("util.stanza", function()
 			assert.are.equal(#r.tags, 1);
 			assert.are.equal(r.tags[1].tags[1].name, "service-unavailable");
 		end);
+
+		it("should reject not-stanzas", function ()
+			assert.has.error_match(function ()
+				st.error_reply(not "a stanza", "modify", "bad-request");
+			end, "expected stanza");
+		end);
+
+		it("should reject stanzas of type error", function ()
+			assert.has.error_match(function ()
+				st.error_reply(st.message({type="error"}), "cancel", "conflict");
+			end, "got stanza of type error");
+			assert.has.error_match(function ()
+				st.error_reply(st.error_reply(st.message({type="chat"}), "modify", "forbidden"), "cancel", "service-unavailable");
+			end, "got stanza of type error");
+		end);
+
+		describe("util.error integration", function ()
+		it("should accept util.error objects", function ()
+			local s = st.message({ to = "touser", from = "fromuser", id = "123", type = "chat" }, "Hello");
+			local e = errors.new({ type = "modify", condition = "not-acceptable", text = "Bork bork bork" }, { by = "this.test" });
+			local r = st.error_reply(s, e);
+
+			assert.are.equal(r.name, s.name);
+			assert.are.equal(r.id, s.id);
+			assert.are.equal(r.attr.to, s.attr.from);
+			assert.are.equal(r.attr.from, s.attr.to);
+			assert.are.equal(r.attr.type, "error");
+			assert.are.equal(r.tags[1].name, "error");
+			assert.are.equal(r.tags[1].attr.type, e.type);
+			assert.are.equal(r.tags[1].tags[1].name, e.condition);
+			assert.are.equal(r.tags[1].tags[2]:get_text(), e.text);
+			assert.are.equal("this.test", r.tags[1].attr.by);
+		end);
+
+		it("should accept util.error objects with an URI", function ()
+			local s = st.message({ to = "touser", from = "fromuser", id = "123", type = "chat" }, "Hello");
+			local gone = errors.new({ condition = "gone", extra = { uri = "file:///dev/null" } })
+			local gonner = st.error_reply(s, gone);
+			assert.are.equal("gone", gonner.tags[1].tags[1].name);
+			assert.are.equal("file:///dev/null", gonner.tags[1].tags[1][1]);
+		end);
+
+		it("should accept util.error objects with application specific error", function ()
+			local s = st.message({ to = "touser", from = "fromuser", id = "123", type = "chat" }, "Hello");
+			local e = errors.new({ condition = "internal-server-error", text = "Namespaced thing happened",
+				extra = {namespace="xmpp:example.test", condition="this-happened"} })
+			local r = st.error_reply(s, e);
+			assert.are.equal("xmpp:example.test", r.tags[1].tags[3].attr.xmlns);
+			assert.are.equal("this-happened", r.tags[1].tags[3].name);
+
+			local e2 = errors.new({ condition = "internal-server-error", text = "Namespaced thing happened",
+				extra = {tag=st.stanza("that-happened", { xmlns = "xmpp:example.test", ["another-attribute"] = "here" })} })
+			local r2 = st.error_reply(s, e2);
+			assert.are.equal("xmpp:example.test", r2.tags[1].tags[3].attr.xmlns);
+			assert.are.equal("that-happened", r2.tags[1].tags[3].name);
+			assert.are.equal("here", r2.tags[1].tags[3].attr["another-attribute"]);
+		end);
+		end);
 	end);
+
+	describe("#get_error()", function ()
+		describe("basics", function ()
+			local s = st.message();
+			local e = st.error_reply(s, "cancel", "not-acceptable", "UNACCEPTABLE!!!! ONE MILLION YEARS DUNGEON!")
+				:tag("dungeon", { xmlns = "urn:uuid:c9026187-5b05-4e70-b265-c3b6338a7d0f", period="1000000years"});
+			local typ, cond, text, extra = e:get_error();
+			assert.equal("cancel", typ);
+			assert.equal("not-acceptable", cond);
+			assert.equal("UNACCEPTABLE!!!! ONE MILLION YEARS DUNGEON!", text);
+			assert.not_nil(extra)
+		end)
+	end)
 
 	describe("should reject #invalid", function ()
 		local invalid_names = {
@@ -370,4 +467,43 @@ describe("util.stanza", function()
 			end);
 		end);
 	end);
+
+	describe("top_tag", function ()
+		local xml_parse = require "util.xml".parse;
+		it("works", function ()
+			local s = st.message({type="chat"}, "Hello");
+			local top_tag = s:top_tag();
+			assert.is_string(top_tag);
+			assert.not_equal("/>", top_tag:sub(-2, -1));
+			assert.equal(">", top_tag:sub(-1, -1));
+			local s2 = xml_parse(top_tag.."</message>");
+			assert(st.is_stanza(s2));
+			assert.equal("message", s2.name);
+			assert.equal(0, #s2);
+			assert.equal(0, #s2.tags);
+			assert.equal("chat", s2.attr.type);
+		end);
+
+		it("works with namespaced attributes", function ()
+			local s = xml_parse[[<message foo:bar='true' xmlns:foo='my-awesome-ns'/>]];
+			local top_tag = s:top_tag();
+			assert.is_string(top_tag);
+			assert.not_equal("/>", top_tag:sub(-2, -1));
+			assert.equal(">", top_tag:sub(-1, -1));
+			local s2 = xml_parse(top_tag.."</message>");
+			assert(st.is_stanza(s2));
+			assert.equal("message", s2.name);
+			assert.equal(0, #s2);
+			assert.equal(0, #s2.tags);
+			assert.equal("true", s2.attr["my-awesome-ns\1bar"]);
+		end);
+	end);
+
+	describe("indent", function ()
+		local s = st.stanza("foo"):text("\n"):tag("bar"):tag("baz"):up():text_tag("cow", "moo");
+		assert.equal("<foo>\n\t<bar>\n\t\t<baz/>\n\t\t<cow>moo</cow>\n\t</bar>\n</foo>", tostring(s:indent()));
+		assert.equal("<foo>\n  <bar>\n    <baz/>\n    <cow>moo</cow>\n  </bar>\n</foo>", tostring(s:indent(1, "  ")));
+		assert.equal("<foo>\n\t\t<bar>\n\t\t\t<baz/>\n\t\t\t<cow>moo</cow>\n\t\t</bar>\n\t</foo>", tostring(s:indent(2, "\t")));
+	end);
+
 end);

@@ -25,7 +25,7 @@ function inject_roster_contacts(event)
 	local function import_jids_to_roster(group_name)
 		for jid in pairs(groups[group_name]) do
 			-- Add them to roster
-			--module:log("debug", "processing jid %s in group %s", tostring(jid), tostring(group_name));
+			--module:log("debug", "processing jid %s in group %s", jid, group_name);
 			if jid ~= bare_jid then
 				if not roster[jid] then roster[jid] = {}; end
 				roster[jid].subscription = "both";
@@ -99,7 +99,7 @@ function module.load()
 				end
 				members[false][#members[false]+1] = curr_group; -- Is a public group
 			end
-			module:log("debug", "New group: %s", tostring(curr_group));
+			module:log("debug", "New group: %s", curr_group);
 			groups[curr_group] = groups[curr_group] or {};
 		else
 			-- Add JID
@@ -108,7 +108,7 @@ function module.load()
 			local jid;
 			jid = jid_prep(entryjid:match("%S+"));
 			if jid then
-				module:log("debug", "New member of %s: %s", tostring(curr_group), tostring(jid));
+				module:log("debug", "New member of %s: %s", curr_group, jid);
 				groups[curr_group][jid] = name or false;
 				members[jid] = members[jid] or {};
 				members[jid][#members[jid]+1] = curr_group;

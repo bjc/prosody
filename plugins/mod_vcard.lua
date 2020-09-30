@@ -19,7 +19,7 @@ local function handle_vcard(event)
 	if stanza.attr.type == "get" then
 		local vCard;
 		if to then
-			local node, host = jid_split(to);
+			local node = jid_split(to);
 			vCard = st.deserialize(vcards:get(node)); -- load vCard for user or server
 		else
 			vCard = st.deserialize(vcards:get(session.username));-- load user's own vCard

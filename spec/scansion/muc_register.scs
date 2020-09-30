@@ -100,7 +100,9 @@ Juliet receives:
 				<field type='hidden' var='FORM_TYPE'>
 					<value>http://jabber.org/protocol/muc#register</value>
 				</field>
-				<field type='text-single' label='Nickname' var='muc#register_roomnick'/>
+				<field type='text-single' label='Nickname' var='muc#register_roomnick'>
+					<required/>
+				</field>
 			</x>
 		</query>
 	</iq>
@@ -175,7 +177,7 @@ Rosaline sends:
 
 Rosaline receives:
 	<presence type='error' from='room@conference.localhost/Juliet'>
-		<error type='cancel'>
+		<error type='cancel' by='room@conference.localhost'>
 			<conflict xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
 		</error>
 		<x xmlns='http://jabber.org/protocol/muc'/>
@@ -286,7 +288,7 @@ Rosaline sends:
 
 Rosaline receives:
 	<presence type='error' from='room@conference.localhost/Juliet'>
-		<error type='cancel'>
+		<error type='cancel' by='room@conference.localhost'>
 			<conflict xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
 		</error>
 		<x xmlns='http://jabber.org/protocol/muc'/>
@@ -326,7 +328,7 @@ Romeo receives:
 	</iq>
 
 # Romeo updates his own registration
-	
+
 Romeo sends:
 	<iq id='jw81b36f' to='room@conference.localhost' type='get'>
 		<query xmlns='jabber:iq:register'/>
@@ -339,7 +341,9 @@ Romeo receives:
 				<field type='hidden' var='FORM_TYPE'>
 					<value>http://jabber.org/protocol/muc#register</value>
 				</field>
-				<field type='text-single' label='Nickname' var='muc#register_roomnick'/>
+				<field type='text-single' label='Nickname' var='muc#register_roomnick'>
+					<required/>
+				</field>
 			</x>
 		</query>
 	</iq>

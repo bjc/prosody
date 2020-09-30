@@ -23,6 +23,8 @@ install: $(ALL)
 clean:
 	rm -f $(ALL) $(patsubst %.so,%.o,$(ALL))
 
+encodings.o: encodings.c
+	$(CC) $(CFLAGS) $(IDNA_FLAGS) -c -o $@ $<
 encodings.so: encodings.o
 	$(LD) $(LDFLAGS) -o $@ $< $(LDLIBS) $(IDNA_LIBS)
 

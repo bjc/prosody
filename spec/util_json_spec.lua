@@ -1,5 +1,6 @@
 
 local json = require "util.json";
+local array = require "util.array";
 
 describe("util.json", function()
 	describe("#encode()", function()
@@ -67,4 +68,13 @@ describe("util.json", function()
 			end
 		end);
 	end)
+
+	describe("util.array integration", function ()
+		it("works", function ()
+			assert.equal("[]", json.encode(array()));
+			assert.equal("[1,2,3]", json.encode(array({1,2,3})));
+			assert.equal(getmetatable(array()), getmetatable(json.decode("[]")));
+		end);
+	end);
+
 end);

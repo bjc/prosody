@@ -20,7 +20,6 @@ end
 local configmanager = require "core.configmanager";
 local log = require "util.logger".init("certmanager");
 local ssl_context = ssl.context or softreq"ssl.context";
-local ssl_x509 = ssl.x509 or softreq"ssl.x509";
 local ssl_newcontext = ssl.newcontext;
 local new_config = require"util.sslconfig".new;
 local stat = require "lfs".attributes;
@@ -38,6 +37,9 @@ local config_path = prosody.paths.config or ".";
 
 local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
 local luasec_version = tonumber(luasec_major) * 100 + tonumber(luasec_minor);
+-- TODO Use ssl.config instead of require here once we are sure that the fix
+-- in LuaSec has been widely distributed
+-- https://github.com/brunoos/luasec/issues/149
 local luasec_has = softreq"ssl.config" or {
 	algorithms = {
 		ec = luasec_version >= 5;
@@ -108,7 +110,7 @@ local core_defaults = {
 	capath = "/etc/ssl/certs";
 	depth = 9;
 	protocol = "tlsv1+";
-	verify = (ssl_x509 and { "peer", "client_once", }) or "none";
+	verify = "none";
 	options = {
 		cipher_server_preference = luasec_has.options.cipher_server_preference;
 		no_ticket = luasec_has.options.no_ticket;
@@ -150,13 +152,6 @@ local path_options = { -- These we pass through resolve_path()
 	key = true, certificate = true, cafile = true, capath = true, dhparam = true
 }
 
-if luasec_version < 5 and ssl_x509 then
-	-- COMPAT mw/luasec-hg
-	for i=1,#core_defaults.verifyext do -- Remove lsec_ prefix
-		core_defaults.verify[#core_defaults.verify+1] = core_defaults.verifyext[i]:sub(6);
-	end
-end
-
 local function create_context(host, mode, ...)
 	local cfg = new_config();
 	cfg:apply(core_defaults);
@@ -179,8 +174,10 @@ local function create_context(host, mode, ...)
 	local user_ssl_config = cfg:final();
 
 	if mode == "server" then
-		if not user_ssl_config.certificate then return nil, "No certificate present in SSL/TLS configuration for "..host; end
-		if not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
+		if not user_ssl_config.certificate then
+			log("info", "No certificate present in SSL/TLS configuration for %s. SNI will be required.", host);
+		end
+		if user_ssl_config.certificate and not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
 	end
 
 	for option in pairs(path_options) do
@@ -260,4 +257,5 @@ return {
 	create_context = create_context;
 	reload_ssl_config = reload_ssl_config;
 	find_cert = find_cert;
+	find_host_cert = find_host_cert;
 };

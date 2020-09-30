@@ -145,16 +145,16 @@ Juliet receives:
 	</message>
 
 # Bye
-Juliet disconnects
-
 Juliet sends:
 	<presence type="unavailable"/>
+
+Juliet disconnects
 
 Romeo receives:
 	<presence from="${Juliet's full JID}" to="${Romeo's JID}" type="unavailable"/>
 
-Romeo disconnects
-
 Romeo sends:
 	<presence type="unavailable"/>
+
+Romeo disconnects
 

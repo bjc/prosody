@@ -8,6 +8,7 @@ local calculate_hash = require "util.caps".calculate_hash;
 local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed;
 local cache = require "util.cache";
 local set = require "util.set";
+local new_id = require "util.id".medium;
 local storagemanager = require "core.storagemanager";
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
@@ -123,9 +124,6 @@ local function get_broadcaster(username)
 		if kind == "retract" then
 			kind = "items"; -- XEP-0060 signals retraction in an <items> container
 		end
-		local message = st.message({ from = user_bare, type = "headline" })
-			:tag("event", { xmlns = xmlns_pubsub_event })
-				:tag(kind, { node = node });
 		if item then
 			item = st.clone(item);
 			item.attr.xmlns = nil; -- Clear the pubsub namespace
@@ -134,10 +132,19 @@ local function get_broadcaster(username)
 					item:maptags(function () return nil; end);
 				end
 			end
+		end
+
+		local id = new_id();
+		local message = st.message({ from = user_bare, type = "headline", id = id })
+			:tag("event", { xmlns = xmlns_pubsub_event })
+				:tag(kind, { node = node });
+
+		if item then
 			message:add_child(item);
 		end
+
 		for jid in pairs(jids) do
-			module:log("debug", "Sending notification to %s from %s: %s", jid, user_bare, tostring(item));
+			module:log("debug", "Sending notification to %s from %s for node %s", jid, user_bare, node);
 			message.attr.to = jid;
 			module:send(message);
 		end
@@ -166,12 +173,12 @@ local function get_subscriber_filter(username)
 end
 
 function get_pep_service(username)
-	module:log("debug", "get_pep_service(%q)", username);
 	local user_bare = jid_join(username, host);
 	local service = services[username];
 	if service then
 		return service;
 	end
+	module:log("debug", "Creating pubsub service for user %q", username);
 	service = pubsub.new({
 		pep_username = username;
 		node_defaults = {
@@ -238,8 +245,6 @@ end
 module:hook("iq/bare/"..xmlns_pubsub..":pubsub", handle_pubsub_iq);
 module:hook("iq/bare/"..xmlns_pubsub_owner..":pubsub", handle_pubsub_iq);
 
-module:add_identity("pubsub", "pep", module:get_option_string("name", "Prosody"));
-module:add_feature("http://jabber.org/protocol/pubsub#publish");
 
 local function get_caps_hash_from_presence(stanza, current)
 	local t = stanza.attr.type;

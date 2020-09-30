@@ -50,7 +50,7 @@ module:hook("muc-occupant-pre-join", function(event)
 	if get_password(room) ~= password then
 		local from, to = stanza.attr.from, stanza.attr.to;
 		module:log("debug", "%s couldn't join due to invalid password: %s", from, to);
-		local reply = st.error_reply(stanza, "auth", "not-authorized"):up();
+		local reply = st.error_reply(stanza, "auth", "not-authorized", nil, room.jid):up();
 		reply.tags[1].attr.code = "401";
 		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 		return true;

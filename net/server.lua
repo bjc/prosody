@@ -13,7 +13,11 @@ if not (prosody and prosody.config_loaded) then
 end
 
 local log = require "util.logger".init("net.server");
-local server_type = require "core.configmanager".get("*", "network_backend") or "select";
+
+local have_util_poll = pcall(require, "util.poll");
+local default_backend = have_util_poll and "epoll" or "select";
+
+local server_type = require "core.configmanager".get("*", "network_backend") or default_backend;
 
 if require "core.configmanager".get("*", "use_libevent") then
 	server_type = "event";

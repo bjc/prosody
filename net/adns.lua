@@ -8,13 +8,17 @@
 
 local server = require "net.server";
 local new_resolver = require "net.dns".resolver;
+local promise = require "util.promise";
 
 local log = require "util.logger".init("adns");
 
-local coroutine, tostring, pcall = coroutine, tostring, pcall;
+log("debug", "Using legacy DNS API (missing lua-unbound?)"); -- TODO write docs about luaunbound
+-- TODO Raise log level once packages are available
+
+local coroutine, pcall = coroutine, pcall;
 local setmetatable = setmetatable;
 
-local function dummy_send(sock, data, i, j) return (j-i)+1; end
+local function dummy_send(sock, data, i, j) return (j-i)+1; end -- luacheck: ignore 212
 
 local _ENV = nil;
 -- luacheck: std none
@@ -29,8 +33,7 @@ local function new_async_socket(sock, resolver)
 	local peername = "<unknown>";
 	local listener = {};
 	local handler = {};
-	local err;
-	function listener.onincoming(conn, data)
+	function listener.onincoming(conn, data) -- luacheck: ignore 212/conn
 		if data then
 			resolver:feed(handler, data);
 		end
@@ -46,9 +49,12 @@ local function new_async_socket(sock, resolver)
 			resolver:servfail(conn); -- Let the magic commence
 		end
 	end
-	handler, err = server.wrapclient(sock, "dns", 53, listener);
-	if not handler then
-		return nil, err;
+	do
+		local err;
+		handler, err = server.wrapclient(sock, "dns", 53, listener);
+		if not handler then
+			return nil, err;
+		end
 	end
 
 	handler.settimeout = function () end
@@ -71,11 +77,11 @@ function async_resolver_methods:lookup(handler, qname, qtype, qclass)
 					handler(peek);
 					return;
 				end
-				log("debug", "Records for %s not in cache, sending query (%s)...", qname, tostring(coroutine.running()));
+				log("debug", "Records for %s not in cache, sending query (%s)...", qname, coroutine.running());
 				local ok, err = resolver:query(qname, qtype, qclass);
 				if ok then
 					coroutine.yield(setmetatable({ resolver, qclass or "IN", qtype or "A", qname, coroutine.running()}, query_mt)); -- Wait for reply
-					log("debug", "Reply for %s (%s)", qname, tostring(coroutine.running()));
+					log("debug", "Reply for %s (%s)", qname, coroutine.running());
 				end
 				if ok then
 					ok, err = pcall(handler, resolver:peek(qname, qtype, qclass));
@@ -84,13 +90,25 @@ function async_resolver_methods:lookup(handler, qname, qtype, qclass)
 					ok, err = pcall(handler, nil, err);
 				end
 				if not ok then
-					log("error", "Error in DNS response handler: %s", tostring(err));
+					log("error", "Error in DNS response handler: %s", err);
 				end
 			end)(resolver:peek(qname, qtype, qclass));
 end
 
-function query_methods:cancel(call_handler, reason)
-	log("warn", "Cancelling DNS lookup for %s", tostring(self[4]));
+function async_resolver_methods:lookup_promise(qname, qtype, qclass)
+	return promise.new(function (resolve, reject)
+		local function handler(answer)
+			if not answer then
+				return reject();
+			end
+			resolve(answer);
+		end
+		self:lookup(handler, qname, qtype, qclass);
+	end);
+end
+
+function query_methods:cancel(call_handler, reason) -- luacheck: ignore 212/reason
+	log("warn", "Cancelling DNS lookup for %s", self[4]);
 	self[1].cancel(self[2], self[3], self[4], self[5], call_handler);
 end
 

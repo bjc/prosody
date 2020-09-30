@@ -9,8 +9,7 @@
 local softreq = require "util.dependencies".softreq;
 local random_bytes = require "util.random".bytes;
 
-local bit = assert(softreq"bit" or softreq"bit32",
-	"No bit module found. See https://prosody.im/doc/depends#bitop");
+local bit = require "util.bitcompat";
 local band = bit.band;
 local bor = bit.bor;
 local bxor = bit.bxor;
@@ -20,8 +19,8 @@ local unpack = table.unpack or unpack; -- luacheck: ignore 113
 
 local t_concat = table.concat;
 local s_char= string.char;
-local s_pack = string.pack; -- luacheck: ignore 143
-local s_unpack = string.unpack; -- luacheck: ignore 143
+local s_pack = string.pack;
+local s_unpack = string.unpack;
 
 if not s_pack and softreq"struct" then
 	s_pack = softreq"struct".pack;

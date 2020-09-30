@@ -26,6 +26,7 @@ typedef unsigned __int32 uint32_t;
 #include <openssl/sha.h>
 #include <openssl/md5.h>
 #include <openssl/hmac.h>
+#include <openssl/evp.h>
 
 #if (LUA_VERSION_NUM == 501)
 #define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
@@ -34,8 +35,8 @@ typedef unsigned __int32 uint32_t;
 #define HMAC_IPAD 0x36363636
 #define HMAC_OPAD 0x5c5c5c5c
 
-const char *hex_tab = "0123456789abcdef";
-void toHex(const unsigned char *in, int length, unsigned char *out) {
+static const char *hex_tab = "0123456789abcdef";
+static void toHex(const unsigned char *in, int length, unsigned char *out) {
 	int i;
 
 	for(i = 0; i < length; i++) {
@@ -75,44 +76,6 @@ struct hash_desc {
 	void *ctx, *ctxo;
 };
 
-static void hmac(struct hash_desc *desc, const char *key, size_t key_len,
-                 const char *msg, size_t msg_len, unsigned char *result) {
-	union xory {
-		unsigned char bytes[64];
-		uint32_t quadbytes[16];
-	};
-
-	int i;
-	unsigned char hashedKey[64]; /* Maximum used digest length */
-	union xory k_ipad, k_opad;
-
-	if(key_len > 64) {
-		desc->Init(desc->ctx);
-		desc->Update(desc->ctx, key, key_len);
-		desc->Final(hashedKey, desc->ctx);
-		key = (const char *)hashedKey;
-		key_len = desc->digestLength;
-	}
-
-	memcpy(k_ipad.bytes, key, key_len);
-	memset(k_ipad.bytes + key_len, 0, 64 - key_len);
-	memcpy(k_opad.bytes, k_ipad.bytes, 64);
-
-	for(i = 0; i < 16; i++) {
-		k_ipad.quadbytes[i] ^= HMAC_IPAD;
-		k_opad.quadbytes[i] ^= HMAC_OPAD;
-	}
-
-	desc->Init(desc->ctx);
-	desc->Update(desc->ctx, k_ipad.bytes, 64);
-	desc->Init(desc->ctxo);
-	desc->Update(desc->ctxo, k_opad.bytes, 64);
-	desc->Update(desc->ctx, msg, msg_len);
-	desc->Final(result, desc->ctx);
-	desc->Update(desc->ctxo, result, desc->digestLength);
-	desc->Final(result, desc->ctxo);
-}
-
 #define MAKE_HMAC_FUNCTION(myFunc, evp, size, type) \
 static int myFunc(lua_State *L) { \
 	unsigned char hash[size], result[2*size]; \
@@ -136,56 +99,37 @@ MAKE_HMAC_FUNCTION(Lhmac_sha256, EVP_sha256, SHA256_DIGEST_LENGTH, SHA256_CTX)
 MAKE_HMAC_FUNCTION(Lhmac_sha512, EVP_sha512, SHA512_DIGEST_LENGTH, SHA512_CTX)
 MAKE_HMAC_FUNCTION(Lhmac_md5, EVP_md5, MD5_DIGEST_LENGTH, MD5_CTX)
 
-static int LscramHi(lua_State *L) {
-	union xory {
-		unsigned char bytes[SHA_DIGEST_LENGTH];
-		uint32_t quadbytes[SHA_DIGEST_LENGTH / 4];
-	};
-	int i;
-	SHA_CTX ctx, ctxo;
-	unsigned char Ust[SHA_DIGEST_LENGTH];
-	union xory Und;
-	union xory res;
-	size_t str_len, salt_len;
-	struct hash_desc desc;
-	const char *str = luaL_checklstring(L, 1, &str_len);
-	const char *salt = luaL_checklstring(L, 2, &salt_len);
-	char *salt2;
+static int Lpbkdf2_sha1(lua_State *L) {
+	unsigned char out[SHA_DIGEST_LENGTH];
+
+	size_t pass_len, salt_len;
+	const char *pass = luaL_checklstring(L, 1, &pass_len);
+	const unsigned char *salt = (unsigned char *)luaL_checklstring(L, 2, &salt_len);
 	const int iter = luaL_checkinteger(L, 3);
 
-	desc.Init = (int (*)(void *))SHA1_Init;
-	desc.Update = (int (*)(void *, const void *, size_t))SHA1_Update;
-	desc.Final = (int (*)(unsigned char *, void *))SHA1_Final;
-	desc.digestLength = SHA_DIGEST_LENGTH;
-	desc.ctx = &ctx;
-	desc.ctxo = &ctxo;
-
-	salt2 = malloc(salt_len + 4);
-
-	if(salt2 == NULL) {
-		return luaL_error(L, "Out of memory in scramHi");
+	if(PKCS5_PBKDF2_HMAC(pass, pass_len, salt, salt_len, iter, EVP_sha1(), SHA_DIGEST_LENGTH, out) == 0) {
+		return luaL_error(L, "PKCS5_PBKDF2_HMAC() failed");
 	}
 
-	memcpy(salt2, salt, salt_len);
-	memcpy(salt2 + salt_len, "\0\0\0\1", 4);
-	hmac(&desc, str, str_len, salt2, salt_len + 4, Ust);
-	free(salt2);
+	lua_pushlstring(L, (char *)out, SHA_DIGEST_LENGTH);
 
-	memcpy(res.bytes, Ust, sizeof(res));
+	return 1;
+}
 
-	for(i = 1; i < iter; i++) {
-		int j;
-		hmac(&desc, str, str_len, (char *)Ust, sizeof(Ust), Und.bytes);
 
-		for(j = 0; j < SHA_DIGEST_LENGTH / 4; j++) {
-			res.quadbytes[j] ^= Und.quadbytes[j];
-		}
+static int Lpbkdf2_sha256(lua_State *L) {
+	unsigned char out[SHA256_DIGEST_LENGTH];
 
-		memcpy(Ust, Und.bytes, sizeof(Ust));
+	size_t pass_len, salt_len;
+	const char *pass = luaL_checklstring(L, 1, &pass_len);
+	const unsigned char *salt = (unsigned char *)luaL_checklstring(L, 2, &salt_len);
+	const int iter = luaL_checkinteger(L, 3);
+
+	if(PKCS5_PBKDF2_HMAC(pass, pass_len, salt, salt_len, iter, EVP_sha256(), SHA256_DIGEST_LENGTH, out) == 0) {
+		return luaL_error(L, "PKCS5_PBKDF2_HMAC() failed");
 	}
 
-	lua_pushlstring(L, (char *)res.bytes, SHA_DIGEST_LENGTH);
-
+	lua_pushlstring(L, (char *)out, SHA256_DIGEST_LENGTH);
 	return 1;
 }
 
@@ -200,7 +144,9 @@ static const luaL_Reg Reg[] = {
 	{ "hmac_sha256",	Lhmac_sha256	},
 	{ "hmac_sha512",	Lhmac_sha512	},
 	{ "hmac_md5",		Lhmac_md5	},
-	{ "scram_Hi_sha1",	LscramHi	},
+	{ "scram_Hi_sha1",	Lpbkdf2_sha1	}, /* COMPAT */
+	{ "pbkdf2_hmac_sha1",	Lpbkdf2_sha1	},
+	{ "pbkdf2_hmac_sha256",	Lpbkdf2_sha256	},
 	{ NULL,			NULL		}
 };
 
@@ -209,7 +155,7 @@ LUALIB_API int luaopen_util_hashes(lua_State *L) {
 	luaL_checkversion(L);
 #endif
 	lua_newtable(L);
-	luaL_setfuncs(L, Reg, 0);;
+	luaL_setfuncs(L, Reg, 0);
 	lua_pushliteral(L, "-3.14");
 	lua_setfield(L, -2, "version");
 	return 1;

@@ -1,0 +1,57 @@
+# XEP-0215: External Service Discovery
+
+[Client] Romeo
+	password: password
+	jid: user@localhost/mFquWxSr
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<iq type='get' xml:lang='sv' id='lx2' to='localhost'>
+		<services xmlns='urn:xmpp:extdisco:2'/>
+	</iq>
+
+Romeo receives:
+	<iq type='result' id='lx2' from='localhost'>
+		<services xmlns='urn:xmpp:extdisco:2'>
+			<service host='default.example' transport='udp' port='9876' type='stun'/>
+			<service port='9876' type='turn' restricted='1' password='yHYYBDN7M3mdlug0LTdJbW0GvvQ=' transport='udp' host='default.example' username='1219525744'/>
+			<service port='9876' type='turn' restricted='1' password='1Uc6QfrDhIlbK97rGCUQ/cUICxs=' transport='udp' host='default.example' username='1219525744'/>
+			<service port='2121' type='ftp' restricted='1' password='password' transport='tcp' host='default.example' username='john'/>
+			<service port='21' type='ftp' restricted='1' password='password' transport='tcp' host='ftp.example.com' username='john'/>
+		</services>
+	</iq>
+
+Romeo sends:
+	<iq type='get' xml:lang='sv' id='lx3' to='localhost'>
+		<services xmlns='urn:xmpp:extdisco:2' type='ftp'/>
+	</iq>
+
+Romeo receives:
+	<iq type='result' id='lx3' from='localhost'>
+		<services xmlns='urn:xmpp:extdisco:2'>
+			<service port='2121' type='ftp' restricted='1' password='password' transport='tcp' host='default.example' username='john'/>
+			<service port='21' type='ftp' restricted='1' password='password' transport='tcp' host='ftp.example.com' username='john'/>
+		</services>
+	</iq>
+
+Romeo sends:
+	<iq type='get' xml:lang='sv' id='lx4' to='localhost'>
+		<credentials xmlns='urn:xmpp:extdisco:2'>
+			<service host='default.example' type='turn'/>
+		</credentials>
+	</iq>
+
+Romeo receives:
+	<iq type='result' id='lx4' from='localhost'>
+		<credentials xmlns='urn:xmpp:extdisco:2'>
+			<service port='9876' type='turn' restricted='1' password='yHYYBDN7M3mdlug0LTdJbW0GvvQ=' transport='udp' host='default.example' username='1219525744'/>
+			<service port='9876' type='turn' restricted='1' password='1Uc6QfrDhIlbK97rGCUQ/cUICxs=' transport='udp' host='default.example' username='1219525744'/>
+		</credentials>
+	</iq>
+
+Romeo disconnects
+
+# recording ended on 2020-07-18T16:47:57Z

@@ -37,6 +37,9 @@
 #if (LUA_VERSION_NUM == 501)
 #define luaL_setmetatable(L, tname) luaL_getmetatable(L, tname); lua_setmetatable(L, -2)
 #endif
+#if (LUA_VERSION_NUM < 504)
+#define luaL_pushfail lua_pushnil
+#endif
 
 /*
  * Structure to keep state for each type of API
@@ -59,7 +62,7 @@ typedef struct Lpoll_state {
 /*
  * Add an FD to be watched
  */
-int Ladd(lua_State *L) {
+static int Ladd(lua_State *L) {
 	struct Lpoll_state *state = luaL_checkudata(L, 1, STATE_MT);
 	int fd = luaL_checkinteger(L, 2);
 
@@ -67,7 +70,7 @@ int Ladd(lua_State *L) {
 	int wantwrite = lua_toboolean(L, 4);
 
 	if(fd < 0) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(EBADF));
 		lua_pushinteger(L, EBADF);
 		return 3;
@@ -84,7 +87,7 @@ int Ladd(lua_State *L) {
 
 	if(ret < 0) {
 		ret = errno;
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(ret));
 		lua_pushinteger(L, ret);
 		return 3;
@@ -96,14 +99,14 @@ int Ladd(lua_State *L) {
 #else
 
 	if(fd > FD_SETSIZE) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(EBADF));
 		lua_pushinteger(L, EBADF);
 		return 3;
 	}
 
 	if(FD_ISSET(fd, &state->all)) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(EEXIST));
 		lua_pushinteger(L, EEXIST);
 		return 3;
@@ -137,7 +140,7 @@ int Ladd(lua_State *L) {
 /*
  * Set events to watch for, readable and/or writable
  */
-int Lset(lua_State *L) {
+static int Lset(lua_State *L) {
 	struct Lpoll_state *state = luaL_checkudata(L, 1, STATE_MT);
 	int fd = luaL_checkinteger(L, 2);
 
@@ -160,7 +163,7 @@ int Lset(lua_State *L) {
 	}
 	else {
 		ret = errno;
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(ret));
 		lua_pushinteger(L, ret);
 		return 3;
@@ -169,9 +172,10 @@ int Lset(lua_State *L) {
 #else
 
 	if(!FD_ISSET(fd, &state->all)) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(ENOENT));
 		lua_pushinteger(L, ENOENT);
+		return 3;
 	}
 
 	if(!lua_isnoneornil(L, 3)) {
@@ -200,7 +204,7 @@ int Lset(lua_State *L) {
 /*
  * Remove FDs
  */
-int Ldel(lua_State *L) {
+static int Ldel(lua_State *L) {
 	struct Lpoll_state *state = luaL_checkudata(L, 1, STATE_MT);
 	int fd = luaL_checkinteger(L, 2);
 
@@ -217,7 +221,7 @@ int Ldel(lua_State *L) {
 	}
 	else {
 		ret = errno;
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(ret));
 		lua_pushinteger(L, ret);
 		return 3;
@@ -226,9 +230,10 @@ int Ldel(lua_State *L) {
 #else
 
 	if(!FD_ISSET(fd, &state->all)) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(ENOENT));
 		lua_pushinteger(L, ENOENT);
+		return 3;
 	}
 
 	FD_CLR(fd, &state->wantread);
@@ -247,7 +252,7 @@ int Ldel(lua_State *L) {
 /*
  * Check previously manipulated event state for FDs ready for reading or writing
  */
-int Lpushevent(lua_State *L, struct Lpoll_state *state) {
+static int Lpushevent(lua_State *L, struct Lpoll_state *state) {
 #ifdef USE_EPOLL
 
 	if(state->processed > 0) {
@@ -281,7 +286,7 @@ int Lpushevent(lua_State *L, struct Lpoll_state *state) {
 /*
  * Wait for event
  */
-int Lwait(lua_State *L) {
+static int Lwait(lua_State *L) {
 	struct Lpoll_state *state = luaL_checkudata(L, 1, STATE_MT);
 
 	int ret = Lpushevent(L, state);
@@ -312,18 +317,20 @@ int Lwait(lua_State *L) {
 #endif
 
 	if(ret == 0) {
+		/* Is this an error? */
 		lua_pushnil(L);
 		lua_pushstring(L, "timeout");
 		return 2;
 	}
 	else if(ret < 0 && errno == EINTR) {
+		/* Is this an error? */
 		lua_pushnil(L);
 		lua_pushstring(L, "signal");
 		return 2;
 	}
 	else if(ret < 0) {
 		ret = errno;
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(ret));
 		lua_pushinteger(L, ret);
 		return 3;
@@ -344,7 +351,7 @@ int Lwait(lua_State *L) {
 /*
  * Return Epoll FD
  */
-int Lgetfd(lua_State *L) {
+static int Lgetfd(lua_State *L) {
 	struct Lpoll_state *state = luaL_checkudata(L, 1, STATE_MT);
 	lua_pushinteger(L, state->epoll_fd);
 	return 1;
@@ -353,7 +360,7 @@ int Lgetfd(lua_State *L) {
 /*
  * Close epoll FD
  */
-int Lgc(lua_State *L) {
+static int Lgc(lua_State *L) {
 	struct Lpoll_state *state = luaL_checkudata(L, 1, STATE_MT);
 
 	if(state->epoll_fd == -1) {
@@ -375,7 +382,7 @@ int Lgc(lua_State *L) {
 /*
  * String representation
  */
-int Ltos(lua_State *L) {
+static int Ltos(lua_State *L) {
 	struct Lpoll_state *state = luaL_checkudata(L, 1, STATE_MT);
 	lua_pushfstring(L, "%s: %p", STATE_MT, state);
 	return 1;
@@ -384,7 +391,7 @@ int Ltos(lua_State *L) {
 /*
  * Create a new context
  */
-int Lnew(lua_State *L) {
+static int Lnew(lua_State *L) {
 	/* Allocate state */
 	Lpoll_state *state = lua_newuserdata(L, sizeof(Lpoll_state));
 	luaL_setmetatable(L, STATE_MT);
@@ -397,7 +404,7 @@ int Lnew(lua_State *L) {
 	int epoll_fd = epoll_create1(EPOLL_CLOEXEC);
 
 	if(epoll_fd <= 0) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(errno));
 		lua_pushinteger(L, errno);
 		return 3;

@@ -3,11 +3,23 @@ local muc_util;
 local st = require "util.stanza";
 
 do
-	local old_pp = package.path;
-	package.path = "./?.lib.lua;"..package.path;
-	muc_util = require "plugins.muc.util";
-	package.path = old_pp;
-end
+	-- XXX Hack for lack of a mock moduleapi
+	local env = setmetatable({
+		module = {
+			_shared = {};
+			-- Close enough to the real module:shared() for our purposes here
+			shared = function (self, name)
+				local t = self._shared[name];
+				if t == nil then
+					t = {};
+					self._shared[name] = t;
+				end
+				return t;
+			end;
+		}
+	}, { __index = _ENV or _G });
+	muc_util = require "util.envload".envloadfile("plugins/muc/util.lib.lua", env)();
+	end
 
 describe("muc/util", function ()
 	describe("filter_muc_x()", function ()

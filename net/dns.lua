@@ -13,9 +13,11 @@
 
 
 local socket = require "socket";
-local timer = require "util.timer";
+local have_timer, timer = pcall(require, "util.timer");
 local new_ip = require "util.ip".new_ip;
 local have_util_net, util_net = pcall(require, "util.net");
+
+local log = require "util.logger".init("dns");
 
 local _, windows = pcall(require, "util.windows");
 local is_windows = (_ and windows) or os.getenv("WINDIR");
@@ -69,7 +71,9 @@ local ztact = { -- public domain 20080404 lua@ztact.com
 };
 local get, set = ztact.get, ztact.set;
 
-local default_timeout = 15;
+local default_timeout = 5;
+local default_jitter = 1;
+local default_retry_jitter = 2;
 
 -------------------------------------------------- module dns
 local _ENV = nil;
@@ -664,8 +668,10 @@ end
 -- socket layer -------------------------------------------------- socket layer
 
 
-resolver.delays = { 1, 3 };
+resolver.delays = { 1, 2, 3, 5 };
 
+resolver.jitter = have_timer and default_jitter or nil;
+resolver.retry_jitter = have_timer and default_retry_jitter or nil;
 
 function resolver:addnameserver(address)    -- - - - - - - - - - addnameserver
 	self.server = self.server or {};
@@ -853,7 +859,10 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 		packet = header..question,
 		server = self.best_server,
 		delay  = 1,
-		retry  = socket.gettime() + self.delays[1]
+		retry  = socket.gettime() + self.delays[1];
+		qclass = qclass;
+		qtype  = qtype;
+		qname  = qname;
 	};
 
 	-- remember the query
@@ -864,30 +873,32 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 	if not conn then
 		return nil, err;
 	end
-	conn:send (o.packet)
+	if self.jitter then
+		timer.add_task(math.random()*self.jitter, function ()
+			conn:send(o.packet);
+		end);
+	else
+		conn:send(o.packet);
+	end
 
 	-- remember which coroutine wants the answer
 	if co then
 		set(self.wanted, qclass, qtype, qname, co, true);
 	end
 	
-	if timer and self.timeout then
+	if have_timer and self.timeout then
 		local num_servers = #self.server;
 		local i = 1;
 		timer.add_task(self.timeout, function ()
 			if get(self.wanted, qclass, qtype, qname, co) then
-				if i < num_servers then
+				log("debug", "DNS request timeout %d/%d", i, num_servers)
 					i = i + 1;
-					self:servfail(conn);
-					o.server = self.best_server;
-					conn, err = self:getsocket(o.server);
-					if conn then
-						conn:send(o.packet);
-						return self.timeout;
-					end
-				end
-				-- Tried everything, failed
-				self:cancel(qclass, qtype, qname);
+					self:servfail(self.socket[o.server]);
+--				end
+			end
+			-- Still outstanding? (i.e. retried)
+			if get(self.wanted, qclass, qtype, qname, co) then
+				return self.timeout; -- Then wait
 			end
 		end)
 	end
@@ -904,6 +915,7 @@ function resolver:servfail(sock, err)
 
 	-- Find all requests to the down server, and retry on the next server
 	self.time = socket.gettime();
+	log("debug", "servfail %d (of %d)", num, #self.server);
 	for id,queries in pairs(self.active) do
 		for question,o in pairs(queries) do
 			if o.server == num then -- This request was to the broken server
@@ -913,12 +925,27 @@ function resolver:servfail(sock, err)
 				end
 
 				o.retries = (o.retries or 0) + 1;
-				if o.retries >= #self.server then
-					--print('timeout');
-					queries[question] = nil;
-				else
+				local retried;
+				if o.retries < #self.server then
 					sock, err = self:getsocket(o.server);
-					if sock then sock:send(o.packet); end
+					if sock then
+						retried = true;
+						if self.retry_jitter then
+							local delay = self.delays[((o.retries-1)%#self.delays)+1] + (math.random()*self.retry_jitter);
+							log("debug", "retry %d in %0.2fs", o.retries, delay);
+							timer.add_task(delay, function ()
+								sock:send(o.packet);
+							end);
+						else
+							log("debug", "retry %d (immediate)", o.retries);
+							sock:send(o.packet);
+						end
+					end
+				end	
+				if not retried then
+					log("debug", 'tried all servers, giving up');
+					self:cancel(o.qclass, o.qtype, o.qname);
+					queries[question] = nil;
 				end
 			end
 		end
@@ -1164,6 +1191,7 @@ end
 
 local _resolver = dns.resolver();
 dns._resolver = _resolver;
+_resolver.jitter, _resolver.retry_jitter = false, false;
 
 function dns.lookup(...)    -- - - - - - - - - - - - - - - - - - - - -  lookup
 	return _resolver:lookup(...);

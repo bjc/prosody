@@ -12,6 +12,8 @@ local httpstream_new = require "net.http.parser".new;
 local util_http = require "util.http";
 local events = require "util.events";
 local verify_identity = require"util.x509".verify_identity;
+local promise = require "util.promise";
+local http_errors = require "net.http.errors";
 
 local basic_resolver = require "net.resolvers.basic";
 local connect = require "net.connect".connect;
@@ -40,7 +42,7 @@ local listener = { default_port = 80, default_mode = "*a" };
 local function handleerr(err) log("error", "Traceback[http]: %s", traceback(tostring(err), 2)); return err; end
 local function log_if_failed(req, ret, ...)
 	if not ret then
-		log("error", "Request '%s': error in callback: %s", req.id, tostring((...)));
+		log("error", "Request '%s': error in callback: %s", req.id, (...));
 		if not req.suppress_errors then
 			error(...);
 		end
@@ -161,7 +163,7 @@ function listener.onincoming(conn, data)
 	local request = requests[conn];
 
 	if not request then
-		log("warn", "Received response from connection %s with no request attached!", tostring(conn));
+		log("warn", "Received response from connection %s with no request attached!", conn);
 		return;
 	end
 
@@ -282,7 +284,22 @@ end
 local function new(options)
 	local http = {
 		options = options;
-		request = request;
+		request = function (self, u, ex, callback)
+			if callback ~= nil then
+				return request(self, u, ex, callback);
+			else
+				return promise.new(function (resolve, reject)
+					request(self, u, ex, function (body, code, a, b)
+						if code == 0 then
+							reject(http_errors.new(body, { request = a }));
+						else
+							a.request = b;
+							resolve(a);
+						end
+					end);
+				end);
+			end
+		end;
 		new = options and function (new_options)
 			local final_options = {};
 			for k, v in pairs(options) do final_options[k] = v; end
@@ -297,7 +314,7 @@ local function new(options)
 end
 
 local default_http = new({
-	sslctx = { mode = "client", protocol = "sslv23", options = { "no_sslv2", "no_sslv3" } };
+	sslctx = { mode = "client", protocol = "sslv23", options = { "no_sslv2", "no_sslv3" }, alpn = "http/1.1" };
 	suppress_errors = true;
 });
 

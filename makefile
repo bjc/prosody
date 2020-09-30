@@ -19,6 +19,9 @@ INSTALL_EXEC=$(INSTALL) -m755
 MKDIR=install -d
 MKDIR_PRIVATE=$(MKDIR) -m750
 
+LUACHECK=luacheck
+BUSTED=busted
+
 .PHONY: all test clean install
 
 all: prosody.install prosodyctl.install prosody.cfg.lua.install prosody.version
@@ -45,9 +48,12 @@ install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodin
 	$(INSTALL_DATA) util/*.so $(SOURCE)/util
 	$(MKDIR) $(SOURCE)/util/sasl
 	$(INSTALL_DATA) util/sasl/*.lua $(SOURCE)/util/sasl
-	$(MKDIR) $(MODULES)/mod_s2s $(MODULES)/mod_pubsub $(MODULES)/adhoc $(MODULES)/muc $(MODULES)/mod_mam
+	$(MKDIR) $(SOURCE)/util/human
+	$(INSTALL_DATA) util/human/*.lua $(SOURCE)/util/human
+	$(MKDIR) $(SOURCE)/util/prosodyctl
+	$(INSTALL_DATA) util/prosodyctl/*.lua $(SOURCE)/util/prosodyctl
+	$(MKDIR) $(MODULES)/mod_pubsub $(MODULES)/adhoc $(MODULES)/muc $(MODULES)/mod_mam
 	$(INSTALL_DATA) plugins/*.lua $(MODULES)
-	$(INSTALL_DATA) plugins/mod_s2s/*.lua $(MODULES)/mod_s2s
 	$(INSTALL_DATA) plugins/mod_pubsub/*.lua $(MODULES)/mod_pubsub
 	$(INSTALL_DATA) plugins/adhoc/*.lua $(MODULES)/adhoc
 	$(INSTALL_DATA) plugins/muc/*.lua $(MODULES)/muc
@@ -68,8 +74,13 @@ clean:
 	rm -f prosody.version
 	$(MAKE) clean -C util-src
 
+lint:
+	$(LUACHECK) -q $$(HGPLAIN= hg files -I '**.lua') prosody prosodyctl
+	@echo $$(sed -n '/^\tlocal exclude_files/,/^}/p;' .luacheckrc | sed '1d;$d' | wc -l) files ignored
+	shellcheck configure
+
 test:
-	busted --lua=$(RUNWITH)
+	$(BUSTED) --lua=$(RUNWITH)
 
 
 prosody.install: prosody

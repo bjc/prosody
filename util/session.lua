@@ -4,12 +4,13 @@ local logger = require "util.logger";
 local function new_session(typ)
 	local session = {
 		type = typ .. "_unauthed";
+		base_type = typ;
 	};
 	return session;
 end
 
 local function set_id(session)
-	local id = session.type .. tostring(session):match("%x+$"):lower();
+	local id = session.base_type .. tostring(session):match("%x+$"):lower();
 	session.id = id;
 	return session;
 end
@@ -30,7 +31,7 @@ local function set_send(session)
 	local conn = session.conn;
 	if not conn then
 		function session.send(data)
-			session.log("debug", "Discarding data sent to unconnected session: %s", tostring(data));
+			session.log("debug", "Discarding data sent to unconnected session: %s", data);
 			return false;
 		end
 		return session;
@@ -46,7 +47,7 @@ local function set_send(session)
 			if t then
 				local ret, err = w(conn, t);
 				if not ret then
-					session.log("debug", "Error writing to connection: %s", tostring(err));
+					session.log("debug", "Error writing to connection: %s", err);
 					return false, err;
 				end
 			end

@@ -75,14 +75,13 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 	local msg_type = node_obj and node_obj.config.message_type or "headline";
 	local message = st.message({ from = module.host, type = msg_type, id = id })
 		:tag("event", { xmlns = xmlns_pubsub_event })
-			:tag(kind, { node = node })
+			:tag(kind, { node = node });
 
 	if item then
 		message:add_child(item);
 	end
 
 	local summary;
-	-- Compose a sensible textual representation of at least Atom payloads
 	if item and item.tags[1] then
 		local payload = item.tags[1];
 		summary = module:fire_event("pubsub-summary/"..payload.attr.xmlns, {
@@ -101,11 +100,12 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 end
 
 local max_max_items = module:get_option_number("pubsub_max_items", 256);
-function check_node_config(node, actor, new_config) -- luacheck: ignore 212/actor 212/node
+function check_node_config(node, actor, new_config) -- luacheck: ignore 212/node 212/actor
 	if (new_config["max_items"] or 1) > max_max_items then
 		return false;
 	end
-	if new_config["access_model"] ~= "whitelist" and new_config["access_model"] ~= "open" then
+	if new_config["access_model"] ~= "whitelist"
+	and new_config["access_model"] ~= "open" then
 		return false;
 	end
 	return true;
@@ -115,6 +115,7 @@ function is_item_stanza(item)
 	return st.is_stanza(item) and item.attr.xmlns == xmlns_pubsub and item.name == "item" and #item.tags == 1;
 end
 
+-- Compose a textual representation of Atom payloads
 module:hook("pubsub-summary/http://www.w3.org/2005/Atom", function (event)
 	local payload = event.payload;
 	local title = payload:get_child_text("title");
