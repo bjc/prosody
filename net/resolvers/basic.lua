@@ -2,9 +2,12 @@ local adns = require "net.adns";
 local inet_pton = require "util.net".pton;
 local inet_ntop = require "util.net".ntop;
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
+local unpack = table.unpack or unpack; -- luacheck: ignore 113
 
 local methods = {};
 local resolver_mt = { __index = methods };
+
+-- FIXME RFC 6724
 
 -- Find the next target to connect to, and
 -- pass it to cb()
@@ -36,23 +39,32 @@ function methods:next(cb)
 
 	-- Resolve DNS to target list
 	local dns_resolver = adns.resolver();
-	dns_resolver:lookup(function (answer)
-		if answer then
-			for _, record in ipairs(answer) do
-				table.insert(targets, { self.conn_type.."4", record.a, self.port, self.extra });
-			end
-		end
-		ready();
-	end, self.hostname, "A", "IN");
 
-	dns_resolver:lookup(function (answer)
-		if answer then
-			for _, record in ipairs(answer) do
-				table.insert(targets, { self.conn_type.."6", record.aaaa, self.port, self.extra });
+	if not self.extra or self.extra.use_ipv4 ~= false then
+		dns_resolver:lookup(function (answer)
+			if answer then
+				for _, record in ipairs(answer) do
+					table.insert(targets, { self.conn_type.."4", record.a, self.port, self.extra });
+				end
 			end
-		end
+			ready();
+		end, self.hostname, "A", "IN");
+	else
 		ready();
-	end, self.hostname, "AAAA", "IN");
+	end
+
+	if not self.extra or self.extra.use_ipv6 ~= false then
+		dns_resolver:lookup(function (answer)
+			if answer then
+				for _, record in ipairs(answer) do
+					table.insert(targets, { self.conn_type.."6", record.aaaa, self.port, self.extra });
+				end
+			end
+			ready();
+		end, self.hostname, "AAAA", "IN");
+	else
+		ready();
+	end
 end
 
 local function new(hostname, port, conn_type, extra)

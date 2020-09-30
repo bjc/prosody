@@ -285,21 +285,26 @@ end
 
 function is_contact_pending_in(username, host, jid)
 	local roster = load_roster(username, host);
-	return roster[false].pending[jid];
+	return roster[false].pending[jid] ~= nil;
 end
-local function set_contact_pending_in(username, host, jid)
+local function set_contact_pending_in(username, host, jid, stanza)
 	local roster = load_roster(username, host);
 	local item = roster[jid];
 	if item and (item.subscription == "from" or item.subscription == "both") then
 		return; -- false
 	end
-	roster[false].pending[jid] = true;
+	roster[false].pending[jid] = st.is_stanza(stanza) and st.preserialize(stanza) or true;
 	return save_roster(username, host, roster, jid);
 end
 function is_contact_pending_out(username, host, jid)
 	local roster = load_roster(username, host);
 	local item = roster[jid];
 	return item and item.ask;
+end
+local function is_contact_preapproved(username, host, jid)
+	local roster = load_roster(username, host);
+	local item = roster[jid];
+	return item and (item.approved == "true");
 end
 local function set_contact_pending_out(username, host, jid) -- subscribe
 	local roster = load_roster(username, host);
@@ -331,9 +336,10 @@ local function unsubscribe(username, host, jid)
 	return save_roster(username, host, roster, jid);
 end
 local function subscribed(username, host, jid)
+	local roster = load_roster(username, host);
+	local item = roster[jid];
+
 	if is_contact_pending_in(username, host, jid) then
-		local roster = load_roster(username, host);
-		local item = roster[jid];
 		if not item then -- FIXME should roster item be auto-created?
 			item = {subscription = "none", groups = {}};
 			roster[jid] = item;
@@ -345,7 +351,17 @@ local function subscribed(username, host, jid)
 		end
 		roster[false].pending[jid] = nil;
 		return save_roster(username, host, roster, jid);
-	end -- TODO else implement optional feature pre-approval (ask = subscribed)
+	elseif not item or item.subscription == "none" or item.subscription == "to" then
+		-- Contact is not subscribed and has not sent a subscription request.
+		-- We store a pre-approval as per RFC6121 3.4
+		if not item then
+			item = {subscription = "none", groups = {}};
+			roster[jid] = item;
+		end
+		item.approved = "true";
+		log("debug", "Storing preapproval for %s", jid);
+		return save_roster(username, host, roster, jid);
+	end
 end
 local function unsubscribed(username, host, jid)
 	local roster = load_roster(username, host);
@@ -403,6 +419,7 @@ return {
 	set_contact_pending_in = set_contact_pending_in;
 	is_contact_pending_out = is_contact_pending_out;
 	set_contact_pending_out = set_contact_pending_out;
+	is_contact_preapproved = is_contact_preapproved;
 	unsubscribe = unsubscribe;
 	subscribed = subscribed;
 	unsubscribed = unsubscribed;

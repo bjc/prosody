@@ -21,6 +21,7 @@ MKDIR_PRIVATE=$(MKDIR) -m750
 
 LUACHECK=luacheck
 BUSTED=busted
+SCANSION=scansion
 
 .PHONY: all test coverage clean install
 
@@ -48,9 +49,12 @@ install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodin
 	$(INSTALL_DATA) util/*.so $(SOURCE)/util
 	$(MKDIR) $(SOURCE)/util/sasl
 	$(INSTALL_DATA) util/sasl/*.lua $(SOURCE)/util/sasl
-	$(MKDIR) $(MODULES)/mod_s2s $(MODULES)/mod_pubsub $(MODULES)/adhoc $(MODULES)/muc $(MODULES)/mod_mam
+	$(MKDIR) $(SOURCE)/util/human
+	$(INSTALL_DATA) util/human/*.lua $(SOURCE)/util/human
+	$(MKDIR) $(SOURCE)/util/prosodyctl
+	$(INSTALL_DATA) util/prosodyctl/*.lua $(SOURCE)/util/prosodyctl
+	$(MKDIR) $(MODULES)/mod_pubsub $(MODULES)/adhoc $(MODULES)/muc $(MODULES)/mod_mam
 	$(INSTALL_DATA) plugins/*.lua $(MODULES)
-	$(INSTALL_DATA) plugins/mod_s2s/*.lua $(MODULES)/mod_s2s
 	$(INSTALL_DATA) plugins/mod_pubsub/*.lua $(MODULES)/mod_pubsub
 	$(INSTALL_DATA) plugins/adhoc/*.lua $(MODULES)/adhoc
 	$(INSTALL_DATA) plugins/muc/*.lua $(MODULES)/muc
@@ -70,6 +74,13 @@ clean:
 
 test:
 	$(BUSTED) --lua=$(RUNWITH)
+
+integration-test: all
+	$(MKDIR) data
+	$(RUNWITH) prosodyctl --config ./spec/scansion/prosody.cfg.lua start
+	$(SCANSION) -d ./spec/scansion; R=$$? \
+	$(RUNWITH) prosodyctl --config ./spec/scansion/prosody.cfg.lua stop \
+	exit $$R
 
 coverage:
 	-rm -- luacov.*

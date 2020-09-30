@@ -33,10 +33,13 @@
 #if (LUA_VERSION_NUM == 501)
 #define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
 #endif
+#if (LUA_VERSION_NUM < 504)
+#define luaL_pushfail lua_pushnil
+#endif
 
 /* Enumerate all locally configured IP addresses */
 
-const char *const type_strings[] = {
+static const char *const type_strings[] = {
 	"both",
 	"ipv4",
 	"ipv6",
@@ -46,8 +49,8 @@ const char *const type_strings[] = {
 static int lc_local_addresses(lua_State *L) {
 #ifndef _WIN32
 	/* Link-local IPv4 addresses; see RFC 3927 and RFC 5735 */
-	const long ip4_linklocal = htonl(0xa9fe0000); /* 169.254.0.0 */
-	const long ip4_mask      = htonl(0xffff0000);
+	const uint32_t ip4_linklocal = htonl(0xa9fe0000); /* 169.254.0.0 */
+	const uint32_t ip4_mask      = htonl(0xffff0000);
 	struct ifaddrs *addr = NULL, *a;
 #endif
 	int n = 1;
@@ -59,7 +62,7 @@ static int lc_local_addresses(lua_State *L) {
 #ifndef _WIN32
 
 	if(getifaddrs(&addr) < 0) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushfstring(L, "getifaddrs failed (%d): %s", errno,
 		                strerror(errno));
 		return 2;
@@ -141,14 +144,14 @@ static int lc_pton(lua_State *L) {
 
 		case -1:
 			errno_ = errno;
-			lua_pushnil(L);
+			luaL_pushfail(L);
 			lua_pushstring(L, strerror(errno_));
 			lua_pushinteger(L, errno_);
 			return 3;
 
 		default:
 		case 0:
-			lua_pushnil(L);
+			luaL_pushfail(L);
 			lua_pushstring(L, strerror(EINVAL));
 			lua_pushinteger(L, EINVAL);
 			return 3;
@@ -170,7 +173,7 @@ static int lc_ntop(lua_State *L) {
 		family = AF_INET;
 	}
 	else {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(EAFNOSUPPORT));
 		lua_pushinteger(L, EAFNOSUPPORT);
 		return 3;
@@ -179,7 +182,7 @@ static int lc_ntop(lua_State *L) {
 	if(!inet_ntop(family, ipaddr, buf, INET6_ADDRSTRLEN))
 	{
 		errno_ = errno;
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(errno_));
 		lua_pushinteger(L, errno_);
 		return 3;

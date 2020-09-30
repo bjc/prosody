@@ -59,7 +59,7 @@ local add_user_command_handler = adhoc_simple(add_user_layout, function(fields, 
 	if err then
 		return generate_error_message(err);
 	end
-	local username, host, resource = jid.split(fields.accountjid);
+	local username, host = jid.split(fields.accountjid);
 	if module_host ~= host then
 		return { status = "completed", error = { message = "Trying to add a user on " .. host .. " but command was sent to " .. module_host}};
 	end
@@ -94,7 +94,7 @@ local change_user_password_command_handler = adhoc_simple(change_user_password_l
 	if err then
 		return generate_error_message(err);
 	end
-	local username, host, resource = jid.split(fields.accountjid);
+	local username, host = jid.split(fields.accountjid);
 	if module_host ~= host then
 		return {
 			status = "completed",
@@ -136,7 +136,7 @@ local delete_user_command_handler = adhoc_simple(delete_user_layout, function(fi
 	local failed = {};
 	local succeeded = {};
 	for _, aJID in ipairs(fields.accountjids) do
-		local username, host, resource = jid.split(aJID);
+		local username, host = jid.split(aJID);
 		if (host == module_host) and  usermanager_user_exists(username, host) and usermanager_delete_user(username, host) then
 			module:log("debug", "User %s has been deleted", aJID);
 			succeeded[#succeeded+1] = aJID;
@@ -180,7 +180,7 @@ local end_user_session_handler = adhoc_simple(end_user_session_layout, function(
 	local failed = {};
 	local succeeded = {};
 	for _, aJID in ipairs(fields.accountjids) do
-		local username, host, resource = jid.split(aJID);
+		local username, host = jid.split(aJID);
 		if (host == module_host) and  usermanager_user_exists(username, host) and disconnect_user(aJID) then
 			succeeded[#succeeded+1] = aJID;
 		else
@@ -212,7 +212,7 @@ local get_user_password_handler = adhoc_simple(get_user_password_layout, functio
 	if err then
 		return generate_error_message(err);
 	end
-	local user, host, resource = jid.split(fields.accountjid);
+	local user, host = jid.split(fields.accountjid);
 	local accountjid;
 	local password;
 	if host ~= module_host then
@@ -243,7 +243,7 @@ local get_user_roster_handler = adhoc_simple(get_user_roster_layout, function(fi
 		return generate_error_message(err);
 	end
 
-	local user, host, resource = jid.split(fields.accountjid);
+	local user, host = jid.split(fields.accountjid);
 	if host ~= module_host then
 		return { status = "completed", error = { message = "Tried to get roster for a user on " .. host .. " but command was sent to " .. module_host } };
 	elseif not usermanager_user_exists(user, host) then
@@ -392,6 +392,12 @@ local function session_flags(session, line)
 	if session.cert_identity_status == "valid" then
 		flags[#flags+1] = "authenticated";
 	end
+	if session.dialback_key then
+		flags[#flags+1] = "dialback";
+	end
+	if session.external_auth then
+		flags[#flags+1] = "SASL";
+	end
 	if session.secure then
 		flags[#flags+1] = "encrypted";
 	end
@@ -404,6 +410,12 @@ local function session_flags(session, line)
 	if session.ip and session.ip:match(":") then
 		flags[#flags+1] = "IPv6";
 	end
+	if session.incoming and session.outgoing then
+		flags[#flags+1] = "bidi";
+	elseif session.is_bidi or session.bidi_session then
+		flags[#flags+1] = "bidi";
+	end
+
 	line[#line+1] = "("..t_concat(flags, ", ")..")";
 
 	return t_concat(line, " ");

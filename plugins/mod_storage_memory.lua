@@ -8,6 +8,8 @@ local new_id = require "util.id".medium;
 local auto_purge_enabled = module:get_option_boolean("storage_memory_temporary", false);
 local auto_purge_stores = module:get_option_set("storage_memory_temporary_stores", {});
 
+local archive_item_limit = module:get_option_number("storage_archive_item_limit", 1000);
+
 local memory = setmetatable({}, {
 	__index = function(t, k)
 		local store = module:shared(k)
@@ -51,6 +53,12 @@ archive_store.__index = archive_store;
 
 archive_store.users = _users;
 
+archive_store.caps = {
+	total = true;
+	quota = archive_item_limit;
+	truncate = true;
+};
+
 function archive_store:append(username, key, value, when, with)
 	if is_stanza(value) then
 		value = st.preserialize(value);
@@ -70,6 +78,8 @@ function archive_store:append(username, key, value, when, with)
 	end
 	if a[key] then
 		table.remove(a, a[key]);
+	elseif #a >= archive_item_limit then
+		return nil, "quota-limit";
 	end
 	local i = #a+1;
 	a[i] = v;
@@ -80,10 +90,18 @@ end
 function archive_store:find(username, query)
 	local items = self.store[username or NULL];
 	if not items then
-		return function () end, 0;
+		if query then
+			if query.before or query.after then
+				return nil, "item-not-found";
+			end
+			if query.total then
+				return function () end, 0;
+			end
+		end
+		return function () end;
 	end
-	local count = #items;
-	local i = 0;
+	local count = nil;
+	local i, last_key = 0;
 	if query then
 		items = array():append(items);
 		if query.key then
@@ -106,23 +124,37 @@ function archive_store:find(username, query)
 				return item.when <= query["end"];
 			end);
 		end
-		count = #items;
+		if query.total then
+			count = #items;
+		end
 		if query.reverse then
 			items:reverse();
 			if query.before then
-				for j = 1, count do
+				local found = false;
+				for j = 1, #items do
 					if (items[j].key or tostring(j)) == query.before then
+						found = true;
 						i = j;
 						break;
 					end
 				end
+				if not found then
+					return nil, "item-not-found";
+				end
 			end
+		elseif query.before then
+			last_key = query.before;
 		elseif query.after then
-			for j = 1, count do
+			local found = false;
+			for j = 1, #items do
 				if (items[j].key or tostring(j)) == query.after then
+					found = true;
 					i = j;
 					break;
 				end
+			end
+			if not found then
+				return nil, "item-not-found";
 			end
 		end
 		if query.limit and #items - i > query.limit then
@@ -132,9 +164,60 @@ function archive_store:find(username, query)
 	return function ()
 		i = i + 1;
 		local item = items[i];
-		if not item then return; end
+		if not item or (last_key and item.key == last_key) then return; end
 		return item.key, item.value(), item.when, item.with;
 	end, count;
+end
+
+function archive_store:get(username, wanted_key)
+	local items = self.store[username or NULL];
+	if not items then return nil, "item-not-found"; end
+	local i = items[wanted_key];
+	if not i then return nil, "item-not-found"; end
+	local item = items[i];
+	return item.value(), item.when, item.with;
+end
+
+function archive_store:set(username, wanted_key, new_value, new_when, new_with)
+	local items = self.store[username or NULL];
+	if not items then return nil, "item-not-found"; end
+	local i = items[wanted_key];
+	if not i then return nil, "item-not-found"; end
+	local item = items[i];
+
+	if is_stanza(new_value) then
+		new_value = st.preserialize(new_value);
+		item.value = envload("return xml"..serialize(new_value), "=(stanza)", { xml = st.deserialize })
+	else
+		item.value = envload("return "..serialize(new_value), "=(data)", {});
+	end
+	if new_when then
+		item.when = new_when;
+	end
+	if new_with then
+		item.with = new_when;
+	end
+	return true;
+end
+
+function archive_store:summary(username, query)
+	local iter, err = self:find(username, query)
+	if not iter then return iter, err; end
+	local counts = {};
+	local earliest = {};
+	local latest = {};
+	for _, _, when, with in iter do
+		counts[with] = (counts[with] or 0) + 1;
+		if earliest[with] == nil then
+			earliest[with] = when;
+		end
+		latest[with] = when;
+	end
+	return {
+		counts = counts;
+		earliest = earliest;
+		latest = latest;
+	};
 end
 
 

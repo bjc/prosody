@@ -38,7 +38,7 @@ local simple_map = {
 module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 	local origin, stanza = event.origin, event.stanza;
 	local pep_service = mod_pep.get_pep_service(jid_split(stanza.attr.to) or origin.username);
-	local ok, id, vcard4_item = pep_service:get_last_item("urn:xmpp:vcard4", stanza.attr.from);
+	local ok, _, vcard4_item = pep_service:get_last_item("urn:xmpp:vcard4", stanza.attr.from);
 
 	local vcard_temp = st.stanza("vCard", { xmlns = "vcard-temp" });
 	if ok and vcard4_item then
@@ -105,26 +105,46 @@ module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 					vcard_temp:tag("WORK"):up();
 				end
 				vcard_temp:up();
+			elseif tag.name == "impp" then
+				local uri = tag:get_child_text("uri");
+				if uri and uri:sub(1, 5) == "xmpp:" then
+					vcard_temp:text_tag("JABBERID", uri:sub(6))
+				end
+			elseif tag.name == "org" then
+				vcard_temp:tag("ORG")
+					:text_tag("ORGNAME", tag:get_child_text("text"))
+				:up();
+			end
+		end
+	else
+		local ok, _, nick_item = pep_service:get_last_item("http://jabber.org/protocol/nick", stanza.attr.from);
+		if ok and nick_item then
+			local nickname = nick_item:get_child_text("nick", "http://jabber.org/protocol/nick");
+			if nickname then
+				vcard_temp:text_tag("NICKNAME", nickname);
 			end
 		end
 	end
 
-	local meta_ok, avatar_meta = pep_service:get_items("urn:xmpp:avatar:metadata", stanza.attr.from);
-	local data_ok, avatar_data = pep_service:get_items("urn:xmpp:avatar:data", stanza.attr.from);
+	local ok, avatar_hash, meta = pep_service:get_last_item("urn:xmpp:avatar:metadata", true);
+	if ok and avatar_hash then
 
-	if data_ok then
-		for _, hash in ipairs(avatar_data) do
-			local meta = meta_ok and avatar_meta[hash];
-			local data = avatar_data[hash];
-			local info = meta and meta.tags[1]:get_child("info");
+		local info = meta.tags[1]:get_child("info");
+		if info then
 			vcard_temp:tag("PHOTO");
-			if info and info.attr.type then
+
+			if info.attr.type then
 				vcard_temp:text_tag("TYPE", info.attr.type);
 			end
-			if data then
-				vcard_temp:text_tag("BINVAL", data.tags[1]:get_text());
-			elseif info and info.attr.url then
+
+			if info.attr.url then
 				vcard_temp:text_tag("EXTVAL", info.attr.url);
+			elseif info.attr.id then
+				local data_ok, avatar_data = pep_service:get_items("urn:xmpp:avatar:data", stanza.attr.from, { info.attr.id });
+				if data_ok and avatar_data and avatar_data[info.attr.id]  then
+					local data = avatar_data[info.attr.id];
+					vcard_temp:text_tag("BINVAL", data.tags[1]:get_text());
+				end
 			end
 			vcard_temp:up();
 		end
@@ -140,7 +160,7 @@ local node_defaults = {
 };
 
 function vcard_to_pep(vcard_temp)
-	local avatars = {};
+	local avatar = {};
 
 	local vcard4 = st.stanza("item", { xmlns = "http://jabber.org/protocol/pubsub", id = "current" })
 		:tag("vcard", { xmlns = 'urn:ietf:params:xml:ns:vcard-4.0' });
@@ -216,6 +236,10 @@ function vcard_to_pep(vcard_temp)
 				vcard4:text_tag("text", "work");
 			end
 			vcard4:up():up():up();
+		elseif tag.name == "JABBERID" then
+			vcard4:tag("impp")
+				:text_tag("uri", "xmpp:" .. tag:get_text())
+			:up();
 		elseif tag.name == "PHOTO" then
 			local avatar_type = tag:get_child_text("TYPE");
 			local avatar_payload = tag:get_child_text("BINVAL");
@@ -225,7 +249,9 @@ function vcard_to_pep(vcard_temp)
 				local avatar_raw = base64_decode(avatar_payload);
 				local avatar_hash = sha1(avatar_raw, true);
 
-				local avatar_meta = st.stanza("item", { id = avatar_hash, xmlns = "http://jabber.org/protocol/pubsub" })
+				avatar.hash = avatar_hash;
+
+				avatar.meta = st.stanza("item", { id = avatar_hash, xmlns = "http://jabber.org/protocol/pubsub" })
 					:tag("metadata", { xmlns="urn:xmpp:avatar:metadata" })
 						:tag("info", {
 							bytes = tostring(#avatar_raw),
@@ -233,36 +259,27 @@ function vcard_to_pep(vcard_temp)
 							type = avatar_type,
 						});
 
-				local avatar_data = st.stanza("item", { id = avatar_hash, xmlns = "http://jabber.org/protocol/pubsub" })
+				avatar.data = st.stanza("item", { id = avatar_hash, xmlns = "http://jabber.org/protocol/pubsub" })
 					:tag("data", { xmlns="urn:xmpp:avatar:data" })
 						:text(avatar_payload);
 
-				table.insert(avatars, { hash = avatar_hash, meta = avatar_meta, data = avatar_data });
 			end
 		end
 	end
-	return vcard4, avatars;
+	return vcard4, avatar;
 end
 
-function save_to_pep(pep_service, actor, vcard4, avatars)
-	if avatars then
+function save_to_pep(pep_service, actor, vcard4, avatar)
+	if avatar then
 
 		if pep_service:purge("urn:xmpp:avatar:metadata", actor) then
 			pep_service:purge("urn:xmpp:avatar:data", actor);
 		end
 
-		local avatar_defaults = node_defaults;
-		if #avatars > 1 then
-			avatar_defaults = {};
-			for k,v in pairs(node_defaults) do
-				avatar_defaults[k] = v;
-			end
-			avatar_defaults.max_items = #avatars;
-		end
-		for _, avatar in ipairs(avatars) do
-			local ok, err = pep_service:publish("urn:xmpp:avatar:data", actor, avatar.hash, avatar.data, avatar_defaults);
+		if avatar.data and avatar.meta then
+			local ok, err = assert(pep_service:publish("urn:xmpp:avatar:data", actor, avatar.hash, avatar.data, node_defaults));
 			if ok then
-				ok, err = pep_service:publish("urn:xmpp:avatar:metadata", actor, avatar.hash, avatar.meta, avatar_defaults);
+				ok, err = assert(pep_service:publish("urn:xmpp:avatar:metadata", actor, avatar.hash, avatar.meta, node_defaults));
 			end
 			if not ok then
 				return ok, err;

@@ -48,16 +48,18 @@ module:hook("muc-config-form", function(event)
 	table.insert(event.form, {
 		name = "muc#roomconfig_historylength";
 		type = "text-single";
+		datatype = "xs:integer";
 		label = "Maximum number of history messages returned by room";
 		desc = "Specify the maximum number of previous messages that should be sent to users when they join the room";
-		value = tostring(get_historylength(event.room));
+		value = get_historylength(event.room);
 	});
 	table.insert(event.form, {
 		name = 'muc#roomconfig_defaulthistorymessages',
 		type = 'text-single',
+		datatype = "xs:integer";
 		label = 'Default number of history messages returned by room',
 		desc = "Specify the number of previous messages sent to new users when they join the room";
-		value = tostring(get_defaulthistorymessages(event.room))
+		value = get_defaulthistorymessages(event.room);
 	});
 end, 70-5);
 
@@ -198,7 +200,27 @@ module:hook("muc-broadcast-message", function(event)
 end);
 
 module:hook("muc-message-is-historic", function (event)
-	return event.stanza:get_child("body");
+	local stanza = event.stanza;
+	if stanza:get_child("no-store", "urn:xmpp:hints")
+	or stanza:get_child("no-permanent-store", "urn:xmpp:hints") then
+		-- XXX Experimental XEP
+		return false, "hint";
+	end
+	if stanza:get_child("store", "urn:xmpp:hints") then
+		return true, "hint";
+	end
+	if stanza:get_child("body") then
+		return true;
+	end
+	if stanza:get_child("encryption", "urn:xmpp:eme:0") then
+		-- Since we can't know what an encrypted message contains, we assume it's important
+		-- XXX Experimental XEP
+		return true, "encrypted";
+	end
+	if stanza:get_child(nil, "urn:xmpp:chat-markers:0") then
+		-- XXX Experimental XEP
+		return true, "marker";
+	end
 end, -1);
 
 return {

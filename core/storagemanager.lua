@@ -167,6 +167,39 @@ local map_shim_mt = {
 			return self.keyval_store:set(username, current);
 		end;
 		remove = {};
+		get_all = function (self, key)
+			if type(key) ~= "string" or key == "" then
+				return nil, "get_all only supports non-empty string keys";
+			end
+			local ret;
+			for username in self.keyval_store:users() do
+				local key_data = self:get(username, key);
+				if key_data then
+					if not ret then
+						ret = {};
+					end
+					ret[username] = key_data;
+				end
+			end
+			return ret;
+		end;
+		delete_all = function (self, key)
+			if type(key) ~= "string" or key == "" then
+				return nil, "delete_all only supports non-empty string keys";
+			end
+			local data = { [key] = self.remove };
+			local last_err;
+			for username in self.keyval_store:users() do
+				local ok, err = self:set_keys(username, data);
+				if not ok then
+					last_err = err;
+				end
+			end
+			if last_err then
+				return nil, last_err;
+			end
+			return true;
+		end;
 	};
 }
 

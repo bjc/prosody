@@ -53,9 +53,10 @@ local function handle_registration_stanza(event)
 			log("info", "User removed their account: %s@%s", username, host);
 			module:fire_event("user-deregistered", { username = username, host = host, source = "mod_register", session = session });
 		else
-			local username = nodeprep(query:get_child_text("username"));
+			local username = query:get_child_text("username");
 			local password = query:get_child_text("password");
 			if username and password then
+				username = nodeprep(username);
 				if username == session.username then
 					if usermanager_set_password(username, password, session.host, session.resource) then
 						session.send(st.reply(stanza));

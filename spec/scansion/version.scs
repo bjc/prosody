@@ -1,0 +1,27 @@
+# XEP-0092: Software Version / mod_version
+
+[Client] Romeo
+	password: password
+	jid: romeo@localhost/dfaZpuxV
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<iq id='lx2' to='localhost' type='get'>
+		<query xmlns='jabber:iq:version'/>
+	</iq>
+
+# Version string would vary so we can't do an exact match atm
+# Inclusion of <os/> is disabled in the config, it should be absent
+Romeo receives:
+	<iq id='lx2' from='localhost' type='result'>
+		<query xmlns='jabber:iq:version' scansion:strict='true'>
+			<name>Prosody</name>
+			<version scansion:strict='false'/>
+		</query>
+	</iq>
+
+
+Romeo disconnects

@@ -44,19 +44,41 @@ local bosh_max_polling = module:get_option_number("bosh_max_polling", 5);
 local bosh_max_wait = module:get_option_number("bosh_max_wait", 120);
 
 local consider_bosh_secure = module:get_option_boolean("consider_bosh_secure");
-local cross_domain = module:get_option("cross_domain_bosh", false);
+local cross_domain = module:get_option("cross_domain_bosh");
 
-if cross_domain == true then cross_domain = "*"; end
-if type(cross_domain) == "table" then cross_domain = table.concat(cross_domain, ", "); end
+if cross_domain ~= nil then
+	module:log("info", "The 'cross_domain_bosh' option has been deprecated");
+end
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 
 -- All sessions, and sessions that have no requests open
 local sessions = module:shared("sessions");
 
+local measure_active = module:measure("active_sessions", "amount");
+local measure_inactive = module:measure("inactive_sessions", "amount");
+local report_bad_host = module:measure("bad_host", "rate");
+local report_bad_sid = module:measure("bad_sid", "rate");
+local report_new_sid = module:measure("new_sid", "rate");
+local report_timeout = module:measure("timeout", "rate");
+
+module:hook("stats-update", function ()
+	local active = 0;
+	local inactive = 0;
+	for _, session in pairs(sessions) do
+		if #session.requests > 0 then
+			active = active + 1;
+		else
+			inactive = inactive + 1;
+		end
+	end
+	measure_active(active);
+	measure_inactive(inactive);
+end);
+
 -- Used to respond to idle sessions (those with waiting requests)
 function on_destroy_request(request)
-	log("debug", "Request destroyed: %s", tostring(request));
+	log("debug", "Request destroyed: %s", request);
 	local session = sessions[request.context.sid];
 	if session then
 		local requests = session.requests;
@@ -73,7 +95,7 @@ function on_destroy_request(request)
 			if session.inactive_timer then
 				session.inactive_timer:stop();
 			end
-			session.inactive_timer = module:add_timer(max_inactive, check_inactive, session, request.context,
+			session.inactive_timer = module:add_timer(max_inactive, session_timeout, session, request.context,
 				"BOSH client silent for over "..max_inactive.." seconds");
 			(session.log or log)("debug", "BOSH session marked as inactive (for %ds)", max_inactive);
 		end
@@ -84,31 +106,16 @@ function on_destroy_request(request)
 	end
 end
 
-function check_inactive(now, session, context, reason) -- luacheck: ignore 212/now
+function session_timeout(now, session, context, reason) -- luacheck: ignore 212/now
 	if not session.destroyed then
+		report_timeout();
 		sessions[context.sid] = nil;
 		sm_destroy_session(session, reason);
 	end
 end
 
-local function set_cross_domain_headers(response)
-	local headers = response.headers;
-	headers.access_control_allow_methods = "GET, POST, OPTIONS";
-	headers.access_control_allow_headers = "Content-Type";
-	headers.access_control_max_age = "7200";
-	headers.access_control_allow_origin = cross_domain;
-	return response;
-end
-
-function handle_OPTIONS(event)
-	if cross_domain and event.request.headers.origin then
-		set_cross_domain_headers(event.response);
-	end
-	return "";
-end
-
 function handle_POST(event)
-	log("debug", "Handling new request %s: %s\n----------", tostring(event.request), tostring(event.request.body));
+	log("debug", "Handling new request %s: %s\n----------", event.request, event.request.body);
 
 	local request, response = event.request, event.response;
 	response.on_destroy = on_destroy_request;
@@ -120,10 +127,6 @@ function handle_POST(event)
 
 	local headers = response.headers;
 	headers.content_type = "text/xml; charset=utf-8";
-
-	if cross_domain and request.headers.origin then
-		set_cross_domain_headers(response);
-	end
 
 	-- stream:feed() calls the stream_callbacks, so all stanzas in
 	-- the body are processed in this next line before it returns.
@@ -205,6 +208,7 @@ function handle_POST(event)
 		return;
 	end
 	module:log("warn", "Unable to associate request with a session (incomplete request?)");
+	report_bad_sid();
 	local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
 		["xmlns:stream"] = xmlns_streams, condition = "item-not-found" });
 	return tostring(close_reply) .. "\n";
@@ -220,7 +224,7 @@ local function bosh_reset_stream(session) session.notopen = true; end
 
 local stream_xmlns_attr = { xmlns = "urn:ietf:params:xml:ns:xmpp-streams" };
 local function bosh_close_stream(session, reason)
-	(session.log or log)("info", "BOSH client disconnected: %s", tostring((reason and reason.condition or reason) or "session close"));
+	(session.log or log)("info", "BOSH client disconnected: %s", (reason and reason.condition or reason) or "session close");
 
 	local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
 		["xmlns:stream"] = xmlns_streams });
@@ -245,7 +249,7 @@ local function bosh_close_stream(session, reason)
 				close_reply = reason;
 			end
 		end
-		log("info", "Disconnecting client, <stream:error> is: %s", tostring(close_reply));
+		log("info", "Disconnecting client, <stream:error> is: %s", close_reply);
 	end
 
 	local response_body = tostring(close_reply);
@@ -268,17 +272,27 @@ function stream_callbacks.streamopened(context, attr)
 		-- New session request
 		context.notopen = nil; -- Signals that we accept this opening tag
 
+		if not attr.to then
+			log("debug", "BOSH client tried to connect without specifying a host");
+			report_bad_host();
+			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+				["xmlns:stream"] = xmlns_streams, condition = "improper-addressing" });
+			response:send(tostring(close_reply));
+			return;
+		end
+
 		local to_host = nameprep(attr.to);
 		local wait = tonumber(attr.wait);
 		if not to_host then
-			log("debug", "BOSH client tried to connect to invalid host: %s", tostring(attr.to));
+			log("debug", "BOSH client tried to connect to invalid host: %s", attr.to);
+			report_bad_host();
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
 				["xmlns:stream"] = xmlns_streams, condition = "improper-addressing" });
 			response:send(tostring(close_reply));
 			return;
 		end
 		if not rid or (not attr.wait or not wait or wait < 0 or wait % 1 ~= 0) then
-			log("debug", "BOSH client sent invalid rid or wait attributes: rid=%s, wait=%s", tostring(attr.rid), tostring(attr.wait));
+			log("debug", "BOSH client sent invalid rid or wait attributes: rid=%s, wait=%s", attr.rid, attr.wait);
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
 				["xmlns:stream"] = xmlns_streams, condition = "bad-request" });
 			response:send(tostring(close_reply));
@@ -309,6 +323,7 @@ function stream_callbacks.streamopened(context, attr)
 
 		session.log("debug", "BOSH session created for request from %s", session.ip);
 		log("info", "New BOSH session, assigned it sid '%s'", sid);
+		report_new_sid();
 
 		module:fire_event("bosh-session", { session = session, request = request });
 
@@ -323,7 +338,7 @@ function stream_callbacks.streamopened(context, attr)
 				s.attr.xmlns = "jabber:client";
 			end
 			s = filter("stanzas/out", s);
-			--log("debug", "Sending BOSH data: %s", tostring(s));
+			--log("debug", "Sending BOSH data: %s", s);
 			if not s then return true end
 			t_insert(session.send_buffer, tostring(s));
 
@@ -363,6 +378,7 @@ function stream_callbacks.streamopened(context, attr)
 	if not session then
 		-- Unknown sid
 		log("info", "Client tried to use sid '%s' which we don't know about", sid);
+		report_bad_sid();
 		response:send(tostring(st.stanza("body", { xmlns = xmlns_bosh, type = "terminate", condition = "item-not-found" })));
 		context.notopen = nil;
 		return;
@@ -425,7 +441,7 @@ function stream_callbacks.streamopened(context, attr)
 	end
 end
 
-local function handleerr(err) log("error", "Traceback[bosh]: %s", traceback(tostring(err), 2)); end
+local function handleerr(err) log("error", "Traceback[bosh]: %s", traceback(err, 2)); end
 
 function runner_callbacks:error(err) -- luacheck: ignore 212/self
 	return handleerr(err);
@@ -495,14 +511,16 @@ function stream_callbacks.error(context, error)
 	end
 end
 
+local GET_response_body = [[<html><body>
+	<p>It works! Now point your BOSH client to this URL to connect to Prosody.</p>
+	<p>For more information see <a href="https://prosody.im/doc/setting_up_bosh">Prosody: Setting up BOSH</a>.</p>
+	</body></html>]];
+
 local GET_response = {
 	headers = {
 		content_type = "text/html";
 	};
-	body = [[<html><body>
-	<p>It works! Now point your BOSH client to this URL to connect to Prosody.</p>
-	<p>For more information see <a href="https://prosody.im/doc/setting_up_bosh">Prosody: Setting up BOSH</a>.</p>
-	</body></html>]];
+	body = module:get_option_string("bosh_get_response_body", GET_response_body);
 };
 
 module:depends("http");
@@ -511,8 +529,6 @@ module:provides("http", {
 	route = {
 		["GET"] = GET_response;
 		["GET /"] = GET_response;
-		["OPTIONS"] = handle_OPTIONS;
-		["OPTIONS /"] = handle_OPTIONS;
 		["POST"] = handle_POST;
 		["POST /"] = handle_POST;
 	};

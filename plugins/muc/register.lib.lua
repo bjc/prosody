@@ -15,8 +15,7 @@ local function get_reserved_nicks(room)
 	end
 	module:log("debug", "Refreshing reserved nicks...");
 	local reserved_nicks = {};
-	for jid in room:each_affiliation() do
-		local data = room._affiliation_data[jid];
+	for jid, _, data in room:each_affiliation() do
 		local nick = data and data.reserved_nickname;
 		module:log("debug", "Refreshed for %s: %s", jid, nick);
 		if nick then
@@ -54,7 +53,7 @@ end);
 
 local registration_form = dataforms.new {
 	{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/muc#register" },
-	{ name = "muc#register_roomnick", type = "text-single", label = "Nickname"},
+	{ name = "muc#register_roomnick", type = "text-single", required = true, label = "Nickname"},
 };
 
 local function enforce_nick_policy(event)
@@ -67,7 +66,7 @@ local function enforce_nick_policy(event)
 	local reserved_by = get_registered_jid(room, requested_nick);
 	if reserved_by and reserved_by ~= jid_bare(stanza.attr.from) then
 		module:log("debug", "%s attempted to use nick %s reserved by %s", stanza.attr.from, requested_nick, reserved_by);
-		local reply = st.error_reply(stanza, "cancel", "conflict"):up();
+		local reply = st.error_reply(stanza, "cancel", "conflict", nil, room.jid):up();
 		origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 		return true;
 	end
@@ -80,7 +79,7 @@ local function enforce_nick_policy(event)
 				event.occupant.nick = jid_bare(event.occupant.nick) .. "/" .. nick;
 			elseif event.dest_occupant.nick ~= jid_bare(event.dest_occupant.nick) .. "/" .. nick then
 				module:log("debug", "Attempt by %s to join as %s, but their reserved nick is %s", stanza.attr.from, requested_nick, nick);
-				local reply = st.error_reply(stanza, "cancel", "not-acceptable"):up();
+				local reply = st.error_reply(stanza, "cancel", "not-acceptable", nil, room.jid):up();
 				origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 				return true;
 			end
@@ -104,7 +103,7 @@ local function handle_register_iq(room, origin, stanza)
 	local user_jid = jid_bare(stanza.attr.from)
 	local affiliation = room:get_affiliation(user_jid);
 	if affiliation == "outcast" then
-		origin.send(st.error_reply(stanza, "auth", "forbidden"));
+		origin.send(st.error_reply(stanza, "auth", "forbidden", room.jid));
 		return true;
 	elseif not (affiliation or allow_unaffiliated) then
 		origin.send(st.error_reply(stanza, "auth", "registration-required"));
@@ -135,13 +134,25 @@ local function handle_register_iq(room, origin, stanza)
 			return true;
 		end
 		local form_tag = query:get_child("x", "jabber:x:data");
-		local reg_data = form_tag and registration_form:data(form_tag);
+		if not form_tag then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", "Missing dataform"));
+			return true;
+		end
+		local form_type, err = dataforms.get_type(form_tag);
+		if not form_type then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", "Error with form: "..err));
+			return true;
+		elseif form_type ~= "http://jabber.org/protocol/muc#register" then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", "Error in form"));
+			return true;
+		end
+		local reg_data = registration_form:data(form_tag);
 		if not reg_data then
 			origin.send(st.error_reply(stanza, "modify", "bad-request", "Error in form"));
 			return true;
 		end
 		-- Is the nickname valid?
-		local desired_nick = resourceprep(reg_data["muc#register_roomnick"]);
+		local desired_nick = resourceprep(reg_data["muc#register_roomnick"], true);
 		if not desired_nick then
 			origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid Nickname"));
 			return true;

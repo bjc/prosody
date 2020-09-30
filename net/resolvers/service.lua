@@ -1,6 +1,8 @@
 local adns = require "net.adns";
 local basic = require "net.resolvers.basic";
+local inet_pton = require "util.net".pton;
 local idna_to_ascii = require "util.encodings".idna.to_ascii;
+local unpack = table.unpack or unpack; -- luacheck: ignore 113
 
 local methods = {};
 local resolver_mt = { __index = methods };
@@ -9,14 +11,17 @@ local resolver_mt = { __index = methods };
 -- pass it to cb()
 function methods:next(cb)
 	if self.targets then
-		if #self.targets == 0 then
-			cb(nil);
-			return;
+		if not self.resolver then
+			if #self.targets == 0 then
+				cb(nil);
+				return;
+			end
+			local next_target = table.remove(self.targets, 1);
+			self.resolver = basic.new(unpack(next_target, 1, 4));
 		end
-		local next_target = table.remove(self.targets, 1);
-		self.resolver = basic.new(unpack(next_target, 1, 4));
 		self.resolver:next(function (...)
 			if ... == nil then
+				self.resolver = nil;
 				self:next(cb);
 			else
 				cb(...);
@@ -39,7 +44,11 @@ function methods:next(cb)
 
 	-- Resolve DNS to target list
 	local dns_resolver = adns.resolver();
-	dns_resolver:lookup(function (answer)
+	dns_resolver:lookup(function (answer, err)
+		if not answer and not err then
+			-- net.adns returns nil if there are zero records or nxdomain
+			answer = {};
+		end
 		if answer then
 			if #answer == 0 then
 				if self.extra and self.extra.default_port then
@@ -64,6 +73,14 @@ function methods:next(cb)
 end
 
 local function new(hostname, service, conn_type, extra)
+	local is_ip = inet_pton(hostname);
+	if not is_ip and hostname:sub(1,1) == '[' then
+		is_ip = inet_pton(hostname:sub(2,-2));
+	end
+	if is_ip and extra and extra.default_port then
+		return basic.new(hostname, extra.default_port, conn_type, extra);
+	end
+
 	return setmetatable({
 		hostname = idna_to_ascii(hostname);
 		service = service;

@@ -19,7 +19,7 @@ function hg.check_id(path)
 			hg_changelog:close();
 		end
 	else
-		local hg_archival,e = io.open(path.."/.hg_archival.txt");
+		local hg_archival,e = io.open(path.."/.hg_archival.txt"); -- luacheck: ignore 211/e
 		if hg_archival then
 			local repo = hg_archival:read("*l");
 			local node = hg_archival:read("*l");

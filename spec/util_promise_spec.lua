@@ -248,6 +248,30 @@ describe("util.promise", function ()
 			assert.spy(cb3).was_called(1);
 			assert.spy(cb3).was_called_with("goodbye");
 		end);
+
+		it("ordinary values", function ()
+			local p = promise.resolve()
+			local cb = spy.new(function ()
+				return "hello"
+			end);
+			local cb2 = spy.new(function () end);
+			p:next(cb):next(cb2);
+			assert.spy(cb).was_called(1);
+			assert.spy(cb2).was_called(1);
+			assert.spy(cb2).was_called_with("hello");
+		end);
+
+		it("nil", function ()
+			local p = promise.resolve()
+			local cb = spy.new(function ()
+				return
+			end);
+			local cb2 = spy.new(function () end);
+			p:next(cb):next(cb2);
+			assert.spy(cb).was_called(1);
+			assert.spy(cb2).was_called(1);
+			assert.spy(cb2).was_called_with(nil);
+		end);
 	end);
 
 	describe("race()", function ()
@@ -327,6 +351,60 @@ describe("util.promise", function ()
 			assert.spy(cb).was_called(0);
 			assert.spy(cb_err).was_called(1);
 			assert.equal("fail", result);
+		end);
+	end);
+	describe("all_settled()", function ()
+		it("works with fulfilled promises", function ()
+			local p1, p2 = promise.resolve("yep"), promise.resolve("nope");
+			local p = promise.all_settled({ p1, p2 });
+			local result;
+			p:next(function (v)
+				result = v;
+			end);
+			assert.same({
+				{ status = "fulfilled", value = "yep" };
+				{ status = "fulfilled", value = "nope" };
+			}, result);
+		end);
+		it("works with pending promises", function ()
+			local r1, r2;
+			local p1, p2 = promise.new(function (resolve) r1 = resolve end), promise.new(function (resolve) r2 = resolve end);
+			local p = promise.all_settled({ p1, p2 });
+
+			local result;
+			local cb = spy.new(function (v)
+				result = v;
+			end);
+			p:next(cb);
+			assert.spy(cb).was_called(0);
+			r2("yep");
+			assert.spy(cb).was_called(0);
+			r1("nope");
+			assert.spy(cb).was_called(1);
+			assert.same({
+				{ status = "fulfilled", value = "nope" };
+				{ status = "fulfilled", value = "yep" };
+			}, result);
+		end);
+		it("works when some promises reject", function ()
+			local r1, r2;
+			local p1, p2 = promise.new(function (resolve) r1 = resolve end), promise.new(function (_, reject) r2 = reject end);
+			local p = promise.all_settled({ p1, p2 });
+
+			local result;
+			local cb = spy.new(function (v)
+				result = v;
+			end);
+			p:next(cb);
+			assert.spy(cb).was_called(0);
+			r2("this fails");
+			assert.spy(cb).was_called(0);
+			r1("this succeeds");
+			assert.spy(cb).was_called(1);
+			assert.same({
+				{ status = "fulfilled", value = "this succeeds" };
+				{ status = "rejected", reason = "this fails" };
+			}, result);
 		end);
 	end);
 	describe("catch()", function ()

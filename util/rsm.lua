@@ -10,9 +10,14 @@
 --
 
 local stanza = require"util.stanza".stanza;
-local tostring, tonumber = tostring, tonumber;
+local tonumber = tonumber;
+local s_format = string.format;
 local type = type;
 local pairs = pairs;
+
+local function inttostr(n)
+	return s_format("%d", n);
+end
 
 local xmlns_rsm = 'http://jabber.org/protocol/rsm';
 
@@ -45,22 +50,28 @@ end
 local element_generators = setmetatable({
 	first = function(st, data)
 		if type(data) == "table" then
-			st:tag("first", { index = data.index }):text(data[1]):up();
+			st:tag("first", { index = inttostr(data.index) }):text(data[1]):up();
 		else
-			st:tag("first"):text(tostring(data)):up();
+			st:tag("first"):text(data):up();
 		end
 	end;
 	before = function(st, data)
 		if data == true then
 			st:tag("before"):up();
 		else
-			st:tag("before"):text(tostring(data)):up();
+			st:tag("before"):text(data):up();
 		end
-	end
+	end;
+	max = function (st, data)
+		st:tag("max"):text(inttostr(data)):up();
+	end;
+	count = function (st, data)
+		st:tag("count"):text(inttostr(data)):up();
+	end;
 }, {
 	__index = function(_, name)
 		return function(st, data)
-			st:tag(name):text(tostring(data)):up();
+			st:tag(name):text(data):up();
 		end
 	end;
 });

@@ -14,13 +14,19 @@ local pluginloader = require "util.pluginloader";
 local timer = require "util.timer";
 local resolve_relative_path = require"util.paths".resolve_relative_path;
 local st = require "util.stanza";
+local cache = require "util.cache";
+local errors = require "util.error";
+local promise = require "util.promise";
+local time_now = require "util.time".now;
+local format = require "util.format".format;
+local jid_node = require "util.jid".node;
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local error, setmetatable, type = error, setmetatable, type;
 local ipairs, pairs, select = ipairs, pairs, select;
 local tonumber, tostring = tonumber, tostring;
 local require = require;
-local pack = table.pack or function(...) return {n=select("#",...), ...}; end -- table.pack is only in 5.2
+local pack = table.pack or require "util.table".pack; -- table.pack is only in 5.2
 local unpack = table.unpack or unpack; --luacheck: ignore 113 -- renamed in 5.2
 
 local prosody = prosody;
@@ -361,6 +367,100 @@ function api:send(stanza, origin)
 	return core_post_stanza(origin or hosts[self.host], stanza);
 end
 
+function api:send_iq(stanza, origin, timeout)
+	local iq_cache = self._iq_cache;
+	if not iq_cache then
+		iq_cache = cache.new(256, function (_, iq)
+			iq.reject(errors.new({
+				type = "wait", condition = "resource-constraint",
+				text = "evicted from iq tracking cache"
+			}));
+		end);
+		self._iq_cache = iq_cache;
+	end
+
+	local event_type;
+	if not jid_node(stanza.attr.from) then
+		event_type = "host";
+	else -- assume bare since we can't hook full jids
+		event_type = "bare";
+	end
+	local result_event = "iq-result/"..event_type.."/"..stanza.attr.id;
+	local error_event = "iq-error/"..event_type.."/"..stanza.attr.id;
+	local cache_key = event_type.."/"..stanza.attr.id;
+
+	local p = promise.new(function (resolve, reject)
+		local function result_handler(event)
+			if event.stanza.attr.from == stanza.attr.to then
+				resolve(event);
+				return true;
+			end
+		end
+
+		local function error_handler(event)
+			if event.stanza.attr.from == stanza.attr.to then
+				reject(errors.from_stanza(event.stanza, event));
+				return true;
+			end
+		end
+
+		if iq_cache:get(cache_key) then
+			reject(errors.new({
+				type = "modify", condition = "conflict",
+				text = "IQ stanza id attribute already used",
+			}));
+			return;
+		end
+
+		self:hook(result_event, result_handler);
+		self:hook(error_event, error_handler);
+
+		local timeout_handle = self:add_timer(timeout or 120, function ()
+			reject(errors.new({
+				type = "wait", condition = "remote-server-timeout",
+				text = "IQ stanza timed out",
+			}));
+		end);
+
+		local ok = iq_cache:set(cache_key, {
+			reject = reject, resolve = resolve,
+			timeout_handle = timeout_handle,
+			result_handler = result_handler, error_handler = error_handler;
+		});
+
+		if not ok then
+			reject(errors.new({
+				type = "wait", condition = "internal-server-error",
+				text = "Could not store IQ tracking data"
+			}));
+			return;
+		end
+
+		local wrapped_origin = setmetatable({
+				-- XXX Needed in some cases for replies to work correctly when sending queries internally.
+				send = function (reply)
+					resolve({ stanza = reply });
+				end;
+			}, {
+				__index = origin or hosts[self.host];
+			});
+
+		self:send(stanza, wrapped_origin);
+	end);
+
+	p:finally(function ()
+		local iq = iq_cache:get(cache_key);
+		if iq then
+			self:unhook(result_event, iq.result_handler);
+			self:unhook(error_event, iq.error_handler);
+			iq.timeout_handle:stop();
+			iq_cache:set(cache_key, nil);
+		end
+	end);
+
+	return p;
+end
+
 function api:broadcast(jids, stanza, iter)
 	for jid in (iter or it.values)(jids) do
 		local new_stanza = st.clone(stanza);
@@ -408,9 +508,9 @@ function api:open_store(name, store_type)
 	return require"core.storagemanager".open(self.host, name or self.name, store_type);
 end
 
-function api:measure(name, stat_type)
+function api:measure(name, stat_type, conf)
 	local measure = require "core.statsmanager".measure;
-	return measure(stat_type, "/"..self.host.."/mod_"..self.name.."/"..name);
+	return measure(stat_type, "/"..self.host.."/mod_"..self.name.."/"..name, conf);
 end
 
 function api:measure_object_event(events_object, event_name, stat_name)
@@ -430,6 +530,34 @@ end
 
 function api:measure_global_event(event_name, stat_name)
 	return self:measure_object_event(prosody.events.wrappers, event_name, stat_name);
+end
+
+local status_priorities = { error = 3, warn = 2, info = 1, core = 0 };
+
+function api:set_status(status_type, status_message, override)
+	local priority = status_priorities[status_type];
+	if not priority then
+		self:log("error", "set_status: Invalid status type '%s', assuming 'info'");
+		status_type, priority = "info", status_priorities.info;
+	end
+	local current_priority = status_priorities[self.status_type] or 0;
+	-- By default an 'error' status can only be overwritten by another 'error' status
+	if (current_priority >= status_priorities.error and priority < current_priority and override ~= true)
+	or (override == false and current_priority > priority) then
+		self:log("debug", "moduleapi: ignoring status [prio %d override %s]: %s", priority, override, status_message);
+		return;
+	end
+	self.status_type, self.status_message, self.status_time = status_type, status_message, time_now();
+	self:fire_event("module-status/updated", { name = self.name });
+end
+
+function api:log_status(level, msg, ...)
+	self:set_status(level, format(msg, ...));
+	return self:log(level, msg, ...);
+end
+
+function api:get_status()
+	return self.status_type, self.status_message, self.status_time;
 end
 
 return api;
