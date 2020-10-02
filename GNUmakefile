@@ -75,10 +75,20 @@ clean:
 test:
 	$(BUSTED) --lua=$(RUNWITH)
 
+test-%:
+	$(BUSTED) --lua=$(RUNWITH) -r $*
+
 integration-test: all
 	$(MKDIR) data
 	$(RUNWITH) prosodyctl --config ./spec/scansion/prosody.cfg.lua start
 	$(SCANSION) -d ./spec/scansion; R=$$? \
+	$(RUNWITH) prosodyctl --config ./spec/scansion/prosody.cfg.lua stop \
+	exit $$R
+
+integration-test-%: all
+	$(MKDIR) data
+	$(RUNWITH) prosodyctl --config ./spec/scansion/prosody.cfg.lua start
+	$(SCANSION) ./spec/scansion/$*.scs; R=$$? \
 	$(RUNWITH) prosodyctl --config ./spec/scansion/prosody.cfg.lua stop \
 	exit $$R
 
