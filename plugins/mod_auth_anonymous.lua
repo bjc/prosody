@@ -11,6 +11,8 @@ local new_sasl = require "util.sasl".new;
 local datamanager = require "util.datamanager";
 local hosts = prosody.hosts;
 
+local allow_storage = module:get_option_boolean("allow_anonymous_storage", false);
+
 -- define auth provider
 local provider = {};
 
@@ -62,10 +64,14 @@ if not module:get_option_boolean("allow_anonymous_s2s", false) then
 end
 
 function module.load()
-	datamanager.add_callback(dm_callback);
+	if not allow_storage then
+		datamanager.add_callback(dm_callback);
+	end
 end
 function module.unload()
-	datamanager.remove_callback(dm_callback);
+	if not allow_storage then
+		datamanager.remove_callback(dm_callback);
+	end
 end
 
 module:provides("auth", provider);
