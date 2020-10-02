@@ -16,6 +16,8 @@
 
 Romeo connects
 
+# Romeo joins the MUC
+
 Romeo sends:
 	<presence to="room@conference.localhost/Romeo">
 		<x xmlns="http://jabber.org/protocol/muc"/>
@@ -52,8 +54,51 @@ Romeo receives:
 	<iq id="config1" from="room@conference.localhost" type="result">
 	</iq>
 
-# Juliet connects, and joins the room
+# Romeo probes himself
+
+Romeo sends:
+	<presence to="room@conference.localhost/Romeo" type="probe">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Romeo receives:
+	<presence from='room@conference.localhost/Romeo'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<item jid="${Romeo's full JID}" affiliation='owner' role='moderator'/>
+		</x>
+	</presence>
+
+# Juliet tries to probe Romeo before joining the room
+
 Juliet connects
+
+Juliet sends:
+	<presence to="room@conference.localhost/Romeo" type="probe">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Juliet receives:
+	<presence from="room@conference.localhost/Romeo" type="error">
+		<error type="cancel">
+			<not-acceptable xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/>
+		</error>
+	</presence>
+
+# Juliet tries to probe Mercutio (who's not in the MUC) before joining the room
+
+Juliet sends:
+	<presence to="room@conference.localhost/Mercutio" type="probe">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Juliet receives:
+	<presence from="room@conference.localhost/Mercutio" type="error">
+		<error type="cancel">
+			<not-acceptable xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/>
+		</error>
+	</presence>
+
+# Juliet joins the room
 
 Juliet sends:
 	<presence to="room@conference.localhost/Juliet">
@@ -79,6 +124,24 @@ Romeo receives:
 			<item jid="${Juliet's full JID}" affiliation='none' role='participant'/>
 		</x>
 	</presence>
+
+
+# Mercutio tries to probe himself in a MUC before joining
+
+Mercutio connects
+
+Mercutio sends:
+	<presence to="room@conference.localhost/Mercutio" type="probe">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Mercutio receives:
+	<presence from="room@conference.localhost/Mercutio" type="error">
+		<error type="cancel">
+			<not-acceptable xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/>
+		</error>
+	</presence>
+
 
 # Romeo makes Mercutio a member and registers his nickname
 

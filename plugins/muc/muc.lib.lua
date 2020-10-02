@@ -595,6 +595,26 @@ function room_mt:build_unavailable_presence(from_muc_jid, to_jid)
 	return event.stanza;
 end
 
+function room_mt:respond_to_probe(origin, stanza, probing_occupant)
+	if probing_occupant == nil then
+		origin.send(st.error_reply(stanza, "cancel", "not-acceptable", "You are not currently connected to this chat", self.jid));
+		return;
+	end
+
+	local from_muc_jid = stanza.attr.to;
+	local probed_occupant = self:get_occupant_by_nick(from_muc_jid);
+	if probed_occupant == nil then
+		local to_jid = stanza.attr.from;
+		local pr = self:build_unavailable_presence(from_muc_jid, to_jid);
+		if pr then
+			self:route_stanza(pr);
+		end
+		return;
+	end
+	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"});
+	self:publicise_occupant_status(probed_occupant, x, nil, nil, nil, nil, false, probing_occupant);
+end
+
 
 function room_mt:handle_normal_presence(origin, stanza)
 	local type = stanza.attr.type;
@@ -616,18 +636,7 @@ function room_mt:handle_normal_presence(origin, stanza)
 		if orig_occupant == nil then return true; end -- Unavailable from someone not in the room
 		-- dest_occupant = nil
 	elseif type == "probe" then
-		local occupant = self:get_occupant_by_nick(stanza.attr.to);
-		if occupant == nil then
-			local from_muc_jid = stanza.attr.to;
-			local to_jid = real_jid;
-			local pr = self:build_unavailable_presence(from_muc_jid, to_jid);
-			if pr then
-				self:route_stanza(pr);
-			end
-			return true;
-		end
-		local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"});
-		self:publicise_occupant_status(occupant, x, nil, nil, nil, nil, false, orig_occupant);
+		self:respond_to_probe(origin, stanza, orig_occupant)
 		return true;
 	elseif orig_occupant and orig_occupant.nick == stanza.attr.to then -- Just a presence update
 		log("debug", "presence update for %s from session %s", orig_occupant.nick, real_jid);
