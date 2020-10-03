@@ -293,6 +293,7 @@ function stream_callbacks.streamopened(context, attr)
 
 		if not prosody.hosts[to_host] then
 			log("debug", "BOSH client tried to connect to non-existant host: %s", attr.to);
+			report_bad_host();
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
 				["xmlns:stream"] = xmlns_streams, condition = "improper-addressing" });
 			response:send(tostring(close_reply));
@@ -301,6 +302,7 @@ function stream_callbacks.streamopened(context, attr)
 
 		if prosody.hosts[to_host].type ~= "local" then
 			log("debug", "BOSH client tried to connect to %s host: %s", prosody.hosts[to_host].type, attr.to);
+			report_bad_host();
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
 				["xmlns:stream"] = xmlns_streams, condition = "improper-addressing" });
 			response:send(tostring(close_reply));
