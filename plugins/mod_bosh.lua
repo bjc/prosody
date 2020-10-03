@@ -282,7 +282,6 @@ function stream_callbacks.streamopened(context, attr)
 		end
 
 		local to_host = nameprep(attr.to);
-		local wait = tonumber(attr.wait);
 		if not to_host then
 			log("debug", "BOSH client tried to connect to invalid host: %s", attr.to);
 			report_bad_host();
@@ -291,6 +290,24 @@ function stream_callbacks.streamopened(context, attr)
 			response:send(tostring(close_reply));
 			return;
 		end
+
+		if not prosody.hosts[to_host] then
+			log("debug", "BOSH client tried to connect to non-existant host: %s", attr.to);
+			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+				["xmlns:stream"] = xmlns_streams, condition = "improper-addressing" });
+			response:send(tostring(close_reply));
+			return;
+		end
+
+		if prosody.hosts[to_host].type ~= "local" then
+			log("debug", "BOSH client tried to connect to %s host: %s", prosody.hosts[to_host].type, attr.to);
+			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
+				["xmlns:stream"] = xmlns_streams, condition = "improper-addressing" });
+			response:send(tostring(close_reply));
+			return;
+		end
+
+		local wait = tonumber(attr.wait);
 		if not rid or (not attr.wait or not wait or wait < 0 or wait % 1 ~= 0) then
 			log("debug", "BOSH client sent invalid rid or wait attributes: rid=%s, wait=%s", attr.rid, attr.wait);
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
