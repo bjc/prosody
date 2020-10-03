@@ -269,7 +269,6 @@ function stream_callbacks.streamopened(context, attr)
 		context.notopen = nil; -- Signals that we accept this opening tag
 
 		local to_host = nameprep(attr.to);
-		local wait = tonumber(attr.wait);
 		if not to_host then
 			log("debug", "BOSH client tried to connect to invalid host: %s", tostring(attr.to));
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
@@ -277,6 +276,8 @@ function stream_callbacks.streamopened(context, attr)
 			response:send(tostring(close_reply));
 			return;
 		end
+
+		local wait = tonumber(attr.wait);
 		if not rid or (not attr.wait or not wait or wait < 0 or wait % 1 ~= 0) then
 			log("debug", "BOSH client sent invalid rid or wait attributes: rid=%s, wait=%s", tostring(attr.rid), tostring(attr.wait));
 			local close_reply = st.stanza("body", { xmlns = xmlns_bosh, type = "terminate",
