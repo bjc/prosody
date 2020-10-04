@@ -198,6 +198,60 @@ function parsers.TLSA(packet)
 	}, tlsa_mt);
 end
 
+local svcb_params = {"alpn"; "no-default-alpn"; "port"; "ipv4hint"; "echconfig"; "ipv6hint"};
+setmetatable(svcb_params, {__index = function(_, n) return "key" .. tostring(n); end});
+
+local svcb_mt = {
+	__tostring = function (rr)
+		local kv = {};
+		for i = 1, #rr.fields do
+			t_insert(kv, s_format("%s=%q", svcb_params[rr.fields[i].key], tostring(rr.fields[i].value)));
+		end
+		return s_format("%d %s %s", rr.prio, rr.name, t_concat(kv, " "));
+	end;
+};
+local svbc_ip_mt = {__tostring = function(ip) return t_concat(ip, ", "); end}
+
+function parsers.SVCB(packet)
+	local prio_h, prio_l = packet:byte(1,2);
+	local prio = prio_h*256+prio_l;
+	local name, pos = readDnsName(packet, 3);
+	local fields = {};
+	while #packet > pos do
+		local key_h, key_l = packet:byte(pos+0,pos+1);
+		local len_h, len_l = packet:byte(pos+2,pos+3);
+		local key = key_h*256+key_l;
+		local len = len_h*256+len_l;
+		local value = packet:sub(pos+4,pos+4-1+len)
+		if key == 1 then
+			value = setmetatable(parsers.TXT(value), svbc_ip_mt);
+		elseif key == 3 then
+			local port_h, port_l = value:byte(1,2);
+			local port = port_h*256+port_l;
+			value = port;
+		elseif key == 4 then
+			local ip = {};
+			for i = 1, #value, 4 do
+				t_insert(ip, parsers.A(value:sub(i, i+3)));
+			end
+			value = setmetatable(ip, svbc_ip_mt);
+		elseif key == 6 then
+			local ip = {};
+			for i = 1, #value, 16 do
+				t_insert(ip, parsers.AAAA(value:sub(i, i+15)));
+			end
+			value = setmetatable(ip, svbc_ip_mt);
+		end
+		t_insert(fields, { key = key, value = value, len = len });
+		pos = pos+len+4;
+	end
+	return setmetatable({
+			prio = prio, name = name, fields = fields,
+		}, svcb_mt);
+end
+
+parsers.HTTPS = parsers.SVCB;
+
 local params = {
 	TLSA = {
 		use = tlsa_usages;
