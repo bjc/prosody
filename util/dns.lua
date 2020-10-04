@@ -40,7 +40,7 @@ local parsers = {};
 
 -- No support for pointers, but libunbound appears to take care of that.
 local function readDnsName(packet, pos)
-	if s_byte(packet, pos) == 0 then return "."; end
+	if s_byte(packet, pos) == 0 then return ".", pos+1; end
 	local pack_len, r, len = #packet, {};
 	pos = pos or 1;
 	repeat
