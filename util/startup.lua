@@ -583,7 +583,7 @@ function startup.prosodyctl()
 	startup.init_gc();
 	startup.init_errors();
 	startup.setup_plugindir();
-	-- startup.setup_plugin_install_path();
+	startup.setup_plugin_install_path();
 	startup.setup_datadir();
 	startup.chdir();
 	startup.read_version();
@@ -612,7 +612,7 @@ function startup.prosody()
 	startup.check_dependencies();
 	startup.load_libraries();
 	startup.setup_plugindir();
-	-- startup.setup_plugin_install_path();
+	startup.setup_plugin_install_path();
 	startup.setup_datadir();
 	startup.chdir();
 	startup.add_global_prosody_functions();
