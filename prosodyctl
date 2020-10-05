@@ -78,7 +78,7 @@ function commands.install(arg)
 		show_usage([[install]], [[Installs a prosody/luarocks plugin]]);
 		return 1;
 	end
-	call_luarocks(arg[1], "install")
+	call_luarocks("install", arg[1]);
 end
 
 function commands.remove(arg)
@@ -86,7 +86,7 @@ function commands.remove(arg)
 		show_usage([[remove]], [[Removes a module installed in the working directory's plugins folder]]);
 		return 1;
 	end
-	call_luarocks(arg[1], "remove")
+	call_luarocks("remove", arg[1])
 end
 
 function commands.list(arg)
@@ -94,7 +94,7 @@ function commands.list(arg)
 		show_usage([[list]], [[Shows installed rocks]]);
 		return 1;
 	end
-	call_luarocks(arg[1], "list")
+	call_luarocks("list", arg[1])
 end
 
 function commands.adduser(arg)
