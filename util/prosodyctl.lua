@@ -234,13 +234,9 @@ local function call_luarocks(operation, mod, server)
 	elseif operation == "remove" then
 		show_message("Removing %s from %s", mod, dir);
 	end
-	if operation == "list" then
-		os.execute(render_cli("luarocks list --tree={dir}", {dir = dir}));
-	else
-		os.execute(render_cli("luarocks {op} --tree={dir} {server&--server={server}} {mod}", {
-					dir = dir; op = operation; mod = mod; server = server;
-			}));
-	end
+	os.execute(render_cli("luarocks {op} --tree={dir} {server&--server={server}} {mod?}", {
+				dir = dir; op = operation; mod = mod; server = server;
+		}));
 	if operation == "install" then
 		show_module_configuration_help(mod);
 	end
