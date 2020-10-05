@@ -227,7 +227,7 @@ end
 
 local render_cli = interpolation.new("%b{}", function (s) return "'"..s:gsub("'","'\\''").."'" end)
 
-local function call_luarocks(mod, operation)
+local function call_luarocks(operation, mod)
 	local dir = get_path_custom_plugins(prosody.paths.plugins);
 	if operation == "install" then
 		show_message("Installing %s at %s", mod, dir);
