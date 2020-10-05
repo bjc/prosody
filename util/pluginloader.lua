@@ -42,6 +42,7 @@ local function load_resource(plugin, resource)
 		"mod_"..plugin..dir_sep..resource;                  -- mod_hello/mod_hello.lua
 		plugin..dir_sep..resource;                          -- hello/mod_hello.lua
 		resource;                                           -- mod_hello.lua
+		"share"..dir_sep.."lua"..dir_sep..lua_version..dir_sep..resource;
 		"share"..dir_sep.."lua"..dir_sep..lua_version..dir_sep.."mod_"..plugin..dir_sep..resource;
 	};
 
