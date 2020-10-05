@@ -12,6 +12,7 @@ local encodings = require "util.encodings";
 local stringprep = encodings.stringprep;
 local storagemanager = require "core.storagemanager";
 local usermanager = require "core.usermanager";
+local interpolation = require "util.interpolation";
 local signal = require "util.signal";
 local set = require "util.set";
 local lfs = require "lfs";
@@ -224,6 +225,8 @@ local function get_path_custom_plugins(plugin_paths)
 	end
 end
 
+local render_cli = interpolation.new("%b{}", function (s) return "'"..s:gsub("'","'\\''").."'" end)
+
 local function call_luarocks(mod, operation)
 	local dir = get_path_custom_plugins(prosody.paths.plugins);
 	if operation == "install" then
@@ -232,9 +235,11 @@ local function call_luarocks(mod, operation)
 		show_message("Removing %s from %s", mod, dir);
 	end
 	if operation == "list" then
-		os.execute("luarocks list --tree='"..dir.."'")
+		os.execute(render_cli("luarocks list --tree={dir}", {dir = dir}));
 	else
-		os.execute("luarocks --tree='"..dir.."' --server='http://localhost/' "..operation.." "..mod);
+		os.execute(render_cli("luarocks {op} --tree={dir} {server&--server={server}} {mod}", {
+					dir = dir; op = operation; mod = mod; server = "http://localhost/";
+			}));
 	end
 	if operation == "install" then
 		show_module_configuration_help(mod);
