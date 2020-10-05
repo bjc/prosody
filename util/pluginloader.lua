@@ -60,6 +60,9 @@ end
 
 local function load_code_ext(plugin, resource, extension, env)
 	local content, err = load_resource(plugin, resource.."."..extension);
+	if not content and extension == "lib.lua" then
+		content, err = load_resource(plugin, resource..".lua");
+	end
 	if not content then
 		content, err = load_resource(resource, resource.."."..extension);
 		if not content then
