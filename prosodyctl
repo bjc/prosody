@@ -78,7 +78,7 @@ function commands.install(arg)
 		show_usage([[install]], [[Installs a prosody/luarocks plugin]]);
 		return 1;
 	end
-	call_luarocks("install", arg[1]);
+	call_luarocks("install", arg[1], "http://localhost/");
 end
 
 function commands.remove(arg)

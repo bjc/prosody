@@ -227,7 +227,7 @@ end
 
 local render_cli = interpolation.new("%b{}", function (s) return "'"..s:gsub("'","'\\''").."'" end)
 
-local function call_luarocks(operation, mod)
+local function call_luarocks(operation, mod, server)
 	local dir = get_path_custom_plugins(prosody.paths.plugins);
 	if operation == "install" then
 		show_message("Installing %s at %s", mod, dir);
@@ -238,7 +238,7 @@ local function call_luarocks(operation, mod)
 		os.execute(render_cli("luarocks list --tree={dir}", {dir = dir}));
 	else
 		os.execute(render_cli("luarocks {op} --tree={dir} {server&--server={server}} {mod}", {
-					dir = dir; op = operation; mod = mod; server = "http://localhost/";
+					dir = dir; op = operation; mod = mod; server = server;
 			}));
 	end
 	if operation == "install" then
