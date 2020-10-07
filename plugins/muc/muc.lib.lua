@@ -372,12 +372,12 @@ function room_mt:send_occupant_list(to, filter)
 end
 
 function room_mt:get_disco_info(stanza)
-	local node = stanza.tags[1].attr.node or "";
+	local node = stanza.tags[1].attr.node;
 	local reply = st.reply(stanza):tag("query", { xmlns = "http://jabber.org/protocol/disco#info", node = node });
 	local event_name = "muc-disco#info";
 	local event_data = { room = self, reply = reply, stanza = stanza };
 
-	if node ~= "" then
+	if node and node ~= "" then
 		event_name = event_name.."/"..node;
 	else
 		event_data.form = dataform.new {
