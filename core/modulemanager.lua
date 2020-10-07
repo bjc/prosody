@@ -10,6 +10,7 @@ local logger = require "util.logger";
 local log = logger.init("modulemanager");
 local config = require "core.configmanager";
 local pluginloader = require "util.pluginloader";
+local envload = require "util.envload";
 local set = require "util.set";
 
 local new_multitable = require "util.multitable".new;
@@ -22,6 +23,7 @@ local xpcall = require "util.xpcall".xpcall;
 local debug_traceback = debug.traceback;
 local setmetatable, rawget = setmetatable, rawget;
 local ipairs, pairs, type, t_insert = ipairs, pairs, type, table.insert;
+local lua_version = _VERSION:match("5%.%d$");
 
 local autoload_modules = {
 	prosody.platform,
@@ -195,6 +197,35 @@ local function do_load_module(host, module_name, state)
 	end
 
 	api_instance.path = err;
+
+	local custom_plugins = prosody.paths.installer;
+	if err:sub(1, #custom_plugins+1) == custom_plugins.."/" then
+		-- Stage 1: Make it work (you are here)
+		-- Stage 2: Make it less hacky (TODO)
+		local manifest = {};
+		local luarocks_path = custom_plugins.."/lib/luarocks/rocks-"..lua_version;
+		local manifest_filename = luarocks_path.."/manifest";
+		local load_manifest, err = envload.envloadfile(manifest_filename, manifest);
+		if not load_manifest then
+			log("error", "Could not load manifest of installed plugins: %s", err, load_manifest);
+		else
+			local ok, err = xpcall(load_manifest, debug_traceback);
+			if not ok then
+				log("error", "Could not load manifest of installed plugins: %s", err);
+			elseif type(manifest.modules) ~= "table" then
+				log("debug", "Expected 'table' but manifest.modules = %q", manifest.modules);
+				log("error", "Can't look up resource path for mod_%s because '%s' does not appear to be a LuaRocks manifest", module_name, manifest_filename);
+			else
+				local versions = manifest.modules["mod_"..module_name];
+				if type(versions) == "table" and versions[1] then
+					-- Not going to deal with multiple installed versions
+					api_instance.resource_path = luarocks_path.."/"..versions[1];
+				else
+					log("debug", "mod_%s does not appear in the installation manifest", module_name);
+				end
+			end
+		end
+	end
 
 	modulemap[host][module_name] = pluginenv;
 	local ok, err = xpcall(mod, debug_traceback);
