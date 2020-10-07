@@ -269,6 +269,7 @@ function startup.setup_plugin_install_path()
 	require"util.paths".complement_lua_path(installer_plugin_path);
 	-- luacheck: ignore 111
 	CFG_PLUGINDIR = installer_plugin_path..path_sep..(CFG_PLUGINDIR or "plugins");
+	prosody.paths.installer = installer_plugin_path;
 	prosody.paths.plugins = CFG_PLUGINDIR;
 end
 
