@@ -500,7 +500,7 @@ function api:get_directory()
 end
 
 function api:load_resource(path, mode)
-	path = resolve_relative_path(self:get_directory(), path);
+	path = resolve_relative_path(self.resource_path or self:get_directory(), path);
 	return io.open(path, mode);
 end
 
