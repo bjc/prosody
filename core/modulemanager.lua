@@ -207,6 +207,13 @@ local function do_load_module(host, module_name, state)
 		local manifest_filename = luarocks_path.."/manifest";
 		local load_manifest, err = envload.envloadfile(manifest_filename, manifest);
 		if not load_manifest then
+			-- COMPAT Luarocks 2.x
+			log("debug", "Could not load LuaRocks 3.x manifest, trying 2.x", err);
+			luarocks_path = custom_plugins.."/lib/luarocks/rocks-"..lua_version;
+			manifest_filename = luarocks_path.."/manifest";
+			load_manifest, err = envload.envloadfile(manifest_filename, manifest);
+		end
+		if not load_manifest then
 			log("error", "Could not load manifest of installed plugins: %s", err, load_manifest);
 		else
 			local ok, err = xpcall(load_manifest, debug_traceback);
