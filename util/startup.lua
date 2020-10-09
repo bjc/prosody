@@ -197,8 +197,14 @@ function startup.set_function_metatable()
 		end
 	end
 	function mt.__tostring(f)
-		local info = debug.getinfo(f, "S");
-		return ("function(%s:%d)"):format(info.short_src:match("[^\\/]*$"), info.linedefined);
+		local info = debug.getinfo(f, "Su");
+		for i = 1, info.nparams do
+			info[i] = debug.getlocal(f, i);
+		end
+		if info.isvararg then
+			info[info.nparams+1] = "...";
+		end
+		return ("function<%s:%d>(%s)"):format(info.short_src:match("[^\\/]*$"), info.linedefined, table.concat(info, ", "));
 	end
 	debug.setmetatable(function() end, mt);
 end
