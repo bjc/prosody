@@ -496,11 +496,11 @@ end
 
 local path_sep = package.config:sub(1,1);
 function api:get_directory()
-	return self.path and (self.path:gsub("%"..path_sep.."[^"..path_sep.."]*$", "")) or nil;
+	return self.resource_path or self.path and (self.path:gsub("%"..path_sep.."[^"..path_sep.."]*$", "")) or nil;
 end
 
 function api:load_resource(path, mode)
-	path = resolve_relative_path(self.resource_path or self:get_directory(), path);
+	path = resolve_relative_path(self:get_directory(), path);
 	return io.open(path, mode);
 end
 
