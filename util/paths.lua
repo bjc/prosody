@@ -37,8 +37,18 @@ function path_util.glob_to_pattern(glob)
 	end).."$";
 end
 
-function path_util.join(...)
-	return t_concat({...}, path_sep);
+function path_util.join(a, b, c, ...) -- (... : string) --> string
+	-- Optimization: Avoid creating table for most uses
+	if b then
+		if c then
+			if ... then
+				return t_concat({a,b,c,...}, path_sep);
+			end
+			return a..path_sep..b..path_sep..c;
+		end
+		return a..path_sep..b;
+	end
+	return a;
 end
 
 function path_util.complement_lua_path(installer_plugin_path)
