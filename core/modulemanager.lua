@@ -199,7 +199,7 @@ local function do_load_module(host, module_name, state)
 	api_instance.path = err;
 
 	local custom_plugins = prosody.paths.installer;
-	if err:sub(1, #custom_plugins+1) == custom_plugins.."/" then
+	if custom_plugins and err:sub(1, #custom_plugins+1) == custom_plugins.."/" then
 		-- Stage 1: Make it work (you are here)
 		-- Stage 2: Make it less hacky (TODO)
 		local manifest = {};
