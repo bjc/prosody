@@ -198,11 +198,12 @@ function startup.set_function_metatable()
 	end
 	function mt.__tostring(f)
 		local info = debug.getinfo(f, "Su");
-		for i = 1, info.nparams do
+		local n_params = info.nparams or 0;
+		for i = 1, n_params do
 			info[i] = debug.getlocal(f, i);
 		end
 		if info.isvararg then
-			info[info.nparams+1] = "...";
+			info[n_params+1] = "...";
 		end
 		return ("function<%s:%d>(%s)"):format(info.short_src:match("[^\\/]*$"), info.linedefined, table.concat(info, ", "));
 	end
