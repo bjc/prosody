@@ -45,6 +45,13 @@ p.extra {
 	font-size : large;
 	font-family : courier
 }
+
+@media(prefers-color-scheme: dark) {
+	body {
+		background-color: #161616;
+		color: #eee
+	}
+}
 </style>
 </head>
 <body>
