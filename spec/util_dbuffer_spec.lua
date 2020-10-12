@@ -42,6 +42,7 @@ describe("util.dbuffer", function ()
 			assert.truthy(b:write("hello world"));
 			assert.truthy(b:discard(6));
 			assert.equal(5, b:length());
+			assert.equal(5, b:len());
 			assert.equal("world", b:read(5));
 		end);
 	end);
