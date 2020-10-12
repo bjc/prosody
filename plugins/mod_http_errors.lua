@@ -41,7 +41,7 @@ p {
 	font-size : x-large
 }
 
-p+p {
+p.extra {
 	font-size : large;
 	font-family : courier
 }
@@ -50,7 +50,7 @@ p+p {
 <body>
 <h1>{title}</h1>
 <p>{message}</p>
-<p>{extra?}</p>
+<p class="extra">{extra?}</p>
 </body>
 </html>
 ]];
