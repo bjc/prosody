@@ -135,6 +135,7 @@ end
 function dbuffer_methods:length()
 	return self._length;
 end
+dbuffer_methods.len = dbuffer_methods.length; -- strings have :len()
 dynamic_buffer_mt.__len = dbuffer_methods.length; -- support # operator
 
 function dbuffer_methods:collapse(bytes)
