@@ -57,7 +57,7 @@ p.extra {
 <body>
 <h1>{title}</h1>
 <p>{message}</p>
-<p class="extra">{extra?}</p>
+{extra&<p class="extra">{extra?}</p>}
 </body>
 </html>
 ]];
