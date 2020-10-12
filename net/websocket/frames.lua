@@ -75,7 +75,7 @@ if s_unpack then
 end
 
 local function parse_frame_header(frame)
-	if #frame < 2 then return; end
+	if frame:len() < 2 then return; end
 
 	local byte1, byte2 = frame:byte(1, 2);
 	local result = {
@@ -97,7 +97,7 @@ local function parse_frame_header(frame)
 	end
 
 	local header_length = 2 + length_bytes + (result.MASK and 4 or 0);
-	if #frame < header_length then return; end
+	if frame:len() < header_length then return; end
 
 	if length_bytes == 2 then
 		result.length = read_uint16be(frame, 3);
@@ -140,7 +140,7 @@ end
 
 local function parse_frame(frame)
 	local result, pos = parse_frame_header(frame);
-	if result == nil or #frame < (pos + result.length) then return nil, nil, result; end
+	if result == nil or frame:len() < (pos + result.length) then return nil, nil, result; end
 	result.data = parse_frame_body(frame, result, pos+1);
 	return result, pos + result.length;
 end
