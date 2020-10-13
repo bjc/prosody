@@ -295,7 +295,10 @@ _M.prepare_header = prepare_header;
 function _M.send_response(response, body)
 	if response.finished then return; end
 	body = body or response.body or "";
-	response.headers.content_length = #body;
+	-- Per RFC 7230, informational (1xx) and 204 (no content) should have no c-l header
+	if response.status_code > 199 and response.status_code ~= 204 then
+		response.headers.content_length = #body;
+	end
 	local output = prepare_header(response);
 	t_insert(output, body);
 	response.conn:write(t_concat(output));
