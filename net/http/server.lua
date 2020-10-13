@@ -331,7 +331,10 @@ end
 function _M.send_response(response, body)
 	if response.finished then return; end
 	body = body or response.body or "";
-	response.headers.content_length = ("%d"):format(#body);
+	-- Per RFC 7230, informational (1xx) and 204 (no content) should have no c-l header
+	if response.status_code > 199 and response.status_code ~= 204 then
+		response.headers.content_length = ("%d"):format(#body);
+	end
 	if response.is_head_request then
 		return _M.send_head_response(response)
 	end
