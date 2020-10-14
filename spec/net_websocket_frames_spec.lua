@@ -36,7 +36,7 @@ describe("net.websocket.frames", function ()
 			["opcode"] = 0;
 			["length"] = 5;
 			["data"] = "hello";
-			["key"] = { 32, 0, 32, 0, };
+			["key"] = " \0 \0";
 			["FIN"] = true;
 			["MASK"] = true;
 			["RSV1"] = false;
