@@ -35,6 +35,7 @@ end
 -- What to set `type` to for stream errors or SASL errors? Those don't have a 'type' attr.
 
 local function new(e, context, registry, source)
+	if is_err(e) then return e; end
 	local template = registry and registry[e];
 	if not template then
 		if type(e) == "table" then
