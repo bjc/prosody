@@ -12,12 +12,11 @@ local random_bytes = require "util.random".bytes;
 local bit = require "util.bitcompat";
 local band = bit.band;
 local bor = bit.bor;
-local bxor = bit.bxor;
 local lshift = bit.lshift;
 local rshift = bit.rshift;
-local unpack = table.unpack or unpack; -- luacheck: ignore 113
+local sbit = require "util.strbitop";
+local sxor = sbit.sxor;
 
-local t_concat = table.concat;
 local s_char= string.char;
 local s_pack = string.pack;
 local s_unpack = string.unpack;
@@ -106,7 +105,7 @@ local function parse_frame_header(frame)
 	end
 
 	if result.MASK then
-		result.key = { frame:byte(length_bytes+3, length_bytes+6) };
+		result.key = frame:sub(length_bytes+3, length_bytes+6);
 	end
 
 	return result, header_length;
@@ -115,19 +114,7 @@ end
 -- XORs the string `str` with the array of bytes `key`
 -- TODO: optimize
 local function apply_mask(str, key, from, to)
-	from = from or 1
-	if from < 0 then from = #str + from + 1 end -- negative indices
-	to = to or #str
-	if to < 0 then to = #str + to + 1 end -- negative indices
-	local key_len = #key
-	local counter = 0;
-	local data = {};
-	for i = from, to do
-		local key_index = counter%key_len + 1;
-		counter = counter + 1;
-		data[counter] = s_char(bxor(key[key_index], str:byte(i)));
-	end
-	return t_concat(data);
+	return sxor(str:sub(from or 1, to or -1), key);
 end
 
 local function parse_frame_body(frame, header, pos)
@@ -174,15 +161,12 @@ local function build_frame(desc)
 
 	local key = ""
 	if desc.MASK then
-		local key_a = desc.key
-		if key_a then
-			key = s_char(unpack(key_a, 1, 4));
-		else
+		key = desc.key
+		if not key then
 			key = random_bytes(4);
-			key_a = {key:byte(1,4)};
 		end
 		b2 = bor(b2, 0x80);
-		data = apply_mask(data, key_a);
+		data = apply_mask(data, key);
 	end
 
 	return s_char(b1, b2) .. length_extra .. key .. data
