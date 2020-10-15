@@ -20,6 +20,8 @@ int strop_and(lua_State *L) {
 	const char *str_a = luaL_checklstring(L, 1, &a);
 	const char *str_b = luaL_checklstring(L, 2, &b);
 
+	luaL_buffinit(L, &buf);
+
 	if(a == 0 || b == 0) {
 		lua_settop(L, 1);
 		return 1;
@@ -38,6 +40,8 @@ int strop_or(lua_State *L) {
 	size_t a, b, i;
 	const char *str_a = luaL_checklstring(L, 1, &a);
 	const char *str_b = luaL_checklstring(L, 2, &b);
+
+	luaL_buffinit(L, &buf);
 
 	if(a == 0 || b == 0) {
 		lua_settop(L, 1);
