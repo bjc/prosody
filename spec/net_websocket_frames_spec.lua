@@ -43,6 +43,15 @@ describe("net.websocket.frames", function ()
 			["RSV2"] = false;
 			["RSV3"] = false;
 		};
+		empty_with_mask = {
+			["opcode"] = 0;
+			["key"] = " \0 \0";
+			["FIN"] = true;
+			["MASK"] = true;
+			["RSV1"] = false;
+			["RSV2"] = false;
+			["RSV3"] = false;
+		};
 	}
 
 	describe("build", function ()
@@ -52,6 +61,7 @@ describe("net.websocket.frames", function ()
 			assert.equal("\0\5hello", build(test_frames.simple_data));
 			assert.equal("\128\0", build(test_frames.simple_fin));
 			assert.equal("\128\133 \0 \0HeLlO", build(test_frames.with_mask))
+			assert.equal("\128\128 \0 \0", build(test_frames.empty_with_mask))
 		end);
 	end);
 
