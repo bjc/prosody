@@ -104,7 +104,7 @@ local function get_traceback_table(thread, start_level)
 		levels[(level-start_level)+1] = {
 			level = level;
 			info = info;
-			locals = get_locals_table(thread, level+(thread and 0 or 1));
+			locals = get_locals_table(thread, level+1);
 			upvalues = get_upvalues_table(info.func);
 		};
 	end
