@@ -147,5 +147,20 @@ if have_signal then
 			prosody.shutdown("Received SIGINT");
 			prosody.lock_globals();
 		end);
+
+		signal.signal("SIGUSR1", function ()
+			module:log("info", "Received SIGUSR1");
+			module:fire_event("signal/SIGUSR1");
+		end);
+
+		signal.signal("SIGUSR2", function ()
+			module:log("info", "Received SIGUSR2");
+			module:fire_event("signal/SIGUSR2");
+		end);
 	end);
 end
+
+-- For other modules to reference
+features = {
+	signal_events = true;
+};
