@@ -20,8 +20,8 @@ describe("util.paths", function ()
 		it("works", function ()
 			assert.equal("^thing.%..*$", paths.glob_to_pattern("thing?.*"))
 		end);
-		
 	end)
+
 	describe("#resolve_relative_path()", function ()
 		it("returns absolute paths as-is", function ()
 			if sep == "/" then
