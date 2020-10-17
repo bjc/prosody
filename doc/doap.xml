@@ -187,6 +187,10 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0091.html"/>
+        <xmpp:version>1.4</xmpp:version>
+        <xmpp:since>0.1</xmpp:since>
+        <xmpp:until>0.12</xmpp:until>
+        <xmpp:note>Gone from offline messages in 0.10.0, gone from MUC in 0.12</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
