@@ -182,9 +182,6 @@ module:hook("muc-add-history", function(event)
 	stanza:tag("delay", { -- XEP-0203
 		xmlns = "urn:xmpp:delay", from = room.jid, stamp = stamp
 	}):up();
-	stanza:tag("x", { -- XEP-0091 (deprecated)
-		xmlns = "jabber:x:delay", from = room.jid, stamp = datetime.legacy()
-	}):up();
 	local entry = { stanza = stanza, timestamp = ts };
 	table.insert(history, entry);
 	while #history > get_historylength(room) do table.remove(history, 1) end
