@@ -83,7 +83,24 @@ local function request_reader(request, data, err)
 			return;
 		end
 
+		local finalize_sink;
 		local function success_cb(r)
+			if r.partial then
+				-- Request should be streamed
+				log("debug", "Request '%s': partial response (%s%s)",
+					request.id,
+					r.chunked and "chunked, " or "",
+					r.body_length and ("%d bytes"):format(r.body_length) or "unknown length"
+				);
+				if request.streaming_handler then
+					log("debug", "Request '%s': Streaming via handler");
+					r.body_sink, finalize_sink = request.streaming_handler(r);
+				end
+				return;
+			elseif finalize_sink then
+				log("debug", "Request '%s': Finalizing response stream");
+				finalize_sink(r);
+			end
 			if request.callback then
 				request.callback(r.body, r.code, r, request);
 				request.callback = nil;
@@ -256,6 +273,7 @@ local function request(self, u, ex, callback)
 		end
 		req.insecure = ex.insecure;
 		req.suppress_errors = ex.suppress_errors;
+		req.streaming_handler = ex.streaming_handler;
 	end
 
 	log("debug", "Making %s %s request '%s' to %s", req.scheme:upper(), method or "GET", req.id, (ex and ex.suppress_url and host_header) or u);
