@@ -47,6 +47,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 				if state and client and not len then -- reading client body until EOF
 					buffer:collapse();
 					packet.body = buffer:read_chunk() or "";
+					packet.partial = nil;
 					success_cb(packet);
 					state = nil;
 				elseif buffer:length() ~= 0 then -- unexpected EOF
@@ -96,6 +97,9 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							httpversion = httpversion;
 							headers = headers;
 							body = false;
+							body_length = len;
+							chunked = chunked;
+							partial = true;
 							-- COMPAT the properties below are deprecated
 							responseversion = httpversion;
 							responseheaders = headers;
@@ -122,6 +126,8 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							headers = headers;
 							body = false;
 							body_sink = nil;
+							chunked = chunked;
+							partial = true;
 						};
 					end
 					if len and len > bodylimit then
@@ -157,6 +163,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							buf = buf:gsub("^.-\r\n\r\n", ""); -- This ensure extensions and trailers are stripped
 							buffer:write(buf);
 							state, chunked = nil, nil;
+							packet.partial = nil;
 							success_cb(packet);
 						elseif buffer:length() - chunk_start - 2 >= chunk_size then -- we have a chunk
 							buffer:discard(chunk_start - 1); -- TODO verify that it's not off-by-one
@@ -176,11 +183,17 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 								return error_cb("body-sink-write-failure");
 							end
 						end
-						if len == 0 then state = nil; success_cb(packet); end
+						if len == 0 then
+							state = nil;
+							packet.partial = nil;
+							success_cb(packet);
+						end
 					elseif buffer:length() >= len then
 						assert(not chunked)
 						packet.body = buffer:read(len) or "";
-						state = nil; success_cb(packet);
+						state = nil;
+						packet.partial = nil;
+						success_cb(packet);
 					else
 						break;
 					end
