@@ -42,7 +42,7 @@ end
 
 local node_store = module:open_store(module.name.."_nodes");
 
-local function create_simple_itemstore(node_config, node_name)
+local function create_simple_itemstore(node_config, node_name) --> util.cache like object
 	local driver = storagemanager.get_driver(module.host, "pubsub_data");
 	local archive = driver:open("pubsub_"..node_name, "archive");
 	return lib_pubsub.archive_itemstore(archive, node_config, nil, node_name);
