@@ -872,7 +872,7 @@ local function archive_itemstore(archive, config, user, node)
 			return item.attr.id, item;
 		end
 	end
-	return setmetatable(get_set, archive);
+	return get_set;
 end
 _M.archive_itemstore = archive_itemstore;
 
