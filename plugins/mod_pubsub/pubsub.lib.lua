@@ -796,7 +796,7 @@ local function create_encapsulating_item(id, payload)
 end
 
 local function archive_itemstore(archive, config, user, node)
-	module:log("debug", "Creation of itemstore for node %s with config %s", node, config);
+	module:log("debug", "Creation of archive itemstore for node %s with config %q", node, config);
 	local get_set = {};
 	local max_items = config["max_items"];
 	function get_set:items() -- luacheck: ignore 212/self
