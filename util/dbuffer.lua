@@ -1,5 +1,6 @@
 local queue = require "util.queue";
 
+local s_byte, s_sub = string.byte, string.sub;
 local dbuffer_methods = {};
 local dynamic_buffer_mt = { __index = dbuffer_methods };
 
@@ -101,7 +102,11 @@ function dbuffer_methods:discard(requested_bytes)
 	return true;
 end
 
-function dbuffer_methods:sub(i, j)
+-- Normalize i, j into absolute offsets within the
+-- front chunk (accounting for front_consumed), and
+-- ensure there is enough data in the first chunk
+-- to cover any subsequent :sub() or :byte() operation
+function dbuffer_methods:_prep_sub(i, j)
 	if j == nil then
 		j = -1;
 	end
@@ -118,18 +123,35 @@ function dbuffer_methods:sub(i, j)
 		j = self._length;
 	end
 	if i > j then
-		return "";
+		return nil;
 	end
 
 	self:collapse(j);
 
-	return self.items:peek():sub(self.front_consumed+1):sub(i, j);
+	if self.front_consumed > 0 then
+		i = i + self.front_consumed;
+		j = j + self.front_consumed;
+	end
+
+	return i, j;
+end
+
+function dbuffer_methods:sub(i, j)
+	i, j = self:_prep_sub(i, j);
+	if not i then
+		return "";
+	end
+	return s_sub(self.items:peek(), i, j);
 end
 
 function dbuffer_methods:byte(i, j)
 	i = i or 1;
 	j = j or i;
-	return string.byte(self:sub(i, j), 1, -1);
+	i, j = self:_prep_sub(i, j);
+	if not i then
+		return;
+	end
+	return s_byte(self.items:peek(), i, j);
 end
 
 function dbuffer_methods:length()
