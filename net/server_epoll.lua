@@ -514,6 +514,7 @@ interface.send = interface.write;
 function interface:close()
 	if self.writebuffer and self.writebuffer[1] then
 		self:set(false, true); -- Flush final buffer contents
+		self:setwritetimeout();
 		self.write, self.send = noop, noop; -- No more writing
 		self:debug("Close after writing remaining buffered data");
 		self.ondrain = interface.close;
