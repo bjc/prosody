@@ -2,7 +2,7 @@ local queue = require "util.queue";
 
 local s_byte, s_sub = string.byte, string.sub;
 local dbuffer_methods = {};
-local dynamic_buffer_mt = { __index = dbuffer_methods };
+local dynamic_buffer_mt = { __name = "dbuffer", __index = dbuffer_methods };
 
 function dbuffer_methods:write(data)
 	if self.max_size and #data + self._length > self.max_size then
