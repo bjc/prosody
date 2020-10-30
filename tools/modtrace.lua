@@ -13,13 +13,20 @@ local serialize = require "util.serialization".serialize;
 local unpack = table.unpack or unpack; --luacheck: ignore 113
 local set = require "util.set";
 
+local serialize_cfg = {
+	preset = "oneline";
+	freeze = true;
+	fatal = false;
+	fallback = function (v) return "<"..tostring(v)..">" end;
+};
+
 local function stringify_value(v)
 	if type(v) == "string" and #v > 20 then
 		return ("<string(%d)>"):format(#v);
 	elseif type(v) == "function" then
 		return tostring(v);
 	end
-	return serialize(v, "debug");
+	return serialize(v, serialize_cfg);
 end
 
 local function stringify_params(...)
