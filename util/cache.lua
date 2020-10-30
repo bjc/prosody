@@ -28,7 +28,7 @@ local function _insert(list, m)
 end
 
 local cache_methods = {};
-local cache_mt = { __index = cache_methods };
+local cache_mt = { __name = "cache", __index = cache_methods };
 
 function cache_methods:set(k, v)
 	local m = self._data[k];
