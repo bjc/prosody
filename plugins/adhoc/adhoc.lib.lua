@@ -21,7 +21,13 @@ local function _cmdtag(desc, status, sessionid, action)
 end
 
 function _M.new(name, node, handler, permission)
-	return { name = name, node = node, handler = handler, cmdtag = _cmdtag, permission = (permission or "user") };
+	if not permission then
+		error "adhoc.new() expects a permission argument, none given"
+	end
+	if permission == "user" then
+		error "the permission mode 'user' has been renamed 'any', please update your code"
+	end
+	return { name = name, node = node, handler = handler, cmdtag = _cmdtag, permission = permission };
 end
 
 function _M.handle_cmd(command, origin, stanza)

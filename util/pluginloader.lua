@@ -8,6 +8,7 @@
 -- luacheck: ignore 113/CFG_PLUGINDIR
 
 local dir_sep, path_sep = package.config:match("^(%S+)%s(%S+)");
+local lua_version = _VERSION:match(" (.+)$");
 local plugin_dir = {};
 for path in (CFG_PLUGINDIR or "./plugins/"):gsub("[/\\]", dir_sep):gmatch("[^"..path_sep.."]+") do
 	path = path..dir_sep; -- add path separator to path end
@@ -36,12 +37,13 @@ end
 
 local function load_resource(plugin, resource)
 	resource = resource or "mod_"..plugin..".lua";
-
 	local names = {
 		"mod_"..plugin..dir_sep..plugin..dir_sep..resource; -- mod_hello/hello/mod_hello.lua
 		"mod_"..plugin..dir_sep..resource;                  -- mod_hello/mod_hello.lua
 		plugin..dir_sep..resource;                          -- hello/mod_hello.lua
 		resource;                                           -- mod_hello.lua
+		"share"..dir_sep.."lua"..dir_sep..lua_version..dir_sep..resource;
+		"share"..dir_sep.."lua"..dir_sep..lua_version..dir_sep.."mod_"..plugin..dir_sep..resource;
 	};
 
 	return load_file(names);
@@ -58,6 +60,9 @@ end
 
 local function load_code_ext(plugin, resource, extension, env)
 	local content, err = load_resource(plugin, resource.."."..extension);
+	if not content and extension == "lib.lua" then
+		content, err = load_resource(plugin, resource..".lua");
+	end
 	if not content then
 		content, err = load_resource(resource, resource.."."..extension);
 		if not content then

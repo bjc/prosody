@@ -1,4 +1,4 @@
-local unpack = table.unpack or unpack;
+local unpack = table.unpack or unpack; -- luacheck: ignore 113
 local server = require "net.server_select";
 package.loaded["net.server"] = server;
 
@@ -90,6 +90,112 @@ describe("storagemanager", function ()
 				end);
 			end);
 
+			describe("map stores", function ()
+				-- These tests rely on being executed in order, disable any order
+				-- randomization for this block
+				randomize(false);
+
+				local store, kv_store;
+				it("may be opened", function ()
+					store = assert(sm.open(test_host, "test-map", "map"));
+				end);
+
+				it("may be opened as a keyval store", function ()
+					kv_store = assert(sm.open(test_host, "test-map", "keyval"));
+				end);
+
+				it("may set a specific key for a user", function ()
+					assert(store:set("user9999", "foo", "bar"));
+					assert.same(kv_store:get("user9999"), { foo = "bar" });
+				end);
+
+				it("may get a specific key for a user", function ()
+					assert.equal("bar", store:get("user9999", "foo"));
+				end);
+
+				it("may find all users with a specific key", function ()
+					assert.is_function(store.get_all);
+					assert(store:set("user9999b", "bar", "bar"));
+					assert(store:set("user9999c", "foo", "blah"));
+					local ret, err = store:get_all("foo");
+					assert.is_nil(err);
+					assert.same({ user9999 = "bar", user9999c = "blah" }, ret);
+				end);
+
+				it("rejects empty or non-string keys to get_all", function ()
+					assert.is_function(store.get_all);
+					do
+						local ret, err = store:get_all("");
+						assert.is_nil(ret);
+						assert.is_not_nil(err);
+					end
+					do
+						local ret, err = store:get_all(true);
+						assert.is_nil(ret);
+						assert.is_not_nil(err);
+					end
+				end);
+
+				it("rejects empty or non-string keys to delete_all", function ()
+					assert.is_function(store.delete_all);
+					do
+						local ret, err = store:delete_all("");
+						assert.is_nil(ret);
+						assert.is_not_nil(err);
+					end
+					do
+						local ret, err = store:delete_all(true);
+						assert.is_nil(ret);
+						assert.is_not_nil(err);
+					end
+				end);
+
+				it("may delete all instances of a specific key", function ()
+					assert.is_function(store.delete_all);
+					assert(store:set("user9999b", "foo", "hello"));
+
+					assert(store:delete_all("bar"));
+					-- Ensure key was deleted
+					do
+						local ret, err = store:get("user9999b", "bar");
+						assert.is_nil(ret);
+						assert.is_nil(err);
+					end
+					-- Ensure other users/keys are intact
+					do
+						local ret, err = store:get("user9999", "foo");
+						assert.equal("bar", ret);
+						assert.is_nil(err);
+					end
+					do
+						local ret, err = store:get("user9999b", "foo");
+						assert.equal("hello", ret);
+						assert.is_nil(err);
+					end
+					do
+						local ret, err = store:get("user9999c", "foo");
+						assert.equal("blah", ret);
+						assert.is_nil(err);
+					end
+				end);
+
+				it("may remove data for a specific key for a user", function ()
+					assert(store:set("user9999", "foo", nil));
+					do
+						local ret, err = store:get("user9999", "foo");
+						assert.is_nil(ret);
+						assert.is_nil(err);
+					end
+
+					assert(store:set("user9999b", "foo", nil));
+					do
+						local ret, err = store:get("user9999b", "foo");
+						assert.is_nil(ret);
+						assert.is_nil(err);
+					end
+				end);
+			end);
+
 			describe("archive stores", function ()
 				randomize(false);
 
@@ -100,7 +206,8 @@ describe("storagemanager", function ()
 
 				local test_stanza = st.stanza("test", { xmlns = "urn:example:foo" })
 					:tag("foo"):up()
-					:tag("foo"):up();
+					:tag("foo"):up()
+					:reset();
 				local test_time = 1539204123;
 
 				local test_data = {
@@ -108,17 +215,22 @@ describe("storagemanager", function ()
 					{ nil, test_stanza, test_time+1, "contact2@example.com" };
 					{ nil, test_stanza, test_time+2, "contact2@example.com" };
 					{ nil, test_stanza, test_time-1, "contact2@example.com" };
+					{ nil, test_stanza, test_time-1, "contact3@example.com" };
+					{ nil, test_stanza, test_time+0, "contact3@example.com" };
+					{ nil, test_stanza, test_time+1, "contact3@example.com" };
 				};
 
 				it("can be added to", function ()
 					for _, data_item in ipairs(test_data) do
-						local ok = archive:append("user", unpack(data_item, 1, 4));
-						assert.truthy(ok);
+						local id = archive:append("user", unpack(data_item, 1, 4));
+						assert.truthy(id);
+						data_item[1] = id;
 					end
 				end);
 
 				describe("can be queried", function ()
 					it("for all items", function ()
+						-- luacheck: ignore 211/err
 						local data, err = archive:find("user", {});
 						assert.truthy(data);
 						local count = 0;
@@ -135,6 +247,7 @@ describe("storagemanager", function ()
 					end);
 
 					it("by JID", function ()
+						-- luacheck: ignore 211/err
 						local data, err = archive:find("user", {
 							with = "contact@example.com";
 						});
@@ -153,6 +266,7 @@ describe("storagemanager", function ()
 					end);
 
 					it("by time (end)", function ()
+						-- luacheck: ignore 211/err
 						local data, err = archive:find("user", {
 							["end"] = test_time;
 						});
@@ -167,10 +281,11 @@ describe("storagemanager", function ()
 							assert.equal(2, #item.tags);
 							assert(test_time >= when);
 						end
-						assert.equal(2, count);
+						assert.equal(4, count);
 					end);
 
 					it("by time (start)", function ()
+						-- luacheck: ignore 211/err
 						local data, err = archive:find("user", {
 							["start"] = test_time;
 						});
@@ -185,10 +300,11 @@ describe("storagemanager", function ()
 							assert.equal(2, #item.tags);
 							assert(test_time <= when);
 						end
-						assert.equal(#test_data -1, count);
+						assert.equal(#test_data - 2, count);
 					end);
 
 					it("by time (start+end)", function ()
+						-- luacheck: ignore 211/err
 						local data, err = archive:find("user", {
 							["start"] = test_time;
 							["end"] = test_time+1;
@@ -205,7 +321,45 @@ describe("storagemanager", function ()
 							assert(when >= test_time, ("%d >= %d"):format(when, test_time));
 							assert(when <= test_time+1, ("%d <= %d"):format(when, test_time+1));
 						end
-						assert.equal(2, count);
+						assert.equal(4, count);
+					end);
+
+					it("by id (after)", function ()
+						-- luacheck: ignore 211/err
+						local data, err = archive:find("user", {
+							["after"] = test_data[2][1];
+						});
+						assert.truthy(data);
+						local count = 0;
+						for id, item in data do
+							count = count + 1;
+							assert.truthy(id);
+							assert.equal(test_data[2+count][1], id);
+							assert(st.is_stanza(item));
+							assert.equal("test", item.name);
+							assert.equal("urn:example:foo", item.attr.xmlns);
+							assert.equal(2, #item.tags);
+						end
+						assert.equal(5, count);
+					end);
+
+					it("by id (before)", function ()
+						-- luacheck: ignore 211/err
+						local data, err = archive:find("user", {
+							["before"] = test_data[4][1];
+						});
+						assert.truthy(data);
+						local count = 0;
+						for id, item in data do
+							count = count + 1;
+							assert.truthy(id);
+							assert.equal(test_data[count][1], id);
+							assert(st.is_stanza(item));
+							assert.equal("test", item.name);
+							assert.equal("urn:example:foo", item.attr.xmlns);
+							assert.equal(2, #item.tags);
+						end
+						assert.equal(3, count);
 					end);
 				end);
 
@@ -239,6 +393,7 @@ describe("storagemanager", function ()
 				end);
 
 				it("can be purged", function ()
+					-- luacheck: ignore 211/err
 					local ok, err = archive:delete("user");
 					assert.truthy(ok);
 					local data, err = archive:find("user", {
@@ -326,6 +481,32 @@ describe("storagemanager", function ()
 					assert.equal(2, count);
 					assert(archive:delete("user-issue1073"));
 				end);
+
+				it("can be treated as a map store", function ()
+					assert.falsy(archive:get("mapuser", "no-such-id"));
+					assert.falsy(archive:set("mapuser", "no-such-id", test_stanza));
+
+					local id = archive:append("mapuser", nil, test_stanza, test_time, "contact@example.com");
+					do
+						local stanza_roundtrip, when, with = archive:get("mapuser", id);
+						assert.same(test_stanza, stanza_roundtrip, "same stanza is returned");
+						assert.equal(test_time, when, "same 'when' is returned");
+						assert.equal("contact@example.com", with, "same 'with' is returned");
+					end
+
+					local replacement_stanza = st.stanza("test", { xmlns = "urn:example:foo" })
+						:tag("bar"):up()
+						:reset();
+					assert(archive:set("mapuser", id, replacement_stanza, test_time+1));
+
+					do
+						local replaced, when, with = archive:get("mapuser", id);
+						assert.same(replacement_stanza, replaced, "replaced stanza is returned");
+						assert.equal(test_time+1, when, "modified 'when' is returned");
+						assert.equal("contact@example.com", with, "original 'with' is returned");
+					end
+				end);
+
 			end);
 		end);
 	end

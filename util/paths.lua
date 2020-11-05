@@ -37,8 +37,34 @@ function path_util.glob_to_pattern(glob)
 	end).."$";
 end
 
-function path_util.join(...)
-	return t_concat({...}, path_sep);
+function path_util.join(a, b, c, ...) -- (... : string) --> string
+	-- Optimization: Avoid creating table for most uses
+	if b then
+		if c then
+			if ... then
+				return t_concat({a,b,c,...}, path_sep);
+			end
+			return a..path_sep..b..path_sep..c;
+		end
+		return a..path_sep..b;
+	end
+	return a;
+end
+
+function path_util.complement_lua_path(installer_plugin_path)
+	-- Checking for duplicates
+	-- The commands using luarocks need the path to the directory that has the /share and /lib folders.
+	local lua_version = _VERSION:match(" (.+)$");
+	local lua_path_sep = package.config:sub(3,3);
+	local dir_sep = package.config:sub(1,1);
+	local sub_path = dir_sep.."lua"..dir_sep..lua_version..dir_sep;
+	if not string.find(package.path, installer_plugin_path, 1, true) then
+		package.path = package.path..lua_path_sep..installer_plugin_path..dir_sep.."share"..sub_path.."?.lua";
+		package.path = package.path..lua_path_sep..installer_plugin_path..dir_sep.."share"..sub_path.."?"..dir_sep.."init.lua";
+	end
+	if not string.find(package.path, installer_plugin_path, 1, true) then
+		package.cpath = package.cpath..lua_path_sep..installer_plugin_path..dir_sep.."lib"..sub_path.."?.so";
+	end
 end
 
 return path_util;

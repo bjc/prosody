@@ -17,9 +17,6 @@ module:hook("s2s-check-certificate", function(event)
 	local chain_valid, errors;
 	if conn.getpeerverification then
 		chain_valid, errors = conn:getpeerverification();
-	elseif conn.getpeerchainvalid then -- COMPAT mw/luasec-hg
-		chain_valid, errors = conn:getpeerchainvalid();
-		errors = (not chain_valid) and { { errors } } or nil;
 	else
 		chain_valid, errors = false, { { "Chain verification not supported by this version of LuaSec" } };
 	end
@@ -30,6 +27,7 @@ module:hook("s2s-check-certificate", function(event)
 			log("debug", "certificate error(s) at depth %d: %s", depth-1, table.concat(t, ", "))
 		end
 		session.cert_chain_status = "invalid";
+		session.cert_chain_errors = errors;
 	else
 		log("debug", "certificate chain validation result: valid");
 		session.cert_chain_status = "valid";

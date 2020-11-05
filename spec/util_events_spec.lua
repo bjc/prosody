@@ -208,5 +208,43 @@ describe("util.events", function ()
 				assert.spy(h).was_called(2);
 			end);
 		end);
+
+		describe("debug hooks", function ()
+			it("should get called", function ()
+				local d = spy.new(function (handler, event_name, event_data) --luacheck: ignore 212/event_name
+					return handler(event_data);
+				end);
+
+				e.add_handler("myevent", h);
+				e.fire_event("myevent");
+
+				assert.spy(h).was_called(1);
+				assert.spy(d).was_called(0);
+
+				assert.is_nil(e.set_debug_hook(d));
+
+				e.fire_event("myevent", { mydata = true });
+
+				assert.spy(h).was_called(2);
+				assert.spy(d).was_called(1);
+				assert.spy(d).was_called_with(h, "myevent", { mydata = true });
+
+				assert.equal(d, e.set_debug_hook(nil));
+
+				e.fire_event("myevent", { mydata = false });
+
+				assert.spy(h).was_called(3);
+				assert.spy(d).was_called(1);
+			end);
+			it("setting should return any existing debug hook", function ()
+				local function f() end
+				local function g() end
+				assert.is_nil(e.set_debug_hook(f));
+				assert.is_equal(f, e.set_debug_hook(g));
+				assert.is_equal(g, e.set_debug_hook(f));
+				assert.is_equal(f, e.set_debug_hook(nil));
+				assert.is_nil(e.set_debug_hook(f));
+			end);
+		end);
 	end);
 end);

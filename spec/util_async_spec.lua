@@ -544,6 +544,8 @@ describe("util.async", function()
 			assert.equal(r1.state, "ready");
 		end);
 
+		-- luacheck: ignore 211/rf
+		-- FIXME what's rf?
 		it("should support multiple done() calls", function ()
 			local processed_item;
 			local wait, done;

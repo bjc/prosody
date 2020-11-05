@@ -23,12 +23,27 @@ local function log_events(events, name, logger)
 		logger("debug", "%s firing event: %s", name, event);
 		return f(event, ...);
 	end
+
+	local function event_handler_hook(handler, event_name, event_data)
+		logger("debug", "calling handler for %s: %s", event_name, handler);
+		local ok, ret = pcall(handler, event_data);
+		if not ok then
+			logger("error", "error in event handler %s: %s", handler, ret);
+			error(ret);
+		end
+		if ret ~= nil then
+			logger("debug", "event chain ended for %s by %s with result: %s", event_name, handler, ret);
+		end
+		return ret;
+	end
+	events.set_debug_hook(event_handler_hook);
 	events[events.fire_event] = f;
 	return events;
 end
 
 local function revert_log_events(events)
 	events.fire_event, events[events.fire_event] = events[events.fire_event], nil; -- :))
+	events.set_debug_hook(nil);
 end
 
 local function log_host_events(host)

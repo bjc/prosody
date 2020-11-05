@@ -93,6 +93,11 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 		-- he wants to be identified through dialback
 		-- We need to check the key with the Authoritative server
 		local attr = stanza.attr;
+		if not attr.to or not attr.from then
+			origin.log("debug", "Missing Dialback addressing (from=%q, to=%q)", attr.from, attr.to);
+			origin:close("improper-addressing");
+			return true;
+		end
 		local to, from = nameprep(attr.to), nameprep(attr.from);
 
 		if not hosts[to] then
@@ -102,6 +107,7 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 			return true;
 		elseif not from then
 			origin:close("improper-addressing");
+			return true;
 		end
 
 		if dwd and origin.secure then

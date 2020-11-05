@@ -9,7 +9,9 @@ describe("core.configmanager", function()
 
 			configmanager.set("*", "testkey1", 321);
 			assert.are.equal(321, configmanager.get("*", "testkey1"), "Retrieving a set global key");
-			assert.are.equal(321, configmanager.get("example.com", "testkey1"), "Retrieving a set key of undefined host, of which only a globally set one exists");
+			assert.are.equal(321, configmanager.get("example.com", "testkey1"),
+				"Retrieving a set key of undefined host, of which only a globally set one exists"
+			);
 
 			configmanager.set("example.com", ""); -- Creates example.com host in config
 			assert.are.equal(321, configmanager.get("example.com", "testkey1"), "Retrieving a set key, of which only a globally set one exists");

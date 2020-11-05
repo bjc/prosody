@@ -24,6 +24,7 @@ install: $(ALL)
 clean:
 	rm -f $(ALL) $(patsubst %.so,%.o,$(ALL))
 
+encodings.o: CFLAGS+=$(IDNA_FLAGS)
 encodings.so: LDLIBS+=$(IDNA_LIBS)
 
 hashes.so: LDLIBS+=$(OPENSSL_LIBS)

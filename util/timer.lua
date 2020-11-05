@@ -16,6 +16,11 @@ local tostring = tostring;
 local xpcall = require "util.xpcall".xpcall;
 local math_max = math.max;
 
+if server.timer then
+	-- The selected net.server implements this API, so defer to that
+	return server.timer;
+end
+
 local _ENV = nil;
 -- luacheck: std none
 

@@ -71,7 +71,7 @@ local parse_xml = (function()
 		if ok then
 			return stanza.tags[1];
 		else
-			return ok, err.." (line "..line..", col "..col..")";
+			return ok, ("%s (line %d, col %d))"):format(err, line, col);
 		end
 	end;
 end)();

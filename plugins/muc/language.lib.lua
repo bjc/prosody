@@ -32,6 +32,7 @@ local function add_form_option(event)
 		label = "Language tag for room (e.g. 'en', 'de', 'fr' etc.)";
 		type = "text-single";
 		desc = "Indicate the primary language spoken in this room";
+		datatype = "xs:language";
 		value = get_language(event.room) or "";
 	});
 end

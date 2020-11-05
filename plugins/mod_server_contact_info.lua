@@ -16,6 +16,7 @@ local form_layout = require "util.dataforms".new({
 	{ name = "feedback", var = "feedback-addresses", type = "list-multi" },
 	{ name = "sales", var = "sales-addresses", type = "list-multi" },
 	{ name = "security", var = "security-addresses", type = "list-multi" },
+	{ name = "status", var = "status-addresses", type = "list-multi" },
 	{ name = "support", var = "support-addresses", type = "list-multi" },
 });
 

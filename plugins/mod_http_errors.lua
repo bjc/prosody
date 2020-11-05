@@ -26,28 +26,38 @@ local html = [[
 <meta charset="utf-8">
 <title>{title}</title>
 <style>
-body{
-	margin-top:14%;
-	text-align:center;
-	background-color:#F8F8F8;
-	font-family:sans-serif;
+body {
+	margin-top : 14%;
+	text-align : center;
+	background-color : #F8F8F8;
+	font-family : sans-serif
 }
-h1{
-	font-size:xx-large;
+
+h1 {
+	font-size : xx-large
 }
-p{
-	font-size:x-large;
+
+p {
+	font-size : x-large
 }
-p+p {
-	font-size:large;
-	font-family:courier;
+
+p.extra {
+	font-size : large;
+	font-family : courier
+}
+
+@media(prefers-color-scheme: dark) {
+	body {
+		background-color: #161616;
+		color: #eee
+	}
 }
 </style>
 </head>
 <body>
 <h1>{title}</h1>
 <p>{message}</p>
-<p>{extra?}</p>
+{extra&<p class="extra">{extra?}</p>}
 </body>
 </html>
 ]];
@@ -70,5 +80,17 @@ module:hook_object_event(server, "http-error", function (event)
 	if event.response then
 		event.response.headers.content_type = "text/html; charset=utf-8";
 	end
-	return get_page(event.code, (show_private and event.private_message) or event.message);
+	return get_page(event.code, (show_private and event.private_message) or event.message or (event.error and event.error.text));
 end);
+
+module:hook_object_event(server, "http-error", function (event)
+	local request, response = event.request, event.response;
+	if request and response and request.path == "/" and response.status_code == 404 then
+		response.headers.content_type = "text/html; charset=utf-8";
+		return render(html, {
+				title = "Prosody is running!";
+				message = "Welcome to the XMPP world!";
+			});
+	end
+end, 1);
+

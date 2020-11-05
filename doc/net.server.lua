@@ -160,6 +160,26 @@ Returns:
 local function addserver(address, port, listeners, pattern, sslctx)
 end
 
+--[[ Binds and listens on the given address and port
+Mostly the same as addserver but with all optional arguments in a table
+
+Arguments:
+  - address: address to bind to, may be "*" to bind all addresses. will be resolved if it is a string.
+  - port: port to bind (as number)
+  - listeners: a table of listeners
+	- config: table of extra settings
+		- read_size: the amount of bytes to read or a read pattern
+		- tls_ctx: is a valid luasec constructor
+		- tls_direct: boolean true for direct TLS, false (or nil) for starttls
+
+Returns:
+  - handle
+  - nil, "an error message": on failure (e.g. out of file descriptors)
+]]
+local function listen(address, port, listeners, config)
+end
+
+
 --[[ Wraps a lua-socket socket client socket in a handle.
 The socket must be already connected to the remote end.
 If `sslctx` is given, a SSL session will be negotiated before listeners are called.
@@ -255,4 +275,5 @@ return {
 	closeall = closeall;
 	hook_signal = hook_signal;
 	watchfd = watchfd;
+	listen = listen;
 }

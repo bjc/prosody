@@ -67,7 +67,7 @@ local function migrate_privacy_list(username)
 		if item.type == "jid" and item.action == "deny" then
 			local jid = jid_prep(item.value);
 			if not jid then
-				module:log("warn", "Invalid JID in privacy store for user '%s' not migrated: %s", username, tostring(item.value));
+				module:log("warn", "Invalid JID in privacy store for user '%s' not migrated: %s", username, item.value);
 			else
 				migrated_data[jid] = true;
 			end
@@ -162,7 +162,7 @@ local function edit_blocklist(event)
 	local blocklist = cache[username] or get_blocklist(username);
 
 	local new_blocklist = {
-		-- We set the [false] key to someting as a signal not to migrate privacy lists
+		-- We set the [false] key to something as a signal not to migrate privacy lists
 		[false] = blocklist[false] or { created = now; };
 	};
 	if type(blocklist[false]) == "table" then
@@ -189,6 +189,7 @@ local function edit_blocklist(event)
 
 	if is_blocking then
 		for jid in pairs(send_unavailable) do
+			-- Check that this JID isn't already blocked, i.e. this is not a change
 			if not blocklist[jid] then
 				for _, session in pairs(sessions[username].sessions) do
 					if session.presence then

@@ -7,6 +7,7 @@ local st = require "util.stanza";
 local it = require "util.iterators";
 local uuid_generate = require "util.uuid".generate;
 local dataform = require"util.dataforms".new;
+local errors = require "util.error";
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_errors = "http://jabber.org/protocol/pubsub#errors";
@@ -34,6 +35,9 @@ local pubsub_errors = {
 };
 local function pubsub_error_reply(stanza, error)
 	local e = pubsub_errors[error];
+	if not e and errors.is_err(error) then
+		e = { error.type, error.condition, error.text, error.pubsub_condition };
+	end
 	local reply = st.error_reply(stanza, t_unpack(e, 1, 3));
 	if e[4] then
 		reply:tag(e[4], { xmlns = xmlns_pubsub_errors }):up();
@@ -185,6 +189,14 @@ local node_metadata_form = dataform {
 		type = "text-single";
 		name = "pubsub#type";
 	};
+	{
+		type = "text-single";
+		name = "pubsub#access_model";
+	};
+	{
+		type = "text-single";
+		name = "pubsub#publish_model";
+	};
 };
 
 local service_method_feature_map = {
@@ -258,6 +270,8 @@ function _M.handle_disco_info_node(event, service)
 			["pubsub#title"] = node_obj.config.title;
 			["pubsub#description"] = node_obj.config.description;
 			["pubsub#type"] = node_obj.config.payload_type;
+			["pubsub#access_model"] = node_obj.config.access_model;
+			["pubsub#publish_model"] = node_obj.config.publish_model;
 		}, "result"));
 	end
 end
@@ -318,14 +332,9 @@ function handlers.get_items(origin, stanza, items, service)
 	for _, id in ipairs(results) do
 		data:add_child(results[id]);
 	end
-	local reply;
-	if data then
-		reply = st.reply(stanza)
-			:tag("pubsub", { xmlns = xmlns_pubsub })
-				:add_child(data);
-	else
-		reply = pubsub_error_reply(stanza, "item-not-found");
-	end
+	local reply = st.reply(stanza)
+		:tag("pubsub", { xmlns = xmlns_pubsub })
+			:add_child(data);
 	origin.send(reply);
 	return true;
 end
@@ -633,14 +642,13 @@ function handlers.set_retract(origin, stanza, retract, service)
 end
 
 function handlers.owner_set_purge(origin, stanza, purge, service)
-	local node, notify = purge.attr.node, purge.attr.notify;
-	notify = (notify == "1") or (notify == "true");
+	local node = purge.attr.node;
 	local reply;
 	if not node then
 		origin.send(pubsub_error_reply(stanza, "nodeid-required"));
 		return true;
 	end
-	local ok, ret = service:purge(node, stanza.attr.from, notify);
+	local ok, ret = service:purge(node, stanza.attr.from, true);
 	if ok then
 		reply = st.reply(stanza);
 	else
@@ -788,7 +796,7 @@ local function create_encapsulating_item(id, payload)
 end
 
 local function archive_itemstore(archive, config, user, node)
-	module:log("debug", "Creation of itemstore for node %s with config %s", node, config);
+	module:log("debug", "Creation of archive itemstore for node %s with config %q", node, config);
 	local get_set = {};
 	local max_items = config["max_items"];
 	function get_set:items() -- luacheck: ignore 212/self
@@ -802,6 +810,7 @@ local function archive_itemstore(archive, config, user, node)
 		end
 		module:log("debug", "Listed items %s", data);
 		return it.reverse(function()
+			-- luacheck: ignore 211/when
 			local id, payload, when, publisher = data();
 			if id == nil then
 				return;
@@ -863,7 +872,7 @@ local function archive_itemstore(archive, config, user, node)
 			return item.attr.id, item;
 		end
 	end
-	return setmetatable(get_set, archive);
+	return get_set;
 end
 _M.archive_itemstore = archive_itemstore;
 

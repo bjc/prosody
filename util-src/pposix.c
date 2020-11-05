@@ -25,13 +25,17 @@
 #define _DEFAULT_SOURCE
 #endif
 #endif
+
 #if defined(__APPLE__)
 #ifndef _DARWIN_C_SOURCE
 #define _DARWIN_C_SOURCE
 #endif
 #endif
+
+#if ! defined(__FreeBSD__)
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
+#endif
 #endif
 
 #include <stdlib.h>
@@ -56,6 +60,12 @@
 
 #if (LUA_VERSION_NUM == 501)
 #define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
+#endif
+#if (LUA_VERSION_NUM < 503)
+#define lua_isinteger(L, n) lua_isnumber(L, n)
+#endif
+#if (LUA_VERSION_NUM < 504)
+#define luaL_pushfail lua_pushnil
 #endif
 
 #include <fcntl.h>
@@ -102,7 +112,7 @@ static int lc_daemonize(lua_State *L) {
 	} else if(pid != 0) {
 		/* We are the parent process */
 		lua_pushboolean(L, 1);
-		lua_pushnumber(L, pid);
+		lua_pushinteger(L, pid);
 		return 2;
 	}
 
@@ -133,7 +143,7 @@ static int lc_daemonize(lua_State *L) {
 
 /* Syslog support */
 
-const char *const facility_strings[] = {
+static const char *const facility_strings[] = {
 	"auth",
 #if !(defined(sun) || defined(__sun))
 	"authpriv",
@@ -159,7 +169,7 @@ const char *const facility_strings[] = {
 	"uucp",
 	NULL
 };
-int facility_constants[] =	{
+static int facility_constants[] =	{
 	LOG_AUTH,
 #if !(defined(sun) || defined(__sun))
 	LOG_AUTHPRIV,
@@ -195,9 +205,9 @@ int facility_constants[] =	{
        constant.
    " -- syslog manpage
 */
-char *syslog_ident = NULL;
+static char *syslog_ident = NULL;
 
-int lc_syslog_open(lua_State *L) {
+static int lc_syslog_open(lua_State *L) {
 	int facility = luaL_checkoption(L, 2, "daemon", facility_strings);
 	facility = facility_constants[facility];
 
@@ -213,7 +223,7 @@ int lc_syslog_open(lua_State *L) {
 	return 0;
 }
 
-const char *const level_strings[] = {
+static const char *const level_strings[] = {
 	"debug",
 	"info",
 	"notice",
@@ -221,7 +231,7 @@ const char *const level_strings[] = {
 	"error",
 	NULL
 };
-int level_constants[] = 	{
+static int level_constants[] = 	{
 	LOG_DEBUG,
 	LOG_INFO,
 	LOG_NOTICE,
@@ -229,7 +239,7 @@ int level_constants[] = 	{
 	LOG_CRIT,
 	-1
 };
-int lc_syslog_log(lua_State *L) {
+static int lc_syslog_log(lua_State *L) {
 	int level = level_constants[luaL_checkoption(L, 1, "notice", level_strings)];
 
 	if(lua_gettop(L) == 3) {
@@ -241,7 +251,7 @@ int lc_syslog_log(lua_State *L) {
 	return 0;
 }
 
-int lc_syslog_close(lua_State *L) {
+static int lc_syslog_close(lua_State *L) {
 	(void)L;
 	closelog();
 
@@ -253,7 +263,7 @@ int lc_syslog_close(lua_State *L) {
 	return 0;
 }
 
-int lc_syslog_setmask(lua_State *L) {
+static int lc_syslog_setmask(lua_State *L) {
 	int level_idx = luaL_checkoption(L, 1, "notice", level_strings);
 	int mask = 0;
 
@@ -267,31 +277,31 @@ int lc_syslog_setmask(lua_State *L) {
 
 /* getpid */
 
-int lc_getpid(lua_State *L) {
+static int lc_getpid(lua_State *L) {
 	lua_pushinteger(L, getpid());
 	return 1;
 }
 
 /* UID/GID functions */
 
-int lc_getuid(lua_State *L) {
+static int lc_getuid(lua_State *L) {
 	lua_pushinteger(L, getuid());
 	return 1;
 }
 
-int lc_getgid(lua_State *L) {
+static int lc_getgid(lua_State *L) {
 	lua_pushinteger(L, getgid());
 	return 1;
 }
 
-int lc_setuid(lua_State *L) {
+static int lc_setuid(lua_State *L) {
 	int uid = -1;
 
 	if(lua_gettop(L) < 1) {
 		return 0;
 	}
 
-	if(!lua_isnumber(L, 1) && lua_tostring(L, 1)) {
+	if(!lua_isinteger(L, 1) && lua_tostring(L, 1)) {
 		/* Passed UID is actually a string, so look up the UID */
 		struct passwd *p;
 		p = getpwnam(lua_tostring(L, 1));
@@ -304,7 +314,7 @@ int lc_setuid(lua_State *L) {
 
 		uid = p->pw_uid;
 	} else {
-		uid = lua_tonumber(L, 1);
+		uid = lua_tointeger(L, 1);
 	}
 
 	if(uid > -1) {
@@ -342,14 +352,14 @@ int lc_setuid(lua_State *L) {
 	return 2;
 }
 
-int lc_setgid(lua_State *L) {
+static int lc_setgid(lua_State *L) {
 	int gid = -1;
 
 	if(lua_gettop(L) < 1) {
 		return 0;
 	}
 
-	if(!lua_isnumber(L, 1) && lua_tostring(L, 1)) {
+	if(!lua_isinteger(L, 1) && lua_tostring(L, 1)) {
 		/* Passed GID is actually a string, so look up the GID */
 		struct group *g;
 		g = getgrnam(lua_tostring(L, 1));
@@ -362,7 +372,7 @@ int lc_setgid(lua_State *L) {
 
 		gid = g->gr_gid;
 	} else {
-		gid = lua_tonumber(L, 1);
+		gid = lua_tointeger(L, 1);
 	}
 
 	if(gid > -1) {
@@ -400,13 +410,13 @@ int lc_setgid(lua_State *L) {
 	return 2;
 }
 
-int lc_initgroups(lua_State *L) {
+static int lc_initgroups(lua_State *L) {
 	int ret;
 	gid_t gid;
 	struct passwd *p;
 
 	if(!lua_isstring(L, 1)) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, "invalid-username");
 		return 2;
 	}
@@ -414,7 +424,7 @@ int lc_initgroups(lua_State *L) {
 	p = getpwnam(lua_tostring(L, 1));
 
 	if(!p) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, "no-such-user");
 		return 2;
 	}
@@ -433,7 +443,7 @@ int lc_initgroups(lua_State *L) {
 			break;
 
 		default:
-			lua_pushnil(L);
+			luaL_pushfail(L);
 			lua_pushstring(L, "invalid-gid");
 			return 2;
 	}
@@ -443,17 +453,17 @@ int lc_initgroups(lua_State *L) {
 	if(ret) {
 		switch(errno) {
 			case ENOMEM:
-				lua_pushnil(L);
+				luaL_pushfail(L);
 				lua_pushstring(L, "no-memory");
 				break;
 
 			case EPERM:
-				lua_pushnil(L);
+				luaL_pushfail(L);
 				lua_pushstring(L, "permission-denied");
 				break;
 
 			default:
-				lua_pushnil(L);
+				luaL_pushfail(L);
 				lua_pushstring(L, "unknown-error");
 		}
 	} else {
@@ -464,7 +474,7 @@ int lc_initgroups(lua_State *L) {
 	return 2;
 }
 
-int lc_umask(lua_State *L) {
+static int lc_umask(lua_State *L) {
 	char old_mode_string[7];
 	mode_t old_mode = umask(strtoul(luaL_checkstring(L, 1), NULL, 8));
 
@@ -475,7 +485,7 @@ int lc_umask(lua_State *L) {
 	return 1;
 }
 
-int lc_mkdir(lua_State *L) {
+static int lc_mkdir(lua_State *L) {
 	int ret = mkdir(luaL_checkstring(L, 1), S_IRUSR | S_IWUSR | S_IXUSR
 	                | S_IRGRP | S_IWGRP | S_IXGRP
 	                | S_IROTH | S_IXOTH); /* mode 775 */
@@ -500,7 +510,7 @@ int lc_mkdir(lua_State *L) {
  *	Example usage:
  *	pposix.setrlimit("NOFILE", 1000, 2000)
  */
-int string2resource(const char *s) {
+static int string2resource(const char *s) {
 	if(!strcmp(s, "CORE")) {
 		return RLIMIT_CORE;
 	}
@@ -550,7 +560,7 @@ int string2resource(const char *s) {
 	return -1;
 }
 
-rlim_t arg_to_rlimit(lua_State *L, int idx, rlim_t current) {
+static rlim_t arg_to_rlimit(lua_State *L, int idx, rlim_t current) {
 	switch(lua_type(L, idx)) {
 		case LUA_TSTRING:
 
@@ -571,7 +581,7 @@ rlim_t arg_to_rlimit(lua_State *L, int idx, rlim_t current) {
 	}
 }
 
-int lc_setrlimit(lua_State *L) {
+static int lc_setrlimit(lua_State *L) {
 	struct rlimit lim;
 	int arguments = lua_gettop(L);
 	int rid = -1;
@@ -610,7 +620,7 @@ int lc_setrlimit(lua_State *L) {
 	return 1;
 }
 
-int lc_getrlimit(lua_State *L) {
+static int lc_getrlimit(lua_State *L) {
 	int arguments = lua_gettop(L);
 	const char *resource = NULL;
 	int rid = -1;
@@ -643,29 +653,29 @@ int lc_getrlimit(lua_State *L) {
 	if(lim.rlim_cur == RLIM_INFINITY) {
 		lua_pushstring(L, "unlimited");
 	} else {
-		lua_pushnumber(L, lim.rlim_cur);
+		lua_pushinteger(L, lim.rlim_cur);
 	}
 
 	if(lim.rlim_max == RLIM_INFINITY) {
 		lua_pushstring(L, "unlimited");
 	} else {
-		lua_pushnumber(L, lim.rlim_max);
+		lua_pushinteger(L, lim.rlim_max);
 	}
 
 	return 3;
 }
 
-int lc_abort(lua_State *L) {
+static int lc_abort(lua_State *L) {
 	(void)L;
 	abort();
 	return 0;
 }
 
-int lc_uname(lua_State *L) {
+static int lc_uname(lua_State *L) {
 	struct utsname uname_info;
 
 	if(uname(&uname_info) != 0) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(errno));
 		return 2;
 	}
@@ -688,14 +698,14 @@ int lc_uname(lua_State *L) {
 	return 1;
 }
 
-int lc_setenv(lua_State *L) {
+static int lc_setenv(lua_State *L) {
 	const char *var = luaL_checkstring(L, 1);
 	const char *value;
 
 	/* If the second argument is nil or nothing, unset the var */
 	if(lua_isnoneornil(L, 2)) {
 		if(unsetenv(var) != 0) {
-			lua_pushnil(L);
+			luaL_pushfail(L);
 			lua_pushstring(L, strerror(errno));
 			return 2;
 		}
@@ -707,7 +717,7 @@ int lc_setenv(lua_State *L) {
 	value = luaL_checkstring(L, 2);
 
 	if(setenv(var, value, 1) != 0) {
-		lua_pushnil(L);
+		luaL_pushfail(L);
 		lua_pushstring(L, strerror(errno));
 		return 2;
 	}
@@ -717,7 +727,7 @@ int lc_setenv(lua_State *L) {
 }
 
 #ifdef WITH_MALLINFO
-int lc_meminfo(lua_State *L) {
+static int lc_meminfo(lua_State *L) {
 	struct mallinfo info = mallinfo();
 	lua_createtable(L, 0, 5);
 	/* This is the total size of memory allocated with sbrk by malloc, in bytes. */
@@ -745,7 +755,7 @@ int lc_meminfo(lua_State *L) {
  * Attempt to allocate space first
  * Truncate to original size on failure
  */
-int lc_atomic_append(lua_State *L) {
+static int lc_atomic_append(lua_State *L) {
 	int err;
 	size_t len;
 
@@ -769,7 +779,7 @@ int lc_atomic_append(lua_State *L) {
 
 			case ENOSPC: /* No space left */
 			default: /* Other issues */
-				lua_pushnil(L);
+				luaL_pushfail(L);
 				lua_pushstring(L, strerror(err));
 				lua_pushinteger(L, err);
 				return 3;
@@ -796,7 +806,7 @@ int lc_atomic_append(lua_State *L) {
 		return luaL_error(L, "atomic_append() failed in ftruncate(): %s", strerror(errno));
 	}
 
-	lua_pushnil(L);
+	luaL_pushfail(L);
 	lua_pushstring(L, strerror(err));
 	lua_pushinteger(L, err);
 	return 3;

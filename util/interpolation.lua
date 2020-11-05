@@ -64,6 +64,9 @@ local function new_render(pat, escape, funcs)
 			elseif opt == '&' then
 				if not value then return ""; end
 				return render(s_sub(block, e), values);
+			elseif opt == '~' then
+				if value then return ""; end
+				return render(s_sub(block, e), values);
 			elseif opt == '?' and not value then
 				return render(s_sub(block, e), values);
 			elseif value ~= nil then
