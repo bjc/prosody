@@ -49,6 +49,9 @@ local function promise_settle(promise, new_state, new_next, cbs, value)
 	for _, cb in ipairs(cbs) do
 		cb(value);
 	end
+	-- No need to keep references to callbacks
+	promise._pending_on_fulfilled = nil;
+	promise._pending_on_rejected = nil;
 	return true;
 end
 
@@ -101,6 +104,27 @@ local function all(promises)
 	end);
 end
 
+local function all_settled(promises)
+	return new(function (resolve)
+		local count, total, results = 0, #promises, {};
+		for i = 1, total do
+			promises[i]:next(function (v)
+				results[i] = { status = "fulfilled", value = v };
+				count = count + 1;
+				if count == total then
+					resolve(results);
+				end
+			end, function (e)
+				results[i] = { status = "rejected", reason = e };
+				count = count + 1;
+				if count == total then
+					resolve(results);
+				end
+			end);
+		end
+	end);
+end
+
 local function race(promises)
 	return new(function (resolve, reject)
 		for i = 1, #promises do
@@ -146,6 +170,7 @@ return {
 	resolve = resolve;
 	reject = reject;
 	all = all;
+	all_settled = all_settled;
 	race = race;
 	try = try;
 	is_promise = is_promise;

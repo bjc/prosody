@@ -1,8 +1,8 @@
 local tonumber = tonumber;
 local assert = assert;
-local t_insert, t_concat = table.insert, table.concat;
 local url_parse = require "socket.url".parse;
 local urldecode = require "util.http".urldecode;
+local dbuffer = require "util.dbuffer";
 
 local function preprocess_path(path)
 	path = urldecode((path:gsub("//+", "/")));
@@ -28,10 +28,13 @@ local httpstream = {};
 function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 	local client = true;
 	if not parser_type or parser_type == "server" then client = false; else assert(parser_type == "client", "Invalid parser type"); end
-	local buf, buflen, buftable = {}, 0, true;
 	local bodylimit = tonumber(options_cb and options_cb().body_size_limit) or 10*1024*1024;
+	-- https://stackoverflow.com/a/686243
+	-- Indiviual headers can be up to 16k? What madness?
+	local headlimit = tonumber(options_cb and options_cb().head_size_limit) or 10*1024;
 	local buflimit = tonumber(options_cb and options_cb().buffer_size_limit) or bodylimit * 2;
-	local chunked, chunk_size, chunk_start;
+	local buffer = dbuffer.new(buflimit);
+	local chunked;
 	local state = nil;
 	local packet;
 	local len;
@@ -41,32 +44,27 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 		feed = function(_, data)
 			if error then return nil, "parse has failed"; end
 			if not data then -- EOF
-				if buftable then buf, buftable = t_concat(buf), false; end
 				if state and client and not len then -- reading client body until EOF
-					packet.body = buf;
+					buffer:collapse();
+					packet.body = buffer:read_chunk() or "";
+					packet.partial = nil;
 					success_cb(packet);
-				elseif buf ~= "" then -- unexpected EOF
+					state = nil;
+				elseif buffer:length() ~= 0 then -- unexpected EOF
 					error = true; return error_cb("unexpected-eof");
 				end
 				return;
 			end
-			if buftable then
-				t_insert(buf, data);
-			else
-				buf = { buf, data };
-				buftable = true;
-			end
-			buflen = buflen + #data;
-			if buflen > buflimit then error = true; return error_cb("max-buffer-size-exceeded"); end
-			while buflen > 0 do
+			if not buffer:write(data) then error = true; return error_cb("max-buffer-size-exceeded"); end
+			while buffer:length() > 0 do
 				if state == nil then -- read request
-					if buftable then buf, buftable = t_concat(buf), false; end
-					local index = buf:find("\r\n\r\n", nil, true);
+					local index = buffer:sub(1, headlimit):find("\r\n\r\n", nil, true);
 					if not index then return; end -- not enough data
-					local method, path, httpversion, status_code, reason_phrase;
+					-- FIXME was reason_phrase meant to be passed on somewhere?
+					local method, path, httpversion, status_code, reason_phrase; -- luacheck: ignore reason_phrase
 					local first_line;
 					local headers = {};
-					for line in buf:sub(1,index+1):gmatch("([^\r\n]+)\r\n") do -- parse request
+					for line in buffer:read(index+3):gmatch("([^\r\n]+)\r\n") do -- parse request
 						if first_line then
 							local key, val = line:match("^([^%s:]+): *(.*)$");
 							if not key then error = true; return error_cb("invalid-header-line"); end -- TODO handle multi-line and invalid headers
@@ -91,7 +89,6 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 					if not first_line then error = true; return error_cb("invalid-status-line"); end
 					chunked = have_body and headers["transfer-encoding"] == "chunked";
 					len = tonumber(headers["content-length"]); -- TODO check for invalid len
-					if len and len > bodylimit then error = true; return error_cb("content-length-limit-exceeded"); end
 					if client then
 						-- FIXME handle '100 Continue' response (by skipping it)
 						if not have_body then len = 0; end
@@ -99,7 +96,10 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							code = status_code;
 							httpversion = httpversion;
 							headers = headers;
-							body = have_body and "" or nil;
+							body = false;
+							body_length = len;
+							chunked = chunked;
+							partial = true;
 							-- COMPAT the properties below are deprecated
 							responseversion = httpversion;
 							responseheaders = headers;
@@ -124,60 +124,81 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							path = path;
 							httpversion = httpversion;
 							headers = headers;
-							body = nil;
+							body = false;
+							body_sink = nil;
+							chunked = chunked;
+							partial = true;
 						};
 					end
-					buf = buf:sub(index + 4);
-					buflen = #buf;
+					if len and len > bodylimit then
+						-- Early notification, for redirection
+						success_cb(packet);
+						if not packet.body_sink then error = true; return error_cb("content-length-limit-exceeded"); end
+					end
+					if chunked and not packet.body_sink then
+						success_cb(packet);
+						if not packet.body_sink then
+							packet.body_buffer = dbuffer.new(buflimit);
+						end
+					end
 					state = true;
 				end
 				if state then -- read body
-					if client then
-						if chunked then
-							if chunk_start and buflen - chunk_start - 2 < chunk_size then
-								return;
-							end -- not enough data
-							if buftable then buf, buftable = t_concat(buf), false; end
-							if not buf:find("\r\n", nil, true) then
-								return;
-							end -- not enough data
-							if not chunk_size then
-								chunk_size, chunk_start = buf:match("^(%x+)[^\r\n]*\r\n()");
-								chunk_size = chunk_size and tonumber(chunk_size, 16);
-								if not chunk_size then error = true; return error_cb("invalid-chunk-size"); end
+					if chunked then
+						local chunk_header = buffer:sub(1, 512); -- XXX How large do chunk headers grow?
+						local chunk_size, chunk_start = chunk_header:match("^(%x+)[^\r\n]*\r\n()");
+						if not chunk_size then return; end
+						chunk_size = chunk_size and tonumber(chunk_size, 16);
+						if not chunk_size then error = true; return error_cb("invalid-chunk-size"); end
+						if chunk_size == 0 and chunk_header:find("\r\n\r\n", chunk_start-2, true) then
+							local body_buffer = packet.body_buffer;
+							if body_buffer then
+								packet.body_buffer = nil;
+								body_buffer:collapse();
+								packet.body = body_buffer:read_chunk() or "";
 							end
-							if chunk_size == 0 and buf:find("\r\n\r\n", chunk_start-2, true) then
-								state, chunk_size = nil, nil;
-								buf = buf:gsub("^.-\r\n\r\n", ""); -- This ensure extensions and trailers are stripped
-								success_cb(packet);
-							elseif buflen - chunk_start - 2 >= chunk_size then -- we have a chunk
-								packet.body = packet.body..buf:sub(chunk_start, chunk_start + (chunk_size-1));
-								buf = buf:sub(chunk_start + chunk_size + 2);
-								buflen = buflen - (chunk_start + chunk_size + 2 - 1);
-								chunk_size, chunk_start = nil, nil;
-							else -- Partial chunk remaining
-								break;
-							end
-						elseif len and buflen >= len then
-							if buftable then buf, buftable = t_concat(buf), false; end
-							if packet.code == 101 then
-								packet.body, buf, buflen, buftable = buf, {}, 0, true;
-							else
-								packet.body, buf = buf:sub(1, len), buf:sub(len + 1);
-								buflen = #buf;
-							end
-							state = nil; success_cb(packet);
-						else
+
+							buffer:collapse();
+							local buf = buffer:read_chunk();
+							buf = buf:gsub("^.-\r\n\r\n", ""); -- This ensure extensions and trailers are stripped
+							buffer:write(buf);
+							state, chunked = nil, nil;
+							packet.partial = nil;
+							success_cb(packet);
+						elseif buffer:length() - chunk_start - 2 >= chunk_size then -- we have a chunk
+							buffer:discard(chunk_start - 1); -- TODO verify that it's not off-by-one
+							(packet.body_sink or packet.body_buffer):write(buffer:read(chunk_size));
+							buffer:discard(2); -- CRLF
+						else -- Partial chunk remaining
 							break;
 						end
-					elseif buflen >= len then
-						if buftable then buf, buftable = t_concat(buf), false; end
-						packet.body, buf = buf:sub(1, len), buf:sub(len + 1);
-						buflen = #buf;
-						state = nil; success_cb(packet);
+					elseif packet.body_sink then
+						local chunk = buffer:read_chunk(len);
+						while chunk and len > 0 do
+							if packet.body_sink:write(chunk) then
+								len = len - #chunk;
+								chunk = buffer:read_chunk(len);
+							else
+								error = true;
+								return error_cb("body-sink-write-failure");
+							end
+						end
+						if len == 0 then
+							state = nil;
+							packet.partial = nil;
+							success_cb(packet);
+						end
+					elseif buffer:length() >= len then
+						assert(not chunked)
+						packet.body = buffer:read(len) or "";
+						state = nil;
+						packet.partial = nil;
+						success_cb(packet);
 					else
 						break;
 					end
+				else
+					break;
 				end
 			end
 		end;

@@ -10,6 +10,7 @@ local t_insert, t_sort, t_remove, t_concat
     = table.insert, table.sort, table.remove, table.concat;
 
 local setmetatable = setmetatable;
+local getmetatable = getmetatable;
 local math_random = math.random;
 local math_floor = math.floor;
 local pairs, ipairs = pairs, ipairs;
@@ -40,6 +41,10 @@ function array_mt.__add(a1, a2)
 end
 
 function array_mt.__eq(a, b)
+	if getmetatable(a) ~= array_mt or getmetatable(b) ~= array_mt then
+		-- Lua 5.3+ calls this if both operands are tables, even if metatables differ
+		return false;
+	end
 	if #a == #b then
 		for i = 1, #a do
 			if a[i] ~= b[i] then
@@ -129,9 +134,13 @@ function array_base.unique(outa, ina)
 	end);
 end
 
-function array_base.pluck(outa, ina, key)
+function array_base.pluck(outa, ina, key, default)
 	for i = 1, #ina do
-		outa[i] = ina[i][key];
+		local v = ina[i][key];
+		if v == nil then
+			v = default;
+		end
+		outa[i] = v;
 	end
 	return outa;
 end

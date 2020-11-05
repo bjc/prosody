@@ -16,7 +16,7 @@ module:add_feature("jabber:iq:last");
 
 module:hook("iq-get/host/jabber:iq:last:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
-	origin.send(st.reply(stanza):tag("query", {xmlns = "jabber:iq:last", seconds = tostring(os.difftime(os.time(), start_time))}));
+	origin.send(st.reply(stanza):tag("query", {xmlns = "jabber:iq:last", seconds = tostring(("%d"):format(os.difftime(os.time(), start_time)))}));
 	return true;
 end);
 
@@ -42,6 +42,6 @@ function uptime_command_handler ()
 	return { info = uptime_text(), status = "completed" };
 end
 
-local descriptor = adhoc_new("Get uptime", "uptime", uptime_command_handler);
+local descriptor = adhoc_new("Get uptime", "uptime", uptime_command_handler, "any");
 
 module:provides("adhoc", descriptor);

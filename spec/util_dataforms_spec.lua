@@ -106,11 +106,26 @@ describe("util.dataforms", function ()
 				name = "text-single-field",
 				value = "text-single-value",
 			},
+			{
+				-- XEP-0221
+				-- TODO Validate the XML produced by this.
+				type = "text-single",
+				label = "text-single-with-media-label",
+				name = "text-single-with-media-field",
+				media = {
+					height = 24,
+					width = 32,
+					{
+						type = "image/png",
+						uri = "data:",
+					},
+				},
+			},
 		});
 		xform = some_form:form();
 	end);
 
-	it("works", function ()
+	it("XML serialization looks like it should", function ()
 		assert.truthy(xform);
 		assert.truthy(st.is_stanza(xform));
 		assert.equal("x", xform.name);
@@ -316,7 +331,7 @@ describe("util.dataforms", function ()
 	end);
 
 	describe(":data", function ()
-		it("works", function ()
+		it("returns something", function ()
 			assert.truthy(some_form:data(xform));
 		end);
 	end);
@@ -402,25 +417,62 @@ describe("util.dataforms", function ()
 		end);
 	end);
 
-	describe("validation", function ()
+	describe("datatype validation", function ()
 		local f = dataforms.new {
 			{
 				name = "number",
 				type = "text-single",
 				datatype = "xs:integer",
+				range_min = -10,
+				range_max = 10,
 			},
 		};
 
-		it("works", function ()
+		it("integer roundtrip works", function ()
 			local d = f:data(f:form({number = 1}));
 			assert.equal(1, d.number);
 		end);
 
-		it("works", function ()
+		it("integer error handling works", function ()
 			local d,e = f:data(f:form({number = "nan"}));
 			assert.not_equal(1, d.number);
 			assert.table(e);
 			assert.string(e.number);
+		end);
+
+		it("works", function ()
+			local d,e = f:data(f:form({number = 100}));
+			assert.not_equal(100, d.number);
+			assert.table(e);
+			assert.string(e.number);
+		end);
+	end);
+	describe("media element", function ()
+		it("produced media element correctly", function ()
+			local f;
+			for field in xform:childtags("field") do
+				if field.attr.var == "text-single-with-media-field" then
+					f = field;
+					break;
+				end
+			end
+
+			assert.truthy(st.is_stanza(f));
+			assert.equal("text-single-with-media-field", f.attr.var);
+			assert.equal("text-single", f.attr.type);
+			assert.equal("text-single-with-media-label", f.attr.label);
+			assert.equal(0, iter.count(f:childtags("value")));
+
+			local m = f:get_child("media", "urn:xmpp:media-element");
+			assert.truthy(st.is_stanza(m));
+			assert.equal("24", m.attr.height);
+			assert.equal("32", m.attr.width);
+			assert.equal(1, iter.count(m:childtags("uri")));
+
+			local u = m:get_child("uri");
+			assert.truthy(st.is_stanza(u));
+			assert.equal("image/png", u.attr.type);
+			assert.equal("data:", u:get_text());
 		end);
 	end);
 end);

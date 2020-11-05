@@ -37,8 +37,7 @@ local function record_event(session, event)
 end
 
 local function record_stanza(stanza, session, verb)
-	local flattened = tostring(stanza):gsub("><", ">\n\t<");
-	-- TODO Proper prettyprinting with indentation
+	local flattened = tostring(stanza:indent(2, "\t"));
 	record(session.scansion_id.." "..verb..":\n\t"..flattened.."\n\n");
 end
 

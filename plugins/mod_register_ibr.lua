@@ -9,10 +9,12 @@
 
 local st = require "util.stanza";
 local dataform_new = require "util.dataforms".new;
-local usermanager_user_exists = require "core.usermanager".user_exists;
-local usermanager_create_user = require "core.usermanager".create_user;
-local usermanager_delete_user = require "core.usermanager".delete_user;
+local usermanager_user_exists  = require "core.usermanager".user_exists;
+local usermanager_create_user  = require "core.usermanager".create_user;
+local usermanager_set_password = require "core.usermanager".create_user;
+local usermanager_delete_user  = require "core.usermanager".delete_user;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
+local util_error = require "util.error";
 
 local additional_fields = module:get_option("additional_registration_fields", {});
 local require_encryption = module:get_option_boolean("c2s_require_encryption",
@@ -155,7 +157,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 		return true;
 	end
 
-	local username, password = nodeprep(data.username), data.password;
+	local username, password = nodeprep(data.username, true), data.password;
 	data.username, data.password = nil, nil;
 	local host = module.host;
 	if not username or username == "" then
@@ -167,25 +169,44 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 	local user = { username = username, password = password, host = host, additional = data, ip = session.ip, session = session, allowed = true }
 	module:fire_event("user-registering", user);
 	if not user.allowed then
-		log("debug", "Registration disallowed by module: %s", user.reason or "no reason given");
-		session.send(st.error_reply(stanza, "modify", "not-acceptable", user.reason));
+		local error_type, error_condition, reason;
+		local err = user.error;
+		if err then
+			error_type, error_condition, reason = err.type, err.condition, err.text;
+		else
+			-- COMPAT pre-util.error
+			error_type, error_condition, reason = user.error_type, user.error_condition, user.reason;
+		end
+		log("debug", "Registration disallowed by module: %s", reason or "no reason given");
+		session.send(st.error_reply(stanza, error_type or "modify", error_condition or "not-acceptable", reason));
 		return true;
 	end
 
 	if usermanager_user_exists(username, host) then
-		log("debug", "Attempt to register with existing username");
-		session.send(st.error_reply(stanza, "cancel", "conflict", "The requested username already exists."));
-		return true;
+		if user.allow_reset == username then
+			local ok, err = util_error.coerce(usermanager_set_password(username, password, host));
+			if ok then
+				module:fire_event("user-password-reset", user);
+				session.send(st.reply(stanza)); -- reset ok!
+			else
+				session.log("error", "Unable to reset password for %s@%s: %s", username, host, err);
+				session.send(st.error_reply(stanza, err.type, err.condition, err.text));
+			end
+			return true;
+		else
+			log("debug", "Attempt to register with existing username");
+			session.send(st.error_reply(stanza, "cancel", "conflict", "The requested username already exists."));
+			return true;
+		end
 	end
 
-	-- TODO unable to write file, file may be locked, etc, what's the correct error?
-	local error_reply = st.error_reply(stanza, "wait", "internal-server-error", "Failed to write data to disk.");
-	if usermanager_create_user(username, password, host) then
+	local created, err = usermanager_create_user(username, password, host);
+	if created then
 		data.registered = os.time();
 		if not account_details:set(username, data) then
 			log("debug", "Could not store extra details");
 			usermanager_delete_user(username, host);
-			session.send(error_reply);
+			session.send(st.error_reply(stanza, "wait", "internal-server-error", "Failed to write data to disk."));
 			return true;
 		end
 		session.send(st.reply(stanza)); -- user created!
@@ -194,8 +215,8 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 			username = username, host = host, source = "mod_register",
 			session = session });
 	else
-		log("debug", "Could not create user");
-		session.send(error_reply);
+		log("debug", "Could not create user", err);
+		session.send(st.error_reply(stanza, "cancel", "feature-not-implemented", err));
 	end
 	return true;
 end);

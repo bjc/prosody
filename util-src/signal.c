@@ -39,6 +39,9 @@
 #if (LUA_VERSION_NUM == 501)
 #define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
 #endif
+#if (LUA_VERSION_NUM < 503)
+#define lua_isinteger(L, n) lua_isnumber(L, n)
+#endif
 
 #ifndef lsig
 
@@ -164,8 +167,8 @@ static lua_Hook Hsig = NULL;
 static int Hmask = 0;
 static int Hcount = 0;
 
-int signals[MAX_PENDING_SIGNALS];
-int nsig = 0;
+static int signals[MAX_PENDING_SIGNALS];
+static int nsig = 0;
 
 static void sighook(lua_State *L, lua_Debug *ar) {
 	(void)ar;
@@ -176,7 +179,7 @@ static void sighook(lua_State *L, lua_Debug *ar) {
 	lua_gettable(L, LUA_REGISTRYINDEX);
 
 	for(int i = 0; i < nsig; i++) {
-		lua_pushnumber(L, signals[i]);
+		lua_pushinteger(L, signals[i]);
 		lua_gettable(L, -2);
 		lua_call(L, 0, 0);
 	};
@@ -223,18 +226,18 @@ static int l_signal(lua_State *L) {
 	t = lua_type(L, 1);
 
 	if(t == LUA_TNUMBER) {
-		sig = (int) lua_tonumber(L, 1);
+		sig = (int) lua_tointeger(L, 1);
 	} else if(t == LUA_TSTRING) {
 		lua_pushstring(L, LUA_SIGNAL);
 		lua_gettable(L, LUA_REGISTRYINDEX);
 		lua_pushvalue(L, 1);
 		lua_gettable(L, -2);
 
-		if(!lua_isnumber(L, -1)) {
+		if(!lua_isinteger(L, -1)) {
 			return luaL_error(L, "invalid signal string");
 		}
 
-		sig = (int) lua_tonumber(L, -1);
+		sig = (int) lua_tointeger(L, -1);
 		lua_pop(L, 1); /* get rid of number we pushed */
 	} else {
 		luaL_checknumber(L, 1);    /* will always error, with good error msg */
@@ -245,9 +248,9 @@ static int l_signal(lua_State *L) {
 	if(args == 1 || lua_isnil(L, 2)) { /* clear handler */
 		lua_pushstring(L, LUA_SIGNAL);
 		lua_gettable(L, LUA_REGISTRYINDEX);
-		lua_pushnumber(L, sig);
+		lua_pushinteger(L, sig);
 		lua_gettable(L, -2); /* return old handler */
-		lua_pushnumber(L, sig);
+		lua_pushinteger(L, sig);
 		lua_pushnil(L);
 		lua_settable(L, -4);
 		lua_remove(L, -2); /* remove LUA_SIGNAL table */
@@ -258,7 +261,7 @@ static int l_signal(lua_State *L) {
 		lua_pushstring(L, LUA_SIGNAL);
 		lua_gettable(L, LUA_REGISTRYINDEX);
 
-		lua_pushnumber(L, sig);
+		lua_pushinteger(L, sig);
 		lua_pushvalue(L, 2);
 		lua_settable(L, -3);
 
@@ -292,15 +295,15 @@ static int l_signal(lua_State *L) {
 static int l_raise(lua_State *L) {
 	/* int args = lua_gettop(L); */
 	int t = 0; /* type */
-	lua_Number ret;
+	lua_Integer ret;
 
 	luaL_checkany(L, 1);
 
 	t = lua_type(L, 1);
 
 	if(t == LUA_TNUMBER) {
-		ret = (lua_Number) raise((int) lua_tonumber(L, 1));
-		lua_pushnumber(L, ret);
+		ret = (lua_Integer) raise((int) lua_tointeger(L, 1));
+		lua_pushinteger(L, ret);
 	} else if(t == LUA_TSTRING) {
 		lua_pushstring(L, LUA_SIGNAL);
 		lua_gettable(L, LUA_REGISTRYINDEX);
@@ -311,9 +314,9 @@ static int l_raise(lua_State *L) {
 			return luaL_error(L, "invalid signal string");
 		}
 
-		ret = (lua_Number) raise((int) lua_tonumber(L, -1));
+		ret = (lua_Integer) raise((int) lua_tointeger(L, -1));
 		lua_pop(L, 1); /* get rid of number we pushed */
-		lua_pushnumber(L, ret);
+		lua_pushinteger(L, ret);
 	} else {
 		luaL_checknumber(L, 1);    /* will always error, with good error msg */
 	}
@@ -334,7 +337,7 @@ static int l_raise(lua_State *L) {
 
 static int l_kill(lua_State *L) {
 	int t; /* type */
-	lua_Number ret; /* return value */
+	lua_Integer ret; /* return value */
 
 	luaL_checknumber(L, 1); /* must be int for pid */
 	luaL_checkany(L, 2); /* check for a second arg */
@@ -342,9 +345,9 @@ static int l_kill(lua_State *L) {
 	t = lua_type(L, 2);
 
 	if(t == LUA_TNUMBER) {
-		ret = (lua_Number) kill((int) lua_tonumber(L, 1),
-		                        (int) lua_tonumber(L, 2));
-		lua_pushnumber(L, ret);
+		ret = (lua_Integer) kill((int) lua_tointeger(L, 1),
+		                         (int) lua_tointeger(L, 2));
+		lua_pushinteger(L, ret);
 	} else if(t == LUA_TSTRING) {
 		lua_pushstring(L, LUA_SIGNAL);
 		lua_gettable(L, LUA_REGISTRYINDEX);
@@ -355,10 +358,10 @@ static int l_kill(lua_State *L) {
 			return luaL_error(L, "invalid signal string");
 		}
 
-		ret = (lua_Number) kill((int) lua_tonumber(L, 1),
-		                        (int) lua_tonumber(L, -1));
+		ret = (lua_Integer) kill((int) lua_tointeger(L, 1),
+		                         (int) lua_tointeger(L, -1));
 		lua_pop(L, 1); /* get rid of number we pushed */
-		lua_pushnumber(L, ret);
+		lua_pushinteger(L, ret);
 	} else {
 		luaL_checknumber(L, 2);    /* will always error, with good error msg */
 	}
@@ -396,11 +399,11 @@ int luaopen_util_signal(lua_State *L) {
 	while(lua_signals[i].name != NULL) {
 		/* registry table */
 		lua_pushstring(L, lua_signals[i].name);
-		lua_pushnumber(L, lua_signals[i].sig);
+		lua_pushinteger(L, lua_signals[i].sig);
 		lua_settable(L, -3);
 		/* signal table */
 		lua_pushstring(L, lua_signals[i].name);
-		lua_pushnumber(L, lua_signals[i].sig);
+		lua_pushinteger(L, lua_signals[i].sig);
 		lua_settable(L, -5);
 		i++;
 	}

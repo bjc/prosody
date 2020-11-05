@@ -1,0 +1,21 @@
+#!/usr/bin/env lua-any
+-- Lua-Versions: 5.3 5.2 5.1
+-- traceback to errors.err for vim -q
+local path_sep = package.config:sub(1,1);
+for line in io.lines() do
+	local src, err = line:match("%s*(%S+)(:%d+: .*)")
+	if src then
+		src = src:gsub("\\", path_sep);
+		local cut = src:match("/()core/")
+			or src:match("/()net/")
+			or src:match("/()util/")
+			or src:match("/()modules/")
+			or src:match("/()plugins/")
+			or src:match("/()prosody[ctl]*$") 
+		if cut then
+			src = src:sub(cut);
+		end
+		src = src:gsub("^modules/", "plugins/")
+		io.write(src, err, "\n");
+	end
+end

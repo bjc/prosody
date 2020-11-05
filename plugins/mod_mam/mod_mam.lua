@@ -25,6 +25,7 @@ local jid_bare = require "util.jid".bare;
 local jid_split = require "util.jid".split;
 local jid_prepped_split = require "util.jid".prepped_split;
 local dataform = require "util.dataforms".new;
+local get_form_type = require "util.dataforms".get_type;
 local host = module.host;
 
 local rm_load_roster = require "core.rostermanager".load_roster;
@@ -39,6 +40,11 @@ local strip_tags = module:get_option_set("dont_archive_namespaces", { "http://ja
 
 local archive_store = module:get_option_string("archive_store", "archive");
 local archive = module:open_store(archive_store, "archive");
+
+local cleanup_after = module:get_option_string("archive_expires_after", "1w");
+local cleanup_interval = module:get_option_number("archive_cleanup_interval", 4 * 60 * 60);
+local archive_item_limit = module:get_option_number("storage_archive_item_limit", archive.caps and archive.caps.quota or 1000);
+local archive_truncate = math.floor(archive_item_limit * 0.99);
 
 if not archive.find then
 	error("mod_"..(archive._provided_by or archive.name and "storage_"..archive.name).." does not support archiving\n"
@@ -98,7 +104,14 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	local qwith, qstart, qend;
 	local form = query:get_child("x", "jabber:x:data");
 	if form then
-		local err;
+		local form_type, err = get_form_type(form);
+		if not form_type then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid dataform: "..err));
+			return true;
+		elseif form_type ~= xmlns_mam then
+			origin.send(st.error_reply(stanza, "modify", "bad-request", "Unexpected FORM_TYPE, expected '"..xmlns_mam.."'"));
+			return true;
+		end
 		form, err = query_form:data(form);
 		if err then
 			origin.send(st.error_reply(stanza, "modify", "bad-request", select(2, next(err))));
@@ -117,10 +130,12 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 		qstart, qend = vstart, vend;
 	end
 
-	module:log("debug", "Archive query, id %s with %s from %s until %s",
-		tostring(qid), qwith or "anyone",
-		qstart and timestamp(qstart) or "the dawn of time",
-		qend and timestamp(qend) or "now");
+	module:log("debug", "Archive query by %s id=%s with=%s when=%s...%s",
+		origin.username,
+		qid or stanza.attr.id,
+		qwith or "*",
+		qstart and timestamp(qstart) or "",
+		qend and timestamp(qend) or "");
 
 	-- RSM stuff
 	local qset = rsm.get(query);
@@ -128,6 +143,9 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	local reverse = qset and qset.before or false;
 	local before, after = qset and qset.before, qset and qset.after;
 	if type(before) ~= "string" then before = nil; end
+	if qset then
+		module:log("debug", "Archive query id=%s rsm=%q", qid or stanza.attr.id, qset);
+	end
 
 	-- Load all the data!
 	local data, err = archive:find(origin.username, {
@@ -140,7 +158,12 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	});
 
 	if not data then
-		origin.send(st.error_reply(stanza, "cancel", "internal-server-error", err));
+		module:log("debug", "Archive query id=%s failed: %s", qid or stanza.attr.id, err);
+		if err == "item-not-found" then
+			origin.send(st.error_reply(stanza, "modify", "item-not-found"));
+		else
+			origin.send(st.error_reply(stanza, "cancel", "internal-server-error"));
+		end
 		return true;
 	end
 	local total = tonumber(err);
@@ -189,13 +212,13 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 		first, last = last, first;
 	end
 
-	-- That's all folks!
-	module:log("debug", "Archive query %s completed", tostring(qid));
-
 	origin.send(st.reply(stanza)
 		:tag("fin", { xmlns = xmlns_mam, queryid = qid, complete = complete })
 			:add_child(rsm.generate {
 				first = first, last = last, count = total }));
+
+	-- That's all folks!
+	module:log("debug", "Archive query id=%s completed, %d items returned", qid or stanza.attr.id, complete and count or count - 1);
 	return true;
 end);
 
@@ -213,13 +236,13 @@ local function shall_store(user, who)
 	end
 	local prefs = get_prefs(user);
 	local rule = prefs[who];
-	module:log("debug", "%s's rule for %s is %s", user, who, tostring(rule));
+	module:log("debug", "%s's rule for %s is %s", user, who, rule);
 	if rule ~= nil then
 		return rule;
 	end
 	-- Below could be done by a metatable
 	local default = prefs[false];
-	module:log("debug", "%s's default rule is %s", user, tostring(default));
+	module:log("debug", "%s's default rule is %s", user, default);
 	if default == "roster" then
 		return has_in_roster(user, who);
 	end
@@ -242,11 +265,70 @@ local function strip_stanza_id(stanza, user)
 	return stanza;
 end
 
+local function should_store(stanza, c2s) --> boolean, reason: string
+	local st_type = stanza.attr.type or "normal";
+	-- FIXME pass direction of stanza and use that along with bare/full JID addressing
+	-- for more accurate MUC / type=groupchat check
+
+	if st_type == "headline" then
+		-- Headline messages are ephemeral by definition
+		return false, "headline";
+	end
+	if st_type == "error" and not c2s then
+		-- Store delivery failure notifications so you know if your own messages were not delivered
+		return true, "bounce";
+	end
+	if st_type == "groupchat" then
+		-- MUC messages always go to the full JID, usually archived by the MUC
+		return false, "groupchat";
+	end
+	if stanza:get_child("no-store", "urn:xmpp:hints")
+	or stanza:get_child("no-permanent-store", "urn:xmpp:hints") then
+		-- XXX Experimental XEP
+		return false, "hint";
+	end
+	if stanza:get_child("store", "urn:xmpp:hints") then
+		return true, "hint";
+	end
+	if stanza:get_child("body") then
+		return true, "body";
+	end
+	if stanza:get_child("subject") then
+		-- XXX Who would send a message with a subject but without a body?
+		return true, "subject";
+	end
+	if stanza:get_child("encryption", "urn:xmpp:eme:0") then
+		-- Since we can't know what an encrypted message contains, we assume it's important
+		-- XXX Experimental XEP
+		return true, "encrypted";
+	end
+	if stanza:get_child(nil, "urn:xmpp:receipts") then
+		-- If it's important enough to ask for a receipt then it's important enough to archive
+		-- and the same applies to the receipt
+		return true, "receipt";
+	end
+	if stanza:get_child(nil, "urn:xmpp:chat-markers:0") then
+		-- XXX Experimental XEP
+		return true, "marker";
+	end
+	if stanza:get_child("x", "jabber:x:conference")
+	or stanza:find("{http://jabber.org/protocol/muc#user}x/invite") then
+		return true, "invite";
+	end
+	if stanza:get_child(nil, "urn:xmpp:jingle-message:0") then
+		-- XXX Experimental XEP stuck in Proposed for almost a year at the time of this comment
+		return true, "jingle call";
+	end
+
+	 -- The IM-NG thing to do here would be to return `not st_to_full`
+	 -- One day ...
+	return false, "default";
+end
+
 -- Handle messages
 local function message_handler(event, c2s)
 	local origin, stanza = event.origin, event.stanza;
 	local log = c2s and origin.log or module._log;
-	local orig_type = stanza.attr.type or "normal";
 	local orig_from = stanza.attr.from;
 	local orig_to = stanza.attr.to or orig_from;
 	-- Stanza without 'to' are treated as if it was to their own bare jid
@@ -259,19 +341,10 @@ local function message_handler(event, c2s)
 	-- Filter out <stanza-id> that claim to be from us
 	event.stanza = strip_stanza_id(stanza, store_user);
 
-	-- We store chat messages or normal messages that have a body
-	if not(orig_type == "chat" or (orig_type == "normal" and stanza:get_child("body")) ) then
-		log("debug", "Not archiving stanza: %s (type)", stanza:top_tag());
+	local should, why = should_store(stanza, c2s);
+	if not should then
+		log("debug", "Not archiving stanza: %s (%s)", stanza:top_tag(), why);
 		return;
-	end
-
-	-- or if hints suggest we shouldn't
-	if not stanza:get_child("store", "urn:xmpp:hints") then -- No hint telling us we should store
-		if stanza:get_child("no-permanent-store", "urn:xmpp:hints")
-			or stanza:get_child("no-store", "urn:xmpp:hints") then -- Hint telling us we should NOT store
-			log("debug", "Not archiving stanza: %s (hint)", stanza:top_tag());
-			return;
-		end
 	end
 
 	local clone_for_storage;
@@ -294,10 +367,31 @@ local function message_handler(event, c2s)
 
 	-- Check with the users preferences
 	if shall_store(store_user, with) then
-		log("debug", "Archiving stanza: %s", stanza:top_tag());
+		log("debug", "Archiving stanza: %s (%s)", stanza:top_tag(), why);
 
 		-- And stash it
-		local ok, err = archive:append(store_user, nil, clone_for_storage, time_now(), with);
+		local time = time_now();
+		local ok, err = archive:append(store_user, nil, clone_for_storage, time, with);
+		if not ok and err == "quota-limit" then
+			if type(cleanup_after) == "number" then
+				module:log("debug", "User '%s' over quota, cleaning archive", store_user);
+				local cleaned = archive:delete(store_user, {
+					["end"] = (os.time() - cleanup_after);
+				});
+				if cleaned then
+					ok, err = archive:append(store_user, nil, clone_for_storage, time, with);
+				end
+			end
+			if not ok and (archive.caps and archive.caps.truncate) then
+				module:log("debug", "User '%s' over quota, truncating archive", store_user);
+				local truncated = archive:delete(store_user, {
+					truncate = archive_truncate;
+				});
+				if truncated then
+					ok, err = archive:append(store_user, nil, clone_for_storage, time, with);
+				end
+			end
+		end
 		if ok then
 			local clone_for_other_handlers = st.clone(stanza);
 			local id = ok;
@@ -325,8 +419,6 @@ end
 module:hook("pre-message/bare", strip_stanza_id_after_other_events, -1);
 module:hook("pre-message/full", strip_stanza_id_after_other_events, -1);
 
-local cleanup_after = module:get_option_string("archive_expires_after", "1w");
-local cleanup_interval = module:get_option_number("archive_cleanup_interval", 4 * 60 * 60);
 if cleanup_after ~= "never" then
 	local cleanup_storage = module:open_store("archive_cleanup");
 	local cleanup_map = module:open_store("archive_cleanup", "map");
@@ -361,9 +453,11 @@ if cleanup_after ~= "never" then
 			last_date:set(username, date);
 		end
 	end
+	local cleanup_time = module:measure("cleanup", "times");
 
 	local async = require "util.async";
 	cleanup_runner = async.runner(function ()
+		local cleanup_done = cleanup_time();
 		local users = {};
 		local cut_off = datestamp(os.time() - cleanup_after);
 		for date in cleanup_storage:users() do
@@ -397,6 +491,7 @@ if cleanup_after ~= "never" then
 			wait();
 		end
 		module:log("info", "Deleted %d expired messages for %d users", sum, num_users);
+		cleanup_done();
 	end);
 
 	cleanup_task = module:add_timer(1, function ()

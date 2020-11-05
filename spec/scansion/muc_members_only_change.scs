@@ -94,7 +94,7 @@ Romeo sends:
 			<item affiliation='none' jid="${Juliet's JID}" />
 		</query>
 	</iq>
-	
+
 # As a non-member, Juliet must now be removed from the room
 Romeo receives:
 	<presence type='unavailable' from='room@conference.localhost/Juliet'>

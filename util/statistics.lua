@@ -44,25 +44,33 @@ local function new_registry(config)
 	local registry = {};
 	local methods;
 	methods = {
-		amount = function (name, initial)
-			local v = initial or 0;
-			registry[name..":amount"] = function () return "amount", v; end
+		amount = function (name, conf)
+			local v = conf and conf.initial or 0;
+			registry[name..":amount"] = function ()
+				return "amount", v, conf;
+			end
 			return function (new_v) v = new_v; end
 		end;
-		counter = function (name, initial)
-			local v = initial or 0;
-			registry[name..":amount"] = function () return "amount", v; end
+		counter = function (name, conf)
+			local v = conf and conf.initial or 0;
+			registry[name..":amount"] = function ()
+				return "amount", v, conf;
+			end
 			return function (delta)
 				v = v + delta;
 			end;
 		end;
-		rate = function (name)
-			local since, n = time(), 0;
+		rate = function (name, conf)
+			local since, n, total = time(), 0, 0;
 			registry[name..":rate"] = function ()
+				total = total + n;
 				local t = time();
 				local stats = {
 					rate = n/(t-since);
 					count = n;
+					total = total;
+					units = conf and conf.units;
+					type = conf and conf.type;
 				};
 				since, n = t, 0;
 				return "rate", stats.rate, stats;
@@ -71,15 +79,16 @@ local function new_registry(config)
 				n = n + 1;
 			end;
 		end;
-		distribution = function (name, unit, type)
-			type = type or "distribution";
+		distribution = function (name, conf)
+			local units = conf and conf.units;
+			local type = conf and conf.type or "distribution";
 			local events, last_event = {}, 0;
 			local n_actual_events = 0;
 			local since = time();
 
 			registry[name..":"..type] = function ()
 				local new_time = time();
-				local stats = get_distribution_stats(events, n_actual_events, since, new_time, unit);
+				local stats = get_distribution_stats(events, n_actual_events, since, new_time, units);
 				events, last_event = {}, 0;
 				n_actual_events = 0;
 				since = new_time;
@@ -94,17 +103,19 @@ local function new_registry(config)
 				end
 			end;
 		end;
-		sizes = function (name)
-			return methods.distribution(name, "bytes", "size");
+		sizes = function (name, conf)
+			conf = conf or { units = "bytes", type = "size" }
+			return methods.distribution(name, conf);
 		end;
-		times = function (name)
+		times = function (name, conf)
+			local units = conf and conf.units or "seconds";
 			local events, last_event = {}, 0;
 			local n_actual_events = 0;
 			local since = time();
 
 			registry[name..":duration"] = function ()
 				local new_time = time();
-				local stats = get_distribution_stats(events, n_actual_events, since, new_time, "seconds");
+				local stats = get_distribution_stats(events, n_actual_events, since, new_time, units);
 				events, last_event = {}, 0;
 				n_actual_events = 0;
 				since = new_time;

@@ -14,6 +14,7 @@ local s_find = string.find;
 local tonumber = tonumber;
 
 local core_post_stanza = prosody.core_post_stanza;
+local core_process_stanza = prosody.core_process_stanza;
 local st = require "util.stanza";
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
@@ -29,6 +30,14 @@ local sessionmanager = require "core.sessionmanager";
 local recalc_resource_map = require "util.presence".recalc_resource_map;
 
 local ignore_presence_priority = module:get_option_boolean("ignore_presence_priority", false);
+
+local pre_approval_stream_feature = st.stanza("sub", {xmlns="urn:xmpp:features:pre-approval"});
+module:hook("stream-features", function(event)
+	local origin, features = event.origin, event.features;
+	if origin.username then
+		features:add_child(pre_approval_stream_feature);
+	end
+end);
 
 function handle_normal_presence(origin, stanza)
 	if ignore_presence_priority then
@@ -81,8 +90,14 @@ function handle_normal_presence(origin, stanza)
 				res.presence.attr.to = nil;
 			end
 		end
-		for jid in pairs(roster[false].pending) do -- resend incoming subscription requests
-			origin.send(st.presence({type="subscribe", from=jid})); -- TODO add to attribute? Use original?
+		for jid, pending_request in pairs(roster[false].pending) do -- resend incoming subscription requests
+			if type(pending_request) == "table" then
+				local subscribe = st.deserialize(pending_request);
+				subscribe.attr.type, subscribe.attr.from = "subscribe", jid;
+				origin.send(subscribe);
+			else
+				origin.send(st.presence({type="subscribe", from=jid}));
+			end
 		end
 		local request = st.presence({type="subscribe", from=origin.username.."@"..origin.host});
 		for jid, item in pairs(roster) do -- resend outgoing subscription requests
@@ -175,8 +190,10 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 		if rostermanager.subscribed(node, host, to_bare) then
 			rostermanager.roster_push(node, host, to_bare);
 		end
-		core_post_stanza(origin, stanza);
-		send_presence_of_available_resources(node, host, to_bare, origin);
+		if rostermanager.is_contact_subscribed(node, host, to_bare) then
+			core_post_stanza(origin, stanza);
+			send_presence_of_available_resources(node, host, to_bare, origin);
+		end
 		if rostermanager.is_user_subscribed(node, host, to_bare) then
 			core_post_stanza(origin, st.presence({ type = "probe", from = from_bare, to = to_bare }));
 		end
@@ -184,6 +201,8 @@ function handle_outbound_presence_subscriptions_and_probes(origin, stanza, from_
 		-- 1. send unavailable
 		-- 2. route stanza
 		-- 3. roster push (subscription = from or both)
+		-- luacheck: ignore 211/pending_in
+		-- Is pending_in meant to be used?
 		local success, pending_in, subscribed = rostermanager.unsubscribed(node, host, to_bare);
 		if success then
 			if subscribed then
@@ -223,10 +242,16 @@ function handle_inbound_presence_subscriptions_and_probes(origin, stanza, from_b
 			if 0 == send_presence_of_available_resources(node, host, from_bare, origin) then
 				core_post_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unavailable"}), true); -- TODO send last activity
 			end
+		elseif rostermanager.is_contact_preapproved(node, host, from_bare) then
+			if not rostermanager.is_contact_pending_in(node, host, from_bare) then
+				if rostermanager.set_contact_pending_in(node, host, from_bare, stanza) then
+					core_post_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="subscribed"}), true);
+				end -- TODO else return error, unable to save
+			end
 		else
 			core_post_stanza(hosts[host], st.presence({from=to_bare, to=from_bare, type="unavailable"}), true); -- acknowledging receipt
 			if not rostermanager.is_contact_pending_in(node, host, from_bare) then
-				if rostermanager.set_contact_pending_in(node, host, from_bare) then
+				if rostermanager.set_contact_pending_in(node, host, from_bare, stanza) then
 					sessionmanager.send_to_available_resources(node, host, stanza);
 				end -- TODO else return error, unable to save
 			end
@@ -346,7 +371,7 @@ module:hook("resource-unbind", function(event)
 		if err then
 			pres:tag("status"):text("Disconnected: "..err):up();
 		end
-		session:dispatch_stanza(pres);
+		core_process_stanza(session, pres);
 	elseif session.directed then
 		local pres = st.presence{ type = "unavailable", from = session.full_jid };
 		if err then

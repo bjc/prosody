@@ -1,3 +1,25 @@
+TRUNK
+=====
+
+-   Module statuses
+-   SNI support (not completely finished)
+-   CORS handling now provided by mod\_http
+-   CSI improvements
+-   mod\_limits: Exempted JIDs
+-   Archive quotas
+-   mod\_mimicking
+-   Rewritten migrator
+-   SCRAM-SHA-256
+-   Bi-directional server-to-server (XEP-0288)
+-   Built-in HTTP server now handles HEAD requests
+-   MUC presence broadcast controls
+-   ALPN support in mod\_net\_multiplex
+-   `daemonize` option deprecated
+-   SASL DIGEST-MD5 removed
+-   Switch to libunbound for DNS queries
+-   mod_external_services (XEP-0215)
+-   util.error for encapsulating errors
+
 0.11.0
 ======
 

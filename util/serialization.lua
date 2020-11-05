@@ -16,22 +16,18 @@ local s_char = string.char;
 local s_match = string.match;
 local t_concat = table.concat;
 
+local to_hex = require "util.hex".to;
+
 local pcall = pcall;
 local envload = require"util.envload".envload;
 
 local pos_inf, neg_inf = math.huge, -math.huge;
--- luacheck: ignore 143/math
 local m_type = math.type or function (n)
 	return n % 1 == 0 and n <= 9007199254740992 and n >= -9007199254740992 and "integer" or "float";
 end;
 
-local char_to_hex = {};
-for i = 0,255 do
-	char_to_hex[s_char(i)] = s_format("%02x", i);
-end
-
-local function to_hex(s)
-	return (s_gsub(s, ".", char_to_hex));
+local function rawpairs(t)
+	return next, t, nil;
 end
 
 local function fatal_error(obj, why)
@@ -123,6 +119,7 @@ local function new(opt)
 	local freeze = opt.freeze;
 	local maxdepth = opt.maxdepth or 127;
 	local multirefs = opt.multiref;
+	local table_pairs = opt.table_iterator or rawpairs;
 
 	-- serialize one table, recursively
 	-- t - table being serialized
@@ -153,6 +150,10 @@ local function new(opt)
 
 				if type(fr) == "function" then
 					t = fr(t);
+					if type(t) == "string" then
+						o[l], l = t, l + 1;
+						return l;
+					end
 					if type(tag) == "string" then
 						o[l], l = tag, l + 1;
 					end
@@ -164,7 +165,9 @@ local function new(opt)
 		local indent = s_rep(indentwith, d);
 		local numkey = 1;
 		local ktyp, vtyp;
-		for k,v in next,t do
+		local had_items = false;
+		for k,v in table_pairs(t) do
+			had_items = true;
 			o[l], l = itemstart, l + 1;
 			o[l], l = indent, l + 1;
 			ktyp, vtyp = type(k), type(v);
@@ -195,14 +198,10 @@ local function new(opt)
 			else
 				o[l], l = ser(v), l + 1;
 			end
-			-- last item?
-			if next(t, k) ~= nil then
-				o[l], l = itemsep, l + 1;
-			else
-				o[l], l = itemlast, l + 1;
-			end
+			o[l], l = itemsep, l + 1;
 		end
-		if next(t) ~= nil then
+		if had_items then
+			o[l - 1] = itemlast;
 			o[l], l = s_rep(indentwith, d-1), l + 1;
 		end
 		o[l], l = tend, l +1;

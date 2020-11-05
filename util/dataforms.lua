@@ -10,6 +10,7 @@ local setmetatable = setmetatable;
 local ipairs = ipairs;
 local type, next = type, next;
 local tonumber = tonumber;
+local tostring = tostring;
 local t_concat = table.concat;
 local st = require "util.stanza";
 local jid_prep = require "util.jid".prep;
@@ -54,6 +55,12 @@ function form_t.form(layout, data, formtype)
 
 		if formtype == "form" and field.datatype then
 			form:tag("validate", { xmlns = xmlns_validate, datatype = field.datatype });
+			if field.range_min or field.range_max then
+				form:tag("range", {
+						min = field.range_min and tostring(field.range_min),
+						max = field.range_max and tostring(field.range_max),
+					}):up();
+			end
 			-- <basic/> assumed
 			form:up();
 		end
@@ -136,7 +143,7 @@ function form_t.form(layout, data, formtype)
 
 		local media = field.media;
 		if media then
-			form:tag("media", { xmlns = "urn:xmpp:media-element", height = media.height, width = media.width });
+			form:tag("media", { xmlns = "urn:xmpp:media-element", height = ("%g"):format(media.height), width = ("%g"):format(media.width) });
 			for _, val in ipairs(media) do
 				form:tag("uri", { type = val.type }):text(val.uri):up()
 			end
@@ -290,12 +297,17 @@ field_readers["hidden"] =
 	end
 
 data_validators["xs:integer"] =
-	function (data)
+	function (data, field)
 		local n = tonumber(data);
 		if not n then
 			return false, "not a number";
 		elseif n % 1 ~= 0 then
 			return false, "not an integer";
+		end
+		if field.range_max and n > field.range_max then
+			return false, "out of bounds";
+		elseif field.range_min and n < field.range_min then
+			return false, "out of bounds";
 		end
 		return true, n;
 	end

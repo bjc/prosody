@@ -7,15 +7,16 @@
 --
 
 local _G = _G;
-local setmetatable, rawget, rawset, io, os, error, dofile, type, pairs =
-      setmetatable, rawget, rawset, io, os, error, dofile, type, pairs;
-local format, math_max = string.format, math.max;
+local setmetatable, rawget, rawset, io, os, error, dofile, type, pairs, ipairs =
+      setmetatable, rawget, rawset, io, os, error, dofile, type, pairs, ipairs;
+local format, math_max, t_insert = string.format, math.max, table.insert;
 
 local envload = require"util.envload".envload;
 local deps = require"util.dependencies";
 local resolve_relative_path = require"util.paths".resolve_relative_path;
 local glob_to_pattern = require"util.paths".glob_to_pattern;
 local path_sep = package.config:sub(1,1);
+local get_traceback_table = require "util.debug".get_traceback_table;
 
 local encodings = deps.softreq"util.encodings";
 local nameprep = encodings and encodings.stringprep.nameprep or function (host) return host:lower(); end
@@ -100,8 +101,18 @@ end
 -- Built-in Lua parser
 do
 	local pcall = _G.pcall;
+	local function get_line_number(config_file)
+		local tb = get_traceback_table(nil, 2);
+		for i = 1, #tb do
+			if tb[i].info.short_src == config_file then
+				return tb[i].info.currentline;
+			end
+		end
+	end
 	parser = {};
 	function parser.load(data, config_file, config_table)
+		local set_options = {}; -- set_options[host.."/"..option_name] = true (when the option has been set already in this file)
+		local warnings = {};
 		local env;
 		-- The ' = true' are needed so as not to set off __newindex when we assign the functions below
 		env = setmetatable({
@@ -115,13 +126,26 @@ do
 					return rawget(_G, k);
 				end,
 				__newindex = function (_, k, v)
+					local host = env.__currenthost or "*";
+					local option_path = host.."/"..k;
+					if set_options[option_path] then
+						t_insert(warnings, ("%s:%d: Duplicate option '%s'"):format(config_file, get_line_number(config_file), k));
+					end
+					set_options[option_path] = true;
 					set(config_table, env.__currenthost or "*", k, v);
 				end
 		});
 
 		rawset(env, "__currenthost", "*") -- Default is global
 		function env.VirtualHost(name)
-			name = nameprep(name);
+			if not name then
+				error("Host must have a name", 2);
+			end
+			local prepped_name = nameprep(name);
+			if not prepped_name then
+				error(format("Name of Host %q contains forbidden characters", name), 0);
+			end
+			name = prepped_name;
 			if rawget(config_table, name) and rawget(config_table[name], "component_module") then
 				error(format("Host %q clashes with previously defined %s Component %q, for services use a sub-domain like conference.%s",
 					name, config_table[name].component_module:gsub("^%a+$", { component = "external", muc = "MUC"}), name, name), 0);
@@ -139,7 +163,14 @@ do
 		env.Host, env.host = env.VirtualHost, env.VirtualHost;
 
 		function env.Component(name)
-			name = nameprep(name);
+			if not name then
+				error("Component must have a name", 2);
+			end
+			local prepped_name = nameprep(name);
+			if not prepped_name then
+				error(format("Name of Component %q contains forbidden characters", name), 0);
+			end
+			name = prepped_name;
 			if rawget(config_table, name) and rawget(config_table[name], "defined")
 				and not rawget(config_table[name], "component_module") then
 				error(format("Component %q clashes with previously defined Host %q, for services use a sub-domain like conference.%s",
@@ -195,6 +226,11 @@ do
 			if f then
 				local ret, err = parser.load(f:read("*a"), file, config_table);
 				if not ret then error(err:gsub("%[string.-%]", file), 0); end
+				if err then
+					for _, warning in ipairs(err) do
+						t_insert(warnings, warning);
+					end
+				end
 			end
 			if not f then error("Error loading included "..file..": "..err, 0); end
 			return f, err;
@@ -217,7 +253,7 @@ do
 			return nil, err;
 		end
 
-		return true;
+		return true, warnings;
 	end
 
 end

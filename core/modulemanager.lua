@@ -10,6 +10,7 @@ local logger = require "util.logger";
 local log = logger.init("modulemanager");
 local config = require "core.configmanager";
 local pluginloader = require "util.pluginloader";
+local envload = require "util.envload";
 local set = require "util.set";
 
 local new_multitable = require "util.multitable".new;
@@ -22,9 +23,26 @@ local xpcall = require "util.xpcall".xpcall;
 local debug_traceback = debug.traceback;
 local setmetatable, rawget = setmetatable, rawget;
 local ipairs, pairs, type, t_insert = ipairs, pairs, type, table.insert;
+local lua_version = _VERSION:match("5%.%d$");
 
-local autoload_modules = {prosody.platform, "presence", "message", "iq", "offline", "c2s", "s2s", "s2s_auth_certs"};
-local component_inheritable_modules = {"tls", "saslauth", "dialback", "iq", "s2s"};
+local autoload_modules = {
+	prosody.platform,
+	"presence",
+	"message",
+	"iq",
+	"offline",
+	"c2s",
+	"s2s",
+	"s2s_auth_certs",
+};
+local component_inheritable_modules = {
+	"tls",
+	"saslauth",
+	"dialback",
+	"iq",
+	"s2s",
+	"s2s_bidi",
+};
 
 -- We need this to let modules access the real global namespace
 local _G = _G;
@@ -174,10 +192,47 @@ local function do_load_module(host, module_name, state)
 	local mod, err = pluginloader.load_code(module_name, nil, pluginenv);
 	if not mod then
 		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
+		api_instance:set_status("error", "Failed to load (see log)");
 		return nil, err;
 	end
 
 	api_instance.path = err;
+
+	local custom_plugins = prosody.paths.installer;
+	if custom_plugins and err:sub(1, #custom_plugins+1) == custom_plugins.."/" then
+		-- Stage 1: Make it work (you are here)
+		-- Stage 2: Make it less hacky (TODO)
+		local manifest = {};
+		local luarocks_path = custom_plugins.."/lib/luarocks/rocks-"..lua_version;
+		local manifest_filename = luarocks_path.."/manifest";
+		local load_manifest, err = envload.envloadfile(manifest_filename, manifest);
+		if not load_manifest then
+			-- COMPAT Luarocks 2.x
+			log("debug", "Could not load LuaRocks 3.x manifest, trying 2.x", err);
+			luarocks_path = custom_plugins.."/lib/luarocks/rocks-"..lua_version;
+			manifest_filename = luarocks_path.."/manifest";
+			load_manifest, err = envload.envloadfile(manifest_filename, manifest);
+		end
+		if not load_manifest then
+			log("error", "Could not load manifest of installed plugins: %s", err, load_manifest);
+		else
+			local ok, err = xpcall(load_manifest, debug_traceback);
+			if not ok then
+				log("error", "Could not load manifest of installed plugins: %s", err);
+			elseif type(manifest.modules) ~= "table" then
+				log("debug", "Expected 'table' but manifest.modules = %q", manifest.modules);
+				log("error", "Can't look up resource path for mod_%s because '%s' does not appear to be a LuaRocks manifest", module_name, manifest_filename);
+			else
+				local versions = manifest.modules["mod_"..module_name];
+				if type(versions) == "table" and versions[1] then
+					-- Not going to deal with multiple installed versions
+					api_instance.resource_path = luarocks_path.."/"..versions[1];
+				else
+					log("debug", "mod_%s does not appear in the installation manifest", module_name);
+				end
+			end
+		end
+	end
 
 	modulemap[host][module_name] = pluginenv;
 	local ok, err = xpcall(mod, debug_traceback);
@@ -187,6 +242,7 @@ local function do_load_module(host, module_name, state)
 			ok, err = call_module_method(pluginenv, "load");
 			if not ok then
 				log("warn", "Error loading module '%s' on '%s': %s", module_name, host, err or "nil");
+				api_instance:set_status("warn", "Error during load (see log)");
 			end
 		end
 		api_instance.reloading, api_instance.saved_state = nil, nil;
@@ -209,6 +265,9 @@ local function do_load_module(host, module_name, state)
 	if not ok then
 		modulemap[api_instance.host][module_name] = nil;
 		log("error", "Error initializing module '%s' on '%s': %s", module_name, host, err or "nil");
+		api_instance:set_status("warn", "Error during load (see log)");
+	else
+		api_instance:set_status("core", "Loaded", false);
 	end
 	return ok and pluginenv, err;
 end
@@ -225,7 +284,8 @@ local function do_reload_module(host, name)
 
 	local saved;
 	if module_has_method(mod, "save") then
-		local ok, ret, err = call_module_method(mod, "save");
+		-- FIXME What goes in 'err' here?
+		local ok, ret, err = call_module_method(mod, "save"); -- luacheck: ignore 211/err
 		if ok then
 			saved = ret;
 		else

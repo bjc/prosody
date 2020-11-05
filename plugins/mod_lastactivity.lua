@@ -30,7 +30,7 @@ module:hook("iq-get/bare/jabber:iq:last:query", function(event)
 	if not stanza.attr.to or is_contact_subscribed(username, module.host, jid_bare(stanza.attr.from)) then
 		local seconds, text = "0", "";
 		if map[username] then
-			seconds = tostring(os.difftime(os.time(), map[username].t));
+			seconds = string.format("%d", os.difftime(os.time(), map[username].t));
 			text = map[username].s;
 		end
 		origin.send(st.reply(stanza):tag('query', {xmlns='jabber:iq:last', seconds=seconds}):text(text));
