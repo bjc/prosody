@@ -127,7 +127,7 @@ module:hook("pubsub-summary/http://www.w3.org/2005/Atom", function (event)
 		end
 	end
 	return summary;
-end);
+end, -1);
 
 module:hook("iq/host/"..xmlns_pubsub..":pubsub", handle_pubsub_iq);
 module:hook("iq/host/"..xmlns_pubsub_owner..":pubsub", handle_pubsub_iq);
