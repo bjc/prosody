@@ -72,7 +72,7 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 	end
 
 	local id = new_id();
-	local msg_type = node_obj and node_obj.config.message_type or "headline";
+	local msg_type = node_obj and node_obj.config.notification_type or "headline";
 	local message = st.message({ from = module.host, type = msg_type, id = id })
 		:tag("event", { xmlns = xmlns_pubsub_event })
 			:tag(kind, { node = node });
