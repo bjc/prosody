@@ -11,7 +11,6 @@ local error         =         error;
 local t_insert      =  table.insert;
 local t_remove      =  table.remove;
 local t_concat      =  table.concat;
-local s_format      = string.format;
 local s_match       =  string.match;
 local tostring      =      tostring;
 local setmetatable  =  setmetatable;
@@ -491,38 +490,47 @@ end
 
 if do_pretty_printing then
 	local getstyle, getstring = termcolours.getstyle, termcolours.getstring;
-	local style_attrk = getstyle("yellow");
-	local style_attrv = getstyle("red");
-	local style_tagname = getstyle("red");
-	local style_punc = getstyle("magenta");
 
-	local attr_format = " "..getstring(style_attrk, "%s")..getstring(style_punc, "=")..getstring(style_attrv, "'%s'");
-	local top_tag_format = getstring(style_punc, "<")..getstring(style_tagname, "%s").."%s"..getstring(style_punc, ">");
-	--local tag_format = getstring(style_punc, "<")..getstring(style_tagname, "%s").."%s"..getstring(style_punc, ">").."%s"..getstring(style_punc, "</")..getstring(style_tagname, "%s")..getstring(style_punc, ">");
-	local tag_format = top_tag_format.."%s"..getstring(style_punc, "</")..getstring(style_tagname, "%s")..getstring(style_punc, ">");
+	local blue1 = getstyle("1b3967");
+	local blue2 = getstyle("13b5ea");
+	local green1 = getstyle("439639");
+	local green2 = getstyle("a0ce67");
+	local orange1 = getstyle("d9541e");
+	local orange2 = getstyle("e96d1f");
+
+	local attr_replace = (
+		getstring(green2, "%1") .. -- attr name
+		getstring(green1, "%2") .. -- equal
+		getstring(orange1, "%3") .. -- quote
+		getstring(orange2, "%4") .. -- attr value
+		getstring(orange1, "%5") -- quote
+	);
+
+	local text_replace = (
+		getstring(green1, "%1") .. -- &
+		getstring(green2, "%2") .. -- amp
+		getstring(green1, "%3") -- ;
+	);
+
+	local function pretty(s)
+		-- Tag soup color
+		-- Outer gsub call takes each <tag>, applies colour to the brackets, the
+		-- tag name, then applies one inner gsub call to colour the attributes and
+		-- another for any text content.
+		return (s:gsub("(</?)([^ >]*)(.-)([?/]?>)([^<]*)", function(opening_bracket, tag_name, attrs, closing_bracket, content)
+			return getstring(blue1, opening_bracket)..getstring(blue2, tag_name)..
+				attrs:gsub("([^=]+)(=)([\"'])(.-)([\"'])", attr_replace) ..
+			getstring(blue1, closing_bracket) ..
+			content:gsub("(&#?)(%w+)(;)", text_replace);
+		end, 100));
+	end
+
 	function stanza_mt.pretty_print(t)
-		local children_text = "";
-		for _, child in ipairs(t) do
-			if type(child) == "string" then
-				children_text = children_text .. xml_escape(child);
-			else
-				children_text = children_text .. child:pretty_print();
-			end
-		end
-
-		local attr_string = "";
-		if t.attr then
-			for k, v in pairs(t.attr) do if type(k) == "string" then attr_string = attr_string .. s_format(attr_format, k, tostring(v)); end end
-		end
-		return s_format(tag_format, t.name, attr_string, children_text, t.name);
+		return pretty(tostring(t));
 	end
 
 	function stanza_mt.pretty_top_tag(t)
-		local attr_string = "";
-		if t.attr then
-			for k, v in pairs(t.attr) do if type(k) == "string" then attr_string = attr_string .. s_format(attr_format, k, tostring(v)); end end
-		end
-		return s_format(top_tag_format, t.name, attr_string);
+		return pretty(t:top_tag());
 	end
 else
 	-- Sorry, fresh out of colours for you guys ;)
