@@ -22,20 +22,10 @@ local type          =          type;
 local s_gsub        =   string.gsub;
 local s_sub         =    string.sub;
 local s_find        =   string.find;
-local os            =            os;
 
 local valid_utf8 = require "util.encodings".utf8.valid;
 
-local do_pretty_printing = not os.getenv("WINDIR");
-local getstyle, getstring;
-if do_pretty_printing then
-	local ok, termcolours = pcall(require, "util.termcolours");
-	if ok then
-		getstyle, getstring = termcolours.getstyle, termcolours.getstring;
-	else
-		do_pretty_printing = nil;
-	end
-end
+local do_pretty_printing, termcolours = pcall(require, "util.termcolours");
 
 local xmlns_stanzas = "urn:ietf:params:xml:ns:xmpp-stanzas";
 
@@ -500,6 +490,7 @@ local function presence(attr)
 end
 
 if do_pretty_printing then
+	local getstyle, getstring = termcolours.getstyle, termcolours.getstring;
 	local style_attrk = getstyle("yellow");
 	local style_attrv = getstyle("red");
 	local style_tagname = getstyle("red");
