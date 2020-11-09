@@ -1,6 +1,7 @@
 local lfs = require "lfs";
 
 local pctl = require "util.prosodyctl";
+local hi = require "util.human.io";
 local configmanager = require "core.configmanager";
 
 local openssl;
@@ -12,7 +13,7 @@ local cert_commands = {};
 local function use_existing(filename)
 	local attrs = lfs.attributes(filename);
 	if attrs then
-		if pctl.show_yesno(filename .. " exists, do you want to replace it? [y/n]") then
+		if hi.show_yesno(filename .. " exists, do you want to replace it? [y/n]") then
 			local backup = filename..".bkp~"..os.date("%FT%T", attrs.change);
 			os.rename(filename, backup);
 			pctl.show_message("%s backed up to %s", filename, backup);
@@ -67,7 +68,7 @@ function cert_commands.config(arg)
 							v = tld:upper();
 						end
 					end
-					nv = pctl.show_prompt(("%s (%s):"):format(k, nv or v));
+					nv = hi.show_prompt(("%s (%s):"):format(k, nv or v));
 					nv = (not nv or nv == "") and v or nv;
 					if nv:find"[\192-\252][\128-\191]+" then
 						conf.req.string_mask = "utf8only"
@@ -99,7 +100,7 @@ function cert_commands.key(arg)
 			return nil, key_filename;
 		end
 		os.remove(key_filename); -- This file, if it exists is unlikely to have write permissions
-		local key_size = tonumber(arg[2] or pctl.show_prompt("Choose key size (2048):") or 2048);
+		local key_size = tonumber(arg[2] or hi.show_prompt("Choose key size (2048):") or 2048);
 		local old_umask = pposix.umask("0377");
 		if openssl.genrsa{out=key_filename, key_size} then
 			os.execute(("chmod 400 '%s'"):format(key_filename));
