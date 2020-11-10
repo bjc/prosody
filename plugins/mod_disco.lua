@@ -71,6 +71,7 @@ local function build_server_disco_info()
 		ver = _cached_server_caps_hash;
 	});
 end
+
 local function clear_disco_cache()
 	_cached_server_disco_info, _cached_server_caps_feature, _cached_server_caps_hash = nil, nil, nil;
 end
@@ -116,6 +117,7 @@ module:hook("iq-get/host/http://jabber.org/protocol/disco#info:query", function(
 	origin.send(reply);
 	return true;
 end);
+
 module:hook("iq-get/host/http://jabber.org/protocol/disco#items:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
 	local node = stanza.tags[1].attr.node;
@@ -179,6 +181,7 @@ module:hook("iq-get/bare/http://jabber.org/protocol/disco#info:query", function(
 		return true;
 	end
 end);
+
 module:hook("iq-get/bare/http://jabber.org/protocol/disco#items:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
 	local node = stanza.tags[1].attr.node;
@@ -204,3 +207,4 @@ module:hook("iq-get/bare/http://jabber.org/protocol/disco#items:query", function
 		return true;
 	end
 end);
+
