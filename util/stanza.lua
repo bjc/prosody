@@ -45,6 +45,10 @@ local _ENV = nil;
 local stanza_mt = { __name = "stanza" };
 stanza_mt.__index = stanza_mt;
 
+local function valid_xml_cdata(str, attr)
+	return not s_find(str, attr and "[^\1\9\10\13\20-~\128-\247]" or "[^\9\10\13\20-~\128-\247]");
+end
+
 local function check_name(name, name_type)
 	if type(name) ~= "string" then
 		error("invalid "..name_type.." name: expected string, got "..type(name));
@@ -52,6 +56,8 @@ local function check_name(name, name_type)
 		error("invalid "..name_type.." name: empty string");
 	elseif s_find(name, "[<>& '\"]") then
 		error("invalid "..name_type.." name: contains invalid characters");
+	elseif not valid_xml_cdata(name, name_type == "attribute") then
+		error("invalid "..name_type.." name: contains control characters");
 	elseif not valid_utf8(name) then
 		error("invalid "..name_type.." name: contains invalid utf8");
 	end
@@ -60,7 +66,9 @@ end
 local function check_text(text, text_type)
 	if type(text) ~= "string" then
 		error("invalid "..text_type.." value: expected string, got "..type(text));
-	elseif not valid_utf8(text) then
+	elseif not valid_xml_cdata(text) then
+		error("invalid "..text_type.." value: contains control characters");
+	elseif not valid_utf8(text, false) then
 		error("invalid "..text_type.." value: contains invalid utf8");
 	end
 end
