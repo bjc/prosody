@@ -297,6 +297,7 @@ describe("util.stanza", function()
 			["number"] = 1234, ["table"] = {};
 			["utf8"] = string.char(0xF4, 0x90, 0x80, 0x80);
 			["nil"] = "nil"; ["boolean"] = true;
+			["control characters"] = "\0\1\2\3";
 		};
 
 		for value_type, value in pairs(invalid_names) do
