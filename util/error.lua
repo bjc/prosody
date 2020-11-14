@@ -91,7 +91,7 @@ end
 
 local function init(source, namespace, registry)
 	if type(namespace) == "table" then
-		-- registry can be given as second argument if namespace is either not used
+		-- registry can be given as second argument if namespace is not used
 		registry, namespace = namespace, nil;
 	end
 	local _, protoerr = next(registry, nil);
