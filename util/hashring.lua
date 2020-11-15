@@ -1,13 +1,13 @@
 local function generate_ring(nodes, num_replicas, hash)
 	local new_ring = {};
-        for _, node_name in ipairs(nodes) do
-                for replica = 1, num_replicas do
-                        local replica_hash = hash(node_name..":"..replica);
-                        new_ring[replica_hash] = node_name;
-                        table.insert(new_ring, replica_hash);
-                end
-        end
-        table.sort(new_ring);
+	for _, node_name in ipairs(nodes) do
+		for replica = 1, num_replicas do
+			local replica_hash = hash(node_name..":"..replica);
+			new_ring[replica_hash] = node_name;
+			table.insert(new_ring, replica_hash);
+		end
+	end
+	table.sort(new_ring);
 	return new_ring;
 end
 
