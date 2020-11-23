@@ -255,7 +255,7 @@ module:hook("stream-features", function(event)
 				local info = socket.info and socket:info();
 				if info.protocol == "TLSv1.3" then
 					log("debug", "Channel binding 'tls-unique' undefined in context of TLS 1.3");
-				elseif socket.getpeerfinished then
+				elseif socket.getpeerfinished and socket:getpeerfinished() then
 					sasl_handler:add_cb_handler("tls-unique", tls_unique);
 				end
 				sasl_handler["userdata"] = {
