@@ -81,7 +81,7 @@ local function new(f)
 	local p = setmetatable({ _state = "pending", _next = next_pending, _pending_on_fulfilled = {}, _pending_on_rejected = {} }, promise_mt);
 	if f then
 		local resolve, reject = new_resolve_functions(p);
-		local ok, ret = pcall(f, resolve, reject);
+		local ok, ret = xpcall(f, debug.traceback, resolve, reject);
 		if not ok and p._state == "pending" then
 			reject(ret);
 		end
