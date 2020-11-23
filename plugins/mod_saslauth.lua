@@ -252,7 +252,10 @@ module:hook("stream-features", function(event)
 			-- FIXME: would be nice to have this check only once and not for every socket
 			if sasl_handler.add_cb_handler then
 				local socket = origin.conn:socket();
-				if socket.getpeerfinished then
+				local info = socket.info and socket:info();
+				if info.protocol == "TLSv1.3" then
+					log("debug", "Channel binding 'tls-unique' undefined in context of TLS 1.3");
+				elseif socket.getpeerfinished then
 					sasl_handler:add_cb_handler("tls-unique", tls_unique);
 				end
 				sasl_handler["userdata"] = {
