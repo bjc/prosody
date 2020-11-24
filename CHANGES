@@ -19,6 +19,7 @@ TRUNK
 -   Switch to libunbound for DNS queries
 -   mod_external_services (XEP-0215)
 -   util.error for encapsulating errors
+-   MUC: support for XEP-0421 occupant identifiers
 
 0.11.0
 ======
