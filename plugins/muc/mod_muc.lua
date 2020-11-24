@@ -91,6 +91,8 @@ room_mt.get_presence_broadcast = presence_broadcast.get;
 room_mt.set_presence_broadcast = presence_broadcast.set;
 room_mt.get_valid_broadcast_roles = presence_broadcast.get_valid_broadcast_roles;
 
+local occupant_id = module:require "muc/occupant_id";
+room_mt.get_occupant_id = occupant_id.get_occupant_id;
 
 local jid_split = require "util.jid".split;
 local jid_prep = require "util.jid".prep;
