@@ -120,28 +120,67 @@ struct hash_desc {
 	void *ctx, *ctxo;
 };
 
-#define MAKE_HMAC_FUNCTION(myFunc, evp, size, type) \
-static int myFunc(lua_State *L) { \
-	unsigned char hash[size], result[2*size]; \
-	size_t key_len, msg_len; \
-	unsigned int out_len; \
-	const char *key = luaL_checklstring(L, 1, &key_len); \
-	const char *msg = luaL_checklstring(L, 2, &msg_len); \
-	const int hex_out = lua_toboolean(L, 3); \
-	HMAC(evp(), key, key_len, (const unsigned char*)msg, msg_len, (unsigned char*)hash, &out_len); \
-	if (hex_out) { \
-		toHex(hash, out_len, result); \
-		lua_pushlstring(L, (char*)result, out_len*2); \
-	} else { \
-		lua_pushlstring(L, (char*)hash, out_len); \
-	} \
-	return 1; \
+static int Levp_hmac(lua_State *L, const EVP_MD *evp) {
+	unsigned char hash[EVP_MAX_MD_SIZE], result[EVP_MAX_MD_SIZE * 2];
+	size_t key_len, msg_len;
+	size_t out_len = EVP_MAX_MD_SIZE;
+	const char *key = luaL_checklstring(L, 1, &key_len);
+	const char *msg = luaL_checklstring(L, 2, &msg_len);
+	const int hex_out = lua_toboolean(L, 3);
+
+	EVP_PKEY *pkey = EVP_PKEY_new_raw_private_key(EVP_PKEY_HMAC, NULL, (unsigned char *)key, key_len);
+	EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+
+	if(ctx == NULL || pkey == NULL) {
+		goto fail;
+	}
+
+	if(!EVP_DigestSignInit(ctx, NULL, evp, NULL, pkey)) {
+		goto fail;
+	}
+
+	if(!EVP_DigestSignUpdate(ctx, msg, msg_len)) {
+		goto fail;
+	}
+
+	if(!EVP_DigestSignFinal(ctx, hash, &out_len)) {
+		goto fail;
+	}
+
+	EVP_MD_CTX_free(ctx);
+	EVP_PKEY_free(pkey);
+
+	if(hex_out) {
+		toHex(hash, out_len, result);
+		lua_pushlstring(L, (char *)result, out_len * 2);
+	} else {
+		lua_pushlstring(L, (char *)hash, out_len);
+	}
+
+	return 1;
+
+fail:
+	EVP_MD_CTX_free(ctx);
+	EVP_PKEY_free(pkey);
+	return luaL_error(L, "hash function failed");
 }
 
-MAKE_HMAC_FUNCTION(Lhmac_sha1, EVP_sha1, SHA_DIGEST_LENGTH, SHA_CTX)
-MAKE_HMAC_FUNCTION(Lhmac_sha256, EVP_sha256, SHA256_DIGEST_LENGTH, SHA256_CTX)
-MAKE_HMAC_FUNCTION(Lhmac_sha512, EVP_sha512, SHA512_DIGEST_LENGTH, SHA512_CTX)
-MAKE_HMAC_FUNCTION(Lhmac_md5, EVP_md5, MD5_DIGEST_LENGTH, MD5_CTX)
+static int Lhmac_sha1(lua_State *L) {
+	return Levp_hmac(L, EVP_sha1());
+}
+
+static int Lhmac_sha256(lua_State *L) {
+	return Levp_hmac(L, EVP_sha256());
+}
+
+static int Lhmac_sha512(lua_State *L) {
+	return Levp_hmac(L, EVP_sha512());
+}
+
+static int Lhmac_md5(lua_State *L) {
+	return Levp_hmac(L, EVP_md5());
+}
+
 
 static int Lpbkdf2_sha1(lua_State *L) {
 	unsigned char out[SHA_DIGEST_LENGTH];
