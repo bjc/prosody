@@ -11,6 +11,8 @@ local record lib
 	md5 : hash
 	hmac_sha1 : hmac
 	hmac_sha256 : hmac
+	hmac_sha224 : hmac
+	hmac_sha384  :hmac
 	hmac_sha512 : hmac
 	hmac_md5 : hmac
 	scram_Hi_sha1 : kdf
