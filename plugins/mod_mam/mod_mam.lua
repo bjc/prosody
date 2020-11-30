@@ -229,6 +229,41 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	return true;
 end);
 
+module:hook("iq-get/self/"..xmlns_mam..":metadata", function (event)
+	local origin, stanza = event.origin, event.stanza;
+
+	local reply = st.reply(stanza):tag("metadata", { xmlns = xmlns_mam });
+
+	do
+		local first = archive:find(origin.username, { limit = 1 });
+		if not first then
+			origin.send(st.error_reply(stanza, "cancel", "internal-server-error"));
+			return true;
+		end
+
+		local id, _, when = first();
+		if id then
+			reply:tag("start", { id = id, timestamp = timestamp(when) }):up();
+		end
+	end
+
+	do
+		local last = archive:find(origin.username, { limit = 1, reverse = true });
+		if not last then
+			origin.send(st.error_reply(stanza, "cancel", "internal-server-error"));
+			return true;
+		end
+
+		local id, _, when = last();
+		if id then
+			reply:tag("end", { id = id, timestamp = timestamp(when) }):up();
+		end
+	end
+
+	origin.send(reply);
+	return true;
+end);
+
 local function has_in_roster(user, who)
 	local roster = rm_load_roster(user, host);
 	module:log("debug", "%s has %s in roster? %s", user, who, roster[who] and "yes" or "no");
@@ -522,7 +557,6 @@ module:hook("message/full", message_handler, 0);
 local advertise_extended = module:get_option_boolean("mam_advertise_extend", false);
 -- TODO before-id, after-id
 -- TODO ids
--- TODO archive metadata query
 -- TODO delete feature flag option
 
 module:hook("account-disco-info", function(event)
