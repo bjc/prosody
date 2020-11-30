@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2017 Matthew Wild
 -- Copyright (C) 2008-2017 Waqas Hussain
--- Copyright (C) 2011-2017 Kim Alvefur
+-- Copyright (C) 2011-2020 Kim Alvefur
 --
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -10,6 +10,7 @@
 --
 
 local xmlns_mam     = "urn:xmpp:mam:2";
+local xmlns_mam_ext = "urn:xmpp:mam:2#extended";
 local xmlns_delay   = "urn:xmpp:delay";
 local xmlns_forward = "urn:xmpp:forward:0";
 local xmlns_st_id   = "urn:xmpp:sid:0";
@@ -512,8 +513,18 @@ module:hook("pre-message/full", c2s_message_handler, 0);
 module:hook("message/bare", message_handler, 0);
 module:hook("message/full", message_handler, 0);
 
+local advertise_extended = module:get_option_boolean("mam_advertise_extend", false);
+-- TODO before-id, after-id
+-- TODO ids
+-- TODO page flipping
+-- TODO archive metadata query
+-- TODO delete feature flag option
+
 module:hook("account-disco-info", function(event)
 	(event.reply or event.stanza):tag("feature", {var=xmlns_mam}):up();
+	if advertise_extended then
+		(event.reply or event.stanza):tag("feature", {var=xmlns_mam_ext}):up();
+	end
 	(event.reply or event.stanza):tag("feature", {var=xmlns_st_id}):up();
 end);
 
