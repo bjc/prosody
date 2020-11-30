@@ -36,6 +36,20 @@ Romeo sends:
 		<body>U there?</body>
 	</message>
 
+# Metadata
+Romeo sends:
+	<iq type="get" id="mamextmeta">
+		<metadata xmlns="urn:xmpp:mam:2"/>
+	</iq>
+
+Romeo receives:
+	<iq type="result" id="mamextmeta">
+		<metadata xmlns="urn:xmpp:mam:2">
+			<start timestamp="2008-08-22T21:09:04Z" xmlns="urn:xmpp:mam:2" id="{scansion:any}"/>
+			<end timestamp="2008-08-22T21:09:04Z" xmlns="urn:xmpp:mam:2" id="{scansion:any}"/>
+		</metadata>
+	</iq>
+
 Romeo sends:
 	<iq type="set" id="mamquery1">
 		<query xmlns="urn:xmpp:mam:2" queryid="q1"/>
