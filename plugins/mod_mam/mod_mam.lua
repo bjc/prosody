@@ -147,6 +147,10 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	if qset then
 		module:log("debug", "Archive query id=%s rsm=%q", qid or stanza.attr.id, qset);
 	end
+	-- A reverse query needs to be flipped
+	local flip = reverse;
+	-- A flip-page query needs to be the opposite of that.
+	if query:get_child("flip-page") then flip = not flip end
 
 	-- Load all the data!
 	local data, err = archive:find(origin.username, {
@@ -199,17 +203,19 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 		if not first then first = id; end
 		last = id;
 
-		if reverse then
+		if flip then
 			results[count] = fwd_st;
 		else
 			origin.send(fwd_st);
 		end
 	end
 
-	if reverse then
+	if flip then
 		for i = #results, 1, -1 do
 			origin.send(results[i]);
 		end
+	end
+	if reverse then
 		first, last = last, first;
 	end
 
@@ -516,7 +522,6 @@ module:hook("message/full", message_handler, 0);
 local advertise_extended = module:get_option_boolean("mam_advertise_extend", false);
 -- TODO before-id, after-id
 -- TODO ids
--- TODO page flipping
 -- TODO archive metadata query
 -- TODO delete feature flag option
 
