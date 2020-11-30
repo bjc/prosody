@@ -76,3 +76,47 @@ Romeo receives:
 			</set>
 		</fin>
 	</iq>
+
+# Get results in reverse order
+Romeo sends:
+	<iq type="set" id="mamquery2">
+		<query xmlns="urn:xmpp:mam:2" queryid="q1">
+			<flip-page/>
+		</query>
+	</iq>
+
+Romeo receives:
+	<message to="${Romeo's full JID}">
+		<result xmlns="urn:xmpp:mam:2" queryid="q1" id="{scansion:any}">
+			<forwarded xmlns="urn:xmpp:forward:0">
+				<delay stamp="2008-08-22T21:09:04Z" xmlns="urn:xmpp:delay"/>
+				<message to="someone@localhost" xmlns="jabber:client" type="chat" xml:lang="en" id="chat02" from="${Romeo's full JID}">
+					<body>U there?</body>
+				</message>
+			</forwarded>
+		</result>
+	</message>
+
+Romeo receives:
+	<message to="${Romeo's full JID}">
+		<result xmlns="urn:xmpp:mam:2" queryid="q1" id="{scansion:any}">
+			<forwarded xmlns="urn:xmpp:forward:0">
+				<delay stamp="2008-08-22T21:09:04Z" xmlns="urn:xmpp:delay"/>
+				<message to="someone@localhost" xmlns="jabber:client" type="chat" xml:lang="en" id="chat01" from="${Romeo's full JID}">
+					<body>Hello</body>
+				</message>
+			</forwarded>
+		</result>
+	</message>
+
+# FIXME unstable tag order from util.rsm
+Romeo receives:
+	<iq type="result" id="mamquery2" to="${Romeo's full JID}">
+		<fin xmlns="urn:xmpp:mam:2" complete="true" queryid="q1">
+			<set xmlns="http://jabber.org/protocol/rsm" scansion:strict="false">
+				<count>2</count>
+				<first></first>
+				<last></last>
+			</set>
+		</fin>
+	</iq>
