@@ -14,6 +14,10 @@ TRUNK
 - Support for TCP Fast Open in server_epoll (pending LuaSocket support)
 - Support for deferred accept in server_epoll (pending LuaSocket support)
 
+### Security and authentication
+
+- Advertise supported SASL Channel-Binding types (XEP-0440)
+
 0.12.0
 ======
 

@@ -258,6 +258,7 @@ module:hook("stream-features", function(event)
 		end
 		local sasl_handler = usermanager_get_sasl_handler(module.host, origin)
 		origin.sasl_handler = sasl_handler;
+		local channel_bindings = set.new()
 		if origin.encrypted then
 			-- check whether LuaSec has the nifty binding to the function needed for tls-unique
 			-- FIXME: would be nice to have this check only once and not for every socket
@@ -268,6 +269,7 @@ module:hook("stream-features", function(event)
 				elseif origin.conn.ssl_peerfinished and origin.conn:ssl_peerfinished() then
 					log("debug", "Channel binding 'tls-unique' supported");
 					sasl_handler:add_cb_handler("tls-unique", tls_unique);
+					channel_bindings:add("tls-unique");
 				else
 					log("debug", "Channel binding 'tls-unique' not supported (by LuaSec?)");
 				end
@@ -303,6 +305,14 @@ module:hook("stream-features", function(event)
 			log("debug", "Offering usable mechanisms: %s", usable_mechanisms);
 			for mechanism in usable_mechanisms do
 				mechanisms:tag("mechanism"):text(mechanism):up();
+			end
+			if not channel_bindings:empty() then
+				-- XXX XEP-0440 is Experimental
+				mechanisms:tag("sasl-channel-binding", {xmlns='urn:xmpp:sasl-cb:0'})
+				for channel_binding in channel_bindings do
+					mechanisms:tag("channel-binding", {type=channel_binding}):up()
+				end
+				mechanisms:up();
 			end
 			features:add_child(mechanisms);
 			return;
