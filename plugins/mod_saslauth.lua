@@ -14,6 +14,7 @@ local sm_make_authenticated = require "prosody.core.sessionmanager".make_authent
 local base64 = require "prosody.util.encodings".base64;
 local set = require "prosody.util.set";
 local errors = require "prosody.util.error";
+local hex = require "prosody.util.hex";
 
 local usermanager_get_sasl_handler = require "prosody.core.usermanager".get_sasl_handler;
 
@@ -21,6 +22,7 @@ local secure_auth_only = module:get_option_boolean("c2s_require_encryption", mod
 local allow_unencrypted_plain_auth = module:get_option_boolean("allow_unencrypted_plain_auth", false)
 local insecure_mechanisms = module:get_option_set("insecure_sasl_mechanisms", allow_unencrypted_plain_auth and {} or {"PLAIN", "LOGIN"});
 local disabled_mechanisms = module:get_option_set("disable_sasl_mechanisms", { "DIGEST-MD5" });
+local tls_server_end_point_hash = module:get_option_string("tls_server_end_point_hash");
 
 local log = module._log;
 
@@ -255,6 +257,11 @@ local function sasl_tls_exporter(self)
 	return tls_exporter(self.userdata["tls-exporter"]);
 end
 
+local function tls_server_end_point(self)
+	local cert_hash = self.userdata["tls-server-end-point"];
+	if cert_hash then return hex.from(cert_hash); end
+end
+
 local mechanisms_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-sasl' };
 local bind_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-bind' };
 local xmpp_session_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-session' };
@@ -288,9 +295,15 @@ module:hook("stream-features", function(event)
 				else
 					log("debug", "Channel binding 'tls-unique' not supported (by LuaSec?)");
 				end
+				if tls_server_end_point_hash then
+					log("debug", "Channel binding 'tls-server-end-point' can be offered with the configured certificate hash");
+					sasl_handler:add_cb_handler("tls-server-end-point", tls_server_end_point);
+					channel_bindings:add("tls-server-end-point");
+				end
 				sasl_handler["userdata"] = {
 					["tls-unique"] = origin.conn;
 					["tls-exporter"] = origin.conn;
+					["tls-server-end-point"] = tls_server_end_point_hash;
 				};
 			else
 				log("debug", "Channel binding not supported by SASL handler");
