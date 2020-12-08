@@ -103,6 +103,14 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0048.html"/>
+        <xmpp:version>1.2</xmpp:version>
+        <xmpp:since>0.1</xmpp:since>
+        <xmpp:note>mod_private, indirectly supported via XEP-0049</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0049.html"/>
         <xmpp:version>1.2</xmpp:version>
         <xmpp:since>0.1</xmpp:since>
