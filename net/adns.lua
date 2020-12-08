@@ -43,7 +43,7 @@ local function new_async_socket(sock, resolver)
 			log("warn", "DNS socket for %s disconnected: %s", peername, err);
 			local servers = resolver.server;
 			if resolver.socketset[conn] == resolver.best_server and resolver.best_server == #servers then
-				log("error", "Exhausted all %d configured DNS servers, next lookup will try %s again", #servers, servers[1]);
+				log("warn", "Exhausted all %d configured DNS servers, next lookup will try %s again", #servers, servers[1]);
 			end
 
 			resolver:servfail(conn); -- Let the magic commence
