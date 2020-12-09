@@ -123,6 +123,7 @@ local function init(source, namespace, registry)
 			return nil, wrap(err);
 		end;
 		wrap = wrap;
+		is_error = is_error;
 	};
 end
 
