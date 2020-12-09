@@ -98,12 +98,31 @@ local function init(source, namespace, registry)
 	if protoerr and type(next(protoerr)) == "number" then
 		registry = expand_registry(namespace, registry);
 	end
+
+	local function wrap(e, context)
+		if is_err(e) then
+			return e;
+		end
+		local err = new(registry[e] or {
+			type = "cancel", condition = "undefined-condition"
+		}, context, registry, source);
+		err.context.wrapped_error = e;
+		return err;
+	end
+
 	return {
 		source = source;
 		registry = registry;
 		new = function (e, context)
 			return new(e, context, registry, source);
 		end;
+		coerce = function (ok, err, ...)
+			if ok then
+				return ok, err, ...;
+			end
+			return nil, wrap(err);
+		end;
+		wrap = wrap;
 	};
 end
 
