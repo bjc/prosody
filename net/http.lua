@@ -24,6 +24,7 @@ local t_insert, t_concat = table.insert, table.concat;
 local pairs = pairs;
 local tonumber, tostring, traceback =
       tonumber, tostring, debug.traceback;
+local os_time = os.time;
 local xpcall = require "util.xpcall".xpcall;
 local error = error
 
@@ -221,6 +222,7 @@ local function request(self, u, ex, callback)
 
 	req.url = u;
 	req.http = self;
+	req.time = os_time();
 
 	if not req.path then
 		req.path = "/";
