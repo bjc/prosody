@@ -14,7 +14,7 @@ function error_mt:__tostring()
 	return ("error<%s:%s:%s>"):format(self.type, self.condition, self.text or "");
 end
 
-local function is_err(e)
+local function is_error(e)
 	return getmetatable(e) == error_mt;
 end
 
@@ -35,7 +35,7 @@ end
 -- What to set `type` to for stream errors or SASL errors? Those don't have a 'type' attr.
 
 local function new(e, context, registry, source)
-	if is_err(e) then return e; end
+	if is_error(e) then return e; end
 	local template = registry and registry[e];
 	if not template then
 		if type(e) == "table" then
@@ -100,7 +100,7 @@ local function init(source, namespace, registry)
 	end
 
 	local function wrap(e, context)
-		if is_err(e) then
+		if is_error(e) then
 			return e;
 		end
 		local err = new(registry[e] or {
@@ -127,7 +127,7 @@ local function init(source, namespace, registry)
 end
 
 local function coerce(ok, err, ...)
-	if ok or is_err(err) then
+	if ok or is_error(err) then
 		return ok, err, ...;
 	end
 
@@ -165,7 +165,8 @@ return {
 	new = new;
 	init = init;
 	coerce = coerce;
-	is_err = is_err;
+	is_error = is_error;
+	is_err = is_error; -- COMPAT w/ older 0.12 trunk
 	from_stanza = from_stanza;
 	configure = configure;
 }
