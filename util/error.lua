@@ -1,16 +1,13 @@
 local id = require "util.id";
 
+local util_debug; -- only imported on-demand
+
 -- Library configuration (see configure())
 local auto_inject_traceback = false;
-local display_tracebacks = false;
-
 
 local error_mt = { __name = "error" };
 
 function error_mt:__tostring()
-	if display_tracebacks and self.context.traceback then
-		return ("error<%s:%s:%s:%s>"):format(self.type, self.condition, self.text or "", self.context.traceback);
-	end
 	return ("error<%s:%s:%s>"):format(self.type, self.condition, self.text or "");
 end
 
@@ -19,11 +16,11 @@ local function is_error(e)
 end
 
 local function configure(opt)
-	if opt.display_tracebacks ~= nil then
-		display_tracebacks = opt.display_tracebacks;
-	end
 	if opt.auto_inject_traceback ~= nil then
 		auto_inject_traceback = opt.auto_inject_traceback;
+		if auto_inject_traceback then
+			util_debug = require "util.debug";
+		end
 	end
 end
 
@@ -53,7 +50,7 @@ local function new(e, context, registry, source)
 	context = context or {};
 
 	if auto_inject_traceback then
-		context.traceback = debug.traceback("error stack", 2);
+		context.traceback = util_debug.get_traceback_table(nil, 2);
 	end
 
 	local error_instance = setmetatable({
