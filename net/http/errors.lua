@@ -40,6 +40,10 @@ local error_templates = {
 		code = 0, type = "modify", condition = "bad-request";
 		text = "Invalid URL";
 	};
+	["unable to resolve service"] = {
+		code = 0, type = "cancel", condition = "remote-server-not-found";
+		text = "DNS resolution failed";
+	};
 
 	-- This doesn't attempt to map every single HTTP code (not all have sane mappings),
 	-- but all the common ones should be covered. XEP-0086 was used as reference for
