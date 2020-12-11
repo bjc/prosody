@@ -177,7 +177,10 @@ function route_to_new_session(event)
 end
 
 local function keepalive(event)
-	return event.session.sends2s(' ');
+	local session = event.session;
+	if not session.notopen then
+		return event.session.send(' ');
+	end
 end
 
 module:hook("s2s-read-timeout", keepalive, -1);
