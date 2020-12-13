@@ -289,6 +289,7 @@
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0133.html"/>
         <xmpp:since>0.7</xmpp:since>
+        <xmpp:status>partial</xmpp:status>
       </xmpp:SupportedXep>
     </implements>
     <implements>
