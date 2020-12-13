@@ -138,6 +138,14 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0059.html"/>
+        <xmpp:version>1.0</xmpp:version>
+        <xmpp:since>0.10.0</xmpp:since>
+        <xmpp:note>used by XEP-0313, util.rsm</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0060.html"/>
         <xmpp:version>1.15.8</xmpp:version>
         <xmpp:since>0.9</xmpp:since>
