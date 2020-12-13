@@ -533,6 +533,13 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0297.html"/>
+        <xmpp:since>0.11</xmpp:since>
+        <xmpp:note>Used by XEP-0280, XEP-0313</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0302.html"/>
         <xmpp:note>Core Server</xmpp:note>
       </xmpp:SupportedXep>
