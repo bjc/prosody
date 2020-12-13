@@ -566,7 +566,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0352.html"/>
-        <xmpp:version>0.3.0</xmpp:version>
+        <xmpp:version>1.0.0</xmpp:version>
         <xmpp:since>0.11</xmpp:since>
       </xmpp:SupportedXep>
     </implements>
