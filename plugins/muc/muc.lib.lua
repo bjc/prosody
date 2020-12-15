@@ -1326,8 +1326,8 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
 			if occupant.role == nil then
 				module:fire_event("muc-occupant-left", {room = self; nick = occupant.nick; occupant = occupant;});
 			elseif is_semi_anonymous and
-				(old_role == "moderator" and occupant.role ~= "moderator") or
-				(old_role ~= "moderator" and occupant.role == "moderator") then -- Has gained or lost moderator status
+				((old_role == "moderator" and occupant.role ~= "moderator") or
+				(old_role ~= "moderator" and occupant.role == "moderator")) then -- Has gained or lost moderator status
 				-- Send everyone else's presences (as jid visibility has changed)
 				for real_jid in occupant:each_session() do
 					self:send_occupant_list(real_jid, function(occupant_jid, occupant) --luacheck: ignore 212 433
