@@ -179,7 +179,7 @@ end
 local function keepalive(event)
 	local session = event.session;
 	if not session.notopen then
-		return event.session.send(' ');
+		return event.session.sends2s(' ');
 	end
 end
 
