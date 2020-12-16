@@ -205,7 +205,7 @@ function interface:on(what, ...)
 			self:error("Closing due to error calling on%s: %s", what, err);
 			self:destroy();
 		else
-			self:debug("Error calling on%s: %s", what, err);
+			self:error("Error calling on%s: %s", what, err);
 		end
 		return nil, err;
 	end
