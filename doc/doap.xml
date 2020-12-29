@@ -101,6 +101,8 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0044.html"/>
+        <xmpp:version>0.1</xmpp:version>
+        <xmpp:since>0.1.0</xmpp:since>
         <xmpp:note>libexpat</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
