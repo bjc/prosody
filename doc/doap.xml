@@ -69,6 +69,7 @@
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0009.html"/>
         <xmpp:since>0.4.0</xmpp:since>
         <xmpp:until>0.7.0</xmpp:until>
+        <xmpp:status>removed</xmpp:status>
       </xmpp:SupportedXep>
     </implements>
     <implements>
@@ -85,6 +86,8 @@
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0016.html"/>
         <xmpp:since>0.7.0</xmpp:since>
         <xmpp:until>0.10.0</xmpp:until>
+        <xmpp:status>removed</xmpp:status>
+        <xmpp:note>mod_privacy</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
@@ -213,6 +216,7 @@
         <xmpp:version>1.4</xmpp:version>
         <xmpp:since>0.1.0</xmpp:since>
         <xmpp:until>0.12.0</xmpp:until>
+        <xmpp:status>removed</xmpp:status>
         <xmpp:note>Gone from offline messages in 0.10.0, gone from MUC in 0.12</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
@@ -278,6 +282,8 @@
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0126.html"/>
         <xmpp:until>0.10.0</xmpp:until>
+        <xmpp:status>removed</xmpp:status>
+        <xmpp:note>Gone with XEP-0016</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
@@ -299,6 +305,8 @@
         <xmpp:version>2.0</xmpp:version>
         <xmpp:since>0.6.0</xmpp:since>
         <xmpp:until>0.10.0</xmpp:until>
+        <xmpp:status>removed</xmpp:status>
+        <xmpp:note>Compression considered insecure</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
