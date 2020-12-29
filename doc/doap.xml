@@ -61,6 +61,7 @@
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0004.html"/>
         <xmpp:version>2.9</xmpp:version>
+        <xmpp:since>0.4.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
       </xmpp:SupportedXep>
     </implements>
