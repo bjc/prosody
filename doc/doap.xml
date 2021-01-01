@@ -11,6 +11,7 @@
     <homepage rdf:resource="https://prosody.im/"/>
     <download-page rdf:resource="https://prosody.im/download/"/>
     <license rdf:resource="https://hg.prosody.im/trunk/file/tip/COPYING"/>
+    <xmpp:logo rdf:resource="https://prosody.im/"/>
     <bug-database rdf:resource="https://issues.prosody.im/"/>
     <support-forum rdf:resource="xmpp:prosody@conference.prosody.im?join"/>
     <repository>
