@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:xmpp="https://linkmauve.fr/ns/xmpp-doap#" xml:lang="en">
+<rdf:RDF xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:xmpp="https://linkmauve.fr/ns/xmpp-doap#" xml:lang="en">
   <Project xmlns="http://usefulinc.com/ns/doap#">
     <name>Prosody IM</name>
     <shortdesc>Lightweight XMPP server</shortdesc>
