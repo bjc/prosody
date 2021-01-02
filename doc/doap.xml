@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<rdf:RDF xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:xmpp="https://linkmauve.fr/ns/xmpp-doap#" xml:lang="en">
+<rdf:RDF xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:schema="https://schema.org/" xmlns:xmpp="https://linkmauve.fr/ns/xmpp-doap#" xml:lang="en">
   <Project xmlns="http://usefulinc.com/ns/doap#">
     <name>Prosody IM</name>
     <shortdesc>Lightweight XMPP server</shortdesc>
@@ -11,7 +11,7 @@
     <homepage rdf:resource="https://prosody.im/"/>
     <download-page rdf:resource="https://prosody.im/download/"/>
     <license rdf:resource="https://hg.prosody.im/trunk/file/tip/COPYING"/>
-    <xmpp:logo rdf:resource="https://prosody.im/prosody.svg"/>
+    <schema:logo rdf:resource="https://prosody.im/prosody.svg"/>
     <bug-database rdf:resource="https://issues.prosody.im/"/>
     <support-forum rdf:resource="xmpp:prosody@conference.prosody.im?join"/>
     <repository>
