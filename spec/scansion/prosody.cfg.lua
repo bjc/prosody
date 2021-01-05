@@ -114,7 +114,7 @@ mam_smart_enable = true
 
 -- Logging configuration
 -- For advanced logging see https://prosody.im/doc/logging
-log = {debug = "*console" }
+log = {"*console",debug = ENV_PROSODY_LOGFILE}
 
 pidfile = "prosody.pid"
 
