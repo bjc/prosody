@@ -13,10 +13,12 @@ local s_lower = string.lower;
 local s_upper = string.upper;
 local noop = function() end;
 
-local log = require "util.logger".init("unbound");
+local logger = require "util.logger";
+local log = logger.init("unbound");
 local net_server = require "net.server";
 local libunbound = require"lunbound";
 local promise = require"util.promise";
+local new_id = require "util.id".medium;
 
 local gettime = require"socket".gettime;
 local dns_utils = require"util.dns";
@@ -104,26 +106,27 @@ local function lookup(callback, qname, qtype, qclass)
 	local ntype, nclass = types[qtype], classes[qclass];
 	local startedat = gettime();
 	local ret;
+	local log_query = logger.init("unbound.query"..new_id());
 	local function callback_wrapper(a, err)
 		local gotdataat = gettime();
 		waiting_queries[ret] = nil;
 		if a then
 			prep_answer(a);
-			log("debug", "Results for %s %s %s: %s (%s, %f sec)", qname, qclass, qtype, a.rcode == 0 and (#a .. " items") or a.status,
+			log_query("debug", "Results for %s %s %s: %s (%s, %f sec)", qname, qclass, qtype, a.rcode == 0 and (#a .. " items") or a.status,
 				a.secure and "Secure" or a.bogus or "Insecure", gotdataat - startedat); -- Insecure as in unsigned
 		else
-			log("error", "Results for %s %s %s: %s", qname, qclass, qtype, tostring(err));
+			log_query("error", "Results for %s %s %s: %s", qname, qclass, qtype, tostring(err));
 		end
 		local ok, cerr = pcall(callback, a, err);
-		if not ok then log("error", "Error in callback: %s", cerr); end
+		if not ok then log_query("error", "Error in callback: %s", cerr); end
 	end
-	log("debug", "Resolve %s %s %s", qname, qclass, qtype);
+	log_query("debug", "Resolve %s %s %s", qname, qclass, qtype);
 	local err;
 	ret, err = unbound:resolve_async(callback_wrapper, qname, ntype, nclass);
 	if ret then
 		waiting_queries[ret] = callback;
 	else
-		log("warn", "Resolver error: %s", err);
+		log_query("warn", "Resolver error: %s", err);
 	end
 	return ret, err;
 end
