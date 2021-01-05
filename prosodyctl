@@ -630,7 +630,7 @@ local command_runner = async.runner(function ()
 		print("");
 		print("Where COMMAND may be one of:\n");
 
-		local hidden_commands = require "util.set".new{ "register", "unregister", "addplugin" };
+		local hidden_commands = require "util.set".new{ "register", "unregister" };
 		local commands_order = { "install", "remove", "list", "adduser", "passwd", "deluser", "start", "stop", "restart", "reload",
 			"about" };
 
