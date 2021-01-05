@@ -60,7 +60,9 @@ local function initialize()
 	unbound = libunbound.new(unbound_config);
 	server_conn = connect_server(unbound, net_server);
 end
-initialize();
+if prosody then
+	prosody.events.add_handler("server-started", initialize);
+end
 
 local answer_mt = {
 	__tostring = function(self)
@@ -105,6 +107,7 @@ local function prep_answer(a)
 end
 
 local function lookup(callback, qname, qtype, qclass)
+	if not unbound then initialize(); end
 	qtype = qtype and s_upper(qtype) or "A";
 	qclass = qclass and s_upper(qclass) or "IN";
 	local ntype, nclass = types[qtype], classes[qclass];
