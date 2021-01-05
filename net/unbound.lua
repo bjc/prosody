@@ -123,7 +123,7 @@ local function lookup(callback, qname, qtype, qclass)
 	if ret then
 		waiting_queries[ret] = callback;
 	else
-		log("warn", err);
+		log("warn", "Resolver error: %s", err);
 	end
 	return ret, err;
 end
