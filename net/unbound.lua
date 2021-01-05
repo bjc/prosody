@@ -54,9 +54,13 @@ local function connect_server(unbound, server)
 	end);
 end
 
-local unbound = libunbound.new(unbound_config);
+local unbound, server_conn;
 
-local server_conn = connect_server(unbound, net_server);
+local function initialize()
+	unbound = libunbound.new(unbound_config);
+	server_conn = connect_server(unbound, net_server);
+end
+initialize();
 
 local answer_mt = {
 	__tostring = function(self)
@@ -154,8 +158,7 @@ end
 local function purge()
 	for id in pairs(waiting_queries) do cancel(id); end
 	if server_conn then server_conn:close(); end
-	unbound = libunbound.new(unbound_config);
-	server_conn = connect_server(unbound, net_server);
+	initialize();
 	return true;
 end
 
