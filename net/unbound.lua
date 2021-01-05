@@ -45,7 +45,9 @@ end
 -- Note: libunbound will default to using root hints if resolvconf is unset
 
 local function connect_server(unbound, server)
+	log("debug", "Setting up net.server event handling for %s", unbound);
 	return server.watchfd(unbound, function ()
+		log("debug", "Processing queries for %s", unbound);
 		unbound:process()
 	end);
 end
