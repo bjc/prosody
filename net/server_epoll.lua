@@ -97,10 +97,10 @@ local function runtimers(next_delay, min_wait)
 	-- Any timers at all?
 	local now = gettime();
 	local peek = timers:peek();
+	local readd;
 	while peek do
 
 		if peek > now then
-			next_delay = peek - now;
 			break;
 		end
 
@@ -109,13 +109,29 @@ local function runtimers(next_delay, min_wait)
 		if ok and type(ret) == "number"  then
 			local next_time = now+ret;
 			timer[1] = next_time;
-			timers:insert(timer, next_time);
+			-- Delay insertion of timers to be re-added
+			-- so they don't get called again this tick
+			if readd then
+				readd[id] = timer;
+			else
+				readd = { [id] = timer };
+			end
 		end
 
 		peek = timers:peek();
 	end
+
+	if readd then
+		for _, timer in pairs(readd) do
+			timers:insert(timer, timer[2]);
+		end
+		peek = timers:peek();
+	end
+
 	if peek == nil then
 		return next_delay;
+	else
+		next_delay = peek - now;
 	end
 
 	if next_delay < min_wait then
