@@ -18,10 +18,12 @@ local scan = io.open(record_file, "w+");
 
 local function record(string)
 	scan:write(string);
+	scan:flush();
 end
 
 local function record_header(string)
 	head:write(string);
+	head:flush();
 end
 
 local function record_object(class, name, props)
@@ -30,6 +32,7 @@ local function record_object(class, name, props)
 		head:write(("\t%s: %s\n"):format(k, v));
 	end
 	head:write("\n");
+	head:flush();
 end
 
 local function record_event(session, event)
