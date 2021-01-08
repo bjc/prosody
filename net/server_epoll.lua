@@ -119,10 +119,10 @@ local function runtimers(next_delay, min_wait)
 	local elapsed = monotonic();
 	local now = realtime();
 	local peek = timers:peek();
+	local readd;
 	while peek do
 
 		if peek > elapsed then
-			next_delay = peek - elapsed;
 			break;
 		end
 
@@ -130,15 +130,31 @@ local function runtimers(next_delay, min_wait)
 		local ok, ret = xpcall(timer, traceback, now, id);
 		if ok and type(ret) == "number"  then
 			local next_time = elapsed+ret;
-			timers:insert(timer, next_time);
+			-- Delay insertion of timers to be re-added
+			-- so they don't get called again this tick
+			if readd then
+				readd[id] = { timer, next_time };
+			else
+				readd = { [id] = { timer, next_time } };
+			end
 		elseif not ok then
 			log("error", "Error in timer: %s", ret);
 		end
 
 		peek = timers:peek();
 	end
+
+	if readd then
+		for _, timer in pairs(readd) do
+			timers:insert(timer[1], timer[2]);
+		end
+		peek = timers:peek();
+	end
+
 	if peek == nil then
 		return next_delay;
+	else
+		next_delay = peek - elapsed;
 	end
 
 	if next_delay < min_wait then

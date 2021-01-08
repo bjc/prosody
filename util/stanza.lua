@@ -66,9 +66,9 @@ end
 local function check_text(text, text_type)
 	if type(text) ~= "string" then
 		error("invalid "..text_type.." value: expected string, got "..type(text));
-	elseif not valid_xml_cdata(text) then
+	elseif not valid_xml_cdata(text, false) then
 		error("invalid "..text_type.." value: contains control characters");
-	elseif not valid_utf8(text, false) then
+	elseif not valid_utf8(text) then
 		error("invalid "..text_type.." value: contains invalid utf8");
 	end
 end

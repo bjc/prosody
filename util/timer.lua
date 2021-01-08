@@ -15,6 +15,7 @@ local debug_traceback = debug.traceback;
 local tostring = tostring;
 local xpcall = require "util.xpcall".xpcall;
 local math_max = math.max;
+local pairs = pairs;
 
 if server.timer then
 	-- The selected net.server implements this API, so defer to that
@@ -34,6 +35,7 @@ local next_time = nil;
 local function _traceback_handler(err) log("error", "Traceback[timer]: %s", debug_traceback(tostring(err), 2)); end
 local function _on_timer(now)
 	local peek;
+	local readd;
 	while true do
 		peek = h:peek();
 		if peek == nil or peek > now then break; end
@@ -43,9 +45,20 @@ local function _on_timer(now)
 		--item(now, id, _param);
 		local success, err = xpcall(callback, _traceback_handler, now, id, param);
 		if success and type(err) == "number" then
-			h:insert(callback, err + now, id); -- re-add
+			if readd then
+				readd[id] = { callback, err + now };
+			else
+				readd = { [id] = { callback, err + now } };
+			end
 			params[id] = param;
 		end
+	end
+
+	if readd then
+		for id,timer in pairs(readd) do
+			h:insert(timer[1], timer[2], id);
+		end
+		peek = h:peek();
 	end
 
 	if peek ~= nil and _active_timers > 1 and peek == next_time then
