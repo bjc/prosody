@@ -1,7 +1,7 @@
 -- Prosody IM
 -- Copyright (C) 2008-2017 Matthew Wild
 -- Copyright (C) 2008-2017 Waqas Hussain
--- Copyright (C) 2011-2020 Kim Alvefur
+-- Copyright (C) 2011-2021 Kim Alvefur
 --
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -83,6 +83,11 @@ local query_form = dataform {
 	{ name = "end"; type = "text-single"; };
 };
 
+if archive.caps and archive.caps.full_id_range then
+	table.insert(query_form, { name = "before-id"; type = "text-single"; });
+	table.insert(query_form, { name = "after-id"; type = "text-single"; });
+end
+
 -- Serve form
 module:hook("iq-get/self/"..xmlns_mam..":query", function(event)
 	local origin, stanza = event.origin, event.stanza;
@@ -102,7 +107,7 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	get_prefs(origin.username, true);
 
 	-- Search query parameters
-	local qwith, qstart, qend;
+	local qwith, qstart, qend, qbefore, qafter;
 	local form = query:get_child("x", "jabber:x:data");
 	if form then
 		local form_type, err = get_form_type(form);
@@ -119,6 +124,7 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 			return true;
 		end
 		qwith, qstart, qend = form["with"], form["start"], form["end"];
+		qbefore, qafter = form["before-id"], form["after-id"];
 		qwith = qwith and jid_bare(qwith); -- dataforms does jidprep
 	end
 
@@ -142,7 +148,7 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	local qset = rsm.get(query);
 	local qmax = m_min(qset and qset.max or default_max_items, max_max_items);
 	local reverse = qset and qset.before or false;
-	local before, after = qset and qset.before, qset and qset.after;
+	local before, after = qset and qset.before or qbefore, qset and qset.after or qafter;
 	if type(before) ~= "string" then before = nil; end
 	if qset then
 		module:log("debug", "Archive query id=%s rsm=%q", qid or stanza.attr.id, qset);
@@ -555,7 +561,6 @@ module:hook("message/bare", message_handler, 0);
 module:hook("message/full", message_handler, 0);
 
 local advertise_extended = module:get_option_boolean("mam_advertise_extend", false);
--- TODO before-id, after-id
 -- TODO ids
 -- TODO delete feature flag option
 
