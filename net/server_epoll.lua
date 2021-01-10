@@ -123,7 +123,7 @@ local function runtimers(next_delay, min_wait)
 
 	if readd then
 		for _, timer in pairs(readd) do
-			timers:insert(timer, timer[2]);
+			timers:insert(timer, timer[1]);
 		end
 		peek = timers:peek();
 	end
