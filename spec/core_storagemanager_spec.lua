@@ -361,6 +361,27 @@ describe("storagemanager", function ()
 						end
 						assert.equal(3, count);
 					end);
+
+					it("by id (before and after) #full_id_range", function ()
+						assert.truthy(archive.caps and archive.caps.full_id_range, "full ID range support")
+						local data, err = archive:find("user", {
+								["after"] = test_data[1][1];
+								["before"] = test_data[4][1];
+							});
+						assert.truthy(data, err);
+						local count = 0;
+						for id, item in data do
+							count = count + 1;
+							assert.truthy(id);
+							assert.equal(test_data[1+count][1], id);
+							assert(st.is_stanza(item));
+							assert.equal("test", item.name);
+							assert.equal("urn:example:foo", item.attr.xmlns);
+							assert.equal(2, #item.tags);
+						end
+						assert.equal(2, count);
+					end);
+
 				end);
 
 				it("can selectively delete items", function ()
