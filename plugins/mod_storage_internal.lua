@@ -6,6 +6,7 @@ local st = require "util.stanza";
 local now = require "util.time".now;
 local id = require "util.id".medium;
 local jid_join = require "util.jid".join;
+local set = require "util.set";
 
 local host = module.host;
 
@@ -53,6 +54,7 @@ archive.caps = {
 	quota = archive_item_limit;
 	truncate = true;
 	full_id_range = true;
+	ids = true;
 };
 
 function archive:append(username, key, value, when, with)
@@ -142,6 +144,12 @@ function archive:find(username, query)
 		if query.key then
 			items:filter(function (item)
 				return item.key == query.key;
+			end);
+		end
+		if query.ids then
+			local ids = set.new(query.ids);
+			items:filter(function (item)
+				return ids:contains(item.key);
 			end);
 		end
 		if query.with then
