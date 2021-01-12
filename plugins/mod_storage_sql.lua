@@ -283,6 +283,7 @@ archive_store.caps = {
 	quota = archive_item_limit;
 	truncate = true;
 	full_id_range = true;
+	ids = true;
 };
 archive_store.__index = archive_store
 function archive_store:append(username, key, value, when, with)
@@ -375,6 +376,15 @@ local function archive_where(query, args, where)
 	if query.key then
 		where[#where+1] = "\"key\" = ?";
 		args[#args+1] = query.key
+	end
+
+	-- Set of ids
+	if query.ids then
+		local nids, nargs = #query.ids, #args;
+		where[#where + 1] = "\"key\" IN (" .. string.rep("?", nids, ",") .. ")";
+		for i, id in ipairs(query.ids) do
+			args[nargs+i] = id;
+		end
 	end
 end
 local function archive_where_id_range(query, args, where)
