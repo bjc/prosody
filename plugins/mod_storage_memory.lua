@@ -4,6 +4,7 @@ local envload = require "util.envload".envload;
 local st = require "util.stanza";
 local is_stanza = st.is_stanza or function (s) return getmetatable(s) == st.stanza_mt end
 local new_id = require "util.id".medium;
+local set = require "util.set";
 
 local auto_purge_enabled = module:get_option_boolean("storage_memory_temporary", false);
 local auto_purge_stores = module:get_option_set("storage_memory_temporary_stores", {});
@@ -58,6 +59,7 @@ archive_store.caps = {
 	quota = archive_item_limit;
 	truncate = true;
 	full_id_range = true;
+	ids = true;
 };
 
 function archive_store:append(username, key, value, when, with)
@@ -108,6 +110,12 @@ function archive_store:find(username, query)
 		if query.key then
 			items:filter(function (item)
 				return item.key == query.key;
+			end);
+		end
+		if query.ids then
+			local ids = set.new(query.ids);
+			items:filter(function (item)
+				return ids:contains(item.key);
 			end);
 		end
 		if query.with then
