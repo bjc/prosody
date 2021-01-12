@@ -382,6 +382,30 @@ describe("storagemanager", function ()
 						assert.equal(2, count);
 					end);
 
+					it("by multiple ids", function ()
+						assert.truthy(archive.caps and archive.caps.ids, "Multilpe ID query")
+						local data, err = archive:find("user", {
+								["ids"] = {
+									test_data[2][1];
+									test_data[4][1];
+								};
+							});
+						assert.truthy(data, err);
+						local count = 0;
+						for id, item in data do
+							count = count + 1;
+							assert.truthy(id);
+							assert.equal(test_data[count==1 and 2 or 4][1], id);
+							assert(st.is_stanza(item));
+							assert.equal("test", item.name);
+							assert.equal("urn:example:foo", item.attr.xmlns);
+							assert.equal(2, #item.tags);
+						end
+						assert.equal(2, count);
+
+					end);
+
+
 				end);
 
 				it("can selectively delete items", function ()
