@@ -88,6 +88,11 @@ if archive.caps and archive.caps.full_id_range then
 	table.insert(query_form, { name = "after-id"; type = "text-single"; });
 end
 
+if archive.caps and archive.caps.ids then
+	table.insert(query_form, { name = "ids"; type = "list-multi"; });
+end
+
+
 -- Serve form
 module:hook("iq-get/self/"..xmlns_mam..":query", function(event)
 	local origin, stanza = event.origin, event.stanza;
@@ -107,7 +112,7 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	get_prefs(origin.username, true);
 
 	-- Search query parameters
-	local qwith, qstart, qend, qbefore, qafter;
+	local qwith, qstart, qend, qbefore, qafter, qids;
 	local form = query:get_child("x", "jabber:x:data");
 	if form then
 		local form_type, err = get_form_type(form);
@@ -125,6 +130,7 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 		end
 		qwith, qstart, qend = form["with"], form["start"], form["end"];
 		qbefore, qafter = form["before-id"], form["after-id"];
+		qids = form["ids"];
 		qwith = qwith and jid_bare(qwith); -- dataforms does jidprep
 	end
 
@@ -164,6 +170,7 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 		with = qwith;
 		limit = qmax == 0 and 0 or qmax + 1;
 		before = before; after = after;
+		ids = qids;
 		reverse = reverse;
 		total = use_total or qmax == 0;
 	});
@@ -561,7 +568,6 @@ module:hook("message/bare", message_handler, 0);
 module:hook("message/full", message_handler, 0);
 
 local advertise_extended = module:get_option_boolean("mam_advertise_extend", false);
--- TODO ids
 -- TODO delete feature flag option
 
 module:hook("account-disco-info", function(event)
