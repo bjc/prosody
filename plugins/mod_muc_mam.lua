@@ -1,5 +1,5 @@
 -- XEP-0313: Message Archive Management for Prosody MUC
--- Copyright (C) 2011-2017 Kim Alvefur
+-- Copyright (C) 2011-2021 Kim Alvefur
 --
 -- This file is MIT/X11 licensed.
 
@@ -9,6 +9,7 @@ if module:get_host_type() ~= "component" then
 end
 
 local xmlns_mam     = "urn:xmpp:mam:2";
+local xmlns_mam_ext = "urn:xmpp:mam:2#extended";
 local xmlns_delay   = "urn:xmpp:delay";
 local xmlns_forward = "urn:xmpp:forward:0";
 local xmlns_st_id   = "urn:xmpp:sid:0";
@@ -143,6 +144,8 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 
 	-- Search query parameters
 	local qstart, qend;
+	local qbefore, qafter;
+	local qids;
 	local form = query:get_child("x", "jabber:x:data");
 	if form then
 		local form_type, err = get_form_type(form);
@@ -159,6 +162,8 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 			return true;
 		end
 		qstart, qend = form["start"], form["end"];
+		qbefore, qafter = form["before-id"], form["after-id"];
+		qids = form["ids"];
 	end
 
 	if qstart or qend then -- Validate timestamps
@@ -181,17 +186,22 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 	local qmax = m_min(qset and qset.max or default_max_items, max_max_items);
 	local reverse = qset and qset.before or false;
 
-	local before, after = qset and qset.before, qset and qset.after;
+	local before, after = qset and qset.before or qbefore, qset and qset.after or qafter;
 	if type(before) ~= "string" then before = nil; end
 	if qset then
 		module:log("debug", "Archive query id=%s rsm=%q", qid or stanza.attr.id, qset);
 	end
+	-- A reverse query needs to be flipped
+	local flip = reverse;
+	-- A flip-page query needs to be the opposite of that.
+	if query:get_child("flip-page") then flip = not flip end
 
 	-- Load all the data!
 	local data, err = archive:find(room_node, {
 		start = qstart; ["end"] = qend; -- Time range
 		limit = qmax + 1;
 		before = before; after = after;
+		ids = qids;
 		reverse = reverse;
 		with = "message<groupchat";
 	});
@@ -245,17 +255,19 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 		if not first then first = id; end
 		last = id;
 
-		if reverse then
+		if flip then
 			results[count] = fwd_st;
 		else
 			origin.send(fwd_st);
 		end
 	end
 
-	if reverse then
+	if flip then
 		for i = #results, 1, -1 do
 			origin.send(results[i]);
 		end
+	end
+	if reverse then
 		first, last = last, first;
 	end
 
@@ -439,9 +451,14 @@ end
 
 module:add_feature(xmlns_mam);
 
+local advertise_extended = archive.caps and archive.caps.full_id_range and archive.caps.ids;
+
 module:hook("muc-disco#info", function(event)
 	if archiving_enabled(event.room) then
 		event.reply:tag("feature", {var=xmlns_mam}):up();
+		if advertise_extended then
+			(event.reply or event.stanza):tag("feature", {var=xmlns_mam_ext}):up();
+		end
 	end
 	event.reply:tag("feature", {var=xmlns_st_id}):up();
 end);
