@@ -56,6 +56,11 @@ local function new_async_socket(sock, resolver)
 			return nil, err;
 		end
 	end
+	if handler.set then
+		-- server_epoll: only watch for incoming data
+		-- avoids sending empty packet on first 'onwritable' event
+		handler:set(true, false);
+	end
 
 	handler.settimeout = function () end
 	handler.setsockname = function (_, ...) return sock:setsockname(...); end
