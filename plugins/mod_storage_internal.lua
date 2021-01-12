@@ -52,6 +52,7 @@ archive.caps = {
 	total = true;
 	quota = archive_item_limit;
 	truncate = true;
+	full_id_range = true;
 };
 
 function archive:append(username, key, value, when, with)
@@ -178,8 +179,7 @@ function archive:find(username, query)
 					return nil, "item-not-found";
 				end
 			end
-		elseif query.before then
-			last_key = query.before;
+			last_key = query.after;
 		elseif query.after then
 			local found = false;
 			for j = 1, #items do
@@ -192,6 +192,9 @@ function archive:find(username, query)
 			if not found then
 				return nil, "item-not-found";
 			end
+			last_key = query.before;
+		elseif query.before then
+			last_key = query.before;
 		end
 		if query.limit and #items - i > query.limit then
 			items[i+query.limit+1] = nil;
