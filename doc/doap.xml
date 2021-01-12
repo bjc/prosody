@@ -569,7 +569,7 @@
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0313.html"/>
         <xmpp:version>0.7.2</xmpp:version>
-        <xmpp:status>partial</xmpp:status>
+        <xmpp:status>complete</xmpp:status>
         <xmpp:since>0.10.0</xmpp:since>
         <xmpp:note>mod_mam, mod_muc_mam</xmpp:note>
       </xmpp:SupportedXep>

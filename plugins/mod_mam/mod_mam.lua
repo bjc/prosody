@@ -567,8 +567,7 @@ module:hook("pre-message/full", c2s_message_handler, 0);
 module:hook("message/bare", message_handler, 0);
 module:hook("message/full", message_handler, 0);
 
-local advertise_extended = module:get_option_boolean("mam_advertise_extend", false);
--- TODO delete feature flag option
+local advertise_extended = archive.caps and archive.caps.full_id_range and archive.caps.ids;
 
 module:hook("account-disco-info", function(event)
 	(event.reply or event.stanza):tag("feature", {var=xmlns_mam}):up();
