@@ -381,7 +381,8 @@ local function archive_where(query, args, where)
 	-- Set of ids
 	if query.ids then
 		local nids, nargs = #query.ids, #args;
-		where[#where + 1] = "\"key\" IN (" .. string.rep("?", nids, ",") .. ")";
+		-- COMPAT Lua 5.1: No separator argument to string.rep
+		where[#where + 1] = "\"key\" IN (" .. string.rep("?,", nids):sub(1,-2) .. ")";
 		for i, id in ipairs(query.ids) do
 			args[nargs+i] = id;
 		end
