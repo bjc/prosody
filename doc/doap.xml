@@ -17,7 +17,7 @@
     <repository>
       <HgRepository>
         <location rdf:resource="https://hg.prosody.im/trunk/"/>
-        <browse rdf:location="https://hg.prosody.im/trunk/"/>
+        <browse rdf:resource="https://hg.prosody.im/trunk/"/>
       </HgRepository>
     </repository>
     <programming-langauge>Lua</programming-langauge>
