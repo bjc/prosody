@@ -209,7 +209,7 @@ local function do_load_module(host, module_name, state)
 		if not load_manifest then
 			-- COMPAT Luarocks 2.x
 			log("debug", "Could not load LuaRocks 3.x manifest, trying 2.x", err);
-			luarocks_path = custom_plugins.."/lib/luarocks/rocks-"..lua_version;
+			luarocks_path = custom_plugins.."/lib/luarocks/rocks";
 			manifest_filename = luarocks_path.."/manifest";
 			load_manifest, err = envload.envloadfile(manifest_filename, manifest);
 		end
