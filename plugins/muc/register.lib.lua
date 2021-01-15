@@ -56,6 +56,20 @@ local registration_form = dataforms.new {
 	{ name = "muc#register_roomnick", type = "text-single", required = true, label = "Nickname"},
 };
 
+module:handle_items("muc-registration-field", function (event)
+	module:log("debug", "Adding MUC registration form field: %s", event.item.name);
+	table.insert(registration_form, event.item);
+end, function (event)
+	module:log("debug", "Removing MUC registration form field: %s", event.item.name);
+	local removed_field_name = event.item.name;
+	for i, field in ipairs(registration_form) do
+		if field.name == removed_field_name then
+			table.remove(registration_form, i);
+			break;
+		end
+	end
+end);
+
 local function enforce_nick_policy(event)
 	local origin, stanza = event.origin, event.stanza;
 	local room = assert(event.room); -- FIXME
@@ -114,6 +128,8 @@ local function handle_register_iq(room, origin, stanza)
 	if stanza.attr.type == "get" then
 		reply:query("jabber:iq:register");
 		if registered_nick then
+			-- I find it strange, but XEP-0045 says not to include
+			-- the current registration data (only the registered name)
 			reply:tag("registered"):up();
 			reply:tag("username"):text(registered_nick);
 			origin.send(reply);
@@ -183,6 +199,13 @@ local function handle_register_iq(room, origin, stanza)
 		-- Checks passed, save the registration
 		if registered_nick ~= desired_nick then
 			local registration_data = { reserved_nickname = desired_nick };
+			module:fire_event("muc-registration-submitted", {
+				room = room;
+				origin = origin;
+				stanza = stanza;
+				submitted_data = reg_data;
+				affiliation_data = registration_data;
+			});
 			local ok, err_type, err_condition = room:set_affiliation(true, user_jid, affiliation or "member", nil, registration_data);
 			if not ok then
 				origin.send(st.error_reply(stanza, err_type, err_condition));
