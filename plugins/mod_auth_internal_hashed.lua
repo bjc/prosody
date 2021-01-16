@@ -22,7 +22,7 @@ local host = module.host;
 
 local accounts = module:open_store("accounts");
 
-local hash_name = module:get_option_string("password_hash", "SHA-1");
+local hash_name = module:get_option_enum("password_hash", "SHA-1", "SHA-256");
 local get_auth_db = assert(scram_hashers[hash_name], "SCRAM-"..hash_name.." not supported by SASL library");
 local scram_name = "scram_"..hash_name:gsub("%-","_"):lower();
 

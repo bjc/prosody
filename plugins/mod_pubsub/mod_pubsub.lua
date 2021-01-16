@@ -179,7 +179,7 @@ module:hook("host-disco-items", function (event)
 	end
 end);
 
-local admin_aff = module:get_option_string("default_admin_affiliation", "owner");
+local admin_aff = module:get_option_enum("default_admin_affiliation", "owner", "publisher", "member", "outcast", "none");
 module:default_permission("prosody:admin", ":service-admin");
 local function get_affiliation(jid)
 	local bare_jid = jid_bare(jid);

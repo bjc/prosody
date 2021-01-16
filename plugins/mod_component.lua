@@ -85,7 +85,7 @@ function module.add_host(module)
 		end
 
 		if env.connected then
-			local policy = module:get_option_string("component_conflict_resolve", "kick_new");
+			local policy = module:get_option_enum("component_conflict_resolve", "kick_new", "kick_old");
 			if policy == "kick_old" then
 				env.session:close{ condition = "conflict", text = "Replaced by a new connection" };
 			else -- kick_new

@@ -10,11 +10,14 @@
 --
 -- luacheck: ignore 122/prosody
 
-local global_default_policy = module:get_option_string("default_archive_policy", true);
-if global_default_policy ~= "roster" then
-	global_default_policy = module:get_option_boolean("default_archive_policy", global_default_policy);
-end
+local global_default_policy = module:get_option_enum("default_archive_policy", "always", "roster", "never", true, false);
 local smart_enable = module:get_option_boolean("mam_smart_enable", false);
+
+if global_default_policy == "always" then
+	global_default_policy = true;
+elseif global_default_policy == "never" then
+	global_default_policy = false;
+end
 
 do
 	-- luacheck: ignore 211/prefs_format

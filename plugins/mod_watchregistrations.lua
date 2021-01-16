@@ -13,7 +13,7 @@ local jid_prep = require "prosody.util.jid".prep;
 local registration_watchers = module:get_option_set("registration_watchers", module:get_option("admins", {})) / jid_prep;
 local registration_from = module:get_option_string("registration_from", host);
 local registration_notification = module:get_option_string("registration_notification", "User $username just registered on $host from $ip");
-local msg_type = module:get_option_string("registration_notification_type", "chat");
+local msg_type = module:get_option_enum("registration_notification_type", "chat", "normal", "headline");
 
 local st = require "prosody.util.stanza";
 
