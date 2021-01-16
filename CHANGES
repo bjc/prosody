@@ -38,6 +38,10 @@ TRUNK
 - Performance improvements in internal archive stores
 - Ability to use SQLite3 storage using LuaSQLite3 instead of LuaDBI
 
+### Module API
+
+- Config interface API can require that string values be picked from a provided set
+
 ## Changes
 
 - Support sub-second precision timestamps

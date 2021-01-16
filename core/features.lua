@@ -15,5 +15,8 @@ return {
 
 		-- prosody:guest, prosody:registered, prosody:member
 		"split-user-roles";
+
+		-- new moduleapi methods
+		"getopt-enum";
 	};
 };

@@ -310,6 +310,15 @@ function api:get_option_path(name, default, parent)
 	return resolve_relative_path(parent, value);
 end
 
+function api:get_option_enum(name, default, ...)
+	local value = self:get_option_scalar(name, default);
+	if value == nil then return nil; end
+	local options = set.new{default, ...};
+	if not options:contains(value) then
+		self:log("error", "Config option '%s' not in set of allowed values (one of: %s)", name, options);
+	end
+	return value;
+end
 
 function api:context(host)
 	return setmetatable({ host = host or "*", global = "*" == host }, { __index = self, __newindex = self });

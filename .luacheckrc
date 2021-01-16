@@ -73,6 +73,7 @@ files["plugins/"] = {
 		"module.get_option",
 		"module.get_option_array",
 		"module.get_option_boolean",
+		"module.get_option_enum",
 		"module.get_option_inherited_set",
 		"module.get_option_number",
 		"module.get_option_path",
