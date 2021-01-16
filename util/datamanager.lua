@@ -344,7 +344,7 @@ local function stores(username, host, typ)
 
 	local mode, err = lfs.attributes(store_dir, "mode");
 	if not mode then
-		return function() log("debug", err or (store_dir .. " does not exist")) end
+		return function() log("debug", "Could not iterate over stores in %s: %s", store_dir, err); end
 	end
 	local next, state = lfs.dir(store_dir); -- luacheck: ignore 431/next 431/state
 	return function(state) -- luacheck: ignore 431/state
