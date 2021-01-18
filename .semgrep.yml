@@ -1,0 +1,24 @@
+rules:
+- id: log-variable-fmtstring
+  patterns:
+    - pattern: log("...", $A)
+    - pattern-not: log("...", "...")
+  message: Variable passed as format string to logging
+  languages: [lua]
+  severity: ERROR
+- id: module-log-variable-fmtstring
+  patterns:
+    - pattern: module:log("...", $A)
+    - pattern-not: module:log("...", "...")
+  message: Variable passed as format string to logging
+  languages: [lua]
+  severity: ERROR
+- id: module-getopt-string-default
+  patterns:
+    - pattern: module:get_option_string("...", $A)
+    - pattern-not: module:get_option_string("...", "...")
+    - pattern-not: module:get_option_string("...", host)
+    - pattern-not: module:get_option_string("...", module.host)
+  message: Non-string default from :get_option_string
+  severity: ERROR
+  languages: [lua]
