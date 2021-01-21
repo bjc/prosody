@@ -221,20 +221,12 @@ local render_cli = interpolation.new("%b{}", function (s) return "'"..s:gsub("'"
 
 local function call_luarocks(operation, mod, server)
 	local dir = prosody.paths.installer;
-	if operation == "install" then
-		show_message("Installing %s in %s", mod, dir);
-	elseif operation == "remove" then
-		show_message("Removing %s from %s", mod, dir);
-	end
 	local ok, where, code = os.execute(render_cli("luarocks {op} --tree={dir} {server&--server={server}} {mod?}", {
 				dir = dir; op = operation; mod = mod; server = server;
 		}));
 	if type(ok) == "number" then ok, code = ok == 0, ok; end
 	if not ok then
 		return code;
-	end
-	if operation == "install" then
-		show_module_configuration_help(mod);
 	end
 	return true;
 end
