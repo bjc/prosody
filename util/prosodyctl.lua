@@ -224,7 +224,7 @@ local function call_luarocks(operation, mod, server)
 	local ok, _, code = os.execute(render_cli("luarocks {op} --tree={dir} {server&--server={server}} {mod?}", {
 				dir = dir; op = operation; mod = mod; server = server;
 		}));
-	if type(ok) == "number" then ok, code = ok == 0, ok; end
+	if type(ok) == "number" then code = ok; end
 	return code;
 end
 
