@@ -78,8 +78,12 @@ function commands.install(arg)
 		show_usage([[install]], [[Installs a prosody/luarocks plugin]]);
 		return 1;
 	end
+	show_message("Installing %s in %s", arg[1], prosody.paths.installer);
 	-- TODO finalize config option name
 	local ret = call_luarocks("install", arg[1], configmanager.get("*", "plugin_server") or "http://localhost/");
+	if ret == 0 and operation == "install" then
+		show_module_configuration_help(mod);
+	end
 	return ret;
 end
 
@@ -88,6 +92,7 @@ function commands.remove(arg)
 		show_usage([[remove]], [[Removes a module installed in the working directory's plugins folder]]);
 		return 1;
 	end
+	show_message("Removing %s from %s", arg[1], prosody.paths.installer);
 	local ret = call_luarocks("remove", arg[1]);
 	return ret;
 end
