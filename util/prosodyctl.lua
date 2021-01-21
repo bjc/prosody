@@ -222,7 +222,7 @@ local render_cli = interpolation.new("%b{}", function (s) return "'"..s:gsub("'"
 local function call_luarocks(operation, mod, server)
 	local dir = prosody.paths.installer;
 	if operation == "install" then
-		show_message("Installing %s at %s", mod, dir);
+		show_message("Installing %s in %s", mod, dir);
 	elseif operation == "remove" then
 		show_message("Removing %s from %s", mod, dir);
 	end
