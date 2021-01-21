@@ -83,6 +83,7 @@ function commands.install(arg)
 	if not server then
 		show_warning("There is no 'plugin_server' option in the configuration file");
 		-- see https://prosody.im/doc/TODO documentation
+		-- #1602
 		return 1;
 	end
 	show_message("Installing %s in %s", arg[1], prosody.paths.installer);
