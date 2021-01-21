@@ -643,19 +643,26 @@ local command_runner = async.runner(function ()
 
 	if not commands[command] then -- Show help for all commands
 		function show_usage(usage, desc)
-			print(" "..usage);
-			print("    "..desc);
+			print(string.format(" %-11s    %s", usage, desc));
 		end
 
 		print("prosodyctl - Manage a Prosody server");
 		print("");
 		print("Usage: "..arg[0].." COMMAND [OPTIONS]");
 		print("");
-		print("Where COMMAND may be one of:\n");
+		print("Where COMMAND may be one of:");
 
 		local hidden_commands = require "util.set".new{ "register", "unregister" };
-		local commands_order = { "install", "remove", "list", "adduser", "passwd", "deluser", "start", "stop", "restart", "reload",
-			"about" };
+		local commands_order = {
+			"Plugin management:",
+				"install"; "remove"; "list";
+			"User management:",
+				"adduser"; "passwd"; "deluser";
+			"Process management:",
+				"start"; "stop"; "restart"; "reload"; "status";
+			"Informative:",
+				"about",
+		};
 
 		local done = {};
 
@@ -663,15 +670,16 @@ local command_runner = async.runner(function ()
 			local command_func = commands[command_name];
 			if command_func then
 				command_func{ "--help" };
-				print""
 				done[command_name] = true;
+			else
+				print""
+				print(command_name);
 			end
 		end
 
 		for command_name, command_func in pairs(commands) do
 			if not done[command_name] and not hidden_commands:contains(command_name) then
 				command_func{ "--help" };
-				print""
 				done[command_name] = true;
 			end
 		end
