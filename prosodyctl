@@ -87,8 +87,8 @@ function commands.install(arg)
 		return 1;
 	end
 	local ret = call_luarocks("install", arg[1], server);
-	if ret == 0 and operation == "install" then
-		show_module_configuration_help(mod);
+	if ret == 0 then
+		prosodyctl.show_module_configuration_help(arg[1]);
 	end
 	return ret;
 end
