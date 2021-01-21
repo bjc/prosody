@@ -79,7 +79,8 @@ function commands.install(arg)
 		return 1;
 	end
 	-- TODO finalize config option name
-	call_luarocks("install", arg[1], configmanager.get("*", "plugin_server") or "http://localhost/");
+	local ret = call_luarocks("install", arg[1], configmanager.get("*", "plugin_server") or "http://localhost/");
+	return ret;
 end
 
 function commands.remove(arg)
@@ -87,7 +88,8 @@ function commands.remove(arg)
 		show_usage([[remove]], [[Removes a module installed in the working directory's plugins folder]]);
 		return 1;
 	end
-	call_luarocks("remove", arg[1])
+	local ret = call_luarocks("remove", arg[1]);
+	return ret;
 end
 
 function commands.list(arg)
@@ -95,7 +97,8 @@ function commands.list(arg)
 		show_usage([[list]], [[Shows installed rocks]]);
 		return 1;
 	end
-	call_luarocks("list", arg[1])
+	local ret = call_luarocks("list", arg[1]);
+	return ret;
 end
 
 function commands.adduser(arg)
