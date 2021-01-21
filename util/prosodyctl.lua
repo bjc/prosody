@@ -225,10 +225,7 @@ local function call_luarocks(operation, mod, server)
 				dir = dir; op = operation; mod = mod; server = server;
 		}));
 	if type(ok) == "number" then ok, code = ok == 0, ok; end
-	if not ok then
-		return code;
-	end
-	return true;
+	return code;
 end
 
 return {
