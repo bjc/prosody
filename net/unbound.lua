@@ -139,6 +139,7 @@ local function lookup(callback, qname, qtype, qclass)
 end
 
 local function lookup_sync(qname, qtype, qclass)
+	if not unbound then initialize(); end
 	qtype = qtype and s_upper(qtype) or "A";
 	qclass = qclass and s_upper(qclass) or "IN";
 	local ntype, nclass = types[qtype], classes[qclass];
