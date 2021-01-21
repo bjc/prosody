@@ -47,6 +47,7 @@ local function check(arg)
 			"umask", "prosodyctl_timeout", "use_ipv6", "use_libevent", "network_settings",
 			"network_backend", "http_default_host",
 			"statistics_interval", "statistics", "statistics_config",
+			"plugin_server", "installer_plugin_path",
 		});
 		local config = configmanager.getconfig();
 		-- Check that we have any global options (caused by putting a host at the top)
