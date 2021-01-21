@@ -78,7 +78,6 @@ function commands.install(arg)
 		show_usage([[install]], [[Installs a prosody/luarocks plugin]]);
 		return 1;
 	end
-	show_message("Installing %s in %s", arg[1], prosody.paths.installer);
 	-- TODO finalize config option name
 	local server = configmanager.get("*", "plugin_server");
 	if not server then
@@ -86,6 +85,7 @@ function commands.install(arg)
 		-- see https://prosody.im/doc/TODO documentation
 		return 1;
 	end
+	show_message("Installing %s in %s", arg[1], prosody.paths.installer);
 	local ret = call_luarocks("install", arg[1], server);
 	if ret == 0 then
 		prosodyctl.show_module_configuration_help(arg[1]);
