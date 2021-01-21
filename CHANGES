@@ -17,7 +17,8 @@ TRUNK
 -   `daemonize` option deprecated
 -   SASL DIGEST-MD5 removed
 -   Switch to libunbound for DNS queries
--   mod_external_services (XEP-0215)
+-   mod_external_services (generic XEP-0215)
+-   mod_turn_external for easy STUN+TURN XEP-0215 setup
 -   util.error for encapsulating errors
 -   MUC: support for XEP-0421 occupant identifiers
 -   mod_http_file_share: File sharing via HTTP (XEP-0363)
