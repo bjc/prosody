@@ -217,18 +217,10 @@ local function reload()
 	return true;
 end
 
-local function get_path_custom_plugins(plugin_paths)
-		-- I'm considering that the custom plugins' path is the first one at prosody.paths.plugins
-	-- luacheck: ignore 512
-	for path in plugin_paths:gmatch("[^;]+") do
-		return path;
-	end
-end
-
 local render_cli = interpolation.new("%b{}", function (s) return "'"..s:gsub("'","'\\''").."'" end)
 
 local function call_luarocks(operation, mod, server)
-	local dir = get_path_custom_plugins(prosody.paths.plugins);
+	local dir = prosody.paths.installer;
 	if operation == "install" then
 		show_message("Installing %s at %s", mod, dir);
 	elseif operation == "remove" then
@@ -256,7 +248,6 @@ return {
 	start = start;
 	stop = stop;
 	reload = reload;
-	get_path_custom_plugins = get_path_custom_plugins;
 	call_luarocks = call_luarocks;
 	error_messages = error_messages;
 };
