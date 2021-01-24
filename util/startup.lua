@@ -267,10 +267,9 @@ function startup.setup_plugindir()
 end
 
 function startup.setup_plugin_install_path()
-	local installer_plugin_path = config.get("*", "installer_plugin_path") or (CFG_DATADIR or "data").."/custom_plugins";
+	local installer_plugin_path = config.get("*", "installer_plugin_path") or "custom_plugins";
 	local path_sep = package.config:sub(3,3);
-	-- TODO Figure out what this should be relative to, because CWD could be anywhere
-	installer_plugin_path = config.resolve_relative_path(require "lfs".currentdir(), installer_plugin_path);
+	installer_plugin_path = config.resolve_relative_path(CFG_DATADIR or "data", installer_plugin_path);
 	require"util.paths".complement_lua_path(installer_plugin_path);
 	-- luacheck: ignore 111
 	CFG_PLUGINDIR = installer_plugin_path..path_sep..(CFG_PLUGINDIR or "plugins");
