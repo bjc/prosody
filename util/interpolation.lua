@@ -43,11 +43,11 @@ local function new_render(pat, escape, funcs)
 				end
 			end
 			if funcs then
-				while value ~= nil and opt == '|' do
+				while opt == '|' do
 					local f;
 					f, raw, opt, e = s_match(block, "^([%a_][%w_.]*)(!?)(%p?)()", e);
 					f = funcs[f];
-					if f then value = f(value); end
+					if value ~= nil and f then value = f(value); end
 				end
 			end
 			if opt == '#' or opt == '%' then
