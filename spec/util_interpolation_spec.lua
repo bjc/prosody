@@ -58,4 +58,9 @@ describe("util.interpolation", function ()
 		assert.equal(expect_not_nil, render(template_not, { thing = nil }));
 		assert.equal(expect_not_false, render(template_not, { thing = false }));
 	end);
+	it("fixes #1623", function ()
+		local render = require "util.interpolation".new("%b{}", string.upper, { x = string.lower });
+		assert.equal("", render("{foo?}", {  }))
+		assert.equal("", render("{foo|x?}", {  }))
+	end);
 end);
