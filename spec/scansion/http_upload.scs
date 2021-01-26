@@ -1,0 +1,26 @@
+[Client] Romeo
+	password: password
+	jid: filesharingenthusiast@localhost/krxLaE3s
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<iq to='upload.localhost' type='get' id='932c02fe-4461-4ad4-9c85-54863294b4dc' xml:lang='en'>
+		<request content-type='text/plain' filename='verysmall.dat' xmlns='urn:xmpp:http:upload:0' size='5'/>
+	</iq>
+
+Romeo receives:
+	<iq id='932c02fe-4461-4ad4-9c85-54863294b4dc' from='upload.localhost' type='result'>
+		<slot xmlns='urn:xmpp:http:upload:0'>
+			<get url='{scansion:any}'/>
+			<put url='{scansion:any}'>
+				<header name='Authorization'></header>
+			</put>
+		</slot>
+	</iq>
+
+Romeo disconnects
+
+# recording ended on 2021-01-27T22:10:46Z
