@@ -36,12 +36,18 @@ end
 
 local upload_errors = errors.init(module.name, namespace, {
 	access = { "auth"; "forbidden" };
+	filename = { "modify"; "bad-request", "Invalid filename" };
 });
 
 function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
 	local uploader_host = jid.host(uploader);
 	if not ((access:empty() and prosody.hosts[uploader_host]) or access:contains(uploader) or access:contains(uploader_host)) then
 		return false, upload_errors.new("access");
+	end
+
+	if not filename or filename:find"/" then
+		-- On Linux, only '/' and '\0' are invalid in filenames and NUL can't be in XML
+		return false, upload_errors.new("filename");
 	end
 
 	return true;

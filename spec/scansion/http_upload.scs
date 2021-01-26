@@ -21,6 +21,19 @@ Romeo receives:
 		</slot>
 	</iq>
 
+Romeo sends:
+	<iq to='upload.localhost' type='get' id='ac56d83f-a627-4732-8399-60492d1210b6' xml:lang='en'>
+		<request content-type='text/plain' filename='invalid/filename.dat' xmlns='urn:xmpp:http:upload:0' size='1000'/>
+	</iq>
+
+Romeo receives:
+	<iq id='ac56d83f-a627-4732-8399-60492d1210b6' from='upload.localhost' type='error'>
+		<error type='modify'>
+			<bad-request xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
+			<text xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>Invalid filename</text>
+		</error>
+	</iq>
+
 Romeo disconnects
 
 # recording ended on 2021-01-27T22:10:46Z
