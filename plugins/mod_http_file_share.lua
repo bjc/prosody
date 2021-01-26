@@ -34,10 +34,14 @@ if not external_base_url then
 	module:depends("http");
 end
 
+local upload_errors = errors.init(module.name, namespace, {
+	access = { "auth"; "forbidden" };
+});
+
 function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
 	local uploader_host = jid.host(uploader);
 	if not ((access:empty() and prosody.hosts[uploader_host]) or access:contains(uploader) or access:contains(uploader_host)) then
-		return false;
+		return false, upload_errors.new("access");
 	end
 
 	return true;
