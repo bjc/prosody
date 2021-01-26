@@ -22,6 +22,22 @@ Romeo receives:
 	</iq>
 
 Romeo sends:
+	<iq to='upload.localhost' type='get' id='46ca64f3-518e-42bd-8e2f-4ab2f6d2224f' xml:lang='en'>
+		<request content-type='text/plain' filename='toolarge.dat' xmlns='urn:xmpp:http:upload:0' size='10000000000'/>
+	</iq>
+
+Romeo receives:
+	<iq id='46ca64f3-518e-42bd-8e2f-4ab2f6d2224f' from='upload.localhost' type='error'>
+		<error type='modify'>
+			<not-acceptable xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
+			<text xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>File too large</text>
+			<file-too-large xmlns='urn:xmpp:http:upload:0'>
+				<max-file-size>10000000</max-file-size>
+			</file-too-large>
+		</error>
+	</iq>
+
+Romeo sends:
 	<iq to='upload.localhost' type='get' id='ac56d83f-a627-4732-8399-60492d1210b6' xml:lang='en'>
 		<request content-type='text/plain' filename='invalid/filename.dat' xmlns='urn:xmpp:http:upload:0' size='1000'/>
 	</iq>
