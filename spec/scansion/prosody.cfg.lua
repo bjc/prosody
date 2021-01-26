@@ -131,3 +131,5 @@ Component "conference.localhost" "muc"
 
 Component "pubsub.localhost" "pubsub"
 	storage = "memory"
+
+Component "upload.localhost" "http_file_share"
