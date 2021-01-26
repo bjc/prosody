@@ -38,6 +38,19 @@ Romeo receives:
 	</iq>
 
 Romeo sends:
+	<iq to='upload.localhost' type='get' id='497c20dd-dda2-4feb-8199-7086e203de46' xml:lang='en'>
+		<request content-type='text/plain' filename='negative.dat' xmlns='urn:xmpp:http:upload:0' size='-1000'/>
+	</iq>
+
+Romeo receives:
+	<iq id='497c20dd-dda2-4feb-8199-7086e203de46' from='upload.localhost' type='error'>
+		<error type='modify'>
+			<bad-request xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
+			<text xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>File size must be positive integer</text>
+		</error>
+	</iq>
+
+Romeo sends:
 	<iq to='upload.localhost' type='get' id='ac56d83f-a627-4732-8399-60492d1210b6' xml:lang='en'>
 		<request content-type='text/plain' filename='invalid/filename.dat' xmlns='urn:xmpp:http:upload:0' size='1000'/>
 	</iq>
