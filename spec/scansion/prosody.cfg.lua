@@ -133,3 +133,4 @@ Component "pubsub.localhost" "pubsub"
 	storage = "memory"
 
 Component "upload.localhost" "http_file_share"
+http_file_share_size_limit = 10000000

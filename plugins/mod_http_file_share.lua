@@ -14,6 +14,7 @@ local url = require "socket.url";
 local dm = require "core.storagemanager".olddm;
 local jwt = require "util.jwt";
 local errors = require "util.error";
+local dataform = require "util.dataforms".new;
 
 local namespace = "urn:xmpp:http:upload:0";
 
@@ -27,6 +28,7 @@ local uploads = module:open_store("uploads", "archive");
 
 local secret = module:get_option_string(module.name.."_secret", require"util.id".long());
 local external_base_url = module:get_option_string(module.name .. "_base_url");
+local file_size_limit = module:get_option_number(module.name .. "_size_limit", 10 * 1024 * 1024); -- 10 MB
 
 local access = module:get_option_set(module.name .. "_access", {});
 
@@ -34,9 +36,16 @@ if not external_base_url then
 	module:depends("http");
 end
 
+module:add_extension(dataform {
+	{ name = "FORM_TYPE", type = "hidden", value = namespace },
+	{ name = "max-file-size", type = "text-single" },
+}:form({ ["max-file-size"] = tostring(file_size_limit) }, "result"));
+
 local upload_errors = errors.init(module.name, namespace, {
 	access = { "auth"; "forbidden" };
 	filename = { "modify"; "bad-request", "Invalid filename" };
+	filesize = { "modify"; "not-acceptable"; "File too large";
+		st.stanza("file-too-large", {xmlns = namespace}):tag("max-size"):text(tostring(file_size_limit)); };
 });
 
 function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
@@ -48,6 +57,10 @@ function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
 	if not filename or filename:find"/" then
 		-- On Linux, only '/' and '\0' are invalid in filenames and NUL can't be in XML
 		return false, upload_errors.new("filename");
+	end
+
+	if filesize > file_size_limit then
+		return false, upload_errors.new("filesize");
 	end
 
 	return true;
