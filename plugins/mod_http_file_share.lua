@@ -47,7 +47,7 @@ local upload_errors = errors.init(module.name, namespace, {
 	filename = { type = "modify"; condition = "bad-request"; text = "Invalid filename" };
 	filetype = { type = "modify"; condition = "not-acceptable"; text = "File type not allowed" };
 	filesize = { type = "modify"; condition = "not-acceptable"; text = "File too large";
-		extra = {tag = st.stanza("file-too-large", {xmlns = namespace}):tag("max-size"):text(tostring(file_size_limit)) };
+		extra = {tag = st.stanza("file-too-large", {xmlns = namespace}):tag("max-file-size"):text(tostring(file_size_limit)) };
 	};
 });
 
