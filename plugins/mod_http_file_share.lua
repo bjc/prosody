@@ -28,12 +28,18 @@ local uploads = module:open_store("uploads", "archive");
 local secret = module:get_option_string(module.name.."_secret", require"util.id".long());
 local external_base_url = module:get_option_string(module.name .. "_base_url");
 
+local access = module:get_option_set(module.name .. "_access", {});
+
 if not external_base_url then
 	module:depends("http");
 end
 
 function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
-	-- TODO authz
+	local uploader_host = jid.host(uploader);
+	if not ((access:empty() and prosody.hosts[uploader_host]) or access:contains(uploader) or access:contains(uploader_host)) then
+		return false;
+	end
+
 	return true;
 end
 
