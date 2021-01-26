@@ -29,6 +29,7 @@ local uploads = module:open_store("uploads", "archive");
 local secret = module:get_option_string(module.name.."_secret", require"util.id".long());
 local external_base_url = module:get_option_string(module.name .. "_base_url");
 local file_size_limit = module:get_option_number(module.name .. "_size_limit", 10 * 1024 * 1024); -- 10 MB
+local file_types = module:get_option_set(module.name .. "_allowed_file_types", {});
 
 local access = module:get_option_set(module.name .. "_access", {});
 
@@ -44,6 +45,7 @@ module:add_extension(dataform {
 local upload_errors = errors.init(module.name, namespace, {
 	access = { "auth"; "forbidden" };
 	filename = { "modify"; "bad-request", "Invalid filename" };
+	filetype = { "modify"; "not-acceptable", "File type not allowed" };
 	filesize = { "modify"; "not-acceptable"; "File too large";
 		st.stanza("file-too-large", {xmlns = namespace}):tag("max-size"):text(tostring(file_size_limit)); };
 });
@@ -61,6 +63,10 @@ function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
 
 	if filesize > file_size_limit then
 		return false, upload_errors.new("filesize");
+	end
+
+	if not ( file_types:empty() or file_types:contains(filetype) or file_types:contains(filetype:gsub("/.*", "/*")) ) then
+		return false, upload_errors.new("filetype");
 	end
 
 	return true;
