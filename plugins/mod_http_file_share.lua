@@ -17,7 +17,6 @@ local errors = require "util.error";
 
 local namespace = "urn:xmpp:http:upload:0";
 
-module:depends("http");
 module:depends("disco");
 
 module:add_identity("store", "file", module:get_option_string("name", "HTTP File Upload"));
@@ -27,6 +26,11 @@ local uploads = module:open_store("uploads", "archive");
 -- id, <request>, time, owner
 
 local secret = module:get_option_string(module.name.."_secret", require"util.id".long());
+local external_base_url = module:get_option_string(module.name .. "_base_url");
+
+if not external_base_url then
+	module:depends("http");
+end
 
 function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
 	-- TODO authz
@@ -45,7 +49,7 @@ function get_authz(uploader, filename, filesize, filetype, slot)
 end
 
 function get_url(slot, filename)
-	local base_url = module:http_url();
+	local base_url = external_base_url or module:http_url();
 	local slot_url = url.parse(base_url);
 	slot_url.path = url.parse_path(slot_url.path or "/");
 	t_insert(slot_url.path, slot);
@@ -182,6 +186,7 @@ end
 
 module:hook("iq-get/host/urn:xmpp:http:upload:0:request", handle_slot_request);
 
+if not external_base_url then
 module:provides("http", {
 		streaming_uploads = true;
 		route = {
@@ -189,3 +194,4 @@ module:provides("http", {
 			["GET /*"] = handle_download;
 		}
 	});
+end
