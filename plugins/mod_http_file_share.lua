@@ -43,11 +43,12 @@ module:add_extension(dataform {
 }:form({ ["max-file-size"] = tostring(file_size_limit) }, "result"));
 
 local upload_errors = errors.init(module.name, namespace, {
-	access = { "auth"; "forbidden" };
-	filename = { "modify"; "bad-request", "Invalid filename" };
-	filetype = { "modify"; "not-acceptable", "File type not allowed" };
-	filesize = { "modify"; "not-acceptable"; "File too large";
-		st.stanza("file-too-large", {xmlns = namespace}):tag("max-size"):text(tostring(file_size_limit)); };
+	access = { type = "auth"; condition = "forbidden" };
+	filename = { type = "modify"; condition = "bad-request"; text = "Invalid filename" };
+	filetype = { type = "modify"; condition = "not-acceptable"; text = "File type not allowed" };
+	filesize = { type = "modify"; condition = "not-acceptable"; text = "File too large";
+		extra = {tag = st.stanza("file-too-large", {xmlns = namespace}):tag("max-size"):text(tostring(file_size_limit)) };
+	};
 });
 
 function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
