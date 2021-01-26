@@ -50,6 +50,19 @@ Romeo receives:
 		</error>
 	</iq>
 
+Romeo sends:
+	<iq to='upload.localhost' type='get' id='1401d3b5-7973-486f-85b3-3e63d13c7f0e' xml:lang='en'>
+		<request content-type='application/x-executable' filename='evil.exe' xmlns='urn:xmpp:http:upload:0' size='1000'/>
+	</iq>
+
+Romeo receives:
+	<iq id='1401d3b5-7973-486f-85b3-3e63d13c7f0e' from='upload.localhost' type='error'>
+		<error type='modify'>
+			<not-acceptable xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
+			<text xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>File type not allowed</text>
+		</error>
+	</iq>
+
 Romeo disconnects
 
 # recording ended on 2021-01-27T22:10:46Z

@@ -134,3 +134,4 @@ Component "pubsub.localhost" "pubsub"
 
 Component "upload.localhost" "http_file_share"
 http_file_share_size_limit = 10000000
+http_file_share_allowed_file_types = { "text/plain", "image/*" }
