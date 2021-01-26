@@ -173,7 +173,12 @@ function handle_upload(event, path) -- PUT /upload/:slot
 	end
 
 	if request.body_sink then
+		local final_size = request.body_sink:seek();
 		local uploaded, err = errors.coerce(request.body_sink:close());
+		if final_size ~= upload_info.filesize then
+			-- Could be too short as well, but we say the same thing
+			uploaded, err = false, 413;
+		end
 		if uploaded then
 			assert(os.rename(filename.."~", filename));
 			return 201;
