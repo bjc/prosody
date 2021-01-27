@@ -83,7 +83,7 @@ function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
 end
 
 function get_authz(uploader, filename, filesize, filetype, slot)
-	return "Bearer "..jwt.sign(secret, {
+	return jwt.sign(secret, {
 		sub = uploader;
 		filename = filename;
 		filesize = filesize;
@@ -138,7 +138,7 @@ function handle_slot_request(event)
 		:tag("slot", { xmlns = namespace })
 			:tag("get", { url = slot_url }):up()
 			:tag("put", { url = upload_url })
-				:text_tag("header", authz, {name="Authorization"})
+				:text_tag("header", "Bearer "..authz, {name="Authorization"})
 		:reset();
 
 	origin.send(reply);
