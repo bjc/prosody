@@ -15,6 +15,8 @@ local dm = require "core.storagemanager".olddm;
 local jwt = require "util.jwt";
 local errors = require "util.error";
 local dataform = require "util.dataforms".new;
+local dt = require "util.datetime";
+local hi = require "util.human.units";
 
 local namespace = "urn:xmpp:http:upload:0";
 
@@ -51,6 +53,9 @@ local upload_errors = errors.init(module.name, namespace, {
 	filesizefmt = { type = "modify"; condition = "bad-request"; text = "File size must be positive integer"; }
 	};
 });
+
+-- Convenience wrapper for logging file sizes
+local function B(bytes) return hi.format(bytes, "B", "b"); end
 
 function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
 	local uploader_host = jid.host(uploader);
@@ -118,6 +123,7 @@ function handle_slot_request(event)
 		return true;
 	end
 
+	module:log("info", "Issuing upload slot to %s for %s", uploader, B(filesize));
 	local slot, storage_err = errors.coerce(uploads:append(nil, nil, request, os.time(), uploader))
 	if not slot then
 		origin.send(st.error_reply(stanza, storage_err));
@@ -143,22 +149,27 @@ function handle_upload(event, path) -- PUT /upload/:slot
 	local request = event.request;
 	local authz = request.headers.authorization;
 	if not authz or not authz:find"^Bearer ." then
+		module:log("debug", "Missing Authorization");
 		return 403;
 	end
 	local authed, upload_info = jwt.verify(secret, authz:match("^Bearer (.*)"));
 	if not (authed and type(upload_info) == "table" and type(upload_info.exp) == "number") then
+		module:log("debug", "Unauthorized or invalid token: %s, %q", authed, upload_info);
 		return 401;
 	end
 	if upload_info.exp < os.time() then
+		module:log("debug", "Authorization token expired on %s", dt.datetime(upload_info.exp));
 		return 410;
 	end
 	if not path or upload_info.slot ~= path:match("^[^/]+") then
+		module:log("debug", "Invalid upload slot: %q, path: %q", upload_info.slot, path);
 		return 400;
 	end
 
 	local filename = dm.getpath(upload_info.slot, module.host, module.name, nil, true);
 
 	if not request.body_sink then
+		module:log("debug", "Preparing to receive upload into %q, expecting %s", filename, B(upload_info.filesize));
 		local fh, err = errors.coerce(io.open(filename.."~", "w"));
 		if not fh then
 			return err;
@@ -170,6 +181,8 @@ function handle_upload(event, path) -- PUT /upload/:slot
 	end
 
 	if request.body then
+		module:log("debug", "Complete upload available, %s", B(#request.body));
+		-- Small enough to have been uploaded already
 		local written, err = errors.coerce(request.body_sink:write(request.body));
 		if not written then
 			return err;
@@ -185,6 +198,7 @@ function handle_upload(event, path) -- PUT /upload/:slot
 			uploaded, err = false, 413;
 		end
 		if uploaded then
+			module:log("debug", "Upload of %q completed, %s", filename, B(final_size));
 			assert(os.rename(filename.."~", filename));
 			return 201;
 		else
