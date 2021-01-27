@@ -171,7 +171,8 @@ function handle_upload(event, path) -- PUT /upload/:slot
 		-- so we also check the final file size on completion.
 	end
 
-	local filename = dm.getpath(upload_info.slot, module.host, module.name, nil, true);
+	local filename = dm.getpath(upload_info.slot, module.host, module.name, "bin", true);
+
 
 	if not request.body_sink then
 		module:log("debug", "Preparing to receive upload into %q, expecting %s", filename, B(upload_info.filesize));
@@ -228,7 +229,7 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 	if request.headers.if_modified_since == last_modified then
 		return 304;
 	end
-	local filename = dm.getpath(slot_id, module.host, module.name);
+	local filename = dm.getpath(slot_id, module.host, module.name, "bin");
 	local handle, ferr = errors.coerce(io.open(filename));
 	if not handle then
 		return ferr or 410;
