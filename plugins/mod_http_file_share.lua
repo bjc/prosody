@@ -152,11 +152,14 @@ end
 function handle_upload(event, path) -- PUT /upload/:slot
 	local request = event.request;
 	local authz = request.headers.authorization;
-	if not authz or not authz:find"^Bearer ." then
+	if authz then
+		authz = authz:match("^Bearer (.*)")
+	end
+	if not authz then
 		module:log("debug", "Missing Authorization");
 		return 403;
 	end
-	local authed, upload_info = jwt.verify(secret, authz:match("^Bearer (.*)"));
+	local authed, upload_info = jwt.verify(secret, authz);
 	if not (authed and type(upload_info) == "table" and type(upload_info.exp) == "number") then
 		module:log("debug", "Unauthorized or invalid token: %s, %q", authed, upload_info);
 		return 401;
