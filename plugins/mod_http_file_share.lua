@@ -263,6 +263,12 @@ if expiry >= 0 and not external_base_url then
 	local async = require "util.async";
 	local ENOENT = require "util.pposix".ENOENT;
 
+	local function sleep(t)
+		local wait, done = async.waiter();
+		module:add_timer(t, done)
+		wait();
+	end
+
 	local reaper_task = async.runner(function(boundary_time)
 		local iter, total = assert(uploads:find(nil, {["end"] = boundary_time; total = true}));
 
@@ -280,9 +286,11 @@ if expiry >= 0 and not external_base_url then
 			obsolete_files:push(get_filename(slot_id));
 		end
 
+		sleep(0.1);
 		local n = 0;
 		obsolete_files:filter(function(filename)
 			n = n + 1;
+			if i % 100 == 0 then sleep(0.1); end
 			local deleted, err, errno = os.remove(filename);
 			if deleted or errno == ENOENT then
 				return false;
