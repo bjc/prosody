@@ -51,8 +51,8 @@ local upload_errors = errors.init(module.name, namespace, {
 	filetype = { type = "modify"; condition = "not-acceptable"; text = "File type not allowed" };
 	filesize = { type = "modify"; condition = "not-acceptable"; text = "File too large";
 		extra = {tag = st.stanza("file-too-large", {xmlns = namespace}):tag("max-file-size"):text(tostring(file_size_limit)) };
-	filesizefmt = { type = "modify"; condition = "bad-request"; text = "File size must be positive integer"; }
 	};
+	filesizefmt = { type = "modify"; condition = "bad-request"; text = "File size must be positive integer"; }
 });
 
 -- Convenience wrapper for logging file sizes
