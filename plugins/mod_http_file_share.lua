@@ -57,6 +57,10 @@ local upload_errors = errors.init(module.name, namespace, {
 -- Convenience wrapper for logging file sizes
 local function B(bytes) return hi.format(bytes, "B", "b"); end
 
+local function get_filename(slot, create)
+	return dm.getpath(slot, module.host, module.name, "bin", create)
+end
+
 function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
 	local uploader_host = jid.host(uploader);
 	if not ((access:empty() and prosody.hosts[uploader_host]) or access:contains(uploader) or access:contains(uploader_host)) then
@@ -171,7 +175,7 @@ function handle_upload(event, path) -- PUT /upload/:slot
 		-- so we also check the final file size on completion.
 	end
 
-	local filename = dm.getpath(upload_info.slot, module.host, module.name, "bin", true);
+	local filename = get_filename(upload_info.slot, true);
 
 
 	if not request.body_sink then
@@ -229,7 +233,7 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 	if request.headers.if_modified_since == last_modified then
 		return 304;
 	end
-	local filename = dm.getpath(slot_id, module.host, module.name, "bin");
+	local filename = get_filename(slot_id);
 	local handle, ferr = errors.coerce(io.open(filename));
 	if not handle then
 		return ferr or 410;
