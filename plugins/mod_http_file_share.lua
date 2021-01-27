@@ -165,6 +165,11 @@ function handle_upload(event, path) -- PUT /upload/:slot
 		module:log("debug", "Invalid upload slot: %q, path: %q", upload_info.slot, path);
 		return 400;
 	end
+	if request.headers.content_length and tonumber(request.headers.content_length) ~= upload_info.filesize then
+		return 413;
+		-- Note: We don't know the size if the upload is streamed in chunked encoding,
+		-- so we also check the final file size on completion.
+	end
 
 	local filename = dm.getpath(upload_info.slot, module.host, module.name, nil, true);
 
