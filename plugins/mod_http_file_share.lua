@@ -109,7 +109,7 @@ function handle_slot_request(event)
 	local request = st.clone(stanza.tags[1], true);
 	local filename = request.attr.filename;
 	local filesize = tonumber(request.attr.size);
-	local filetype = request.attr["content-type"];
+	local filetype = request.attr["content-type"] or "application/octet-stream";
 	local uploader = jid.bare(stanza.attr.from);
 
 	local may, why_not = may_upload(uploader, filename, filesize, filetype);
@@ -216,7 +216,7 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 	end
 	response.headers.last_modified = last_modified;
 	response.headers.content_length = slot.attr.size;
-	response.headers.content_type = slot.attr["content-type"];
+	response.headers.content_type = slot.attr["content-type"] or "application/octet-stream";
 	response.headers.content_disposition = string.format("attachment; filename=%q", slot.attr.filename);
 
 	response.headers.cache_control = "max-age=31556952, immutable";
