@@ -169,7 +169,7 @@ function handle_upload(event, path) -- PUT /upload/:slot
 		module:log("debug", "Unauthorized or invalid token: %s, %q", authed, upload_info);
 		return 401;
 	end
-	if upload_info.exp < os.time() then
+	if not request.body_sink and upload_info.exp < os.time() then
 		module:log("debug", "Authorization token expired on %s", dt.datetime(upload_info.exp));
 		return 410;
 	end
