@@ -227,13 +227,21 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 	local request, response = event.request, event.response;
 	local slot_id = path:match("^[^/]+");
 	-- TODO cache
+	local basename, filetime, filetype, filesize;
 	local slot, when = errors.coerce(uploads:get(nil, slot_id));
 	if not slot then
 		module:log("debug", "uploads:get(%q) --> not-found, %s", slot_id, when);
+	else
+		basename = slot.attr.filename;
+		filesize = slot.attr.size;
+		filetype = slot.attr["content-type"];
+		filetime = when;
+	end
+	if not basename then
 		return 404;
 	end
 	module:log("debug", "uploads:get(%q) --> %s, %d", slot_id, slot, when);
-	local last_modified = os.date('!%a, %d %b %Y %H:%M:%S GMT', when);
+	local last_modified = os.date('!%a, %d %b %Y %H:%M:%S GMT', filetime);
 	if request.headers.if_modified_since == last_modified then
 		return 304;
 	end
@@ -243,9 +251,9 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 		return ferr or 410;
 	end
 	response.headers.last_modified = last_modified;
-	response.headers.content_length = slot.attr.size;
-	response.headers.content_type = slot.attr["content-type"] or "application/octet-stream";
-	response.headers.content_disposition = string.format("attachment; filename=%q", slot.attr.filename);
+	response.headers.content_length = filesize;
+	response.headers.content_type = filetype or "application/octet-stream";
+	response.headers.content_disposition = string.format("attachment; filename=%q", basename);
 
 	response.headers.cache_control = "max-age=31556952, immutable";
 	response.headers.content_security_policy =  "default-src 'none'; frame-ancestors 'none';"
