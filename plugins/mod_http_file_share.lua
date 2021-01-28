@@ -33,6 +33,7 @@ local secret = module:get_option_string(module.name.."_secret", require"util.id"
 local external_base_url = module:get_option_string(module.name .. "_base_url");
 local file_size_limit = module:get_option_number(module.name .. "_size_limit", 10 * 1024 * 1024); -- 10 MB
 local file_types = module:get_option_set(module.name .. "_allowed_file_types", {});
+local safe_types = module:get_option_set(module.name .. "_safe_file_types", {"image/*","video/*","audio/*","text/plain"});
 local expiry = module:get_option_number(module.name .. "_expires_after", 7 * 86400);
 
 local access = module:get_option_set(module.name .. "_access", {});
@@ -278,10 +279,16 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 	if not handle then
 		return ferr or 410;
 	end
+
+	local disposition = "attachment";
+	if safe_types:contains(filetype) or safe_types:contains(filetype:gsub("/.*", "/*")) then
+		disposition = "inline";
+	end
+
 	response.headers.last_modified = last_modified;
 	response.headers.content_length = filesize;
 	response.headers.content_type = filetype or "application/octet-stream";
-	response.headers.content_disposition = string.format("attachment; filename=%q", basename);
+	response.headers.content_disposition = string.format("%s; filename=%q", disposition, basename);
 
 	response.headers.cache_control = "max-age=31556952, immutable";
 	response.headers.content_security_policy =  "default-src 'none'; frame-ancestors 'none';"
