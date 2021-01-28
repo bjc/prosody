@@ -17,6 +17,7 @@ local errors = require "util.error";
 local dataform = require "util.dataforms".new;
 local dt = require "util.datetime";
 local hi = require "util.human.units";
+local cache = require "util.cache";
 
 local namespace = "urn:xmpp:http:upload:0";
 
@@ -54,6 +55,8 @@ local upload_errors = errors.init(module.name, namespace, {
 	};
 	filesizefmt = { type = "modify"; condition = "bad-request"; text = "File size must be positive integer"; }
 });
+
+local upload_cache = cache.new(1024);
 
 -- Convenience wrapper for logging file sizes
 local function B(bytes) return hi.format(bytes, "B", "b"); end
@@ -214,6 +217,13 @@ function handle_upload(event, path) -- PUT /upload/:slot
 		if uploaded then
 			module:log("debug", "Upload of %q completed, %s", filename, B(final_size));
 			assert(os.rename(filename.."~", filename));
+
+			upload_cache:set(upload_info.slot, {
+					name = upload_info.filename;
+					size = tostring(upload_info.filesize);
+					type = upload_info.filetype;
+					time = os.time();
+				});
 			return 201;
 		else
 			assert(os.remove(filename.."~"));
@@ -226,21 +236,39 @@ end
 function handle_download(event, path) -- GET /uploads/:slot+filename
 	local request, response = event.request, event.response;
 	local slot_id = path:match("^[^/]+");
-	-- TODO cache
 	local basename, filetime, filetype, filesize;
-	local slot, when = errors.coerce(uploads:get(nil, slot_id));
-	if not slot then
-		module:log("debug", "uploads:get(%q) --> not-found, %s", slot_id, when);
+	local cached = upload_cache:get(slot_id);
+	if cached then
+		module:log("debug", "Cache hit");
+		-- TODO stats (instead of logging?)
+		basename = cached.name;
+		filesize = cached.size;
+		filetype = cached.type;
+		filetime = cached.time;
+		upload_cache:set(slot_id, cached);
+		-- TODO cache negative hits?
 	else
-		basename = slot.attr.filename;
-		filesize = slot.attr.size;
-		filetype = slot.attr["content-type"];
-		filetime = when;
+		module:log("debug", "Cache miss");
+		local slot, when = errors.coerce(uploads:get(nil, slot_id));
+		if not slot then
+			module:log("debug", "uploads:get(%q) --> not-found, %s", slot_id, when);
+		else
+			module:log("debug", "uploads:get(%q) --> %s, %d", slot_id, slot, when);
+			basename = slot.attr.filename;
+			filesize = slot.attr.size;
+			filetype = slot.attr["content-type"];
+			filetime = when;
+			upload_cache:set(slot_id, {
+					name = basename;
+					size = slot.attr.size;
+					type = filetype;
+					time = when;
+				});
+		end
 	end
 	if not basename then
 		return 404;
 	end
-	module:log("debug", "uploads:get(%q) --> %s, %d", slot_id, slot, when);
 	local last_modified = os.date('!%a, %d %b %Y %H:%M:%S GMT', filetime);
 	if request.headers.if_modified_since == last_modified then
 		return 304;
@@ -292,6 +320,7 @@ if expiry >= 0 and not external_base_url then
 		for slot_id in iter do
 			i = i + 1;
 			obsolete_files:push(get_filename(slot_id));
+			upload_cache:set(slot_id, nil);
 		end
 
 		sleep(0.1);
