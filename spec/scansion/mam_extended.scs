@@ -82,7 +82,7 @@ Romeo receives:
 # FIXME unstable tag order from util.rsm
 Romeo receives:
 	<iq type="result" id="mamquery1" to="${Romeo's full JID}">
-		<fin xmlns="urn:xmpp:mam:2" complete="true" queryid="q1" scansion:strict="false">
+		<fin xmlns="urn:xmpp:mam:2" complete="true" scansion:strict="false">
 		</fin>
 	</iq>
 
@@ -121,6 +121,6 @@ Romeo receives:
 # FIXME unstable tag order from util.rsm
 Romeo receives:
 	<iq type="result" id="mamquery2" to="${Romeo's full JID}">
-		<fin xmlns="urn:xmpp:mam:2" complete="true" queryid="q1" scansion:strict="false">
+		<fin xmlns="urn:xmpp:mam:2" complete="true" scansion:strict="false">
 		</fin>
 	</iq>
