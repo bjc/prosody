@@ -54,8 +54,9 @@
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc6455"/>
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc7301"/>
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc7395"/>
-    <!-- Added in hg:0bbbc9042361 released in 0.6.0 -->
-    <implements rdf:resource="https://datatracker.ietf.org/doc/draft-cridland-xmpp-session/"/>
+    <implements rdf:resource="https://datatracker.ietf.org/doc/draft-cridland-xmpp-session/">
+      <!-- since=0.6.0 note=Added in hg:0bbbc9042361 -->
+    </implements>
     <implements rdf:resource="http://www.unicode.org/reports/tr39/"/>
     <implements>
       <xmpp:SupportedXep>
