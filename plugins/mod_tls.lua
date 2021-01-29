@@ -153,8 +153,11 @@ module:hook_tag("http://etherx.jabber.org/streams", "features", function (sessio
 	if can_do_tls(session) then
 		if stanza:get_child("starttls", xmlns_starttls) then
 			module:log("debug", "%s is offering TLS, taking up the offer...", session.to_host);
-		else
+		elseif s2s_require_encryption then
 			module:log("debug", "%s is *not* offering TLS, trying anyways!", session.to_host);
+		else
+			module:log("debug", "%s is not offering TLS", session.to_host);
+			return;
 		end
 		session.sends2s(starttls_initiate);
 		return true;
