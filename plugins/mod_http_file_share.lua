@@ -161,7 +161,7 @@ function handle_upload(event, path) -- PUT /upload/:slot
 		authz = authz:match("^Bearer (.*)")
 	end
 	if not authz then
-		module:log("debug", "Missing Authorization");
+		module:log("debug", "Missing or malformed Authorization header");
 		return 403;
 	end
 	local authed, upload_info = jwt.verify(secret, authz);
