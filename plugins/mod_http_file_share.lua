@@ -317,7 +317,7 @@ if expiry >= 0 and not external_base_url then
 		local iter, total = assert(uploads:find(nil, {["end"] = boundary_time; total = true}));
 
 		if total == 0 then
-			module:log("info", "No expired to prune");
+			module:log("info", "No expired uploaded files to prune");
 			return;
 		end
 
