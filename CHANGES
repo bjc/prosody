@@ -7,7 +7,7 @@ TRUNK
 -   CSI improvements
 -   mod\_limits: Exempted JIDs
 -   Archive quotas
--   mod\_mimicking
+-   mod_mimicking: Prevent address spoofing
 -   Rewritten migrator
 -   SCRAM-SHA-256
 -   Bi-directional server-to-server (XEP-0288)
