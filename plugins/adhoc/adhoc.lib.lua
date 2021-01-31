@@ -51,7 +51,7 @@ function _M.handle_cmd(command, origin, stanza)
 		cmdreply = command:cmdtag("canceled", sessionid);
 	elseif data.status == "error" then
 		states[sessionid] = nil;
-		local reply = st.error_reply(stanza, data.error.type, data.error.condition, data.error.message);
+		local reply = st.error_reply(stanza, data.error);
 		origin.send(reply);
 		return true;
 	else
