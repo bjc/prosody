@@ -79,13 +79,15 @@ function get_daily_quota(uploader)
 	local iter, err = uploads:find(nil, {with = uploader; start = max_age });
 	if not iter then return iter, err; end
 	local total_bytes = 0;
-	local oldest_upload;
+	local oldest_upload = now;
 	for _, slot, when in iter do
 		local size = tonumber(slot.attr.size);
 		if size then total_bytes = total_bytes + size; end
-		if not oldest_upload then oldest_upload = when; end
+		if when < oldest_upload then oldest_upload = when; end
 	end
-	quota_cache:set(uploader, { time = oldest_upload or now, size = total_bytes });
+	-- If there were no uploads then we end up caching [now, 0], which is fine
+	-- since we increase the size on new uploads
+	quota_cache:set(uploader, { time = oldest_upload, size = total_bytes });
 	return total_bytes;
 end
 
@@ -167,8 +169,11 @@ function handle_slot_request(event)
 		return true;
 	end
 
-	-- Invalidate cache
-	quota_cache:set(uploader, nil);
+	local cached_quota = quota_cache:get(uploader);
+	if cached_quota and cached_quota.time > os.time()-86400 then
+		cached_quota.size = cached_quota.size + filesize;
+		quota_cache:set(uploader, cached_quota);
+	end
 
 	local authz = get_authz(uploader, filename, filesize, filetype, slot);
 	local slot_url = get_url(slot, filename);
