@@ -35,6 +35,7 @@ local file_size_limit = module:get_option_number(module.name .. "_size_limit", 1
 local file_types = module:get_option_set(module.name .. "_allowed_file_types", {});
 local safe_types = module:get_option_set(module.name .. "_safe_file_types", {"image/*","video/*","audio/*","text/plain"});
 local expiry = module:get_option_number(module.name .. "_expires_after", 7 * 86400);
+local daily_quota = module:get_option_number(module.name .. "_daily_quota", file_size_limit*10); -- 100 MB / day
 
 local access = module:get_option_set(module.name .. "_access", {});
 
@@ -55,6 +56,7 @@ local upload_errors = errors.init(module.name, namespace, {
 		extra = {tag = st.stanza("file-too-large", {xmlns = namespace}):tag("max-file-size"):text(tostring(file_size_limit)) };
 	};
 	filesizefmt = { type = "modify"; condition = "bad-request"; text = "File size must be positive integer"; };
+	quota = { type = "wait"; condition = "resource-constraint"; text = "Daily quota reached"; };
 });
 
 local upload_cache = cache.new(1024);
@@ -64,6 +66,18 @@ local function B(bytes) return hi.format(bytes, "B", "b"); end
 
 local function get_filename(slot, create)
 	return dm.getpath(slot, module.host, module.name, "bin", create)
+end
+
+-- TODO cache
+function get_daily_quota(uploader)
+	local iter, err = uploads:find(nil, {with = uploader; start = os.time() - 86400});
+	if not iter then return iter, err; end
+	local total_bytes = 0;
+	for _, slot in iter do
+		local size = tonumber(slot.attr.size);
+		if size then total_bytes = total_bytes + size; end
+	end
+	return total_bytes;
 end
 
 function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
@@ -82,6 +96,11 @@ function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
 	end
 	if filesize > file_size_limit then
 		return false, upload_errors.new("filesize");
+	end
+
+	local uploader_quota = get_daily_quota(uploader);
+	if uploader_quota + filesize > daily_quota then
+		return false, upload_errors.new("quota");
 	end
 
 	if not ( file_types:empty() or file_types:contains(filetype) or file_types:contains(filetype:gsub("/.*", "/*")) ) then
