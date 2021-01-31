@@ -60,6 +60,7 @@ local upload_errors = errors.init(module.name, namespace, {
 });
 
 local upload_cache = cache.new(1024);
+local quota_cache = cache.new(1024);
 
 -- Convenience wrapper for logging file sizes
 local function B(bytes) return hi.format(bytes, "B", "b"); end
@@ -68,17 +69,23 @@ local function get_filename(slot, create)
 	return dm.getpath(slot, module.host, module.name, "bin", create)
 end
 
--- TODO cache
 function get_daily_quota(uploader)
 	local now = os.time();
 	local max_age = now - 86400;
+	local cached = quota_cache:get(uploader);
+	if cached and cached.time > max_age then
+		return cached.size;
+	end
 	local iter, err = uploads:find(nil, {with = uploader; start = max_age });
 	if not iter then return iter, err; end
 	local total_bytes = 0;
-	for _, slot in iter do
+	local oldest_upload;
+	for _, slot, when in iter do
 		local size = tonumber(slot.attr.size);
 		if size then total_bytes = total_bytes + size; end
+		if not oldest_upload then oldest_upload = when; end
 	end
+	quota_cache:set(uploader, { time = oldest_upload or now, size = total_bytes });
 	return total_bytes;
 end
 
@@ -159,6 +166,9 @@ function handle_slot_request(event)
 		origin.send(st.error_reply(stanza, storage_err));
 		return true;
 	end
+
+	-- Invalidate cache
+	quota_cache:set(uploader, nil);
 
 	local authz = get_authz(uploader, filename, filesize, filetype, slot);
 	local slot_url = get_url(slot, filename);
