@@ -70,7 +70,9 @@ end
 
 -- TODO cache
 function get_daily_quota(uploader)
-	local iter, err = uploads:find(nil, {with = uploader; start = os.time() - 86400});
+	local now = os.time();
+	local max_age = now - 86400;
+	local iter, err = uploads:find(nil, {with = uploader; start = max_age });
 	if not iter then return iter, err; end
 	local total_bytes = 0;
 	for _, slot in iter do
