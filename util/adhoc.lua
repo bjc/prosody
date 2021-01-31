@@ -23,8 +23,14 @@ local function new_initial_data_form(form, initial_data, result_handler)
 			local fields, err = form:data(data.form);
 			return result_handler(fields, err, data);
 		else
+			local values, err = initial_data(data);
+			if type(err) == "table" then
+				return {status = "error"; error = err}
+			elseif type(err) == "string" then
+				return {status = "error"; error = {type = "cancel"; condition = "internal-server-error", err}}
+			end
 			return { status = "executing", actions = {"next", "complete", default = "complete"},
-				 form = { layout = form, values = initial_data(data) } }, "executing";
+				 form = { layout = form, values = values } }, "executing";
 		end
 	end
 end
