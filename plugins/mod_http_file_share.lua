@@ -121,7 +121,7 @@ function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
 	return true;
 end
 
-function get_authz(uploader, filename, filesize, filetype, slot)
+function get_authz(slot, uploader, filename, filesize, filetype)
 	return jwt.sign(secret, {
 		sub = uploader;
 		filename = filename;
@@ -175,7 +175,7 @@ function handle_slot_request(event)
 		quota_cache:set(uploader, cached_quota);
 	end
 
-	local authz = get_authz(uploader, filename, filesize, filetype, slot);
+	local authz = get_authz(slot, uploader, filename, filesize, filetype);
 	local slot_url = get_url(slot, filename);
 	local upload_url = slot_url;
 
