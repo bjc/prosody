@@ -406,6 +406,28 @@ describe("storagemanager", function ()
 					end);
 
 
+					it("can be queried in reverse", function ()
+
+						local data, err = archive:find("user", {
+								reverse = true;
+								limit = 3;
+							});
+						assert.truthy(data, err);
+
+						local i = #test_data;
+						for id, item in data do
+							assert.truthy(id);
+							assert.equal(test_data[i][1], id);
+							assert(st.is_stanza(item));
+							assert.equal("test", item.name);
+							assert.equal("urn:example:foo", item.attr.xmlns);
+							assert.equal(2, #item.tags);
+							i = i - 1;
+						end
+
+					end);
+
+
 				end);
 
 				it("can selectively delete items", function ()
