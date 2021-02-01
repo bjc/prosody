@@ -482,6 +482,53 @@ function archive_store:find(username, query)
 	end, total;
 end
 
+function archive_store:get(username, key)
+	local iter, err = self:find(username, { key = key })
+	if not iter then return iter, err; end
+	for _, stanza, when, with in iter do
+		return stanza, when, with;
+	end
+	return nil, "item-not-found";
+end
+
+function archive_store:set(username, key, new_value, new_when, new_with)
+	local user,store = username,self.store;
+	local ok, result = engine:transaction(function ()
+
+		local update_query = [[
+		UPDATE "prosodyarchive"
+		SET %s
+		WHERE %s
+		]];
+		local args = { host, user or "", store, key };
+		local setf = {};
+		local where = { "\"host\" = ?", "\"user\" = ?", "\"store\" = ?", "\"key\" = ?"};
+
+		if new_value then
+			table.insert(setf, '"type" = ?')
+			table.insert(setf, '"value" = ?')
+			local t, value = serialize(new_value);
+			table.insert(args, 1, t);
+			table.insert(args, 2, value);
+		end
+
+		if new_when then
+			table.insert(setf, 1, '"when" = ?')
+			table.insert(args, 1, new_when);
+		end
+
+		if new_with then
+			table.insert(setf, 1, '"with" = ?')
+			table.insert(args, 1, new_with);
+		end
+
+		update_query = update_query:format(t_concat(setf, ", "), t_concat(where, " AND "));
+		return engine:update(update_query, unpack(args));
+	end);
+	if not ok then return ok, result; end
+	return result:affected() == 1;
+end
+
 function archive_store:summary(username, query)
 	query = query or {};
 	local user,store = username,self.store;
