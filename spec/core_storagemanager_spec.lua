@@ -556,7 +556,7 @@ describe("storagemanager", function ()
 					local id = archive:append("mapuser", nil, test_stanza, test_time, "contact@example.com");
 					do
 						local stanza_roundtrip, when, with = archive:get("mapuser", id);
-						assert.same(test_stanza, stanza_roundtrip, "same stanza is returned");
+						assert.same(tostring(test_stanza), tostring(stanza_roundtrip), "same stanza is returned");
 						assert.equal(test_time, when, "same 'when' is returned");
 						assert.equal("contact@example.com", with, "same 'with' is returned");
 					end
@@ -568,7 +568,7 @@ describe("storagemanager", function ()
 
 					do
 						local replaced, when, with = archive:get("mapuser", id);
-						assert.same(replacement_stanza, replaced, "replaced stanza is returned");
+						assert.same(tostring(replacement_stanza), tostring(replaced), "replaced stanza is returned");
 						assert.equal(test_time+1, when, "modified 'when' is returned");
 						assert.equal("contact@example.com", with, "original 'with' is returned");
 					end
