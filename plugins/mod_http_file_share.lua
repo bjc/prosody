@@ -62,6 +62,8 @@ local upload_errors = errors.init(module.name, namespace, {
 local upload_cache = cache.new(1024);
 local quota_cache = cache.new(1024);
 
+local measure_uploads = module:measure("upload", "sizes");
+
 -- Convenience wrapper for logging file sizes
 local function B(bytes) return hi.format(bytes, "B", "b"); end
 
@@ -255,6 +257,7 @@ function handle_upload(event, path) -- PUT /upload/:slot
 		if uploaded then
 			module:log("debug", "Upload of %q completed, %s", filename, B(final_size));
 			assert(os.rename(filename.."~", filename));
+			measure_uploads(final_size);
 
 			upload_cache:set(upload_info.slot, {
 					name = upload_info.filename;
