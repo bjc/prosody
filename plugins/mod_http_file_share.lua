@@ -354,9 +354,11 @@ if expiry >= 0 and not external_base_url then
 
 	local reaper_task = async.runner(function(boundary_time)
 		local iter, total = assert(uploads:find(nil, {["end"] = boundary_time; total = true}));
+		local prune_done = module:measure("prune", "times");
 
 		if total == 0 then
 			module:log("info", "No expired uploaded files to prune");
+			prune_done();
 			return;
 		end
 
@@ -400,6 +402,7 @@ if expiry >= 0 and not external_base_url then
 			module:log("error", "Problem removing metadata for deleted files: %s", err);
 		end
 
+		prune_done();
 	end);
 
 	module:add_timer(1, function ()
