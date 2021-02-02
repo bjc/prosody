@@ -274,6 +274,9 @@ function handle_upload(event, path) -- PUT /upload/:slot
 
 end
 
+local download_cache_hit = module:measure("download_cache_hit", "rate");
+local download_cache_miss = module:measure("download_cache_miss", "rate");
+
 function handle_download(event, path) -- GET /uploads/:slot+filename
 	local request, response = event.request, event.response;
 	local slot_id = path:match("^[^/]+");
@@ -281,7 +284,7 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 	local cached = upload_cache:get(slot_id);
 	if cached then
 		module:log("debug", "Cache hit");
-		-- TODO stats (instead of logging?)
+		download_cache_hit();
 		basename = cached.name;
 		filesize = cached.size;
 		filetype = cached.type;
@@ -290,6 +293,7 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 		-- TODO cache negative hits?
 	else
 		module:log("debug", "Cache miss");
+		download_cache_miss();
 		local slot, when = errors.coerce(uploads:get(nil, slot_id));
 		if not slot then
 			module:log("debug", "uploads:get(%q) --> not-found, %s", slot_id, when);
