@@ -1224,12 +1224,17 @@ def_env.http = {};
 
 function def_env.http:list(hosts)
 	local print = self.session.print;
+	hosts = array.collect(set.new({ not hosts and "*" or nil }) + get_hosts_set(hosts)):sort(_sort_hosts);
 
-	for host in get_hosts_set(hosts) do
+	for _, host in ipairs(hosts) do
 		local http_apps = modulemanager.get_items("http-provider", host);
 		if #http_apps > 0 then
 			local http_host = module:context(host):get_option_string("http_host");
-			print("HTTP endpoints on "..host..(http_host and (" (using "..http_host.."):") or ":"));
+			if host == "*" then
+				print("Global HTTP endpoints available on all hosts:");
+			else
+				print("HTTP endpoints on "..host..(http_host and (" (using "..http_host.."):") or ":"));
+			end
 			for _, provider in ipairs(http_apps) do
 				local url = module:context(host):http_url(provider.name, provider.default_path);
 				print("", url);
