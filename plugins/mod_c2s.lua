@@ -90,7 +90,7 @@ function stream_callbacks._streamopened(session, attr)
 		return;
 	end
 
-	session:open_stream();
+	session:open_stream(host, attr.from);
 
 	(session.log or log)("debug", "Sent reply <stream:stream> to client");
 	session.notopen = nil;
