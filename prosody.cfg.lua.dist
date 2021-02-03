@@ -196,6 +196,9 @@ certificates = "certs"
 -- Settings under each VirtualHost entry apply *only* to that host.
 
 VirtualHost "localhost"
+-- Prosody requires at least one enabled VirtualHost to function. You can
+-- safely remove or disable 'localhost' once you have added another.
+
 
 --VirtualHost "example.com"
 --	certificate = "/path/to/example.crt"
