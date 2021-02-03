@@ -37,6 +37,7 @@ local serialize_config = serialization.new ({ fatal = false, unquoted = true});
 local time = require "util.time";
 
 local format_number = require "util.human.units".format;
+local format_table = require "util.human.io".table;
 
 local commands = module:shared("commands")
 local def_env = module:shared("env");
@@ -1225,6 +1226,10 @@ def_env.http = {};
 function def_env.http:list(hosts)
 	local print = self.session.print;
 	hosts = array.collect(set.new({ not hosts and "*" or nil }) + get_hosts_set(hosts)):sort(_sort_hosts);
+	local output = format_table({
+			{ title = "Module", width = "20%" },
+			{ title = "URL", width = "80%" },
+		}, 132);
 
 	for _, host in ipairs(hosts) do
 		local http_apps = modulemanager.get_items("http-provider", host);
@@ -1235,11 +1240,12 @@ function def_env.http:list(hosts)
 			else
 				print("HTTP endpoints on "..host..(http_host and (" (using "..http_host.."):") or ":"));
 			end
+			print(output());
 			for _, provider in ipairs(http_apps) do
 				local mod = provider._provided_by;
 				local url = module:context(host):http_url(provider.name, provider.default_path);
 				mod = mod and "mod_"..mod or ""
-				print("", mod, url);
+				print(output{mod, url});
 			end
 			print("");
 		end
