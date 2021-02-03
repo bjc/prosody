@@ -1,3 +1,5 @@
+# XEP-0363 HTTP Upload with mod_http_file_share
+
 [Client] Romeo
 	password: password
 	jid: filesharingenthusiast@localhost/krxLaE3s
