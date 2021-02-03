@@ -1238,7 +1238,6 @@ function def_env.http:list(hosts)
 			for _, provider in ipairs(http_apps) do
 				local mod = provider._provided_by;
 				local url = module:context(host):http_url(provider.name, provider.default_path);
-				print("", url);
 				mod = mod and "mod_"..mod or ""
 				print("", mod, url);
 			end
