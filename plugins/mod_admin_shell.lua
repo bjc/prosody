@@ -189,6 +189,7 @@ function commands.help(session, data)
 		print [[module - Commands to load/reload/unload modules/plugins]]
 		print [[host - Commands to activate, deactivate and list virtual hosts]]
 		print [[user - Commands to create and delete users, and change their passwords]]
+		print [[muc - Commands to create, list and manage chat rooms]]
 		print [[server - Uptime, version, shutting down, etc.]]
 		print [[port - Commands to manage ports the server is listening on]]
 		print [[dns - Commands to manage and inspect the internal DNS resolver]]
@@ -225,6 +226,11 @@ function commands.help(session, data)
 		print [[user:password(jid, password) - Set the password for the specified user account]]
 		print [[user:delete(jid) - Permanently remove the specified user account]]
 		print [[user:list(hostname, pattern) - List users on the specified host, optionally filtering with a pattern]]
+	elseif section == "muc" then
+		-- TODO `muc:room():foo()` commands
+		print [[muc:create(roomjid, { config }) - Create the specified MUC room with the given config]]
+		print [[muc:list(host) - List rooms on the specified MUC component]]
+		print [[muc:room(roomjid) - Create the specified MUC room with the given config]]
 	elseif section == "server" then
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
