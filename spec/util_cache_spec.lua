@@ -311,6 +311,30 @@ describe("util.cache", function()
 
 			expect_kv("e", 5, c5:head());
 			expect_kv("c", 3, c5:tail());
+
+		end);
+
+		(_VERSION=="Lua 5.1" and pending or it)(":table works", function ()
+			local t = cache.new(3):table();
+			assert.is.table(t);
+			t["a"] = "1";
+			assert.are.equal(t["a"], "1");
+			t["b"] = "2";
+			assert.are.equal(t["b"], "2");
+			t["c"] = "3";
+			assert.are.equal(t["c"], "3");
+			t["d"] = "4";
+			assert.are.equal(t["d"], "4");
+			assert.are.equal(t["a"], nil);
+
+				local i = spy.new(function () end);
+				for k, v in pairs(t) do
+					i(k,v)
+				end
+				assert.spy(i).was_called();
+				assert.spy(i).was_called_with("b", "2");
+				assert.spy(i).was_called_with("c", "3");
+				assert.spy(i).was_called_with("d", "4");
 		end);
 	end);
 end);
