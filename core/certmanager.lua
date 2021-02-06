@@ -118,7 +118,10 @@ local core_defaults = {
 		single_dh_use = luasec_has.options.single_dh_use;
 		single_ecdh_use = luasec_has.options.single_ecdh_use;
 	};
-	verifyext = { "lsec_continue", "lsec_ignore_purpose" };
+	verifyext = {
+		"lsec_continue", -- Continue past certificate verification errors
+		"lsec_ignore_purpose", -- Validate client certificates as if they were server certificates
+	};
 	curve = luasec_has.algorithms.ec and not luasec_has.capabilities.curves_list and "secp384r1";
 	curveslist = {
 		"X25519",
