@@ -320,7 +320,7 @@ local type_map = {
 }
 
 local function users(host, store, typ) -- luacheck: ignore 431/store
-	typ = type_map[typ or "keyval"];
+	typ = "."..(type_map[typ or "keyval"] or typ);
 	local store_dir = format("%s/%s/%s", data_path, encode(host), store_encode(store));
 
 	local mode, err = lfs.attributes(store_dir, "mode");
@@ -330,9 +330,8 @@ local function users(host, store, typ) -- luacheck: ignore 431/store
 	local next, state = lfs.dir(store_dir); -- luacheck: ignore 431/next 431/state
 	return function(state) -- luacheck: ignore 431/state
 		for node in next, state do
-			local file, ext = node:match("^(.*)%.([dalist]+)$");
-			if file and ext == typ then
-				return decode(file);
+			if node:sub(-#typ, -1) == typ then
+				return decode(node:sub(1, -#typ-1));
 			end
 		end
 	end, state;
