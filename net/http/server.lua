@@ -96,41 +96,42 @@ end, -1);
 local runner_callbacks = {};
 
 function runner_callbacks:ready()
-	self.data:resume();
+	self.data.conn:resume();
 end
 
 function runner_callbacks:waiting()
-	self.data:pause();
+	self.data.conn:pause();
 end
 
 function runner_callbacks:error(err)
 	log("error", "Traceback[httpserver]: %s", err);
-	self.data:write("HTTP/1.0 500 Internal Server Error\r\n\r\n"..events.fire_event("http-error", { code = 500, private_message = err }));
-	self.data:close();
+	self.data.conn:write("HTTP/1.0 500 Internal Server Error\r\n\r\n"..events.fire_event("http-error", { code = 500, private_message = err }));
+	self.data.conn:close();
 end
 
 function listener.onconnect(conn)
+	local session = { conn = conn };
 	local secure = conn:ssl() and true or nil;
-	conn._thread = async.runner(function (request)
+	session.thread = async.runner(function (request)
 		local wait, done = async.waiter();
 		handle_request(conn, request, done); wait();
-	end, runner_callbacks, conn);
+	end, runner_callbacks, session);
 	local function success_cb(request)
 		--log("debug", "success_cb: %s", request.path);
 		request.secure = secure;
-		conn._thread:run(request);
+		session.thread:run(request);
 	end
 	local function error_cb(err)
 		log("debug", "error_cb: %s", err or "<nil>");
 		-- FIXME don't close immediately, wait until we process current stuff
 		-- FIXME if err, send off a bad-request response
-		sessions[conn] = nil;
 		conn:close();
 	end
 	local function options_cb()
 		return options;
 	end
-	sessions[conn] = parser_new(success_cb, error_cb, "server", options_cb);
+	session.parser = parser_new(success_cb, error_cb, "server", options_cb);
+	sessions[conn] = session;
 end
 
 function listener.ondisconnect(conn)
@@ -149,7 +150,7 @@ function listener.ondetach(conn)
 end
 
 function listener.onincoming(conn, data)
-	sessions[conn]:feed(data);
+	sessions[conn].parser:feed(data);
 end
 
 function listener.ondrain(conn)
