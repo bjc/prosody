@@ -224,6 +224,15 @@ function handle_upload(event, path) -- PUT /upload/:slot
 
 	local filename = get_filename(upload_info.slot, true);
 
+	do
+		-- check if upload has been completed already
+		-- we want to allow retry of a failed upload attempt, but not after it's been completed
+		local f = io.open(filename, "r");
+		if f then
+			f:close();
+			return 409;
+		end
+	end
 
 	if not request.body_sink then
 		module:log("debug", "Preparing to receive upload into %q, expecting %s", filename, B(upload_info.filesize));
