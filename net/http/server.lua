@@ -109,11 +109,20 @@ function runner_callbacks:error(err)
 	self.data.conn:close();
 end
 
+local function noop() end
 function listener.onconnect(conn)
 	local session = { conn = conn };
 	local secure = conn:ssl() and true or nil;
 	session.thread = async.runner(function (request)
-		local wait, done = async.waiter();
+		local wait, done;
+		if request.partial == true then
+			-- Have the header for a request, we want to receive the rest
+			-- when we've decided where the data should go.
+			wait, done = noop, noop;
+		else -- Got the entire request
+			-- Hold off on receiving more incoming requests until this one has been handled.
+			wait, done = async.waiter();
+		end
 		handle_request(conn, request, done); wait();
 	end, runner_callbacks, session);
 	local function success_cb(request)
