@@ -233,6 +233,9 @@ function handle_upload(event, path) -- PUT /upload/:slot
 		end
 		request.body_sink = fh;
 		if request.body == false then
+			if request.headers.expect == "100-continue" then
+				request.conn:write("HTTP/1.1 100 Continue\r\n\r\n");
+			end
 			return true;
 		end
 	end
