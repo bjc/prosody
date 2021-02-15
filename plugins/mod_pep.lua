@@ -422,6 +422,7 @@ module:hook("account-disco-info", function(event)
 		"presence-subscribe",
 	};
 
+	reply:tag('feature', {var=xmlns_pubsub}):up();
 	for feature in supported_features do
 		reply:tag('feature', {var=xmlns_pubsub.."#"..feature}):up();
 	end
