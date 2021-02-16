@@ -127,6 +127,7 @@ local function manage_buffer(stanza, session)
 		flush_reasons[why or "important"]();
 		session.log("debug", "Flushing buffer (%s; queue size is %d)", why or "important", session.csi_counter);
 		session.conn:resume_writes();
+		session.state = "flushing";
 	else
 		session.log("debug", "Holding buffer (%s; queue size is %d)", why or "unimportant", session.csi_counter);
 		stanza = with_timestamp(stanza, jid.join(session.username, session.host))
@@ -188,7 +189,8 @@ end, 1);
 
 module:hook("c2s-ondrain", function (event)
 	local session = event.session;
-	if session.state == "inactive" and session.conn and session.conn.pause_writes then
+	if (session.state == "flushing" or session.state == "inactive") and session.conn and session.conn.pause_writes then
+		session.state = "inactive";
 		session.conn:pause_writes();
 		session.csi_measure_buffer_hold = measure_buffer_hold();
 		session.log("debug", "Buffer flushed, resuming inactive mode (queue size was %d)", session.csi_counter);
