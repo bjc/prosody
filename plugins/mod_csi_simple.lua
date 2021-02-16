@@ -128,6 +128,7 @@ local function manage_buffer(stanza, session)
 		session.log("debug", "Flushing buffer (%s; queue size is %d)", why or "important", session.csi_counter);
 		session.conn:resume_writes();
 		session.state = "flushing";
+		module:fire_event("csi-flushing", { session = session });
 	else
 		session.log("debug", "Holding buffer (%s; queue size is %d)", why or "unimportant", session.csi_counter);
 		stanza = with_timestamp(stanza, jid.join(session.username, session.host))
