@@ -174,7 +174,7 @@ end
 
 module:wrap_object_event(server._events, false, function (handlers, event_name, event_data)
 	local request = event_data.request;
-	if request and is_trusted_proxy(request.conn:ip()) then
+	if request and trusted_proxies[request.conn:ip()] then
 		-- Not included in eg http-error events
 		request.ip = get_ip_from_request(request);
 	end
