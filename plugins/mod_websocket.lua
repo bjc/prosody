@@ -266,7 +266,7 @@ function handle_request(event)
 	-- See mod_http and #540
 	session.ip = request.ip;
 
-	session.secure = consider_websocket_secure or session.secure;
+	session.secure = consider_websocket_secure or request.secure or session.secure;
 	session.websocket_request = request;
 
 	session.open_stream = session_open_stream;
