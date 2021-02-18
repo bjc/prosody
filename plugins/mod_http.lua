@@ -223,6 +223,9 @@ module.add_host(module); -- set up handling on global context too
 local trusted_proxies = module:get_option_set("trusted_proxies", { "127.0.0.1", "::1" })._items;
 
 local function is_trusted_proxy(ip)
+	if trusted_proxies[ip] then
+		return true;
+	end
 	local parsed_ip = new_ip(ip)
 	for trusted_proxy in trusted_proxies do
 		if match_ip(parsed_ip, parse_cidr(trusted_proxy)) then
