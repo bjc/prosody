@@ -26,31 +26,12 @@ local html = [[
 <meta charset="utf-8">
 <title>{title}</title>
 <style>
-body {
-	margin-top : 14%;
-	text-align : center;
-	background-color : #F8F8F8;
-	font-family : sans-serif
-}
-
-h1 {
-	font-size : xx-large
-}
-
-p {
-	font-size : x-large
-}
-
-p.extra {
-	font-size : large;
-	font-family : courier
-}
-
-@media(prefers-color-scheme: dark) {
-	body {
-		background-color: #161616;
-		color: #eee
-	}
+body{margin-top:14%;text-align:center;background-color:#f8f8f8;font-family:sans-serif}
+h1{font-size:xx-large}
+p{font-size:x-large}
+p.extra{font-size:large;font-family:courier}
+@media(prefers-color-scheme:dark){
+body{background-color:#161616;color:#eee}
 }
 </style>
 </head>
