@@ -259,6 +259,10 @@ module:wrap_object_event(server._events, false, function (handlers, event_name, 
 	if request and is_trusted_proxy(request.conn:ip()) then
 		-- Not included in eg http-error events
 		request.ip = get_ip_from_request(request);
+
+		if not request.secure and request.headers.x_forwarded_proto == "https" then
+			request.secure = true;
+		end
 	end
 	return handlers(event_name, event_data);
 end);
