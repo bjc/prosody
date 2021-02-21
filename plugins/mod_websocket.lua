@@ -135,8 +135,11 @@ local function filter_open_close(data)
 	return data;
 end
 
+local default_get_response_text = "It works! Now point your WebSocket client to this URL to connect to Prosody."
+local websocket_get_response_text = module:get_option_string("websocket_get_response_text", default_get_response_text)
+
 local default_get_response_body = [[<!DOCTYPE html><html><head><title>Websocket</title></head><body>
-<p>It works! Now point your WebSocket client to this URL to connect to Prosody.</p>
+<p>]]..websocket_get_response_text..[[</p>
 </body></html>]]
 local websocket_get_response_body = module:get_option_string("websocket_get_response_body", default_get_response_body)
 
@@ -205,9 +208,14 @@ function handle_request(event)
 	conn.starttls = false; -- Prevent mod_tls from believing starttls can be done
 
 	if not request.headers.sec_websocket_key or request.method ~= "GET" then
-		response.headers.content_type = "text/html";
-		return websocket_get_response_body;
-	end
+		return module:fire_event("http-message", {
+			response = event.response;
+			---
+			title = "Prosody WebSocket endpoint";
+			message = websocket_get_response_text;
+			warning = not (consider_websocket_secure or request.secure) and "This endpoint is not considered secure!" or nil;
+		}) or websocket_get_response_body;
+		end
 
 	local wants_xmpp = contains_token(request.headers.sec_websocket_protocol or "", "xmpp");
 
