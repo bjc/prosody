@@ -530,17 +530,15 @@ function stream_callbacks.error(context, error)
 	end
 end
 
-local GET_response_body = [[<html><body>
-	<p>It works! Now point your BOSH client to this URL to connect to Prosody.</p>
-	<p>For more information see <a href="https://prosody.im/doc/setting_up_bosh">Prosody: Setting up BOSH</a>.</p>
-	</body></html>]];
-
-local GET_response = {
-	headers = {
-		content_type = "text/html";
-	};
-	body = module:get_option_string("bosh_get_response_body", GET_response_body);
-};
+local function GET_response(event)
+	return module:fire_event("http-message", {
+		response = event.response;
+		---
+		title = "Prosody BOSH endpoint";
+		message = "It works! Now point your BOSH client to this URL to connect to Prosody.";
+		-- <p>For more information see <a href="https://prosody.im/doc/setting_up_bosh">Prosody: Setting up BOSH</a>.</p>
+	}) or "This is the Prosody BOSH endpoint.";
+end
 
 module:depends("http");
 module:provides("http", {
