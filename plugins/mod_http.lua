@@ -160,7 +160,13 @@ function module.add_host(module)
 
 		local streaming = event.item.streaming_uploads;
 
-		for key, handler in pairs(event.item.route or {}) do
+		if not event.item.route then
+			-- TODO: Link to docs
+			module:log("error", "HTTP app %q provides no 'route', a typo or mistake?", app_name);
+			return;
+		end
+
+		for key, handler in pairs(event.item.route) do
 			local event_name = get_http_event(host, app_path, key);
 			if event_name then
 				local method = event_name:match("^%S+");
