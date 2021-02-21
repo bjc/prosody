@@ -435,6 +435,15 @@ module:provides("http", {
 		route = {
 			["PUT /*"] = handle_upload;
 			["GET /*"] = handle_download;
+			["GET /"] = function (event)
+				return prosody.events.fire_event("http-message", {
+						response = event.response;
+						---
+						title = "Prosody HTTP Upload endpoint";
+						message = "This is where files will be uploaded to, and served from.";
+						warning = not (event.request.secure) and "This endpoint is not considered secure!" or nil;
+					}) or "This is the Prosody HTTP Upload endpoint.";
+			end
 		}
 	});
 end
