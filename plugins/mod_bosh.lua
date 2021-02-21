@@ -536,6 +536,7 @@ local function GET_response(event)
 		---
 		title = "Prosody BOSH endpoint";
 		message = "It works! Now point your BOSH client to this URL to connect to Prosody.";
+		warning = not (consider_bosh_secure or event.request.secure) and "This endpoint is not considered secure!" or nil;
 		-- <p>For more information see <a href="https://prosody.im/doc/setting_up_bosh">Prosody: Setting up BOSH</a>.</p>
 	}) or "This is the Prosody BOSH endpoint.";
 end
