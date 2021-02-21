@@ -29,15 +29,18 @@ local html = [[
 body{margin-top:14%;text-align:center;background-color:#f8f8f8;font-family:sans-serif}
 h1{font-size:xx-large}
 p{font-size:x-large}
+p.warning{font-size:large;background-color:yellow}
 p.extra{font-size:large;font-family:courier}
 @media(prefers-color-scheme:dark){
 body{background-color:#161616;color:#eee}
+p.warning{background-color:inherit;color:yellow}
 }
 </style>
 </head>
 <body>
 <h1>{title}</h1>
 <p>{message}</p>
+{warning&<p class="warning">&#9888; {warning?} &#9888;</p>}
 {extra&<p class="extra">{extra?}</p>}
 </body>
 </html>
