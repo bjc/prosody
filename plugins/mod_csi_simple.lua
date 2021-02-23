@@ -218,3 +218,35 @@ function module.unload()
 		end
 	end
 end
+
+function module.command(arg)
+	if arg[1] ~= "test" then
+		print("Usage: "..module.name.." test < test-stream.xml")
+		print("");
+		print("Provide a series of stanzas to test against importance algoritm");
+		return 1;
+	end
+	-- luacheck: ignore 212/self
+	local xmppstream = require "util.xmppstream";
+	local input_session = { notopen = true }
+	local stream_callbacks = { stream_ns = "jabber:client", default_ns = "jabber:client" };
+	function stream_callbacks:handlestanza(stanza)
+		local important, because = is_important(stanza);
+		print("--");
+		print(stanza:indent(nil, "  "));
+		-- :pretty_print() maybe?
+		if important then
+			print((because or "unspecified reason").. " -> important");
+		else
+			print((because or "unspecified reason").. " -> unimportant");
+		end
+	end
+	local input_stream = xmppstream.new(input_session, stream_callbacks);
+	input_stream:reset();
+	input_stream:feed(st.stanza("stream", { xmlns = "jabber:client" }):top_tag());
+	input_session.notopen = nil;
+
+	for line in io.lines() do
+		input_stream:feed(line);
+	end
+end
