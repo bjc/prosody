@@ -162,7 +162,7 @@ function module.add_host(module)
 
 		if not event.item.route then
 			-- TODO: Link to docs
-			module:log("error", "HTTP app %q provides no 'route', a typo or mistake?", app_name);
+			module:log("error", "HTTP app %q provides no 'route', add one to handle HTTP requests", app_name);
 			return;
 		end
 
