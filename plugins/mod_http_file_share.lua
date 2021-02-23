@@ -432,6 +432,9 @@ module:hook("iq-get/host/urn:xmpp:http:upload:0:request", handle_slot_request);
 if not external_base_url then
 module:provides("http", {
 		streaming_uploads = true;
+		cors = {
+			credentials = true;
+		};
 		route = {
 			["PUT /*"] = handle_upload;
 			["GET /*"] = handle_download;
