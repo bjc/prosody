@@ -336,6 +336,9 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 		return ferr or 410;
 	end
 
+	if not filetype then
+		filetype = "application/octet-stream";
+	end
 	local disposition = "attachment";
 	if safe_types:contains(filetype) or safe_types:contains(filetype:gsub("/.*", "/*")) then
 		disposition = "inline";
@@ -343,7 +346,7 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 
 	response.headers.last_modified = last_modified;
 	response.headers.content_length = filesize;
-	response.headers.content_type = filetype or "application/octet-stream";
+	response.headers.content_type = filetype;
 	response.headers.content_disposition = string.format("%s; filename=%q", disposition, basename);
 
 	response.headers.cache_control = "max-age=31556952, immutable";
