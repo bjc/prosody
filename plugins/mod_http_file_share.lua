@@ -383,39 +383,49 @@ if expiry >= 0 and not external_base_url then
 
 		module:log("info", "Pruning expired files uploaded earlier than %s", dt.datetime(boundary_time));
 
-		local obsolete_files = array();
+		local obsolete_uploads = array();
 		local i = 0;
 		for slot_id in iter do
 			i = i + 1;
-			obsolete_files:push(get_filename(slot_id));
+			obsolete_uploads:push(slot_id);
 			upload_cache:set(slot_id, nil);
 		end
 
 		sleep(0.1);
 		local n = 0;
-		obsolete_files:filter(function(filename)
+		local problem_deleting = false;
+		obsolete_uploads:filter(function(slot_id)
 			n = n + 1;
 			if i % 100 == 0 then sleep(0.1); end
+			local filename = get_filename(slot_id);
 			local deleted, err, errno = os.remove(filename);
 			if deleted or errno == ENOENT then
-				return false;
+				return true;
 			else
 				module:log("error", "Could not delete file %q: %s", filename, err);
-				return true;
+				problem_deleting = true;
+				return false;
 			end
 		end);
+		-- obsolete_uploads now contains slot ids for which the files have been
+		-- deleted and that needs to be cleared from the database
 
 		local deletion_query = {["end"] = boundary_time};
-		if #obsolete_files == 0 then
-			module:log("info", "All %d expired files deleted", n);
+		if not problem_deleting then
+			module:log("info", "All (%d) expired files successfully deleted", n);
+			-- we can delete based on time
 		else
-			module:log("warn", "%d out of %d expired files could not be deleted", #obsolete_files, n);
-			deletion_query = {ids = obsolete_files};
+			module:log("warn", "%d out of %d expired files could not be deleted", n-#obsolete_uploads, n);
+			-- we'll need to delete only those entries where the files were
+			-- successfully deleted, and then try again with the failed ones.
+			-- eventually the admin ought to notice and fix the permissions or
+			-- whatever the problem is.
+			deletion_query = {ids = obsolete_uploads};
 		end
 
 		local removed, err = uploads:delete(nil, deletion_query);
 
-		if removed == true or removed == n or removed == #obsolete_files then
+		if removed == true or removed == n or removed == #obsolete_uploads then
 			module:log("debug", "Removed all metadata for expired uploaded files");
 		else
 			module:log("error", "Problem removing metadata for deleted files: %s", err);
