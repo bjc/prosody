@@ -69,6 +69,7 @@ local function get_page(code, extra)
 	end
 end
 
+-- Main error page handler
 module:hook_object_event(server, "http-error", function (event)
 	if event.response then
 		event.response.headers.content_type = "text/html; charset=utf-8";
@@ -76,6 +77,7 @@ module:hook_object_event(server, "http-error", function (event)
 	return get_page(event.code, (show_private and event.private_message) or event.message or (event.error and event.error.text));
 end);
 
+-- Way to use the template for other things so to give a consistent appearance
 module:hook("http-message", function (event)
 	if event.response then
 		event.response.headers.content_type = "text/html; charset=utf-8";
@@ -83,6 +85,7 @@ module:hook("http-message", function (event)
 	return render(html, event);
 end);
 
+-- Something nicer shown instead of 404 at the root path, if nothing else handles this path
 module:hook_object_event(server, "http-error", function (event)
 	local request, response = event.request, event.response;
 	if request and response and request.path == "/" and response.status_code == 404 then
