@@ -423,12 +423,16 @@ if expiry >= 0 and not external_base_url then
 			deletion_query = {ids = obsolete_uploads};
 		end
 
-		local removed, err = uploads:delete(nil, deletion_query);
-
-		if removed == true or removed == n or removed == #obsolete_uploads then
-			module:log("debug", "Removed all metadata for expired uploaded files");
+		if #obsolete_uploads == 0 then
+			module:log("debug", "No metadata to remove");
 		else
-			module:log("error", "Problem removing metadata for deleted files: %s", err);
+			local removed, err = uploads:delete(nil, deletion_query);
+
+			if removed == true or removed == n or removed == #obsolete_uploads then
+				module:log("debug", "Removed all metadata for expired uploaded files");
+			else
+				module:log("error", "Problem removing metadata for deleted files: %s", err);
+			end
 		end
 
 		prune_done();
