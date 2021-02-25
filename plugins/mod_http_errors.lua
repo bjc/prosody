@@ -15,6 +15,15 @@ local default_messages = {
 		"Where did you put it?", "It's behind you.", "Keep looking." };
 	[500] = { "% Check your error log for more info.";
 		"Gremlins.", "It broke.", "Don't look at me." };
+	["/"] = {
+		"A study in simplicity.";
+		"Better catch it!";
+		"Don't just stand there, go after it!";
+		"Well, say something, before it runs too far!";
+		"Welcome to the world of XMPP!";
+		"You can do anything in XMPP!"; -- "The only limit is XML.";
+		"You can do anything with Prosody!"; -- the only limit is memory?
+	};
 };
 
 local messages = setmetatable(module:get_option("http_errors_messages", {}), { __index = default_messages });
@@ -78,9 +87,10 @@ module:hook_object_event(server, "http-error", function (event)
 	local request, response = event.request, event.response;
 	if request and response and request.path == "/" and response.status_code == 404 then
 		response.headers.content_type = "text/html; charset=utf-8";
+		local message = messages["/"];
 		return render(html, {
 				title = "Prosody is running!";
-				message = "Welcome to the XMPP world!";
+				message = message[math.random(#message)];
 			});
 	end
 end, 1);
