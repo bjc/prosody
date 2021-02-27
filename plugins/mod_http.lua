@@ -161,7 +161,7 @@ local trusted_proxies = module:get_option_set("trusted_proxies", { "127.0.0.1", 
 local function get_ip_from_request(request)
 	local ip = request.conn:ip();
 	local forwarded_for = request.headers.x_forwarded_for;
-	if forwarded_for then
+	if forwarded_for and trusted_proxies[ip] then
 		forwarded_for = forwarded_for..", "..ip;
 		for forwarded_ip in forwarded_for:gmatch("[^%s,]+") do
 			if not trusted_proxies[forwarded_ip] then
@@ -174,7 +174,7 @@ end
 
 module:wrap_object_event(server._events, false, function (handlers, event_name, event_data)
 	local request = event_data.request;
-	if request and trusted_proxies[request.conn:ip()] then
+	if request then
 		-- Not included in eg http-error events
 		request.ip = get_ip_from_request(request);
 	end
