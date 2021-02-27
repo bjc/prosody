@@ -259,10 +259,11 @@ local function is_trusted_proxy(ip)
 	return false
 end
 
-local function get_ip_from_request(request)
+local function get_forwarded_connection_info(request) --> ip:string, secure:boolean
 	local ip = request.ip;
+	local secure = request.secure; -- set by net.http.server
 	local forwarded_for = request.headers.x_forwarded_for;
-	if forwarded_for and is_trusted_proxy(ip) then
+	if forwarded_for then
 		-- luacheck: ignore 631
 		-- This logic looks weird at first, but it makes sense.
 		-- The for loop will take the last non-trusted-proxy IP from `forwarded_for`.
@@ -278,18 +279,17 @@ local function get_ip_from_request(request)
 			end
 		end
 	end
-	return ip;
+
+	secure = secure or request.headers.x_forwarded_proto == "https";
+
+	return ip, secure;
 end
 
 module:wrap_object_event(server._events, false, function (handlers, event_name, event_data)
 	local request = event_data.request;
-	if request then
+	if request and is_trusted_proxy(request.ip) then
 		-- Not included in eg http-error events
-		request.ip = get_ip_from_request(request);
-
-		if not request.secure and request.headers.x_forwarded_proto == "https" and is_trusted_proxy(request.conn:ip()) then
-			request.secure = true;
-		end
+		request.ip, request.secure = get_forwarded_connection_info(request);
 	end
 	return handlers(event_name, event_data);
 end);
