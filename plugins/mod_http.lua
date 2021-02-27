@@ -260,7 +260,7 @@ local function is_trusted_proxy(ip)
 end
 
 local function get_ip_from_request(request)
-	local ip = request.conn:ip();
+	local ip = request.ip;
 	local forwarded_for = request.headers.x_forwarded_for;
 	if forwarded_for and is_trusted_proxy(ip) then
 		-- luacheck: ignore 631

@@ -113,6 +113,7 @@ local function noop() end
 function listener.onconnect(conn)
 	local session = { conn = conn };
 	local secure = conn:ssl() and true or nil;
+	local ip = conn:ip();
 	session.thread = async.runner(function (request)
 		local wait, done;
 		if request.partial == true then
@@ -127,6 +128,7 @@ function listener.onconnect(conn)
 	end, runner_callbacks, session);
 	local function success_cb(request)
 		--log("debug", "success_cb: %s", request.path);
+		request.ip = ip;
 		request.secure = secure;
 		session.thread:run(request);
 	end
