@@ -1,0 +1,46 @@
+# MUC: Prevent nicknames failing strict resourceprep
+
+[Client] Romeo
+	jid: user@localhost
+	password: password
+
+[Client] Roboteo
+	jid: bot@localhost
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<presence to="nobots@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Romeo receives:
+	<presence from='nobots@conference.localhost/Romeo'>
+		<x xmlns='http://jabber.org/protocol/muc#user'>
+			<status code='201'/>
+			<item jid="${Romeo's full JID}" affiliation='owner' role='moderator'/>
+			<status code='110'/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<message type='groupchat' from='nobots@conference.localhost'><subject/></message>
+
+Roboteo connects
+
+Roboteo sends:
+	<presence to="nobots@conference.localhost/🤖️">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Roboteo receives:
+	<presence type='error' from='nobots@conference.localhost/🤖'>
+		<error by='nobots@conference.localhost' type='modify'>
+			<jid-malformed xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
+			<text xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>Nickname must pass strict validation</text>
+		</error>
+	</presence>
+
