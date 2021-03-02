@@ -56,6 +56,7 @@ local s2s_service_options = {
 	default_port = 5269;
 	use_ipv4 = module:get_option_boolean("use_ipv4", true);
 	use_ipv6 = module:get_option_boolean("use_ipv6", true);
+	use_dane = module:get_option_boolean("use_dane", false);
 };
 
 module:hook("stats-update", function ()
