@@ -17,6 +17,7 @@ TRUNK
 -   `daemonize` option deprecated
 -   SASL DIGEST-MD5 removed
 -   Switch to libunbound for DNS queries
+-   DANE Support
 -   mod_external_services (XEP-0215)
 -   util.error for encapsulating errors
 -   MUC: support for XEP-0421 occupant identifiers

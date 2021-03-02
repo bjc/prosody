@@ -28,12 +28,23 @@ function methods:next(cb)
 		return;
 	end
 
+	local secure = true;
+	local tlsa = {};
 	local targets = {};
-	local n = 2;
+	local n = 3;
 	local function ready()
 		n = n - 1;
 		if n > 0 then return; end
 		self.targets = targets;
+		if self.extra and self.extra.use_dane then
+			if secure then
+				self.extra.tlsa = tlsa;
+				self.extra.dane_hostname = self.hostname;
+			else
+				self.extra.tlsa = nil;
+				self.extra.dane_hostname = nil;
+			end
+		end
 		self:next(cb);
 	end
 
@@ -43,6 +54,7 @@ function methods:next(cb)
 	if not self.extra or self.extra.use_ipv4 ~= false then
 		dns_resolver:lookup(function (answer)
 			if answer then
+				secure = secure and answer.secure;
 				for _, record in ipairs(answer) do
 					table.insert(targets, { self.conn_type.."4", record.a, self.port, self.extra });
 				end
@@ -56,12 +68,25 @@ function methods:next(cb)
 	if not self.extra or self.extra.use_ipv6 ~= false then
 		dns_resolver:lookup(function (answer)
 			if answer then
+				secure = secure and answer.secure;
 				for _, record in ipairs(answer) do
 					table.insert(targets, { self.conn_type.."6", record.aaaa, self.port, self.extra });
 				end
 			end
 			ready();
 		end, self.hostname, "AAAA", "IN");
+	end
+
+	if self.extra and self.extra.use_dane == true then
+		dns_resolver:lookup(function (answer)
+			if answer then
+				secure = secure and answer.secure;
+				for _, record in ipairs(answer) do
+					table.insert(tlsa, record.tlsa);
+				end
+			end
+			ready();
+		end, ("_%d._tcp.%s"):format(self.port, self.hostname), "TLSA", "IN");
 	else
 		ready();
 	end
