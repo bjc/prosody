@@ -230,6 +230,7 @@ end
 -- Event handlers
 
 local function add_sni_host(host, service)
+	log("debug", "Gathering certificates for SNI for host %s, %s service", host, service or "default");
 	for name, interface, port, n, active_service --luacheck: ignore 213
 		in active_services:iter(service, nil, nil, nil) do
 		if active_service.server.hosts and active_service.tls_cfg then
