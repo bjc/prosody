@@ -37,7 +37,7 @@ function methods:next(cb)
 		if n > 0 then return; end
 		self.targets = targets;
 		if self.extra and self.extra.use_dane then
-			if secure then
+			if secure and tlsa[1] then
 				self.extra.tlsa = tlsa;
 				self.extra.dane_hostname = self.hostname;
 			else
