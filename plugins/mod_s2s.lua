@@ -503,6 +503,8 @@ local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
 local function session_close(session, reason, remote_reason, bounce_reason)
 	local log = session.log or log;
 	if session.conn then
+		local conn = session.conn;
+		conn:pause_writes(); -- until :close
 		if session.notopen then
 			if session.direction == "incoming" then
 				session:open_stream(session.to_host, session.from_host);
@@ -540,8 +542,9 @@ local function session_close(session, reason, remote_reason, bounce_reason)
 		session.log("info", "%s s2s stream %s->%s closed: %s", session.direction:gsub("^.", string.upper),
 			session.from_host or "(unknown host)", session.to_host or "(unknown host)", reason or "stream closed");
 
+		conn:resume_writes();
+
 		-- Authenticated incoming stream may still be sending us stanzas, so wait for </stream:stream> from remote
-		local conn = session.conn;
 		if reason == nil and not session.notopen and session.direction == "incoming" then
 			add_task(stream_close_timeout, function ()
 				if not session.destroyed then
