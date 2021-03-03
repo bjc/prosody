@@ -55,6 +55,7 @@ end
 local resting_session = { -- Resting, not dead
 		destroyed = true;
 		type = "s2s_destroyed";
+		direction = "destroyed";
 		open_stream = function (session)
 			session.log("debug", "Attempt to open stream on resting session");
 		end;
