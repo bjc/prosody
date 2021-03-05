@@ -223,7 +223,7 @@ function module.command(arg)
 	if arg[1] ~= "test" then
 		print("Usage: "..module.name.." test < test-stream.xml")
 		print("");
-		print("Provide a series of stanzas to test against importance algoritm");
+		print("Provide a series of stanzas to test against importance algorithm");
 		return 1;
 	end
 	-- luacheck: ignore 212/self
