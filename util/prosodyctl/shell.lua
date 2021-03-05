@@ -71,6 +71,35 @@ local function start(arg) --luacheck: ignore 212/arg
 		os.exit(1);
 	end
 
+	if arg[1] then
+		if arg[2] then
+			-- TODO send each arg[] and wait for reply?
+			print("Only one command is supported as argument");
+			os.exit(1);
+		end
+
+		client.events.add_handler("connected", function()
+			client.send(st.stanza("repl-input"):text(arg[1]));
+			return true;
+		end, 1);
+
+		local errors = 0; -- TODO This is weird, but works for now.
+		client.events.add_handler("received", function(stanza)
+			if stanza.name == "repl-output" or stanza.name == "repl-result" then
+				if stanza.attr.type == "error" then
+					errors = errors + 1;
+					io.stderr:write(stanza:get_text(), "\n");
+				else
+					print(stanza:get_text());
+				end
+			end
+			if stanza.name == "repl-result" then
+				os.exit(errors);
+			end
+			return true;
+		end, 1);
+	end
+
 	client.events.add_handler("connected", function ()
 		if not opts.quiet then
 			printbanner();
