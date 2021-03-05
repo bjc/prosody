@@ -72,7 +72,7 @@ local function start(arg) --luacheck: ignore 212/arg
 	end
 
 	client.events.add_handler("connected", function ()
-		if not arg.quiet then
+		if not opts.quiet then
 			printbanner();
 		end
 		repl(client);
