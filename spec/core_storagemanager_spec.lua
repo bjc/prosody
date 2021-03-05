@@ -383,7 +383,7 @@ describe("storagemanager", function ()
 					end);
 
 					it("by multiple ids", function ()
-						assert.truthy(archive.caps and archive.caps.ids, "Multilpe ID query")
+						assert.truthy(archive.caps and archive.caps.ids, "Multiple ID query")
 						local data, err = archive:find("user", {
 								["ids"] = {
 									test_data[2][1];
