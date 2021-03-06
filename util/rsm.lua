@@ -65,6 +65,9 @@ local element_generators = setmetatable({
 	max = function (st, data)
 		st:text_tag("max", inttostr(data));
 	end;
+	index = function (st, data)
+		st:text_tag("index", inttostr(data));
+	end;
 	count = function (st, data)
 		st:text_tag("count", inttostr(data));
 	end;
