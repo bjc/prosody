@@ -52,26 +52,26 @@ local element_generators = setmetatable({
 		if type(data) == "table" then
 			st:tag("first", { index = inttostr(data.index) }):text(data[1]):up();
 		else
-			st:tag("first"):text(data):up();
+			st:text_tag("first", data);
 		end
 	end;
 	before = function(st, data)
 		if data == true then
 			st:tag("before"):up();
 		else
-			st:tag("before"):text(data):up();
+			st:text_tag("before", data);
 		end
 	end;
 	max = function (st, data)
-		st:tag("max"):text(inttostr(data)):up();
+		st:text_tag("max", inttostr(data));
 	end;
 	count = function (st, data)
-		st:tag("count"):text(inttostr(data)):up();
+		st:text_tag("count", inttostr(data));
 	end;
 }, {
 	__index = function(_, name)
 		return function(st, data)
-			st:tag(name):text(data):up();
+			st:text_tag(name, data);
 		end
 	end;
 });
