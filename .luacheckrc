@@ -26,6 +26,9 @@ files["util/"] = {
 	-- Ignore unwrapped license text
 	max_comment_line_length = false;
 }
+files["util/jsonschema.lua"] = {
+	ignore = { "211" };
+}
 files["plugins/"] = {
 	module = true;
 	allow_defined_top = true;
