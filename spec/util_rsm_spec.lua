@@ -37,6 +37,28 @@ describe("util.rsm", function ()
 			assert.same({ max = 10, before = "peter@pixyland.org" }, rsm.parse(test));
 		end);
 
+		it("all fields works", function()
+			local test = assert(xml.parse(strip([[
+				<set xmlns='http://jabber.org/protocol/rsm'>
+					<after>a</after>
+					<before>b</before>
+					<count>10</count>
+					<first index='1'>f</first>
+					<index>5</index>
+					<last>z</last>
+					<max>100</max>
+				</set>
+				]])));
+			assert.same({
+				after = "a";
+				before = "b";
+				count = 10;
+				first = {index = 1; "f"};
+				index = 5;
+				last = "z";
+				max = 100;
+			}, rsm.parse(test));
+		end);
 	end);
 
 	describe("generate", function ()
@@ -84,6 +106,27 @@ describe("util.rsm", function ()
 			assert.equal("1", r1:get_child("first").attr.index);
 		end);
 
+
+		it("all fields works", function ()
+			local res = rsm.generate({
+					after = "a";
+					before = "b";
+					count = 10;
+					first = {index = 1; "f"};
+					index = 5;
+					last = "z";
+					max = 100;
+				});
+			assert.equal("a", res:get_child_text("after"));
+			assert.equal("b", res:get_child_text("before"));
+			assert.equal("10", res:get_child_text("count"));
+			assert.equal("f", res:get_child_text("first"));
+			assert.equal("1", res:get_child("first").attr.index);
+			assert.equal("5", res:get_child_text("index"));
+			assert.equal("z", res:get_child_text("last"));
+			assert.equal("100", res:get_child_text("max"));
+		end);
 	end);
+
 end);
 
