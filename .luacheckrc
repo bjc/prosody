@@ -29,6 +29,9 @@ files["util/"] = {
 files["util/jsonschema.lua"] = {
 	ignore = { "211" };
 }
+files["util/datamapper.lua"] = {
+	ignore = { "211" };
+}
 files["plugins/"] = {
 	module = true;
 	allow_defined_top = true;
