@@ -94,7 +94,108 @@ local function parse (schema : js.schema_t, s : st.stanza_t) : table
 	end
 end
 
+local function unparse ( schema : js.schema_t, t : table, current_name : string, current_ns : string ) : st.stanza_t
+	if schema.type == "object" then
+
+		if schema.xml then
+			if schema.xml.name then
+				current_name = schema.xml.name
+			end
+			if schema.xml.namespace then
+				current_ns = schema.xml.namespace
+			end
+			-- TODO prefix?
+		end
+
+		local out = st.stanza(current_name, { xmlns = current_ns })
+
+		for prop, propschema in pairs(schema.properties) do
+			local v = t[prop]
+
+			if v ~= nil then
+				local proptype : js.schema_t.type_e
+				if propschema is js.schema_t then
+					proptype = propschema.type
+				elseif propschema is js.schema_t.type_e then
+					proptype = propschema
+				end
+
+				local name = prop
+				local namespace = current_ns
+				local prefix : string = nil
+				local is_attribute = false
+				local is_text = false
+
+				if propschema is js.schema_t and propschema.xml then
+
+					if propschema.xml.name then
+						name = propschema.xml.name
+					end
+					if propschema.xml.namespace then
+						namespace = propschema.xml.namespace
+					end
+
+					if propschema.xml.prefix then
+						prefix = propschema.xml.prefix
+					end
+
+					if propschema.xml.attribute then
+						is_attribute = true
+					elseif propschema.xml.text then
+						is_text = true
+					end
+				end
+
+				if is_attribute then
+					local attr = name
+					if prefix then
+						attr = prefix .. ':' .. name
+					elseif namespace ~= current_ns then
+						attr = namespace .. "\1" .. name
+					end
+
+					if proptype == "string" and v is string then
+						out.attr[attr] = v
+					elseif proptype == "number" and v is number then
+						out.attr[attr] = string.format("%g", v)
+					elseif proptype == "integer" and v is number then
+						out.attr[attr] = string.format("%d", v)
+					elseif proptype == "boolean" then
+						out.attr[attr] = v and "1" or "0"
+					end
+				elseif is_text then
+					if v is string then
+						out:text(v)
+					end
+				else
+					local propattr : { string : string }
+					if namespace ~= current_ns then
+						propattr = { xmlns = namespace }
+					end
+					if proptype == "string" and v is string then
+						out:text_tag(name, v, propattr)
+					elseif proptype == "number" and v is number then
+						out:text_tag(name, string.format("%g", v), propattr)
+					elseif proptype == "integer" and v is number then
+						out:text_tag(name, string.format("%d", v), propattr)
+					elseif proptype == "boolean" and v is boolean then
+						out:text_tag(name, v and "1" or "0", propattr)
+					elseif proptype == "object" and propschema is js.schema_t and v is table then
+						local c = unparse(propschema, v, name, namespace);
+						if c then
+							out:add_direct_child(c);
+						end
+					-- else TODO
+					end
+				end
+			end
+		end
+		return out;
+
+	end
+end
+
 return {
 	parse = parse,
-	-- unparse = unparse, -- TODO
+	unparse = unparse,
 }

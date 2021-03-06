@@ -53,4 +53,16 @@ describe("util.datampper", function()
 			assert.same(d, map.parse(s, x));
 		end);
 	end);
+
+	describe("unparse", function()
+		it("works", function()
+			local u = map.unparse(s, d);
+			assert.equal("message", u.name);
+			assert.same(x.attr, u.attr);
+			assert.equal(#x.tags, #u.tags)
+			assert.equal(x:get_child_text("body"), u:get_child_text("body"));
+			assert.equal(x:get_child_text("delay", "urn:xmpp:delay"), u:get_child_text("delay", "urn:xmpp:delay"));
+			assert.same(x:get_child("delay", "urn:xmpp:delay").attr, u:get_child("delay", "urn:xmpp:delay").attr);
+		end);
+	end);
 end)
