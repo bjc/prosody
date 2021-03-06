@@ -27,15 +27,20 @@ describe("util.datampper", function()
 					xml = {namespace = "urn:xmpp:delay"; name = "delay"};
 					properties = {stamp = attr(); from = attr(); reason = {type = "string"; xml = {text = true}}};
 				};
+				state = {
+					type = "string";
+					xml = {x_name_is_value = true; namespace = "http://jabber.org/protocol/chatstates"};
+				};
 			};
 		};
 
 		x = xml.parse [[
-			<message xmlns="jabber:client" xml:lang="en" to="a@test" from="b@test" type="chat" id="1">
-			<body>Hello</body>
-			<delay xmlns='urn:xmpp:delay' from='test' stamp='2021-03-07T15:59:08+00:00'>Becasue</delay>
-			</message>
-		]];
+				<message xmlns="jabber:client" xml:lang="en" to="a@test" from="b@test" type="chat" id="1">
+				<body>Hello</body>
+				<delay xmlns='urn:xmpp:delay' from='test' stamp='2021-03-07T15:59:08+00:00'>Becasue</delay>
+				<active xmlns='http://jabber.org/protocol/chatstates'/>
+				</message>
+				]];
 
 		d = {
 			to = "a@test";
@@ -45,6 +50,7 @@ describe("util.datampper", function()
 			lang = "en";
 			body = "Hello";
 			delay = {from = "test"; stamp = "2021-03-07T15:59:08+00:00"; reason = "Becasue"};
+			state = "active";
 		};
 	end);
 

@@ -64,6 +64,7 @@ local record schema_t
 
 		-- nonstantard, maybe in the future
 		text : boolean
+		x_name_is_value : boolean
 	end
 
 	xml : xml_t

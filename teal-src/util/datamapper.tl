@@ -19,6 +19,7 @@ local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 			local prefix : string = nil
 			local is_attribute = false
 			local is_text = false
+			local name_is_value = false;
 
 			local proptype : js.schema_t.type_e
 			if propschema is js.schema_t then
@@ -41,10 +42,17 @@ local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 					is_attribute = true
 				elseif propschema.xml.text then
 					is_text = true
+				elseif propschema.xml.x_name_is_value then
+					name_is_value = true
 				end
 			end
 
-			if is_attribute then
+			if name_is_value then
+				local c = s:get_child(nil, namespace);
+				if c then
+					out[prop] = c.name;
+				end
+			elseif is_attribute then
 				local attr = name
 				if prefix then
 					attr = prefix .. ':' .. name
@@ -125,6 +133,7 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 				local prefix : string = nil
 				local is_attribute = false
 				local is_text = false
+				local name_is_value = false;
 
 				if propschema is js.schema_t and propschema.xml then
 
@@ -143,6 +152,8 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 						is_attribute = true
 					elseif propschema.xml.text then
 						is_text = true
+					elseif propschema.xml.x_name_is_value then
+						name_is_value = true
 					end
 				end
 
@@ -172,7 +183,9 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 					if namespace ~= current_ns then
 						propattr = { xmlns = namespace }
 					end
-					if proptype == "string" and v is string then
+					if name_is_value and v is string then
+						out:tag(v, propattr):up();
+					elseif proptype == "string" and v is string then
 						out:text_tag(name, v, propattr)
 					elseif proptype == "number" and v is number then
 						out:text_tag(name, string.format("%g", v), propattr)
