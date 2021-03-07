@@ -35,6 +35,10 @@ describe("util.datampper", function()
 					type = "boolean";
 					xml = {x_name_is_value = true; name = "fallback"; namespace = "urn:xmpp:fallback:0"};
 				};
+				origin_id = {
+					type = "string";
+					xml = {name = "origin-id"; namespace = "urn:xmpp:sid:0"; x_single_attribute = "id"};
+				};
 			};
 		};
 
@@ -44,6 +48,7 @@ describe("util.datampper", function()
 				<delay xmlns='urn:xmpp:delay' from='test' stamp='2021-03-07T15:59:08+00:00'>Becasue</delay>
 				<active xmlns='http://jabber.org/protocol/chatstates'/>
 				<fallback xmlns='urn:xmpp:fallback:0'/>
+				<origin-id xmlns='urn:xmpp:sid:0' id='qgkmMdPB'/>
 				</message>
 				]];
 
@@ -57,6 +62,7 @@ describe("util.datampper", function()
 			delay = {from = "test"; stamp = "2021-03-07T15:59:08+00:00"; reason = "Becasue"};
 			state = "active";
 			fallback = true;
+			origin_id = "qgkmMdPB";
 		};
 	end);
 
@@ -75,6 +81,7 @@ describe("util.datampper", function()
 			assert.equal(x:get_child_text("body"), u:get_child_text("body"));
 			assert.equal(x:get_child_text("delay", "urn:xmpp:delay"), u:get_child_text("delay", "urn:xmpp:delay"));
 			assert.same(x:get_child("delay", "urn:xmpp:delay").attr, u:get_child("delay", "urn:xmpp:delay").attr);
+			assert.same(x:get_child("origin-id", "urn:xmpp:sid:0").attr, u:get_child("origin-id", "urn:xmpp:sid:0").attr);
 		end);
 	end);
 end)

@@ -20,6 +20,7 @@ local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 			local is_attribute = false
 			local is_text = false
 			local name_is_value = false;
+			local single_attribute : string
 
 			local proptype : js.schema_t.type_e
 			if propschema is js.schema_t then
@@ -44,6 +45,8 @@ local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 					is_text = true
 				elseif propschema.xml.x_name_is_value then
 					name_is_value = true
+				elseif propschema.xml.x_single_attribute then
+					single_attribute = propschema.xml.x_single_attribute
 				end
 			end
 
@@ -78,6 +81,16 @@ local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 					out[prop] = tonumber(s:get_text())
 				end
 
+			elseif single_attribute then
+				local c = s:get_child(name, namespace)
+				local a = c and c.attr[single_attribute]
+				if proptype == "string" then
+					out[prop] = a
+				elseif proptype == "integer" or proptype == "number" then
+					out[prop] = tonumber(a)
+				elseif proptype == "boolean" then
+					out[prop] = toboolean(a)
+				end
 			else
 
 				if proptype == "string" then
@@ -136,6 +149,7 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 				local is_attribute = false
 				local is_text = false
 				local name_is_value = false;
+				local single_attribute : string
 
 				if propschema is js.schema_t and propschema.xml then
 
@@ -156,6 +170,8 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 						is_text = true
 					elseif propschema.xml.x_name_is_value then
 						name_is_value = true
+					elseif propschema.xml.x_single_attribute then
+						single_attribute = propschema.xml.x_single_attribute
 					end
 				end
 
@@ -180,6 +196,24 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 					if v is string then
 						out:text(v)
 					end
+				elseif single_attribute then
+					local propattr : { string : string } = {}
+
+					if namespace ~= current_ns then
+						propattr.xmlns = namespace
+					end
+
+					if proptype == "string" and v is string then
+						propattr[single_attribute] = v
+					elseif proptype == "number" and v is number then
+						propattr[single_attribute] = string.format("%g", v)
+					elseif proptype == "integer" and v is number then
+						propattr[single_attribute] = string.format("%d", v)
+					elseif proptype == "boolean" and v is boolean then
+						propattr[single_attribute] = v and "1" or "0"
+					end
+					out:tag(name, propattr):up();
+
 				else
 					local propattr : { string : string }
 					if namespace ~= current_ns then

@@ -19,6 +19,7 @@ local function parse_object(schema, s)
 			local is_attribute = false
 			local is_text = false
 			local name_is_value = false;
+			local single_attribute
 
 			local proptype
 			if type(propschema) == "table" then
@@ -43,6 +44,8 @@ local function parse_object(schema, s)
 					is_text = true
 				elseif propschema.xml.x_name_is_value then
 					name_is_value = true
+				elseif propschema.xml.x_single_attribute then
+					single_attribute = propschema.xml.x_single_attribute
 				end
 			end
 
@@ -77,6 +80,16 @@ local function parse_object(schema, s)
 					out[prop] = tonumber(s:get_text())
 				end
 
+			elseif single_attribute then
+				local c = s:get_child(name, namespace)
+				local a = c and c.attr[single_attribute]
+				if proptype == "string" then
+					out[prop] = a
+				elseif proptype == "integer" or proptype == "number" then
+					out[prop] = tonumber(a)
+				elseif proptype == "boolean" then
+					out[prop] = toboolean(a)
+				end
 			else
 
 				if proptype == "string" then
@@ -135,6 +148,7 @@ local function unparse(schema, t, current_name, current_ns)
 				local is_attribute = false
 				local is_text = false
 				local name_is_value = false;
+				local single_attribute
 
 				if type(propschema) == "table" and propschema.xml then
 
@@ -155,6 +169,8 @@ local function unparse(schema, t, current_name, current_ns)
 						is_text = true
 					elseif propschema.xml.x_name_is_value then
 						name_is_value = true
+					elseif propschema.xml.x_single_attribute then
+						single_attribute = propschema.xml.x_single_attribute
 					end
 				end
 
@@ -179,6 +195,24 @@ local function unparse(schema, t, current_name, current_ns)
 					if type(v) == "string" then
 						out:text(v)
 					end
+				elseif single_attribute then
+					local propattr = {}
+
+					if namespace ~= current_ns then
+						propattr.xmlns = namespace
+					end
+
+					if proptype == "string" and type(v) == "string" then
+						propattr[single_attribute] = v
+					elseif proptype == "number" and type(v) == "number" then
+						propattr[single_attribute] = string.format("%g", v)
+					elseif proptype == "integer" and type(v) == "number" then
+						propattr[single_attribute] = string.format("%d", v)
+					elseif proptype == "boolean" and type(v) == "boolean" then
+						propattr[single_attribute] = v and "1" or "0"
+					end
+					out:tag(name, propattr):up();
+
 				else
 					local propattr
 					if namespace ~= current_ns then
