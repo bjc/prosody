@@ -31,6 +31,10 @@ describe("util.datampper", function()
 					type = "string";
 					xml = {x_name_is_value = true; namespace = "http://jabber.org/protocol/chatstates"};
 				};
+				fallback = {
+					type = "boolean";
+					xml = {x_name_is_value = true; name = "fallback"; namespace = "urn:xmpp:fallback:0"};
+				};
 			};
 		};
 
@@ -39,6 +43,7 @@ describe("util.datampper", function()
 				<body>Hello</body>
 				<delay xmlns='urn:xmpp:delay' from='test' stamp='2021-03-07T15:59:08+00:00'>Becasue</delay>
 				<active xmlns='http://jabber.org/protocol/chatstates'/>
+				<fallback xmlns='urn:xmpp:fallback:0'/>
 				</message>
 				]];
 
@@ -51,6 +56,7 @@ describe("util.datampper", function()
 			body = "Hello";
 			delay = {from = "test"; stamp = "2021-03-07T15:59:08+00:00"; reason = "Becasue"};
 			state = "active";
+			fallback = true;
 		};
 	end);
 

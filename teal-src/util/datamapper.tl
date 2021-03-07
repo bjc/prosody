@@ -49,8 +49,10 @@ local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 
 			if name_is_value then
 				local c = s:get_child(nil, namespace);
-				if c then
+				if c and proptype == "string" then
 					out[prop] = c.name;
+				elseif proptype == "boolean" and c then
+					out[prop] = true;
 				end
 			elseif is_attribute then
 				local attr = name
@@ -183,8 +185,12 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 					if namespace ~= current_ns then
 						propattr = { xmlns = namespace }
 					end
-					if name_is_value and v is string then
-						out:tag(v, propattr):up();
+					if name_is_value then
+						if proptype == "string" and v is string then
+							out:tag(v, propattr):up();
+						elseif proptype == "boolean" and v == true then
+							out:tag(name, propattr):up();
+						end
 					elseif proptype == "string" and v is string then
 						out:text_tag(name, v, propattr)
 					elseif proptype == "number" and v is number then
