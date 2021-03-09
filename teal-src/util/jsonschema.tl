@@ -1,3 +1,12 @@
+-- Copyright (C) 2021 Kim Alvefur
+--
+-- This project is MIT/X11 licensed. Please see the
+-- COPYING file in the source package for more information.
+--
+-- Based on
+-- https://json-schema.org/draft/2020-12/json-schema-core.html
+-- https://json-schema.org/draft/2020-12/json-schema-validation.html
+--
 
 local record schema_t
 	enum type_e
