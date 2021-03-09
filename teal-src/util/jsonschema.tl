@@ -237,31 +237,17 @@ type_validators.table = function (schema : schema_t, data : any) : boolean
 		end
 
 		if schema.properties then
-			for k, s in pairs(schema.properties) do
-				if data[k] ~= nil then
-					if not validate(s, data[k]) then
-						return false
-					end
-				end
-			end
-		end
-
-		if schema.additionalProperties then
+			local additional : schema_t | boolean = schema.additionalProperties or true
 			for k, v in pairs(data) do
-				if k is string then
-					if not (schema.properties and schema.properties[k]) then
-						if not validate(schema.additionalProperties, v) then
-							return false
-						end
-					end
+				local s = schema.properties[k as string] or additional as schema_t
+				if not validate(s, v) then
+					return false
 				end
 			end
-		elseif schema.properties then
-			for k in pairs(data) do
-				if k is string then
-					if schema.properties[k] == nil then
-						return false
-					end
+		elseif schema.additionalProperties then
+			for k, v in pairs(data) do
+				if not validate(schema.additionalProperties, v) then
+					return false
 				end
 			end
 		end
