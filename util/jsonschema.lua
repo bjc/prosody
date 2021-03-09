@@ -205,6 +205,19 @@ type_validators.table = function(schema, data)
 			end
 		end
 
+		if schema.contains then
+			local found = false
+			for i = 1, #data do
+				if validate(schema.contains, data[i]) then
+					found = true
+					break
+				end
+			end
+			if not found then
+				return false
+			end
+		end
+
 		return true
 	end
 	return false

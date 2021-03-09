@@ -38,7 +38,7 @@ local record schema_t
 
 	-- arrays
 	items : schema_t
-	contains : { schema_t }
+	contains : schema_t
 	maxItems : number
 	minItems : number
 	uniqueItems : boolean
@@ -282,6 +282,19 @@ type_validators.table = function (schema : schema_t, data : any) : boolean
 				if not validate(schema.items, data[i]) then
 					return false
 				end
+			end
+		end
+
+		if schema.contains then
+			local found = false
+			for i = 1, #data do
+				if validate(schema.contains, data[i]) then
+					found = true
+					break
+				end
+			end
+			if not found then
+				return false
 			end
 		end
 
