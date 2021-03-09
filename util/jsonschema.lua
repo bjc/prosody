@@ -158,6 +158,9 @@ type_validators.table = function(schema, data)
 		if schema.properties then
 			local additional = schema.additionalProperties or true
 			for k, v in pairs(data) do
+				if schema.propertyNames and not validate(schema.propertyNames, k) then
+					return false
+				end
 				local s = schema.properties[k] or additional
 				if not validate(s, v) then
 					return false
@@ -165,6 +168,9 @@ type_validators.table = function(schema, data)
 			end
 		elseif schema.additionalProperties then
 			for k, v in pairs(data) do
+				if schema.propertyNames and not validate(schema.propertyNames, k) then
+					return false
+				end
 				if not validate(schema.additionalProperties, v) then
 					return false
 				end

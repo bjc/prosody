@@ -54,6 +54,7 @@ local record schema_t
 	dependentRequired : { string : { string } }
 	additionalProperties: schema_t
 	patternProperties: schema_t
+	propertyNames : schema_t
 
 	-- xml
 	record xml_t
@@ -239,6 +240,9 @@ type_validators.table = function (schema : schema_t, data : any) : boolean
 		if schema.properties then
 			local additional : schema_t | boolean = schema.additionalProperties or true
 			for k, v in pairs(data) do
+				if schema.propertyNames and not validate(schema.propertyNames, k) then
+					return false
+				end
 				local s = schema.properties[k as string] or additional as schema_t
 				if not validate(s, v) then
 					return false
@@ -246,6 +250,9 @@ type_validators.table = function (schema : schema_t, data : any) : boolean
 			end
 		elseif schema.additionalProperties then
 			for k, v in pairs(data) do
+				if schema.propertyNames and not validate(schema.propertyNames, k) then
+					return false
+				end
 				if not validate(schema.additionalProperties, v) then
 					return false
 				end
