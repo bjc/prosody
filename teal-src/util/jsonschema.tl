@@ -37,6 +37,7 @@ local record schema_t
 	format : string
 
 	-- arrays
+	prefixItems : { schema_t }
 	items : schema_t
 	contains : schema_t
 	maxItems : number
@@ -277,8 +278,19 @@ type_validators.table = function (schema : schema_t, data : any) : boolean
 			return true
 		end
 
+		local p = 0
+		if schema.prefixItems then
+			for i, s in ipairs(schema.prefixItems) do
+				if validate(s, data[i]) then
+					p = i
+				else
+					return false
+				end
+			end
+		end
+
 		if schema.items then
-			for i = 1, #data do
+			for i = p+1, #data do
 				if not validate(schema.items, data[i]) then
 					return false
 				end
