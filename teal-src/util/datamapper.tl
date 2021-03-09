@@ -1,3 +1,9 @@
+-- Copyright (C) 2021 Kim Alvefur
+--
+-- This project is MIT/X11 licensed. Please see the
+-- COPYING file in the source package for more information.
+--
+
 local st = require "util.stanza";
 local js = require "util.jsonschema"
 
