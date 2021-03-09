@@ -37,7 +37,7 @@ local record schema_t
 	format : string
 
 	-- arrays
-	items : { schema_t } | schema_t
+	items : schema_t
 	contains : { schema_t }
 	maxItems : number
 	minItems : number
@@ -274,19 +274,11 @@ type_validators.table = function (schema : schema_t, data : any) : boolean
 			return true
 		end
 
-		local item_schemas = schema.items as {schema_t}
-		if item_schemas and item_schemas[1] == nil then
-			local item_schema = item_schemas as schema_t
-			for i, v in pairs(data) do
-				if i is number then
-					if not validate(item_schema, v) then
-						return false
-					end
+		if schema.items then
+			for i = 1, #data do
+				if not validate(schema.items, data[i]) then
+					return false
 				end
-			end
-		elseif item_schemas and item_schemas[1] ~= nil then
-			for i, s in ipairs(item_schemas) do
-				validate(s, data[i])
 			end
 		end
 

@@ -194,19 +194,11 @@ type_validators.table = function(schema, data)
 			return true
 		end
 
-		local item_schemas = schema.items
-		if item_schemas and item_schemas[1] == nil then
-			local item_schema = item_schemas
-			for i, v in pairs(data) do
-				if type(i) == "number" then
-					if not validate(item_schema, v) then
-						return false
-					end
+		if schema.items then
+			for i = 1, #data do
+				if not validate(schema.items, data[i]) then
+					return false
 				end
-			end
-		elseif item_schemas and item_schemas[1] ~= nil then
-			for i, s in ipairs(item_schemas) do
-				validate(s, data[i])
 			end
 		end
 
