@@ -136,7 +136,10 @@ end
 
 type_validators.integer = type_validators.number
 
-local function validate(schema : schema_t | type_e, data : any) : boolean
+local function validate(schema : schema_t | type_e | boolean, data : any) : boolean
+	if schema is boolean then
+		return schema
+	end
 	if schema is type_e then
 		return simple_validate(schema, data)
 	end

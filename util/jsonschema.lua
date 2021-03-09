@@ -57,6 +57,9 @@ end
 type_validators.integer = type_validators.number
 
 local function validate(schema, data)
+	if type(schema) == "boolean" then
+		return schema
+	end
 	if type(schema) == "string" then
 		return simple_validate(schema, data)
 	end
