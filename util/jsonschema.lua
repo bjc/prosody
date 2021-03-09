@@ -194,7 +194,6 @@ type_validators.table = function(schema, data)
 				end
 				values[v] = true
 			end
-			return true
 		end
 
 		local p = 0

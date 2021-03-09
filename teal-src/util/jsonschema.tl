@@ -275,7 +275,6 @@ type_validators.table = function (schema : schema_t, data : any) : boolean
 				end
 				values[v] = true
 			end
-			return true
 		end
 
 		local p = 0
