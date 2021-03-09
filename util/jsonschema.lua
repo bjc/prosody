@@ -110,10 +110,6 @@ local function validate(schema, data)
 			end
 		end
 
-		if not simple_validate(schema.type, data) then
-			return false
-		end
-
 		if schema.const ~= nil and schema.const ~= data then
 			return false
 		end
@@ -127,12 +123,17 @@ local function validate(schema, data)
 			return false
 		end
 
-		local validator = type_validators[schema.type]
-		if not validator then
-			return true
-		end
+		if schema.type then
+			if not simple_validate(schema.type, data) then
+				return false
+			end
 
-		return validator(schema, data)
+			local validator = type_validators[schema.type]
+			if validator then
+				return validator(schema, data)
+			end
+		end
+		return true
 	end
 end
 
