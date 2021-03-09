@@ -3,6 +3,17 @@
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
+-- Based on
+-- https://json-schema.org/draft/2020-12/json-schema-core.html
+-- https://json-schema.org/draft/2020-12/json-schema-validation.html
+-- http://spec.openapis.org/oas/v3.0.1#xmlObject
+-- https://github.com/OAI/OpenAPI-Specification/issues/630 (text:true)
+--
+-- XML Object Extensions:
+-- text to refer to the text content at the same time as attributes
+-- x_name_is_value for enum fields where the <tag-name/> is the value
+-- x_single_attribute for <tag attr="this"/>
+--
 
 local st = require "util.stanza";
 local js = require "util.jsonschema"
@@ -48,10 +59,13 @@ local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 				if propschema.xml.attribute then
 					is_attribute = true
 				elseif propschema.xml.text then
+					-- XXX Not yet in OpenAPI
 					is_text = true
 				elseif propschema.xml.x_name_is_value then
+					-- XXX Custom extension
 					name_is_value = true
 				elseif propschema.xml.x_single_attribute then
+					-- XXX Custom extension
 					single_attribute = propschema.xml.x_single_attribute
 				end
 			end

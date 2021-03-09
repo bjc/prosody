@@ -41,10 +41,13 @@ local function parse_object(schema, s)
 				if propschema.xml.attribute then
 					is_attribute = true
 				elseif propschema.xml.text then
+
 					is_text = true
 				elseif propschema.xml.x_name_is_value then
+
 					name_is_value = true
 				elseif propschema.xml.x_single_attribute then
+
 					single_attribute = propschema.xml.x_single_attribute
 				end
 			end
