@@ -200,8 +200,8 @@ local function validate(schema : schema_t | type_e | boolean, data : any) : bool
 			return false
 		end
 
-		if schema.enum ~= nil then
-			for _, v in ipairs(schema.enum) do
+		if schema["enum"] ~= nil then
+			for _, v in ipairs(schema["enum"]) do
 				if v == data then
 					return true
 				end
