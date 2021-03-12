@@ -20,6 +20,7 @@ local function parse_object(schema, s)
 			local is_text = false
 			local name_is_value = false;
 			local single_attribute
+			local enums
 
 			local proptype
 			if type(propschema) == "table" then
@@ -50,10 +51,28 @@ local function parse_object(schema, s)
 
 					single_attribute = propschema.xml.x_single_attribute
 				end
+				if propschema["const"] then
+					enums = {propschema["const"]}
+				elseif propschema["enum"] then
+					enums = propschema["enum"]
+				end
 			end
 
 			if name_is_value then
-				local c = s:get_child(nil, namespace);
+				local c
+				if proptype == "boolean" then
+					c = s:get_child(name, namespace);
+				elseif enums and proptype == "string" then
+
+					for i = 1, #enums do
+						c = s:get_child(enums[i], namespace);
+						if c then
+							break
+						end
+					end
+				else
+					c = s:get_child(nil, namespace);
+				end
 				if c and proptype == "string" then
 					out[prop] = c.name;
 				elseif proptype == "boolean" and c then

@@ -42,6 +42,7 @@ local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 			local is_text = false
 			local name_is_value = false;
 			local single_attribute : string
+			local enums : { any }
 
 			local proptype : js.schema_t.type_e
 			if propschema is js.schema_t then
@@ -72,10 +73,28 @@ local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 					-- XXX Custom extension
 					single_attribute = propschema.xml.x_single_attribute
 				end
+				if propschema["const"] then
+					enums = { propschema["const"] }
+				elseif propschema["enum"] then
+					enums = propschema["enum"]
+				end
 			end
 
 			if name_is_value then
-				local c = s:get_child(nil, namespace);
+				local c : st.stanza_t
+				if proptype == "boolean" then
+					c = s:get_child(name, namespace);
+				elseif enums and proptype == "string" then
+					-- XXX O(n²) ?
+					-- Probably better to flip the table and loop over :childtags(nil, ns), should be 2xO(n)
+					-- BUT works first, optimize later
+					for i = 1, #enums do
+						c = s:get_child(enums[i] as string, namespace);
+						if c then break end
+					end
+				else
+					c = s:get_child(nil, namespace);
+				end
 				if c and proptype == "string" then
 					out[prop] = c.name;
 				elseif proptype == "boolean" and c then

@@ -29,6 +29,13 @@ describe("util.datampper", function()
 				};
 				state = {
 					type = "string";
+					enum = {
+						"active",
+						"inactive",
+						"gone",
+						"composing",
+						"paused",
+					};
 					xml = {x_name_is_value = true; namespace = "http://jabber.org/protocol/chatstates"};
 				};
 				fallback = {
@@ -46,6 +53,7 @@ describe("util.datampper", function()
 				<message xmlns="jabber:client" xml:lang="en" to="a@test" from="b@test" type="chat" id="1">
 				<body>Hello</body>
 				<delay xmlns='urn:xmpp:delay' from='test' stamp='2021-03-07T15:59:08+00:00'>Becasue</delay>
+				<UNRELATED xmlns='http://jabber.org/protocol/chatstates'/>
 				<active xmlns='http://jabber.org/protocol/chatstates'/>
 				<fallback xmlns='urn:xmpp:fallback:0'/>
 				<origin-id xmlns='urn:xmpp:sid:0' id='qgkmMdPB'/>
@@ -77,7 +85,7 @@ describe("util.datampper", function()
 			local u = map.unparse(s, d);
 			assert.equal("message", u.name);
 			assert.same(x.attr, u.attr);
-			assert.equal(#x.tags, #u.tags)
+			assert.equal(#x.tags-1, #u.tags)
 			assert.equal(x:get_child_text("body"), u:get_child_text("body"));
 			assert.equal(x:get_child_text("delay", "urn:xmpp:delay"), u:get_child_text("delay", "urn:xmpp:delay"));
 			assert.same(x:get_child("delay", "urn:xmpp:delay").attr, u:get_child("delay", "urn:xmpp:delay").attr);
