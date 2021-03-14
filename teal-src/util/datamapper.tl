@@ -51,58 +51,67 @@ local enum value_goes
 	"in_children"
 end
 
+local function unpack_propschema( propschema : js.schema_t | js.schema_t.type_e, propname : string, current_ns : string )
+		: js.schema_t.type_e, value_goes, string, string, string, string, { any }
+	local proptype : js.schema_t.type_e = "string"
+	local value_where : value_goes = "in_text_tag"
+	local name = propname
+	local namespace = current_ns
+	local prefix : string
+	local single_attribute : string
+	local enums : { any }
+
+	if propschema is js.schema_t then
+		proptype = propschema.type
+	elseif propschema is js.schema_t.type_e then
+		proptype = propschema
+	end
+
+	if propschema is js.schema_t then
+		local xml = propschema.xml
+		if xml then
+			if xml.name then
+				name = xml.name
+			end
+			if xml.namespace then
+				namespace = xml.namespace
+			end
+			if xml.prefix then
+				prefix = xml.prefix
+			end
+
+			if xml.attribute then
+				value_where = "in_attribute"
+			elseif xml.text then
+				value_where = "in_text"
+			elseif xml.x_name_is_value then
+				value_where = "in_tag_name"
+			elseif xml.x_single_attribute then
+				single_attribute = xml.x_single_attribute
+				value_where = "in_single_attribute"
+			end
+		end
+		if propschema["const"] then
+			enums = { propschema["const"] }
+		elseif propschema["enum"] then
+			enums = propschema["enum"]
+		end
+	end
+
+	if proptype == "object" or proptype == "array" then
+		value_where = "in_children"
+	end
+
+	return proptype, value_where, name, namespace, prefix, single_attribute, enums
+end
+
+
 local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 	local out : { string : any } = {}
 	if schema.properties then
 		for prop, propschema in pairs(schema.properties) do
-			-- TODO factor out, if it's generic enough
-			local name = prop
-			local namespace = s.attr.xmlns;
-			local prefix : string = nil
-			local value_where : value_goes = "in_text_tag"
-			local single_attribute : string
-			local enums : { any }
 
-			local proptype : js.schema_t.type_e
-			if propschema is js.schema_t then
-				proptype = propschema.type
-			elseif propschema is js.schema_t.type_e then
-				proptype = propschema
-			end
-
-			if proptype == "object" or proptype == "array" then
-				value_where = "in_children"
-			end
-
-			if propschema is js.schema_t and propschema.xml then
-				if propschema.xml.name then
-					name = propschema.xml.name
-				end
-				if propschema.xml.namespace then
-					namespace = propschema.xml.namespace
-				end
-				if propschema.xml.prefix then
-					prefix = propschema.xml.prefix
-				end
-				if propschema.xml.attribute then
-					value_where = "in_attribute"
-				elseif propschema.xml.text then
-					-- XXX Not yet in OpenAPI
-					value_where = "in_text"
-				elseif propschema.xml.x_name_is_value then
-					-- XXX Custom extension
-					value_where = "in_tag_name"
-				elseif propschema.xml.x_single_attribute then
-					-- XXX Custom extension
-					single_attribute = propschema.xml.x_single_attribute
-					value_where = "in_single_attribute"
-				end
-				if propschema["const"] then
-					enums = { propschema["const"] }
-				elseif propschema["enum"] then
-					enums = propschema["enum"]
-				end
-			end
+			local proptype, value_where, name, namespace, prefix, single_attribute, enums = unpack_propschema(propschema, prop, s.attr.xmlns)
 
 			local value : string
 			if value_where == "in_tag_name" then
@@ -181,43 +190,8 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 			local v = t[prop]
 
 			if v ~= nil then
-				local proptype : js.schema_t.type_e
-				if propschema is js.schema_t then
-					proptype = propschema.type
-				elseif propschema is js.schema_t.type_e then
-					proptype = propschema
-				end
 
-				local name = prop
-				local namespace = current_ns
-				local prefix : string = nil
-				local value_where : value_goes = "in_text_tag"
-				local single_attribute : string
-
-				if propschema is js.schema_t and propschema.xml then
-
-					if propschema.xml.name then
-						name = propschema.xml.name
-					end
-					if propschema.xml.namespace then
-						namespace = propschema.xml.namespace
-					end
-
-					if propschema.xml.prefix then
-						prefix = propschema.xml.prefix
-					end
-
-					if propschema.xml.attribute then
-						value_where = "in_attribute"
-					elseif propschema.xml.text then
-						value_where = "in_text"
-					elseif propschema.xml.x_name_is_value then
-						value_where = "in_tag_name"
-					elseif propschema.xml.x_single_attribute then
-						single_attribute = propschema.xml.x_single_attribute
-						value_where = "in_single_attribute"
-					end
-				end
+				local proptype, value_where, name, namespace, prefix, single_attribute = unpack_propschema(propschema, prop, current_ns)
 
 				if value_where == "in_attribute" then
 					local attr = name
