@@ -5,6 +5,18 @@ local function toboolean(s)
 		return true
 	elseif s == "false" or s == "0" then
 		return false
+	elseif s then
+		return true
+	end
+end
+
+local function totype(t, s)
+	if t == "string" then
+		return s
+	elseif t == "boolean" then
+		return toboolean(s)
+	elseif t == "number" or t == "integer" then
+		return tonumber(s)
 	end
 end
 
@@ -27,6 +39,10 @@ local function parse_object(schema, s)
 				proptype = propschema.type
 			elseif type(propschema) == "string" then
 				proptype = propschema
+			end
+
+			if proptype == "object" or proptype == "array" then
+				value_where = "in_children"
 			end
 
 			if type(propschema) == "table" and propschema.xml then
@@ -59,6 +75,7 @@ local function parse_object(schema, s)
 				end
 			end
 
+			local value
 			if value_where == "in_tag_name" then
 				local c
 				if proptype == "boolean" then
@@ -74,11 +91,7 @@ local function parse_object(schema, s)
 				else
 					c = s:get_child(nil, namespace);
 				end
-				if c and proptype == "string" then
-					out[prop] = c.name;
-				elseif proptype == "boolean" and c then
-					out[prop] = true;
-				end
+				value = c.name;
 			elseif value_where == "in_attribute" then
 				local attr = name
 				if prefix then
@@ -86,46 +99,27 @@ local function parse_object(schema, s)
 				elseif namespace ~= s.attr.xmlns then
 					attr = namespace .. "\1" .. name
 				end
-				if proptype == "string" then
-					out[prop] = s.attr[attr]
-				elseif proptype == "integer" or proptype == "number" then
-
-					out[prop] = tonumber(s.attr[attr])
-				elseif proptype == "boolean" then
-					out[prop] = toboolean(s.attr[attr])
-
-				end
+				value = s.attr[attr]
 
 			elseif value_where == "in_text" then
-				if proptype == "string" then
-					out[prop] = s:get_text()
-				elseif proptype == "integer" or proptype == "number" then
-					out[prop] = tonumber(s:get_text())
-				end
+				value = s:get_text()
 
 			elseif value_where == "in_single_attribute" then
 				local c = s:get_child(name, namespace)
-				local a = c and c.attr[single_attribute]
-				if proptype == "string" then
-					out[prop] = a
-				elseif proptype == "integer" or proptype == "number" then
-					out[prop] = tonumber(a)
-				elseif proptype == "boolean" then
-					out[prop] = toboolean(a)
-				end
-			else
-
-				if proptype == "string" then
-					out[prop] = s:get_child_text(name, namespace)
-				elseif proptype == "integer" or proptype == "number" then
-					out[prop] = tonumber(s:get_child_text(name, namespace))
-				elseif proptype == "object" and type(propschema) == "table" then
+				value = c and c.attr[single_attribute]
+			elseif value_where == "in_text_tag" then
+				value = s:get_child_text(name, namespace)
+			elseif value_where == "in_children" and type(propschema) == "table" then
+				if proptype == "object" then
 					local c = s:get_child(name, namespace)
 					if c then
 						out[prop] = parse_object(propschema, c);
 					end
 
 				end
+			end
+			if value_where ~= "in_children" then
+				out[prop] = totype(proptype, value)
 			end
 		end
 	end
