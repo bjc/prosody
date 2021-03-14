@@ -30,6 +30,15 @@ local function toboolean ( s : string ) : boolean
 	end
 end
 
+local enum value_goes
+	"in_tag_name"
+	"in_text"
+	"in_text_tag"
+	"in_attribute"
+	"in_single_attribute"
+	"in_children"
+end
+
 local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 	local out : { string : any } = {}
 	if schema.properties then
@@ -38,9 +47,7 @@ local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 			local name = prop
 			local namespace = s.attr.xmlns;
 			local prefix : string = nil
-			local is_attribute = false
-			local is_text = false
-			local name_is_value = false;
+			local value_where : value_goes = "in_text_tag"
 			local single_attribute : string
 			local enums : { any }
 
@@ -62,16 +69,17 @@ local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 					prefix = propschema.xml.prefix
 				end
 				if propschema.xml.attribute then
-					is_attribute = true
+					value_where = "in_attribute"
 				elseif propschema.xml.text then
 					-- XXX Not yet in OpenAPI
-					is_text = true
+					value_where = "in_text"
 				elseif propschema.xml.x_name_is_value then
 					-- XXX Custom extension
-					name_is_value = true
+					value_where = "in_tag_name"
 				elseif propschema.xml.x_single_attribute then
 					-- XXX Custom extension
 					single_attribute = propschema.xml.x_single_attribute
+					value_where = "in_single_attribute"
 				end
 				if propschema["const"] then
 					enums = { propschema["const"] }
@@ -80,7 +88,7 @@ local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 				end
 			end
 
-			if name_is_value then
+			if value_where == "in_tag_name" then
 				local c : st.stanza_t
 				if proptype == "boolean" then
 					c = s:get_child(name, namespace);
@@ -100,7 +108,7 @@ local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 				elseif proptype == "boolean" and c then
 					out[prop] = true;
 				end
-			elseif is_attribute then
+			elseif value_where == "in_attribute" then
 				local attr = name
 				if prefix then
 					attr = prefix .. ':' .. name
@@ -117,14 +125,14 @@ local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 				-- else TODO
 				end
 
-			elseif is_text then
+			elseif value_where == "in_text" then
 				if proptype == "string" then
 					out[prop] = s:get_text()
 				elseif proptype == "integer" or proptype == "number" then
 					out[prop] = tonumber(s:get_text())
 				end
 
-			elseif single_attribute then
+			elseif value_where == "in_single_attribute" then
 				local c = s:get_child(name, namespace)
 				local a = c and c.attr[single_attribute]
 				if proptype == "string" then
@@ -189,9 +197,7 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 				local name = prop
 				local namespace = current_ns
 				local prefix : string = nil
-				local is_attribute = false
-				local is_text = false
-				local name_is_value = false;
+				local value_where : value_goes = "in_text_tag"
 				local single_attribute : string
 
 				if propschema is js.schema_t and propschema.xml then
@@ -208,17 +214,18 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 					end
 
 					if propschema.xml.attribute then
-						is_attribute = true
+						value_where = "in_attribute"
 					elseif propschema.xml.text then
-						is_text = true
+						value_where = "in_text"
 					elseif propschema.xml.x_name_is_value then
-						name_is_value = true
+						value_where = "in_tag_name"
 					elseif propschema.xml.x_single_attribute then
 						single_attribute = propschema.xml.x_single_attribute
+						value_where = "in_single_attribute"
 					end
 				end
 
-				if is_attribute then
+				if value_where == "in_attribute" then
 					local attr = name
 					if prefix then
 						attr = prefix .. ':' .. name
@@ -235,11 +242,11 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 					elseif proptype == "boolean" then
 						out.attr[attr] = v and "1" or "0"
 					end
-				elseif is_text then
+				elseif value_where == "in_text" then
 					if v is string then
 						out:text(v)
 					end
-				elseif single_attribute then
+				elseif value_where == "in_single_attribute" then
 					local propattr : { string : string } = {}
 
 					if namespace ~= current_ns then
@@ -262,7 +269,7 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 					if namespace ~= current_ns then
 						propattr = { xmlns = namespace }
 					end
-					if name_is_value then
+					if value_where == "in_tag_name" then
 						if proptype == "string" and v is string then
 							out:tag(v, propattr):up();
 						elseif proptype == "boolean" and v == true then

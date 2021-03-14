@@ -8,6 +8,8 @@ local function toboolean(s)
 	end
 end
 
+local value_goes = {}
+
 local function parse_object(schema, s)
 	local out = {}
 	if schema.properties then
@@ -16,9 +18,7 @@ local function parse_object(schema, s)
 			local name = prop
 			local namespace = s.attr.xmlns;
 			local prefix = nil
-			local is_attribute = false
-			local is_text = false
-			local name_is_value = false;
+			local value_where = "in_text_tag"
 			local single_attribute
 			local enums
 
@@ -40,16 +40,17 @@ local function parse_object(schema, s)
 					prefix = propschema.xml.prefix
 				end
 				if propschema.xml.attribute then
-					is_attribute = true
+					value_where = "in_attribute"
 				elseif propschema.xml.text then
 
-					is_text = true
+					value_where = "in_text"
 				elseif propschema.xml.x_name_is_value then
 
-					name_is_value = true
+					value_where = "in_tag_name"
 				elseif propschema.xml.x_single_attribute then
 
 					single_attribute = propschema.xml.x_single_attribute
+					value_where = "in_single_attribute"
 				end
 				if propschema["const"] then
 					enums = {propschema["const"]}
@@ -58,7 +59,7 @@ local function parse_object(schema, s)
 				end
 			end
 
-			if name_is_value then
+			if value_where == "in_tag_name" then
 				local c
 				if proptype == "boolean" then
 					c = s:get_child(name, namespace);
@@ -78,7 +79,7 @@ local function parse_object(schema, s)
 				elseif proptype == "boolean" and c then
 					out[prop] = true;
 				end
-			elseif is_attribute then
+			elseif value_where == "in_attribute" then
 				local attr = name
 				if prefix then
 					attr = prefix .. ":" .. name
@@ -95,14 +96,14 @@ local function parse_object(schema, s)
 
 				end
 
-			elseif is_text then
+			elseif value_where == "in_text" then
 				if proptype == "string" then
 					out[prop] = s:get_text()
 				elseif proptype == "integer" or proptype == "number" then
 					out[prop] = tonumber(s:get_text())
 				end
 
-			elseif single_attribute then
+			elseif value_where == "in_single_attribute" then
 				local c = s:get_child(name, namespace)
 				local a = c and c.attr[single_attribute]
 				if proptype == "string" then
@@ -167,9 +168,7 @@ local function unparse(schema, t, current_name, current_ns)
 				local name = prop
 				local namespace = current_ns
 				local prefix = nil
-				local is_attribute = false
-				local is_text = false
-				local name_is_value = false;
+				local value_where = "in_text_tag"
 				local single_attribute
 
 				if type(propschema) == "table" and propschema.xml then
@@ -186,17 +185,18 @@ local function unparse(schema, t, current_name, current_ns)
 					end
 
 					if propschema.xml.attribute then
-						is_attribute = true
+						value_where = "in_attribute"
 					elseif propschema.xml.text then
-						is_text = true
+						value_where = "in_text"
 					elseif propschema.xml.x_name_is_value then
-						name_is_value = true
+						value_where = "in_tag_name"
 					elseif propschema.xml.x_single_attribute then
 						single_attribute = propschema.xml.x_single_attribute
+						value_where = "in_single_attribute"
 					end
 				end
 
-				if is_attribute then
+				if value_where == "in_attribute" then
 					local attr = name
 					if prefix then
 						attr = prefix .. ":" .. name
@@ -213,11 +213,11 @@ local function unparse(schema, t, current_name, current_ns)
 					elseif proptype == "boolean" then
 						out.attr[attr] = v and "1" or "0"
 					end
-				elseif is_text then
+				elseif value_where == "in_text" then
 					if type(v) == "string" then
 						out:text(v)
 					end
-				elseif single_attribute then
+				elseif value_where == "in_single_attribute" then
 					local propattr = {}
 
 					if namespace ~= current_ns then
@@ -240,7 +240,7 @@ local function unparse(schema, t, current_name, current_ns)
 					if namespace ~= current_ns then
 						propattr = {xmlns = namespace}
 					end
-					if name_is_value then
+					if value_where == "in_tag_name" then
 						if proptype == "string" and type(v) == "string" then
 							out:tag(v, propattr):up();
 						elseif proptype == "boolean" and v == true then
