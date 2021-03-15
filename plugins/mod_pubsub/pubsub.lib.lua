@@ -517,7 +517,13 @@ function handlers.set_unsubscribe(origin, stanza, unsubscribe, service)
 	local ok, ret = service:remove_subscription(node, stanza.attr.from, jid);
 	local reply;
 	if ok then
-		reply = st.reply(stanza);
+		reply = st.reply(stanza)
+			:tag("pubsub", { xmlns = xmlns_pubsub })
+				:tag("subscription", {
+					node = node,
+					jid = jid,
+					subscription = "none"
+				}):up();
 	else
 		reply = pubsub_error_reply(stanza, ret);
 	end

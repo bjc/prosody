@@ -150,7 +150,11 @@ Juliet sends:
 	</iq>
 
 Juliet receives:
-	<iq type="result" id='unsub1'/>
+	<iq type="result" id='unsub1'>
+		<pubsub xmlns='http://jabber.org/protocol/pubsub'>
+			<subscription jid="${Juliet's full JID}" node='princely_musings' subscription='none'/>
+		</pubsub>
+	</iq>
 
 Balthasar sends:
 	<iq type="set" to="pubsub.localhost" id='del1'>
