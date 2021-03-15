@@ -5,7 +5,7 @@ local known_options = {
 	generational = set.new { "mode", "minor_threshold", "major_threshold" };
 };
 
-if _VERSION ~= "5.4" then
+if _VERSION ~= "Lua 5.4" then
 	known_options.generational = nil;
 	known_options.incremental:remove("step_size");
 end
