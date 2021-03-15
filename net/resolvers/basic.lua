@@ -74,6 +74,8 @@ function methods:next(cb)
 			end
 			ready();
 		end, self.hostname, "AAAA", "IN");
+	else
+		ready();
 	end
 
 	if self.extra and self.extra.use_dane == true then
