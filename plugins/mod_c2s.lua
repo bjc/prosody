@@ -130,6 +130,10 @@ function stream_callbacks._streamopened(session, attr)
 	local features = st.stanza("stream:features");
 	hosts[session.host].events.fire_event("stream-features", { origin = session, features = features, stream = attr });
 	if features.tags[1] or session.full_jid then
+		if stanza_size_limit then
+			features:reset();
+			features:tag("stanza-size-limit", { xmlns = "xmpp:prosody.im/stream/limits", bytes = string.format("%d", stanza_size_limit) });
+		end
 		send(features);
 	else
 		if session.secure then
