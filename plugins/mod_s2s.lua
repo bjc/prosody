@@ -518,6 +518,11 @@ function stream_callbacks._streamopened(session, attr)
 			end
 
 			if ( session.type == "s2sin" or session.type == "s2sout" ) or features.tags[1] then
+				if stanza_size_limit then
+					features:reset();
+					features:tag("stanza-size-limit", { xmlns = "xmpp:prosody.im/stream/limits", bytes = string.format("%d", stanza_size_limit) });
+				end
+
 				log("debug", "Sending stream features: %s", features);
 				session.sends2s(features);
 			else
