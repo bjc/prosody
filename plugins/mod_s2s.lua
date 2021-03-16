@@ -250,6 +250,10 @@ function module.add_host(module)
 	module:hook("s2s-authenticated", make_authenticated, -1);
 	module:hook("s2s-read-timeout", keepalive, -1);
 	module:hook_stanza("http://etherx.jabber.org/streams", "features", function (session, stanza) -- luacheck: ignore 212/stanza
+		local limits = stanza:get_child("stanza-size-limit", "xmpp:prosody.im/stream/limits");
+		if limits then
+			session.outgoing_stanza_size_limit = tonumber(limits.attr.bytes);
+		end
 		if session.type == "s2sout" then
 			-- Stream is authenticated and we are seem to be done with feature negotiation,
 			-- so the stream is ready for stanzas.  RFC 6120 Section 4.3
