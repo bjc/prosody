@@ -772,6 +772,11 @@ local function initialize_session(session)
 		end
 		if t then
 			t = filter("bytes/out", tostring(t));
+			if session.outgoing_stanza_size_limit and #t > session.outgoing_stanza_size_limit then
+				log("warn", "Attempt to send a stanza exceeding session limit of %dB (%dB)!", session.outgoing_stanza_size_limit, #t);
+				-- TODO Pass identifiable error condition back to allow appropriate handling
+				return false
+			end
 			if t then
 				return w(conn, t);
 			end
