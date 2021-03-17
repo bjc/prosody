@@ -432,6 +432,14 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0184.html"/>
+        <xmpp:version>1.4.0</xmpp:version>
+        <xmpp:since>0.12.0</xmpp:since>
+        <xmpp:note>mod_mam archives receipts</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0185.html"/>
         <xmpp:version>1.0</xmpp:version>
         <xmpp:status>complete</xmpp:status>
