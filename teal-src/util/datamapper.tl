@@ -192,6 +192,8 @@ function parse_array (schema : js.schema_t, s : st.stanza_t) : { any }
 			error "NYI"
 		end
 
+		value = totype(proptype, value)
+
 		if value ~= nil then
 			table.insert(out, value);
 		end
@@ -210,7 +212,6 @@ local function parse (schema : js.schema_t, s : st.stanza_t) : table
 end
 
 local function unparse ( schema : js.schema_t, t : table, current_name : string, current_ns : string ) : st.stanza_t
-	if schema.type == "object" then
 
 		if schema.xml then
 			if schema.xml.name then
@@ -223,6 +224,8 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 		end
 
 		local out = st.stanza(current_name, { xmlns = current_ns })
+
+	if schema.type == "object" then
 
 		for prop, propschema in pairs(schema.properties) do
 			local v = t[prop]
@@ -294,13 +297,40 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 						if c then
 							out:add_direct_child(c);
 						end
-					-- else TODO
+					elseif proptype == "array" and propschema is js.schema_t and v is table then
+						local c = unparse(propschema, v, name, namespace);
+						if c then
+							if value_where == "in_wrapper" then
+								local w = st.stanza(propschema.xml.name or name, { xmlns = propschema.xml.namespace or namespace })
+								w:add_direct_child(c);
+								out:add_direct_child(w);
+							else
+								out:add_direct_child(c);
+							end
+						end
+					else
+						error "NYI"
 					end
 				end
 			end
 		end
 		return out;
 
+	elseif schema.type == "array" then
+		local proptype, value_where, name, namespace = unpack_propschema(schema.items, current_name, current_ns)
+		-- TODO , prefix, single_attribute
+		if proptype == "string" then
+			for _, item in ipairs(t as { string }) do
+				if value_where == "in_text_tag" then
+					out:text_tag(name, item, { xmlns = namespace });
+				else
+					error "NYI"
+				end
+			end
+		else
+			error "NYI"
+		end
+		return out;
 	end
 end
 

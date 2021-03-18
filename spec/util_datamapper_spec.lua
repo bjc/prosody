@@ -103,15 +103,11 @@ describe("util.datampper", function()
 			assert.same(x:get_child("delay", "urn:xmpp:delay").attr, u:get_child("delay", "urn:xmpp:delay").attr);
 			assert.same(x:get_child("origin-id", "urn:xmpp:sid:0").attr, u:get_child("origin-id", "urn:xmpp:sid:0").attr);
 			for _, tag in ipairs(x.tags) do
-				if tag.name ~= "UNRELATED" and tag.name ~= "reactions" then
+				if tag.name ~= "UNRELATED" then
 					assert.truthy(u:get_child(tag.name, tag.attr.xmlns) or u:get_child(tag.name), tag:top_tag())
 				end
 			end
-			assert.equal(#x.tags-2, #u.tags)
-
-			pending("arrays", function ()
-				assert.truthy(u:get_child("reactions", "urn:xmpp:reactions:0"))
-			end);
+			assert.equal(#x.tags-1, #u.tags)
 
 		end);
 	end);
