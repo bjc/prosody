@@ -46,6 +46,11 @@ describe("util.datampper", function()
 					type = "string";
 					xml = {name = "origin-id"; namespace = "urn:xmpp:sid:0"; x_single_attribute = "id"};
 				};
+				reactions = {
+					type = "array";
+					xml = {namespace = "urn:xmpp:reactions:0"; wrapped = true};
+					items = {type = "string"; xml = {name = "reaction"}};
+				};
 			};
 		};
 
@@ -57,6 +62,10 @@ describe("util.datampper", function()
 				<active xmlns='http://jabber.org/protocol/chatstates'/>
 				<fallback xmlns='urn:xmpp:fallback:0'/>
 				<origin-id xmlns='urn:xmpp:sid:0' id='qgkmMdPB'/>
+				<reactions id='744f6e18-a57a-11e9-a656-4889e7820c76' xmlns='urn:xmpp:reactions:0'>
+					<reaction>👋</reaction>
+					<reaction>🐢</reaction>
+				</reactions>
 				</message>
 				]];
 
@@ -71,6 +80,10 @@ describe("util.datampper", function()
 			state = "active";
 			fallback = true;
 			origin_id = "qgkmMdPB";
+			reactions = {
+				"👋",
+				"🐢",
+			};
 		};
 	end);
 
@@ -85,11 +98,21 @@ describe("util.datampper", function()
 			local u = map.unparse(s, d);
 			assert.equal("message", u.name);
 			assert.same(x.attr, u.attr);
-			assert.equal(#x.tags-1, #u.tags)
 			assert.equal(x:get_child_text("body"), u:get_child_text("body"));
 			assert.equal(x:get_child_text("delay", "urn:xmpp:delay"), u:get_child_text("delay", "urn:xmpp:delay"));
 			assert.same(x:get_child("delay", "urn:xmpp:delay").attr, u:get_child("delay", "urn:xmpp:delay").attr);
 			assert.same(x:get_child("origin-id", "urn:xmpp:sid:0").attr, u:get_child("origin-id", "urn:xmpp:sid:0").attr);
+			for _, tag in ipairs(x.tags) do
+				if tag.name ~= "UNRELATED" and tag.name ~= "reactions" then
+					assert.truthy(u:get_child(tag.name, tag.attr.xmlns) or u:get_child(tag.name), tag:top_tag())
+				end
+			end
+			assert.equal(#x.tags-2, #u.tags)
+
+			pending("arrays", function ()
+				assert.truthy(u:get_child("reactions", "urn:xmpp:reactions:0"))
+			end);
+
 		end);
 	end);
 end)

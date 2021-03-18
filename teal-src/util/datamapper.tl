@@ -49,6 +49,7 @@ local enum value_goes
 	"in_attribute"
 	"in_single_attribute"
 	"in_children"
+	"in_wrapper"
 end
 
 local function unpack_propschema( propschema : js.schema_t | js.schema_t.type_e, propname : string, current_ns : string )
@@ -67,6 +68,10 @@ local function unpack_propschema( propschema : js.schema_t | js.schema_t.type_e,
 		proptype = propschema
 	end
 
+	if proptype == "object" or proptype == "array" then
+		value_where = "in_children"
+	end
+
 	if propschema is js.schema_t then
 		local xml = propschema.xml
 		if xml then
@@ -79,8 +84,9 @@ local function unpack_propschema( propschema : js.schema_t | js.schema_t.type_e,
 			if xml.prefix then
 				prefix = xml.prefix
 			end
-
-			if xml.attribute then
+			if proptype == "array" and xml.wrapped then
+				value_where = "in_wrapper"
+			elseif xml.attribute then
 				value_where = "in_attribute"
 			elseif xml.text then
 				value_where = "in_text"
@@ -98,15 +104,13 @@ local function unpack_propschema( propschema : js.schema_t | js.schema_t.type_e,
 		end
 	end
 
-	if proptype == "object" or proptype == "array" then
-		value_where = "in_children"
-	end
-
 	return proptype, value_where, name, namespace, prefix, single_attribute, enums
 end
 
+local parse_object : function (schema : js.schema_t, s : st.stanza_t) : { string : any }
+local parse_array : function (schema : js.schema_t, s : st.stanza_t) : { any }
 
-local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
+function parse_object (schema : js.schema_t, s : st.stanza_t) : { string : any }
 	local out : { string : any } = {}
 	if schema.properties then
 		for prop, propschema in pairs(schema.properties) do
@@ -153,10 +157,22 @@ local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 					if c then
 						out[prop] = parse_object(propschema, c);
 					end
-				-- else TODO
+				elseif proptype == "array" then
+					out[prop] = parse_array(propschema, s);
+				else
+					error "unreachable"
 				end
+			elseif value_where == "in_wrapper" and propschema is js.schema_t and proptype == "array" then
+				local wrapper = s:get_child(name, namespace);
+				if wrapper then
+					out[prop] = parse_array(propschema, wrapper);
+				else
+					error "unreachable"
 			end
-			if value_where ~= "in_children" then
+			else
+				error "unreachable"
+			end
+			if value_where ~= "in_children" and value_where ~= "in_wrapper" then
 				out[prop] = totype(proptype, value)
 			end
 		end
@@ -165,9 +181,31 @@ local function parse_object (schema : js.schema_t, s : st.stanza_t) : table
 	return out
 end
 
+function parse_array (schema : js.schema_t, s : st.stanza_t) : { any }
+	local proptype, value_where, child_name, namespace = unpack_propschema(schema.items, nil, s.attr.xmlns)
+	local out : { any } = {}
+	for c in s:childtags(child_name, namespace) do
+		local value : string;
+		if value_where == "in_text_tag" then
+			value = c:get_text();
+		else
+			error "NYI"
+		end
+
+		if value ~= nil then
+			table.insert(out, value);
+		end
+	end
+	return out;
+end
+
 local function parse (schema : js.schema_t, s : st.stanza_t) : table
 	if schema.type == "object" then
 		return parse_object(schema, s)
+	elseif schema.type == "array" then
+		return parse_array(schema, s)
+	else
+		error "top-level scalars unsupported"
 	end
 end
 

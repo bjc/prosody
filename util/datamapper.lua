@@ -38,6 +38,10 @@ local function unpack_propschema(propschema, propname, current_ns)
 		proptype = propschema
 	end
 
+	if proptype == "object" or proptype == "array" then
+		value_where = "in_children"
+	end
+
 	if type(propschema) == "table" then
 		local xml = propschema.xml
 		if xml then
@@ -50,8 +54,9 @@ local function unpack_propschema(propschema, propname, current_ns)
 			if xml.prefix then
 				prefix = xml.prefix
 			end
-
-			if xml.attribute then
+			if proptype == "array" and xml.wrapped then
+				value_where = "in_wrapper"
+			elseif xml.attribute then
 				value_where = "in_attribute"
 			elseif xml.text then
 				value_where = "in_text"
@@ -69,14 +74,13 @@ local function unpack_propschema(propschema, propname, current_ns)
 		end
 	end
 
-	if proptype == "object" or proptype == "array" then
-		value_where = "in_children"
-	end
-
 	return proptype, value_where, name, namespace, prefix, single_attribute, enums
 end
 
-local function parse_object(schema, s)
+local parse_object
+local parse_array
+
+function parse_object(schema, s)
 	local out = {}
 	if schema.properties then
 		for prop, propschema in pairs(schema.properties) do
@@ -123,10 +127,22 @@ local function parse_object(schema, s)
 					if c then
 						out[prop] = parse_object(propschema, c);
 					end
-
+				elseif proptype == "array" then
+					out[prop] = parse_array(propschema, s);
+				else
+					error("unreachable")
 				end
+			elseif value_where == "in_wrapper" and type(propschema) == "table" and proptype == "array" then
+				local wrapper = s:get_child(name, namespace);
+				if wrapper then
+					out[prop] = parse_array(propschema, wrapper);
+				else
+					error("unreachable")
+				end
+			else
+				error("unreachable")
 			end
-			if value_where ~= "in_children" then
+			if value_where ~= "in_children" and value_where ~= "in_wrapper" then
 				out[prop] = totype(proptype, value)
 			end
 		end
@@ -135,9 +151,31 @@ local function parse_object(schema, s)
 	return out
 end
 
+function parse_array(schema, s)
+	local proptype, value_where, child_name, namespace = unpack_propschema(schema.items, nil, s.attr.xmlns)
+	local out = {}
+	for c in s:childtags(child_name, namespace) do
+		local value;
+		if value_where == "in_text_tag" then
+			value = c:get_text();
+		else
+			error("NYI")
+		end
+
+		if value ~= nil then
+			table.insert(out, value);
+		end
+	end
+	return out
+end
+
 local function parse(schema, s)
 	if schema.type == "object" then
 		return parse_object(schema, s)
+	elseif schema.type == "array" then
+		return parse_array(schema, s)
+	else
+		error("top-level scalars unsupported")
 	end
 end
 
