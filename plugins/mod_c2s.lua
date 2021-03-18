@@ -228,12 +228,16 @@ end, 200);
 function runner_callbacks:ready()
 	if self.data.conn then
 		self.data.conn:resume();
+	else
+		(self.data.log or log)("debug", "Session has no connection to resume");
 	end
 end
 
 function runner_callbacks:waiting()
 	if self.data.conn then
 		self.data.conn:pause();
+	else
+		(self.data.log or log)("debug", "Session has no connection to pause while waiting");
 	end
 end
 
