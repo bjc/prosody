@@ -8,18 +8,19 @@
 -- https://json-schema.org/draft/2020-12/json-schema-validation.html
 --
 
-local record schema_t
-	enum type_e
-		"null"
-		"boolean"
-		"object"
-		"array"
-		"number"
-		"string"
-		"integer"
-	end
+local json = require"util.json"
+local null = json.null;
 
-	type : type_e
+local type json_type_name = json.json_type_name
+
+-- json_type_name here is non-standard
+local type schema_t = boolean | json_type_name | json_schema_object
+
+local record json_schema_object
+	type json_type_name = json.json_type_name
+	type schema_object = json_schema_object
+
+	type : json_type_name
 	enum : { any }
 	const : any
 
@@ -56,7 +57,7 @@ local record schema_t
 	minContains : integer
 
 	-- objects
-	properties : { string : schema_t | type_e }
+	properties : { string : schema_t }
 	maxProperties : integer
 	minProperties : integer
 	required : { string }
@@ -87,26 +88,30 @@ local record schema_t
 	deprecated : boolean
 	readOnly : boolean
 	writeOnly : boolean
+
+	-- methods
+	validate : function ( schema_t, any) : boolean
 end
-local type_e = schema_t.type_e
 
 -- TODO validator function per schema property
 
-local type_validators : { type_e : function (schema_t, any) : boolean } = {}
+local type_validators : { json_type_name : function (schema_t, any) : boolean } = {}
 
-local function simple_validate(schema : type_e, data : any) : boolean
+local function simple_validate(schema : json_type_name, data : any) : boolean
 	if schema == "object" and data is table then
 		return type(data) == "table" and (next(data)==nil or type((next(data, nil))) == "string")
 	elseif schema == "array" and data is table then
 		return type(data) == "table" and (next(data)==nil or type((next(data, nil))) == "number")
 	elseif schema == "integer" then
 		return math.type(data) == schema
+	elseif schema == "null" then
+		return data == null
 	else
 		return type(data) == schema
 	end
 end
 
-type_validators.string = function (schema : schema_t, data : any) : boolean
+type_validators.string = function (schema : json_schema_object, data : any) : boolean
 	-- XXX this is measured in byte, while JSON measures in ... bork
 	-- TODO use utf8.len?
 	if data is string then
@@ -121,7 +126,7 @@ type_validators.string = function (schema : schema_t, data : any) : boolean
 	return false
 end
 
-type_validators.number = function (schema : schema_t, data : number) : boolean
+type_validators.number = function (schema : json_schema_object, data : number) : boolean
 	if schema.multipleOf and data % schema.multipleOf ~= 0 then
 		return false
 	end
@@ -147,14 +152,14 @@ end
 
 type_validators.integer = type_validators.number
 
-local function validate(schema : schema_t | type_e | boolean, data : any) : boolean
+local function validate(schema : schema_t, data : any) : boolean
 	if schema is boolean then
 		return schema
 	end
-	if schema is type_e then
+	if schema is json_type_name then
 		return simple_validate(schema, data)
 	end
-	if schema is schema_t then
+	if schema is json_schema_object then
 		if schema.allOf then
 			for _, sub in ipairs(schema.allOf) do
 				if not validate(sub, data) then
@@ -228,7 +233,7 @@ local function validate(schema : schema_t | type_e | boolean, data : any) : bool
 	end
 end
 
-type_validators.table = function (schema : schema_t, data : any) : boolean
+type_validators.table = function (schema : json_schema_object, data : any) : boolean
 	if data is table then
 
 		if schema.maxItems and #data > schema.maxItems then
@@ -248,12 +253,12 @@ type_validators.table = function (schema : schema_t, data : any) : boolean
 		end
 
 		if schema.properties then
-			local additional : schema_t | boolean = schema.additionalProperties or true
+			local additional : schema_t = schema.additionalProperties or true
 			for k, v in pairs(data) do
 				if schema.propertyNames and not validate(schema.propertyNames, k) then
 					return false
 				end
-				local s = schema.properties[k as string] or additional as schema_t
+				local s = schema.properties[k as string] or additional
 				if not validate(s, v) then
 					return false
 				end
@@ -345,7 +350,6 @@ type_validators.array = function (schema : schema_t, data : any) : boolean
 	return false
 end
 
-return {
-	validate = validate;
-	schema_t = schema_t;
-}
+json_schema_object.validate = validate;
+
+return json_schema_object;

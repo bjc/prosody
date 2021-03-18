@@ -1,6 +1,11 @@
-local schema_t = {xml_t = {}}
+local json = require("util.json")
+local null = json.null;
 
-local type_e = schema_t.type_e
+local json_type_name = json.json_type_name
+
+local schema_t = {}
+
+local json_schema_object = {xml_t = {}}
 
 local type_validators = {}
 
@@ -11,6 +16,8 @@ local function simple_validate(schema, data)
 		return type(data) == "table" and (next(data) == nil or type((next(data, nil))) == "number")
 	elseif schema == "integer" then
 		return math.type(data) == schema
+	elseif schema == "null" then
+		return data == null
 	else
 		return type(data) == schema
 	end
@@ -253,4 +260,6 @@ type_validators.array = function(schema, data)
 	return false
 end
 
-return {validate = validate; schema_t = schema_t}
+json_schema_object.validate = validate;
+
+return json_schema_object
