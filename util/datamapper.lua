@@ -82,7 +82,7 @@ local parse_array
 
 function parse_object(schema, s)
 	local out = {}
-	if schema.properties then
+	if type(schema) == "table" and schema.properties then
 		for prop, propschema in pairs(schema.properties) do
 
 			local proptype, value_where, name, namespace, prefix, single_attribute, enums = unpack_propschema(propschema, prop, s.attr.xmlns)

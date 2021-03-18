@@ -21,7 +21,11 @@
 --
 
 local st = require "util.stanza";
-local js = require "util.jsonschema"
+local json = require"util.json"
+
+local json_type_name = json.json_type_name;
+local json_schema_object = require "util.jsonschema"
+local type schema_t = boolean | json_type_name | json_schema_object
 
 local function toboolean ( s : string ) : boolean
 	if s == "true" or s == "1" then
@@ -33,7 +37,7 @@ local function toboolean ( s : string ) : boolean
 	end
 end
 
-local function totype(t : js.schema_t.type_e, s : string) : any
+local function totype(t : json_type_name, s : string) : any
 	if t == "string" then
 		return s;
 	elseif t == "boolean" then
@@ -53,9 +57,9 @@ local enum value_goes
 	"in_wrapper"
 end
 
-local function unpack_propschema( propschema : js.schema_t | js.schema_t.type_e, propname : string, current_ns : string )
-		: js.schema_t.type_e, value_goes, string, string, string, string, { any }
-	local proptype : js.schema_t.type_e = "string"
+local function unpack_propschema( propschema : schema_t, propname : string, current_ns : string )
+		: json_type_name, value_goes, string, string, string, string, { any }
+	local proptype : json_type_name = "string"
 	local value_where : value_goes = "in_text_tag"
 	local name = propname
 	local namespace = current_ns
@@ -63,9 +67,9 @@ local function unpack_propschema( propschema : js.schema_t | js.schema_t.type_e,
 	local single_attribute : string
 	local enums : { any }
 
-	if propschema is js.schema_t then
+	if propschema is json_schema_object then
 		proptype = propschema.type
-	elseif propschema is js.schema_t.type_e then
+	elseif propschema is json_type_name then
 		proptype = propschema
 	end
 
@@ -73,7 +77,7 @@ local function unpack_propschema( propschema : js.schema_t | js.schema_t.type_e,
 		value_where = "in_children"
 	end
 
-	if propschema is js.schema_t then
+	if propschema is json_schema_object then
 		local xml = propschema.xml
 		if xml then
 			if xml.name then
@@ -108,12 +112,12 @@ local function unpack_propschema( propschema : js.schema_t | js.schema_t.type_e,
 	return proptype, value_where, name, namespace, prefix, single_attribute, enums
 end
 
-local parse_object : function (schema : js.schema_t, s : st.stanza_t) : { string : any }
-local parse_array : function (schema : js.schema_t, s : st.stanza_t) : { any }
+local parse_object : function (schema : schema_t, s : st.stanza_t) : { string : any }
+local parse_array : function (schema : schema_t, s : st.stanza_t) : { any }
 
-function parse_object (schema : js.schema_t, s : st.stanza_t) : { string : any }
+function parse_object (schema : schema_t, s : st.stanza_t) : { string : any }
 	local out : { string : any } = {}
-	if schema.properties then
+	if schema is json_schema_object and schema.properties then
 		for prop, propschema in pairs(schema.properties) do
 
 			local proptype, value_where, name, namespace, prefix, single_attribute, enums = unpack_propschema(propschema, prop, s.attr.xmlns)
@@ -152,7 +156,7 @@ function parse_object (schema : js.schema_t, s : st.stanza_t) : { string : any }
 				value = c and c.attr[single_attribute]
 			elseif value_where == "in_text_tag" then
 				value = s:get_child_text(name, namespace)
-			elseif value_where == "in_children" and propschema is js.schema_t then
+			elseif value_where == "in_children" and propschema is json_schema_object then
 				if proptype == "object" then
 					local c = s:get_child(name, namespace)
 					if c then
@@ -163,13 +167,13 @@ function parse_object (schema : js.schema_t, s : st.stanza_t) : { string : any }
 				else
 					error "unreachable"
 				end
-			elseif value_where == "in_wrapper" and propschema is js.schema_t and proptype == "array" then
+			elseif value_where == "in_wrapper" and propschema is json_schema_object and proptype == "array" then
 				local wrapper = s:get_child(name, namespace);
 				if wrapper then
 					out[prop] = parse_array(propschema, wrapper);
 				else
 					error "unreachable"
-			end
+				end
 			else
 				error "unreachable"
 			end
@@ -182,7 +186,7 @@ function parse_object (schema : js.schema_t, s : st.stanza_t) : { string : any }
 	return out
 end
 
-function parse_array (schema : js.schema_t, s : st.stanza_t) : { any }
+function parse_array (schema : json_schema_object, s : st.stanza_t) : { any }
 	local proptype, value_where, child_name, namespace = unpack_propschema(schema.items, nil, s.attr.xmlns)
 	local out : { any } = {}
 	for c in s:childtags(child_name, namespace) do
@@ -202,7 +206,7 @@ function parse_array (schema : js.schema_t, s : st.stanza_t) : { any }
 	return out;
 end
 
-local function parse (schema : js.schema_t, s : st.stanza_t) : table
+local function parse (schema : json_schema_object, s : st.stanza_t) : table
 	if schema.type == "object" then
 		return parse_object(schema, s)
 	elseif schema.type == "array" then
@@ -212,19 +216,19 @@ local function parse (schema : js.schema_t, s : st.stanza_t) : table
 	end
 end
 
-local function unparse ( schema : js.schema_t, t : table, current_name : string, current_ns : string ) : st.stanza_t
+local function unparse ( schema : json_schema_object, t : table, current_name : string, current_ns : string ) : st.stanza_t
 
-		if schema.xml then
-			if schema.xml.name then
-				current_name = schema.xml.name
-			end
-			if schema.xml.namespace then
-				current_ns = schema.xml.namespace
-			end
-			-- TODO prefix?
+	if schema.xml then
+		if schema.xml.name then
+			current_name = schema.xml.name
 		end
+		if schema.xml.namespace then
+			current_ns = schema.xml.namespace
+		end
+		-- TODO prefix?
+	end
 
-		local out = st.stanza(current_name, { xmlns = current_ns })
+	local out = st.stanza(current_name, { xmlns = current_ns })
 
 	if schema.type == "object" then
 
@@ -293,12 +297,12 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 						out:text_tag(name, string.format("%d", v), propattr)
 					elseif proptype == "boolean" and v is boolean then
 						out:text_tag(name, v and "1" or "0", propattr)
-					elseif proptype == "object" and propschema is js.schema_t and v is table then
+					elseif proptype == "object" and propschema is json_schema_object and v is table then
 						local c = unparse(propschema, v, name, namespace);
 						if c then
 							out:add_direct_child(c);
 						end
-					elseif proptype == "array" and propschema is js.schema_t and v is table then
+					elseif proptype == "array" and propschema is json_schema_object and v is table then
 						local c = unparse(propschema, v, name, namespace);
 						if c then
 							if value_where == "in_wrapper" then
