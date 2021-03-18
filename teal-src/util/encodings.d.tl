@@ -16,7 +16,7 @@ local record lib
 	end
 	record utf8
 		valid : function (s : string) : boolean
-		length : function (s : string) : number
+		length : function (s : string) : integer
 	end
 	record confusable
 		skeleteon : function (s : string) : string

@@ -35,14 +35,14 @@ local record protoerror
 	type : error_type
 	condition : error_condition
 	text : string
-	code : number
+	code : integer
 end
 
 local record error
 	type : error_type
 	condition : error_condition
 	text : string
-	code : number
+	code : integer
 	context : { any : any }
 	source : string
 end

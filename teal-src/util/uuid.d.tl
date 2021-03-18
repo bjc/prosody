@@ -1,5 +1,8 @@
 local record lib
-	generate : function (number) : string
+	get_nibbles : (number) : string
+	generate : function () : string
+
+	seed : function (string)
 end
 return lib
 

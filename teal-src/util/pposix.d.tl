@@ -46,7 +46,7 @@ local record pposix
 		"unlimited"
 	end
 
-	type ulimit_limit = number | ulimit_unlimited
+	type ulimit_limit = integer | ulimit_unlimited
 
 	record utsname
 		sysname         :  string
@@ -58,11 +58,11 @@ local record pposix
 	end
 
 	record memoryinfo
-		allocated       :  number
-		allocated_mmap  :  number
-		used            :  number
-		unused          :  number
-		returnable      :  number
+		allocated       :  integer
+		allocated_mmap  :  integer
+		used            :  integer
+		unused          :  integer
+		returnable      :  integer
 	end
 
 	abort : function ()
@@ -74,13 +74,13 @@ local record pposix
 	syslog_log : function (level : syslog_level, src : string, msg : string)
 	syslog_setminlevel : function (level : syslog_level)
 
-	getpid : function () : number
-	getuid : function () : number
-	getgid : function () : number
+	getpid : function () : integer
+	getuid : function () : integer
+	getgid : function () : integer
 
-	setuid : function (uid : string) : boolean, string -- string|number
-	setgid : function (uid : string) : boolean, string
-	initgroups : function (user : string, gid : number) : boolean, string
+	setuid : function (uid : integer | string) : boolean, string -- string|integer
+	setgid : function (uid : integer | string) : boolean, string
+	initgroups : function (user : string, gid : integer) : boolean, string
 
 	umask : function (umask : string) : string
 
@@ -96,9 +96,9 @@ local record pposix
 
 	meminfo : function () : memoryinfo
 
-	atomic_append : function (f : FILE, s : string) : boolean, string, number
+	atomic_append : function (f : FILE, s : string) : boolean, string, integer
 
-	ENOENT : number
+	ENOENT : integer
 	_NAME : string
 	_VESRION : string
 end

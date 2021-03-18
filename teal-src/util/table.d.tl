@@ -1,5 +1,5 @@
 local record lib
-	create : function (narr:number, nrec:number):table
+	create : function (narr:integer, nrec:integer):table
 	pack : function (...:any):{any}
 end
 return lib

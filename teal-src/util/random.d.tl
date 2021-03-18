@@ -1,4 +1,4 @@
 local record lib
-	bytes : function (n:number):string
+	bytes : function (n:integer):string
 end
 return lib

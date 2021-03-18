@@ -1,6 +1,6 @@
 local type hash = function (msg : string, hex : boolean) : string
 local type hmac = function (key : string, msg : string, hex : boolean) : string
-local type kdf = function (pass : string, salt : string, i : number) : string
+local type kdf = function (pass : string, salt : string, i : integer) : string
 
 local record lib
 	sha1 : hash

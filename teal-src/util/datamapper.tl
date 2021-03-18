@@ -17,6 +17,7 @@
 -- TODO arrays
 -- TODO pointers
 -- TODO cleanup / refactor
+-- TODO s/number/integer/ once we have appropriate math.type() compat
 --
 
 local st = require "util.stanza";
@@ -246,7 +247,7 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 						out.attr[attr] = v
 					elseif proptype == "number" and v is number then
 						out.attr[attr] = string.format("%g", v)
-					elseif proptype == "integer" and v is number then
+					elseif proptype == "integer" and v is number then -- TODO is integer
 						out.attr[attr] = string.format("%d", v)
 					elseif proptype == "boolean" then
 						out.attr[attr] = v and "1" or "0"
@@ -266,7 +267,7 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 						propattr[single_attribute] = v
 					elseif proptype == "number" and v is number then
 						propattr[single_attribute] = string.format("%g", v)
-					elseif proptype == "integer" and v is number then
+					elseif proptype == "integer" and v is number then -- TODO is integer
 						propattr[single_attribute] = string.format("%d", v)
 					elseif proptype == "boolean" and v is boolean then
 						propattr[single_attribute] = v and "1" or "0"
@@ -288,7 +289,7 @@ local function unparse ( schema : js.schema_t, t : table, current_name : string,
 						out:text_tag(name, v, propattr)
 					elseif proptype == "number" and v is number then
 						out:text_tag(name, string.format("%g", v), propattr)
-					elseif proptype == "integer" and v is number then
+					elseif proptype == "integer" and v is number then -- TODO is integer
 						out:text_tag(name, string.format("%d", v), propattr)
 					elseif proptype == "boolean" and v is boolean then
 						out:text_tag(name, v and "1" or "0", propattr)

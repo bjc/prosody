@@ -40,8 +40,8 @@ local record schema_t
 	exclusiveMinimum : number
 
 	-- strings
-	maxLength : number
-	minLength : number
+	maxLength : integer
+	minLength : integer
 	pattern : string
 	format : string
 
@@ -49,16 +49,16 @@ local record schema_t
 	prefixItems : { schema_t }
 	items : schema_t
 	contains : schema_t
-	maxItems : number
-	minItems : number
+	maxItems : integer
+	minItems : integer
 	uniqueItems : boolean
-	maxContains : number
-	minContains : number
+	maxContains : integer
+	minContains : integer
 
 	-- objects
 	properties : { string : schema_t | type_e }
-	maxProperties : number
-	minProperties : number
+	maxProperties : integer
+	minProperties : integer
 	required : { string }
 	dependentRequired : { string : { string } }
 	additionalProperties: schema_t

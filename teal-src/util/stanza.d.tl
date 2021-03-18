@@ -26,7 +26,7 @@ local record lib
 		get_child_text : function ( stanza_t, string, string ) : string
 		child_with_name : function ( stanza_t, string, string ) : stanza_t
 		child_with_ns : function ( stanza_t, string, string ) : stanza_t
-		children : function ( stanza_t ) : children_iter, stanza_t, number
+		children : function ( stanza_t ) : children_iter, stanza_t, integer
 		childtags : function ( stanza_t, string, string ) : childtags_iter
 		maptags : function ( stanza_t, maptags_cb ) : stanza_t
 		find : function ( stanza_t, string ) : stanza_t | string
@@ -36,7 +36,7 @@ local record lib
 		pretty_top_tag : function ( stanza_t ) : string
 
 		get_error : function ( stanza_t ) : string, string, string, stanza_t
-		indent : function ( stanza_t, number, string ) : stanza_t
+		indent : function ( stanza_t, integer, string ) : stanza_t
 	end
 
 	record serialized_stanza_t
