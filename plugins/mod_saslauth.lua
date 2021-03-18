@@ -44,6 +44,7 @@ local function build_reply(status, ret, err_msg)
 end
 
 local function handle_status(session, status, ret, err_msg)
+	if session["sasl_handler"] == nil then return "failure", "connection-timeout", "Connection gone"; end
 	if status == "failure" then
 		module:fire_event("authentication-failure", { session = session, condition = ret, text = err_msg });
 		session.sasl_handler = session.sasl_handler:clean_clone();
