@@ -226,11 +226,15 @@ module:hook_global("user-password-changed", function(event)
 end, 200);
 
 function runner_callbacks:ready()
-	if self.data["conn"] ~= nil then self.data.conn:resume(); end
+	if self.data.conn then
+		self.data.conn:resume();
+	end
 end
 
 function runner_callbacks:waiting()
-	if self.data["conn"] ~= nil then self.data.conn:pause(); end
+	if self.data.conn then
+		self.data.conn:pause();
+	end
 end
 
 function runner_callbacks:error(err)
