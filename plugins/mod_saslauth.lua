@@ -45,7 +45,7 @@ end
 
 local function handle_status(session, status, ret, err_msg)
 	if not session.sasl_handler then
-		return "failure", "connection-timeout", "Connection gone";
+		return "failure", "temporary-auth-failure", "Connection gone";
 	end
 	if status == "failure" then
 		module:fire_event("authentication-failure", { session = session, condition = ret, text = err_msg });
