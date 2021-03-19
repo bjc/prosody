@@ -105,7 +105,9 @@ function parse_object(schema, s)
 				else
 					c = s:get_child(nil, namespace);
 				end
-				value = c.name;
+				if type(c) == "table" then
+					value = c.name;
+				end
 			elseif value_where == "in_attribute" then
 				local attr = name
 				if prefix then

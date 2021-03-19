@@ -138,7 +138,9 @@ function parse_object (schema : schema_t, s : st.stanza_t) : { string : any }
 				else
 					c = s:get_child(nil, namespace);
 				end
-				value = c.name;
+				if c is st.stanza_t then
+					value = c.name;
+				end
 			elseif value_where == "in_attribute" then
 				local attr = name
 				if prefix then
