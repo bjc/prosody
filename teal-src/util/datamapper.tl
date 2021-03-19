@@ -216,7 +216,7 @@ local function parse (schema : json_schema_object, s : st.stanza_t) : table
 	end
 end
 
-local function unparse ( schema : json_schema_object, t : table, current_name : string, current_ns : string ) : st.stanza_t
+local function unparse ( schema : json_schema_object, t : table, current_name : string, current_ns : string, ctx : st.stanza_t ) : st.stanza_t
 
 	if schema.xml then
 		if schema.xml.name then
@@ -228,7 +228,7 @@ local function unparse ( schema : json_schema_object, t : table, current_name : 
 		-- TODO prefix?
 	end
 
-	local out = st.stanza(current_name, { xmlns = current_ns })
+	local out = ctx or st.stanza(current_name, { xmlns = current_ns })
 
 	if schema.type == "object" then
 
@@ -303,15 +303,13 @@ local function unparse ( schema : json_schema_object, t : table, current_name : 
 							out:add_direct_child(c);
 						end
 					elseif proptype == "array" and propschema is json_schema_object and v is table then
-						local c = unparse(propschema, v, name, namespace);
-						if c then
-							if value_where == "in_wrapper" then
-								local w = st.stanza(propschema.xml.name or name, { xmlns = propschema.xml.namespace or namespace })
-								w:add_direct_child(c);
-								out:add_direct_child(w);
-							else
+						if value_where == "in_wrapper" then
+							local c = unparse(propschema, v, name, namespace);
+							if c then
 								out:add_direct_child(c);
 							end
+						else
+							unparse(propschema, v, name, namespace, out);
 						end
 					else
 						error "NYI"

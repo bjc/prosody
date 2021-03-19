@@ -46,10 +46,13 @@ describe("util.datampper", function()
 					type = "string";
 					xml = {name = "origin-id"; namespace = "urn:xmpp:sid:0"; x_single_attribute = "id"};
 				};
-				reactions = {
-					type = "array";
-					xml = {namespace = "urn:xmpp:reactions:0"; wrapped = true};
-					items = {type = "string"; xml = {name = "reaction"}};
+				react = {
+					type = "object";
+					xml = {namespace = "urn:xmpp:reactions:0"; name = "reactions"};
+					properties = {
+						to = {type = "string"; xml = {attribute = true; name = "id"}};
+						reactions = {type = "array"; items = {type = "string"; xml = {name = "reaction"}}};
+					};
 				};
 			};
 		};
@@ -80,9 +83,12 @@ describe("util.datampper", function()
 			state = "active";
 			fallback = true;
 			origin_id = "qgkmMdPB";
-			reactions = {
-				"👋",
-				"🐢",
+			react = {
+				to = "744f6e18-a57a-11e9-a656-4889e7820c76";
+				reactions = {
+					"👋",
+					"🐢",
+				};
 			};
 		};
 	end);
@@ -102,6 +108,8 @@ describe("util.datampper", function()
 			assert.equal(x:get_child_text("delay", "urn:xmpp:delay"), u:get_child_text("delay", "urn:xmpp:delay"));
 			assert.same(x:get_child("delay", "urn:xmpp:delay").attr, u:get_child("delay", "urn:xmpp:delay").attr);
 			assert.same(x:get_child("origin-id", "urn:xmpp:sid:0").attr, u:get_child("origin-id", "urn:xmpp:sid:0").attr);
+			assert.same(x:get_child("reactions", "urn:xmpp:reactions:0").attr, u:get_child("reactions", "urn:xmpp:reactions:0").attr);
+			assert.same(2, #u:get_child("reactions", "urn:xmpp:reactions:0").tags);
 			for _, tag in ipairs(x.tags) do
 				if tag.name ~= "UNRELATED" then
 					assert.truthy(u:get_child(tag.name, tag.attr.xmlns) or u:get_child(tag.name), tag:top_tag())
