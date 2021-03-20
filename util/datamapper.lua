@@ -183,7 +183,87 @@ local function parse(schema, s)
 	end
 end
 
-local function unparse(schema, t, current_name, current_ns, ctx)
+local unparse
+
+local function unparse_property(out, v, proptype, propschema, value_where, name, namespace, current_ns, prefix, single_attribute)
+	if value_where == "in_attribute" then
+		local attr = name
+		if prefix then
+			attr = prefix .. ":" .. name
+		elseif namespace ~= current_ns then
+			attr = namespace .. "\1" .. name
+		end
+
+		if proptype == "string" and type(v) == "string" then
+			out.attr[attr] = v
+		elseif proptype == "number" and type(v) == "number" then
+			out.attr[attr] = string.format("%g", v)
+		elseif proptype == "integer" and type(v) == "number" then
+			out.attr[attr] = string.format("%d", v)
+		elseif proptype == "boolean" then
+			out.attr[attr] = v and "1" or "0"
+		end
+	elseif value_where == "in_text" then
+		if type(v) == "string" then
+			out:text(v)
+		end
+	elseif value_where == "in_single_attribute" then
+		assert(single_attribute)
+		local propattr = {}
+
+		if namespace ~= current_ns then
+			propattr.xmlns = namespace
+		end
+
+		if proptype == "string" and type(v) == "string" then
+			propattr[single_attribute] = v
+		elseif proptype == "number" and type(v) == "number" then
+			propattr[single_attribute] = string.format("%g", v)
+		elseif proptype == "integer" and type(v) == "number" then
+			propattr[single_attribute] = string.format("%d", v)
+		elseif proptype == "boolean" and type(v) == "boolean" then
+			propattr[single_attribute] = v and "1" or "0"
+		end
+		out:tag(name, propattr):up();
+
+	else
+		local propattr
+		if namespace ~= current_ns then
+			propattr = {xmlns = namespace}
+		end
+		if value_where == "in_tag_name" then
+			if proptype == "string" and type(v) == "string" then
+				out:tag(v, propattr):up();
+			elseif proptype == "boolean" and v == true then
+				out:tag(name, propattr):up();
+			end
+		elseif proptype == "string" and type(v) == "string" then
+			out:text_tag(name, v, propattr)
+		elseif proptype == "number" and type(v) == "number" then
+			out:text_tag(name, string.format("%g", v), propattr)
+		elseif proptype == "integer" and type(v) == "number" then
+			out:text_tag(name, string.format("%d", v), propattr)
+		elseif proptype == "boolean" and type(v) == "boolean" then
+			out:text_tag(name, v and "1" or "0", propattr)
+		elseif proptype == "object" and type(propschema) == "table" and type(v) == "table" then
+			local c = unparse(propschema, v, name, namespace);
+			if c then
+				out:add_direct_child(c);
+			end
+		elseif proptype == "array" and type(propschema) == "table" and type(v) == "table" then
+			if value_where == "in_wrapper" then
+				local c = unparse(propschema, v, name, namespace);
+				if c then
+					out:add_direct_child(c);
+				end
+			else
+				unparse(propschema, v, name, namespace, out);
+			end
+		end
+	end
+end
+
+function unparse(schema, t, current_name, current_ns, ctx)
 
 	if schema.xml then
 		if schema.xml.name then
@@ -203,85 +283,8 @@ local function unparse(schema, t, current_name, current_ns, ctx)
 			local v = t[prop]
 
 			if v ~= nil then
-
 				local proptype, value_where, name, namespace, prefix, single_attribute = unpack_propschema(propschema, prop, current_ns)
-
-				if value_where == "in_attribute" then
-					local attr = name
-					if prefix then
-						attr = prefix .. ":" .. name
-					elseif namespace ~= current_ns then
-						attr = namespace .. "\1" .. name
-					end
-
-					if proptype == "string" and type(v) == "string" then
-						out.attr[attr] = v
-					elseif proptype == "number" and type(v) == "number" then
-						out.attr[attr] = string.format("%g", v)
-					elseif proptype == "integer" and type(v) == "number" then
-						out.attr[attr] = string.format("%d", v)
-					elseif proptype == "boolean" then
-						out.attr[attr] = v and "1" or "0"
-					end
-				elseif value_where == "in_text" then
-					if type(v) == "string" then
-						out:text(v)
-					end
-				elseif value_where == "in_single_attribute" then
-					local propattr = {}
-
-					if namespace ~= current_ns then
-						propattr.xmlns = namespace
-					end
-
-					if proptype == "string" and type(v) == "string" then
-						propattr[single_attribute] = v
-					elseif proptype == "number" and type(v) == "number" then
-						propattr[single_attribute] = string.format("%g", v)
-					elseif proptype == "integer" and type(v) == "number" then
-						propattr[single_attribute] = string.format("%d", v)
-					elseif proptype == "boolean" and type(v) == "boolean" then
-						propattr[single_attribute] = v and "1" or "0"
-					end
-					out:tag(name, propattr):up();
-
-				else
-					local propattr
-					if namespace ~= current_ns then
-						propattr = {xmlns = namespace}
-					end
-					if value_where == "in_tag_name" then
-						if proptype == "string" and type(v) == "string" then
-							out:tag(v, propattr):up();
-						elseif proptype == "boolean" and v == true then
-							out:tag(name, propattr):up();
-						end
-					elseif proptype == "string" and type(v) == "string" then
-						out:text_tag(name, v, propattr)
-					elseif proptype == "number" and type(v) == "number" then
-						out:text_tag(name, string.format("%g", v), propattr)
-					elseif proptype == "integer" and type(v) == "number" then
-						out:text_tag(name, string.format("%d", v), propattr)
-					elseif proptype == "boolean" and type(v) == "boolean" then
-						out:text_tag(name, v and "1" or "0", propattr)
-					elseif proptype == "object" and type(propschema) == "table" and type(v) == "table" then
-						local c = unparse(propschema, v, name, namespace);
-						if c then
-							out:add_direct_child(c);
-						end
-					elseif proptype == "array" and type(propschema) == "table" and type(v) == "table" then
-						if value_where == "in_wrapper" then
-							local c = unparse(propschema, v, name, namespace);
-							if c then
-								out:add_direct_child(c);
-							end
-						else
-							unparse(propschema, v, name, namespace, out);
-						end
-					else
-						error("NYI")
-					end
-				end
+				unparse_property(out, v, proptype, propschema, value_where, name, namespace, current_ns, prefix, single_attribute)
 			end
 		end
 		return out
