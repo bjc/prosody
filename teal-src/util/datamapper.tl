@@ -115,6 +115,45 @@ end
 local parse_object : function (schema : schema_t, s : st.stanza_t) : { string : any }
 local parse_array : function (schema : schema_t, s : st.stanza_t) : { any }
 
+local function extract_value (s : st.stanza_t, value_where : value_goes, proptype : json.json_type_name, name : string, namespace : string, prefix : string, single_attribute : string, enums : { any }) : string
+	if value_where == "in_tag_name" then
+		local c : st.stanza_t
+		if proptype == "boolean" then
+			c = s:get_child(name, namespace);
+		elseif enums and proptype == "string" then
+			-- XXX O(n²) ?
+			-- Probably better to flip the table and loop over :childtags(nil, ns), should be 2xO(n)
+			-- BUT works first, optimize later
+			for i = 1, #enums do
+				c = s:get_child(enums[i] as string, namespace);
+				if c then break end
+			end
+		else
+			c = s:get_child(nil, namespace);
+		end
+		if c then
+			return c.name;
+		end
+	elseif value_where == "in_attribute" then
+		local attr = name
+		if prefix then
+			attr = prefix .. ':' .. name
+		elseif namespace ~= s.attr.xmlns then
+			attr = namespace .. "\1" .. name
+		end
+		return s.attr[attr]
+
+	elseif value_where == "in_text" then
+		return s:get_text()
+
+	elseif value_where == "in_single_attribute" then
+		local c = s:get_child(name, namespace)
+		return c and c.attr[single_attribute]
+	elseif value_where == "in_text_tag" then
+		return s:get_child_text(name, namespace)
+	end
+end
+
 function parse_object (schema : schema_t, s : st.stanza_t) : { string : any }
 	local out : { string : any } = {}
 	if schema is json_schema_object and schema.properties then
@@ -122,43 +161,7 @@ function parse_object (schema : schema_t, s : st.stanza_t) : { string : any }
 
 			local proptype, value_where, name, namespace, prefix, single_attribute, enums = unpack_propschema(propschema, prop, s.attr.xmlns)
 
-			local value : string
-			if value_where == "in_tag_name" then
-				local c : st.stanza_t
-				if proptype == "boolean" then
-					c = s:get_child(name, namespace);
-				elseif enums and proptype == "string" then
-					-- XXX O(n²) ?
-					-- Probably better to flip the table and loop over :childtags(nil, ns), should be 2xO(n)
-					-- BUT works first, optimize later
-					for i = 1, #enums do
-						c = s:get_child(enums[i] as string, namespace);
-						if c then break end
-					end
-				else
-					c = s:get_child(nil, namespace);
-				end
-				if c is st.stanza_t then
-					value = c.name;
-				end
-			elseif value_where == "in_attribute" then
-				local attr = name
-				if prefix then
-					attr = prefix .. ':' .. name
-				elseif namespace ~= s.attr.xmlns then
-					attr = namespace .. "\1" .. name
-				end
-				value = s.attr[attr]
-
-			elseif value_where == "in_text" then
-				value = s:get_text()
-
-			elseif value_where == "in_single_attribute" then
-				local c = s:get_child(name, namespace)
-				value = c and c.attr[single_attribute]
-			elseif value_where == "in_text_tag" then
-				value = s:get_child_text(name, namespace)
-			elseif value_where == "in_children" and propschema is json_schema_object then
+			if value_where == "in_children" and propschema is json_schema_object then
 				if proptype == "object" then
 					local c = s:get_child(name, namespace)
 					if c then
@@ -177,9 +180,8 @@ function parse_object (schema : schema_t, s : st.stanza_t) : { string : any }
 					error "unreachable"
 				end
 			else
-				error "unreachable"
-			end
-			if value_where ~= "in_children" and value_where ~= "in_wrapper" then
+				local value : string = extract_value (s, value_where, proptype, name, namespace, prefix, single_attribute, enums)
+
 				out[prop] = totype(proptype, value)
 			end
 		end

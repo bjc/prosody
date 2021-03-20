@@ -82,6 +82,45 @@ end
 local parse_object
 local parse_array
 
+local function extract_value(s, value_where, proptype, name, namespace, prefix, single_attribute, enums)
+	if value_where == "in_tag_name" then
+		local c
+		if proptype == "boolean" then
+			c = s:get_child(name, namespace);
+		elseif enums and proptype == "string" then
+
+			for i = 1, #enums do
+				c = s:get_child(enums[i], namespace);
+				if c then
+					break
+				end
+			end
+		else
+			c = s:get_child(nil, namespace);
+		end
+		if c then
+			return c.name
+		end
+	elseif value_where == "in_attribute" then
+		local attr = name
+		if prefix then
+			attr = prefix .. ":" .. name
+		elseif namespace ~= s.attr.xmlns then
+			attr = namespace .. "\1" .. name
+		end
+		return s.attr[attr]
+
+	elseif value_where == "in_text" then
+		return s:get_text()
+
+	elseif value_where == "in_single_attribute" then
+		local c = s:get_child(name, namespace)
+		return c and c.attr[single_attribute]
+	elseif value_where == "in_text_tag" then
+		return s:get_child_text(name, namespace)
+	end
+end
+
 function parse_object(schema, s)
 	local out = {}
 	if type(schema) == "table" and schema.properties then
@@ -89,43 +128,7 @@ function parse_object(schema, s)
 
 			local proptype, value_where, name, namespace, prefix, single_attribute, enums = unpack_propschema(propschema, prop, s.attr.xmlns)
 
-			local value
-			if value_where == "in_tag_name" then
-				local c
-				if proptype == "boolean" then
-					c = s:get_child(name, namespace);
-				elseif enums and proptype == "string" then
-
-					for i = 1, #enums do
-						c = s:get_child(enums[i], namespace);
-						if c then
-							break
-						end
-					end
-				else
-					c = s:get_child(nil, namespace);
-				end
-				if type(c) == "table" then
-					value = c.name;
-				end
-			elseif value_where == "in_attribute" then
-				local attr = name
-				if prefix then
-					attr = prefix .. ":" .. name
-				elseif namespace ~= s.attr.xmlns then
-					attr = namespace .. "\1" .. name
-				end
-				value = s.attr[attr]
-
-			elseif value_where == "in_text" then
-				value = s:get_text()
-
-			elseif value_where == "in_single_attribute" then
-				local c = s:get_child(name, namespace)
-				value = c and c.attr[single_attribute]
-			elseif value_where == "in_text_tag" then
-				value = s:get_child_text(name, namespace)
-			elseif value_where == "in_children" and type(propschema) == "table" then
+			if value_where == "in_children" and type(propschema) == "table" then
 				if proptype == "object" then
 					local c = s:get_child(name, namespace)
 					if c then
@@ -144,9 +147,8 @@ function parse_object(schema, s)
 					error("unreachable")
 				end
 			else
-				error("unreachable")
-			end
-			if value_where ~= "in_children" and value_where ~= "in_wrapper" then
+				local value = extract_value(s, value_where, proptype, name, namespace, prefix, single_attribute, enums)
+
 				out[prop] = totype(proptype, value)
 			end
 		end
