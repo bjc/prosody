@@ -27,7 +27,7 @@ local value_goes = {}
 local function unpack_propschema(propschema, propname, current_ns)
 
 	local proptype = "string"
-	local value_where = "in_text_tag"
+	local value_where = propname and "in_text_tag" or "in_text"
 	local name = propname
 	local namespace = current_ns
 	local prefix
@@ -158,21 +158,17 @@ function parse_object(schema, s)
 end
 
 function parse_array(schema, s)
-	local proptype, value_where, child_name, namespace = unpack_propschema(schema.items, nil, s.attr.xmlns)
+	local proptype, value_where, child_name, namespace, prefix, single_attribute, enums = unpack_propschema(schema.items, nil, s.attr.xmlns)
+	local attr_name
+	if value_where == "in_single_attribute" then
+		value_where = "in_attribute";
+		attr_name = single_attribute;
+	end
 	local out = {}
 	for c in s:childtags(child_name, namespace) do
-		local value;
-		if value_where == "in_text_tag" then
-			value = c:get_text();
-		else
-			error("NYI")
-		end
+		local value = extract_value(c, value_where, proptype, attr_name or child_name, namespace, prefix, single_attribute, enums)
 
-		value = totype(proptype, value)
-
-		if value ~= nil then
-			table.insert(out, value);
-		end
+		table.insert(out, totype(proptype, value));
 	end
 	return out
 end

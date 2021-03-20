@@ -9,6 +9,7 @@ end);
 describe("util.datampper", function()
 
 	local s, x, d
+	local disco, disco_info, disco_schema
 	setup(function()
 
 		local function attr() return {type = "string"; xml = {attribute = true}} end
@@ -91,12 +92,74 @@ describe("util.datampper", function()
 				};
 			};
 		};
+
+		disco_schema = {
+			type = "object";
+			xml = {
+				name = "iq";
+				namespace = "jabber:client"
+			};
+			properties = {
+				to = attr();
+				from = attr();
+				type = attr();
+				id = attr();
+				disco = {
+					type = "object";
+					xml = {
+						name = "query";
+						namespace	= "http://jabber.org/protocol/disco#info"
+					};
+					properties = {
+						features = {
+							type = "array";
+							items = {
+								type = "string";
+								xml = {
+									name = "feature";
+									x_single_attribute = "var";
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+
+		disco_info = xml.parse[[
+		<iq type="result" id="disco1" from="example.com">
+			<query xmlns="http://jabber.org/protocol/disco#info">
+				<feature var="urn:example:feature:1">wrong</feature>
+				<feature var="urn:example:feature:2"/>
+				<feature var="urn:example:feature:3"/>
+				<unrelated var="urn:example:feature:not"/>
+			</query>
+		</iq>
+		]];
+
+		disco = {
+			type="result";
+			id="disco1";
+			from="example.com";
+			disco = {
+				features = {
+					"urn:example:feature:1";
+					"urn:example:feature:2";
+					"urn:example:feature:3";
+				};
+			};
+		};
 	end);
 
 	describe("parse", function()
 		it("works", function()
 			assert.same(d, map.parse(s, x));
 		end);
+
+		it("handles arrays", function ()
+			assert.same(disco, map.parse(disco_schema, disco_info));
+		end);
+
 	end);
 
 	describe("unparse", function()

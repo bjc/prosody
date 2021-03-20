@@ -60,7 +60,7 @@ end
 local function unpack_propschema( propschema : schema_t, propname : string, current_ns : string )
 		: json_type_name, value_goes, string, string, string, string, { any }
 	local proptype : json_type_name = "string"
-	local value_where : value_goes = "in_text_tag"
+	local value_where : value_goes = propname and "in_text_tag" or "in_text"
 	local name = propname
 	local namespace = current_ns
 	local prefix : string
@@ -191,21 +191,17 @@ function parse_object (schema : schema_t, s : st.stanza_t) : { string : any }
 end
 
 function parse_array (schema : json_schema_object, s : st.stanza_t) : { any }
-	local proptype, value_where, child_name, namespace = unpack_propschema(schema.items, nil, s.attr.xmlns)
+	local proptype, value_where, child_name, namespace, prefix, single_attribute, enums = unpack_propschema(schema.items, nil, s.attr.xmlns)
+	local attr_name : string
+	if value_where == "in_single_attribute" then -- FIXME this shouldn't be needed
+		value_where = "in_attribute";
+		attr_name = single_attribute;
+	end
 	local out : { any } = {}
 	for c in s:childtags(child_name, namespace) do
-		local value : string;
-		if value_where == "in_text_tag" then
-			value = c:get_text();
-		else
-			error "NYI"
-		end
+		local value : string = extract_value (c, value_where, proptype, attr_name or child_name, namespace, prefix, single_attribute, enums)
 
-		value = totype(proptype, value)
-
-		if value ~= nil then
-			table.insert(out, value);
-		end
+		table.insert(out, totype(proptype, value));
 	end
 	return out;
 end
@@ -329,10 +325,10 @@ local function unparse ( schema : json_schema_object, t : table, current_name : 
 		if proptype == "string" then
 			for _, item in ipairs(t as { string }) do
 				if value_where == "in_text_tag" then
-					out:text_tag(name, item, { xmlns = namespace });
-				else
-					error "NYI"
-				end
+				out:text_tag(name, item, { xmlns = namespace });
+			else
+				error "NYI"
+			end
 			end
 		else
 			error "NYI"
