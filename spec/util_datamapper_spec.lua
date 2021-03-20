@@ -181,5 +181,16 @@ describe("util.datampper", function()
 			assert.equal(#x.tags-1, #u.tags)
 
 		end);
+
+		it("handles arrays", function ()
+			local u = map.unparse(disco_schema, disco);
+			assert.equal("urn:example:feature:1", u:find("{http://jabber.org/protocol/disco#info}query/feature/@var"))
+			local n = 0;
+			for child in u:get_child("query", "http://jabber.org/protocol/disco#info"):childtags("feature") do
+				n = n + 1;
+				assert.equal(string.format("urn:example:feature:%d", n), child.attr.var);
+			end
+		end);
+
 	end);
 end)

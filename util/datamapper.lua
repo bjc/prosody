@@ -290,18 +290,9 @@ function unparse(schema, t, current_name, current_ns, ctx)
 		return out
 
 	elseif schema.type == "array" then
-		local proptype, value_where, name, namespace = unpack_propschema(schema.items, current_name, current_ns)
-
-		if proptype == "string" then
-			for _, item in ipairs(t) do
-				if value_where == "in_text_tag" then
-					out:text_tag(name, item, {xmlns = namespace});
-				else
-					error("NYI")
-				end
-			end
-		else
-			error("NYI")
+		local proptype, value_where, name, namespace, prefix, single_attribute = unpack_propschema(schema.items, current_name, current_ns)
+		for _, item in ipairs(t) do
+			unparse_property(out, item, proptype, schema.items, value_where, name, namespace, current_ns, prefix, single_attribute)
 		end
 		return out
 	end

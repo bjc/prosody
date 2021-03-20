@@ -323,18 +323,9 @@ function unparse ( schema : json_schema_object, t : table, current_name : string
 		return out;
 
 	elseif schema.type == "array" then
-		local proptype, value_where, name, namespace = unpack_propschema(schema.items, current_name, current_ns)
-		-- TODO , prefix, single_attribute
-		if proptype == "string" then
-			for _, item in ipairs(t as { string }) do
-				if value_where == "in_text_tag" then
-				out:text_tag(name, item, { xmlns = namespace });
-			else
-				error "NYI"
-			end
-			end
-		else
-			error "NYI"
+		local proptype, value_where, name, namespace, prefix, single_attribute = unpack_propschema(schema.items, current_name, current_ns)
+		for _, item in ipairs(t as { string }) do
+			unparse_property(out, item, proptype, schema.items, value_where, name, namespace, current_ns, prefix, single_attribute)
 		end
 		return out;
 	end
