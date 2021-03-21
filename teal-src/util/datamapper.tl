@@ -14,7 +14,6 @@
 -- x_name_is_value for enum fields where the <tag-name/> is the value
 -- x_single_attribute for <tag attr="this"/>
 --
--- TODO arrays
 -- TODO pointers
 -- TODO cleanup / refactor
 -- TODO s/number/integer/ once we have appropriate math.type() compat
