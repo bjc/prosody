@@ -175,8 +175,6 @@ function parse_object (schema : schema_t, s : st.stanza_t) : { string : any }
 				local wrapper = s:get_child(name, namespace);
 				if wrapper then
 					out[prop] = parse_array(propschema, wrapper);
-				else
-					error "unreachable"
 				end
 			else
 				local value : string = extract_value (s, value_where, proptype, name, namespace, prefix, single_attribute, enums)

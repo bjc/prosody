@@ -143,8 +143,6 @@ function parse_object(schema, s)
 				local wrapper = s:get_child(name, namespace);
 				if wrapper then
 					out[prop] = parse_array(propschema, wrapper);
-				else
-					error("unreachable")
 				end
 			else
 				local value = extract_value(s, value_where, proptype, name, namespace, prefix, single_attribute, enums)
