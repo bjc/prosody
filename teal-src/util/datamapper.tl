@@ -231,6 +231,18 @@ local function parse (schema : json_schema_object, s : st.stanza_t) : table
 	end
 end
 
+local function toxmlstring(proptype : json_type_name, v : any) : string
+	if proptype == "string" and v is string then
+		return  v
+	elseif proptype == "number" and v is number then
+		return  string.format("%g", v)
+	elseif proptype == "integer" and v is number then -- TODO is integer
+		return  string.format("%d", v)
+	elseif proptype == "boolean" then
+		return  v and "1" or "0"
+	end
+end
+
 local unparse : function (json_schema_object, table, string, string, st.stanza_t) : st.stanza_t
 
 local function unparse_property(out : st.stanza_t, v : any, proptype : json_type_name, propschema : schema_t, value_where : value_goes, name : string, namespace : string, current_ns : string, prefix : string, single_attribute : string)
@@ -242,19 +254,9 @@ local function unparse_property(out : st.stanza_t, v : any, proptype : json_type
 			attr = namespace .. "\1" .. name
 		end
 
-		if proptype == "string" and v is string then
-			out.attr[attr] = v
-		elseif proptype == "number" and v is number then
-			out.attr[attr] = string.format("%g", v)
-		elseif proptype == "integer" and v is number then -- TODO is integer
-			out.attr[attr] = string.format("%d", v)
-		elseif proptype == "boolean" then
-			out.attr[attr] = v and "1" or "0"
-		end
+		out.attr[attr] = toxmlstring(proptype, v)
 	elseif value_where == "in_text" then
-		if v is string then
-			out:text(v)
-		end
+		out:text(toxmlstring(proptype, v))
 	elseif value_where == "in_single_attribute" then
 		assert(single_attribute)
 		local propattr : { string : string } = {}
@@ -263,15 +265,7 @@ local function unparse_property(out : st.stanza_t, v : any, proptype : json_type
 			propattr.xmlns = namespace
 		end
 
-		if proptype == "string" and v is string then
-			propattr[single_attribute] = v
-		elseif proptype == "number" and v is number then
-			propattr[single_attribute] = string.format("%g", v)
-		elseif proptype == "integer" and v is number then -- TODO is integer
-			propattr[single_attribute] = string.format("%d", v)
-		elseif proptype == "boolean" and v is boolean then
-			propattr[single_attribute] = v and "1" or "0"
-		end
+		propattr[single_attribute] = toxmlstring(proptype, v)
 		out:tag(name, propattr):up();
 
 	else
@@ -285,14 +279,6 @@ local function unparse_property(out : st.stanza_t, v : any, proptype : json_type
 			elseif proptype == "boolean" and v == true then
 				out:tag(name, propattr):up();
 			end
-		elseif proptype == "string" and v is string then
-			out:text_tag(name, v, propattr)
-		elseif proptype == "number" and v is number then
-			out:text_tag(name, string.format("%g", v), propattr)
-		elseif proptype == "integer" and v is number then -- TODO is integer
-			out:text_tag(name, string.format("%d", v), propattr)
-		elseif proptype == "boolean" and v is boolean then
-			out:text_tag(name, v and "1" or "0", propattr)
 		elseif proptype == "object" and propschema is json_schema_object and v is table then
 			local c = unparse(propschema, v, name, namespace);
 			if c then
@@ -307,6 +293,8 @@ local function unparse_property(out : st.stanza_t, v : any, proptype : json_type
 			else
 				unparse(propschema, v, name, namespace, out);
 			end
+		else
+			out:text_tag(name, toxmlstring(proptype, v), propattr)
 		end
 	end
 end

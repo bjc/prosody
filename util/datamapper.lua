@@ -199,6 +199,18 @@ local function parse(schema, s)
 	end
 end
 
+local function toxmlstring(proptype, v)
+	if proptype == "string" and type(v) == "string" then
+		return v
+	elseif proptype == "number" and type(v) == "number" then
+		return string.format("%g", v)
+	elseif proptype == "integer" and type(v) == "number" then
+		return string.format("%d", v)
+	elseif proptype == "boolean" then
+		return v and "1" or "0"
+	end
+end
+
 local unparse
 
 local function unparse_property(out, v, proptype, propschema, value_where, name, namespace, current_ns, prefix, single_attribute)
@@ -210,19 +222,9 @@ local function unparse_property(out, v, proptype, propschema, value_where, name,
 			attr = namespace .. "\1" .. name
 		end
 
-		if proptype == "string" and type(v) == "string" then
-			out.attr[attr] = v
-		elseif proptype == "number" and type(v) == "number" then
-			out.attr[attr] = string.format("%g", v)
-		elseif proptype == "integer" and type(v) == "number" then
-			out.attr[attr] = string.format("%d", v)
-		elseif proptype == "boolean" then
-			out.attr[attr] = v and "1" or "0"
-		end
+		out.attr[attr] = toxmlstring(proptype, v)
 	elseif value_where == "in_text" then
-		if type(v) == "string" then
-			out:text(v)
-		end
+		out:text(toxmlstring(proptype, v))
 	elseif value_where == "in_single_attribute" then
 		assert(single_attribute)
 		local propattr = {}
@@ -231,15 +233,7 @@ local function unparse_property(out, v, proptype, propschema, value_where, name,
 			propattr.xmlns = namespace
 		end
 
-		if proptype == "string" and type(v) == "string" then
-			propattr[single_attribute] = v
-		elseif proptype == "number" and type(v) == "number" then
-			propattr[single_attribute] = string.format("%g", v)
-		elseif proptype == "integer" and type(v) == "number" then
-			propattr[single_attribute] = string.format("%d", v)
-		elseif proptype == "boolean" and type(v) == "boolean" then
-			propattr[single_attribute] = v and "1" or "0"
-		end
+		propattr[single_attribute] = toxmlstring(proptype, v)
 		out:tag(name, propattr):up();
 
 	else
@@ -253,14 +247,6 @@ local function unparse_property(out, v, proptype, propschema, value_where, name,
 			elseif proptype == "boolean" and v == true then
 				out:tag(name, propattr):up();
 			end
-		elseif proptype == "string" and type(v) == "string" then
-			out:text_tag(name, v, propattr)
-		elseif proptype == "number" and type(v) == "number" then
-			out:text_tag(name, string.format("%g", v), propattr)
-		elseif proptype == "integer" and type(v) == "number" then
-			out:text_tag(name, string.format("%d", v), propattr)
-		elseif proptype == "boolean" and type(v) == "boolean" then
-			out:text_tag(name, v and "1" or "0", propattr)
 		elseif proptype == "object" and type(propschema) == "table" and type(v) == "table" then
 			local c = unparse(propschema, v, name, namespace);
 			if c then
@@ -275,6 +261,8 @@ local function unparse_property(out, v, proptype, propschema, value_where, name,
 			else
 				unparse(propschema, v, name, namespace, out);
 			end
+		else
+			out:text_tag(name, toxmlstring(proptype, v), propattr)
 		end
 	end
 end
