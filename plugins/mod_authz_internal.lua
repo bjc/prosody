@@ -24,6 +24,6 @@ function get_jid_roles(jid)
 	return nil;
 end
 
-function set_jid_roles(jid)
+function set_jid_roles(jid) -- luacheck: ignore 212
 	return false;
 end
