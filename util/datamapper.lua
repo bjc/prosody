@@ -156,17 +156,35 @@ function parse_object(schema, s)
 end
 
 function parse_array(schema, s)
-	local proptype, value_where, child_name, namespace, prefix, single_attribute, enums = unpack_propschema(schema.items, nil, s.attr.xmlns)
+	local itemschema = schema.items;
+	local proptype, value_where, child_name, namespace, prefix, single_attribute, enums = unpack_propschema(itemschema, nil, s.attr.xmlns)
 	local attr_name
 	if value_where == "in_single_attribute" then
 		value_where = "in_attribute";
 		attr_name = single_attribute;
 	end
 	local out = {}
-	for c in s:childtags(child_name, namespace) do
-		local value = extract_value(c, value_where, proptype, attr_name or child_name, namespace, prefix, single_attribute, enums)
 
-		table.insert(out, totype(proptype, value));
+	if proptype == "object" then
+		if type(itemschema) == "table" then
+			for c in s:childtags(child_name, namespace) do
+				table.insert(out, parse_object(itemschema, c));
+			end
+		else
+			error("array items must be schema object")
+		end
+	elseif proptype == "array" then
+		if type(itemschema) == "table" then
+			for c in s:childtags(child_name, namespace) do
+				table.insert(out, parse_array(itemschema, c));
+			end
+		end
+	else
+		for c in s:childtags(child_name, namespace) do
+			local value = extract_value(c, value_where, proptype, attr_name or child_name, namespace, prefix, single_attribute, enums)
+
+			table.insert(out, totype(proptype, value));
+		end
 	end
 	return out
 end

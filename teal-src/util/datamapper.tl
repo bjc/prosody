@@ -188,17 +188,35 @@ function parse_object (schema : schema_t, s : st.stanza_t) : { string : any }
 end
 
 function parse_array (schema : json_schema_object, s : st.stanza_t) : { any }
-	local proptype, value_where, child_name, namespace, prefix, single_attribute, enums = unpack_propschema(schema.items, nil, s.attr.xmlns)
+	local itemschema : schema_t = schema.items;
+	local proptype, value_where, child_name, namespace, prefix, single_attribute, enums = unpack_propschema(itemschema, nil, s.attr.xmlns)
 	local attr_name : string
 	if value_where == "in_single_attribute" then -- FIXME this shouldn't be needed
 		value_where = "in_attribute";
 		attr_name = single_attribute;
 	end
 	local out : { any } = {}
-	for c in s:childtags(child_name, namespace) do
-		local value : string = extract_value (c, value_where, proptype, attr_name or child_name, namespace, prefix, single_attribute, enums)
 
-		table.insert(out, totype(proptype, value));
+	if proptype == "object" then
+		if itemschema is json_schema_object then
+			for c in s:childtags(child_name, namespace) do
+				table.insert(out, parse_object(itemschema, c));
+			end
+		else
+			error "array items must be schema object"
+		end
+	elseif proptype == "array" then
+		if itemschema is json_schema_object then
+			for c in s:childtags(child_name, namespace) do
+				table.insert(out, parse_array(itemschema, c));
+			end
+		end
+	else
+		for c in s:childtags(child_name, namespace) do
+			local value : string = extract_value (c, value_where, proptype, attr_name or child_name, namespace, prefix, single_attribute, enums)
+
+			table.insert(out, totype(proptype, value));
+		end
 	end
 	return out;
 end
