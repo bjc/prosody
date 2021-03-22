@@ -158,6 +158,23 @@ local function get_roles(jid, host)
 	return roles;
 end
 
+local function set_roles(jid, host, roles)
+	if host and not hosts[host] then return false; end
+	if type(jid) ~= "string" then return false; end
+
+	jid = jid_bare(jid);
+	host = host or "*";
+
+	local actor_user, actor_host = jid_split(jid);
+
+	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
+	if actor_user and actor_host == host then -- Local user
+		return authz_provider.set_user_roles(actor_user, roles)
+	else -- Remote entity
+		return authz_provider.set_jid_roles(jid, roles)
+	end
+end
+
 local function is_admin(jid, host)
 	local roles = get_roles(jid, host);
 	return roles and roles["prosody:admin"];
@@ -176,5 +193,6 @@ return {
 	get_sasl_handler = get_sasl_handler;
 	get_provider = get_provider;
 	get_roles = get_roles;
+	set_roles = set_roles;
 	is_admin = is_admin;
 };
