@@ -61,7 +61,7 @@ local function unpack_propschema( propschema : schema_t, propname : string, curr
 	local proptype : json_type_name = "string"
 	local value_where : value_goes = propname and "in_text_tag" or "in_text"
 	local name = propname
-	local namespace = current_ns
+	local namespace : string
 	local prefix : string
 	local single_attribute : string
 	local enums : { any }
@@ -82,7 +82,7 @@ local function unpack_propschema( propschema : schema_t, propname : string, curr
 			if xml.name then
 				name = xml.name
 			end
-			if xml.namespace then
+			if xml.namespace and xml.namespace ~= current_ns then
 				namespace = xml.namespace
 			end
 			if xml.prefix then
@@ -137,7 +137,7 @@ local function extract_value (s : st.stanza_t, value_where : value_goes, proptyp
 		local attr = name
 		if prefix then
 			attr = prefix .. ':' .. name
-		elseif namespace ~= s.attr.xmlns then
+		elseif namespace and namespace ~= s.attr.xmlns then
 			attr = namespace .. "\1" .. name
 		end
 		return s.attr[attr]
@@ -250,7 +250,7 @@ local function unparse_property(out : st.stanza_t, v : any, proptype : json_type
 		local attr = name
 		if prefix then
 			attr = prefix .. ':' .. name
-		elseif namespace ~= current_ns then
+		elseif namespace and namespace ~= current_ns then
 			attr = namespace .. "\1" .. name
 		end
 
@@ -261,7 +261,7 @@ local function unparse_property(out : st.stanza_t, v : any, proptype : json_type
 		assert(single_attribute)
 		local propattr : { string : string } = {}
 
-		if namespace ~= current_ns then
+		if namespace and namespace ~= current_ns then
 			propattr.xmlns = namespace
 		end
 

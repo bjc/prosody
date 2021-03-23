@@ -29,7 +29,7 @@ local function unpack_propschema(propschema, propname, current_ns)
 	local proptype = "string"
 	local value_where = propname and "in_text_tag" or "in_text"
 	local name = propname
-	local namespace = current_ns
+	local namespace
 	local prefix
 	local single_attribute
 	local enums
@@ -50,7 +50,7 @@ local function unpack_propschema(propschema, propname, current_ns)
 			if xml.name then
 				name = xml.name
 			end
-			if xml.namespace then
+			if xml.namespace and xml.namespace ~= current_ns then
 				namespace = xml.namespace
 			end
 			if xml.prefix then
@@ -105,7 +105,7 @@ local function extract_value(s, value_where, proptype, name, namespace, prefix, 
 		local attr = name
 		if prefix then
 			attr = prefix .. ":" .. name
-		elseif namespace ~= s.attr.xmlns then
+		elseif namespace and namespace ~= s.attr.xmlns then
 			attr = namespace .. "\1" .. name
 		end
 		return s.attr[attr]
@@ -218,7 +218,7 @@ local function unparse_property(out, v, proptype, propschema, value_where, name,
 		local attr = name
 		if prefix then
 			attr = prefix .. ":" .. name
-		elseif namespace ~= current_ns then
+		elseif namespace and namespace ~= current_ns then
 			attr = namespace .. "\1" .. name
 		end
 
@@ -229,7 +229,7 @@ local function unparse_property(out, v, proptype, propschema, value_where, name,
 		assert(single_attribute)
 		local propattr = {}
 
-		if namespace ~= current_ns then
+		if namespace and namespace ~= current_ns then
 			propattr.xmlns = namespace
 		end
 

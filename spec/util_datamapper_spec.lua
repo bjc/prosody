@@ -1,7 +1,9 @@
+local st
 local xml
 local map
 
 setup(function()
+	st = require "util.stanza";
 	xml = require "util.xml";
 	map = require "util.datamapper";
 end);
@@ -158,6 +160,32 @@ describe("util.datampper", function()
 
 		it("handles arrays", function ()
 			assert.same(disco, map.parse(disco_schema, disco_info));
+		end);
+
+		it("deals with locally built stanzas", function()
+			-- FIXME this could also be argued to be a util.stanza problem
+			local ver_schema = {
+				type = "object";
+				xml = {name = "iq"};
+				properties = {
+					type = {type = "string"; xml = {attribute = true}};
+					id = {type = "string"; xml = {attribute = true}};
+					version = {
+						type = "object";
+						xml = {name = "query"; namespace = "jabber:iq:version"};
+						properties = {name = "string"; version = "string"; os = "string"};
+					};
+				};
+			};
+			local ver_st = st.iq({type = "result"; id = "v1"})
+				:query("jabber:iq:version")
+					:text_tag("name", "Prosody")
+					:text_tag("version", "trunk")
+					:text_tag("os", "Lua 5.3")
+				:reset();
+
+			local data = {type = "result"; id = "v1"; version = {name = "Prosody"; version = "trunk"; os = "Lua 5.3"}}
+			assert.same(data, map.parse(ver_schema, ver_st));
 		end);
 
 	end);
