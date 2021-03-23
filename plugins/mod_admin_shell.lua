@@ -1307,6 +1307,7 @@ function def_env.debug:timers()
 		normalize_time = server.timer.to_absolute_time or normalize_time;
 	end
 	if h then
+		local timers = {};
 		for i, id in ipairs(h.ids) do
 			local t, cb = h.priorities[i], h.items[id];
 			if not params then
@@ -1319,7 +1320,11 @@ function def_env.debug:timers()
 			elseif params[id] then
 				cb = params[id].callback or cb;
 			end
-			print(format_time(t), cb);
+			table.insert(timers, { format_time(t), cb });
+		end
+		table.sort(timers, function (a, b) return a[1] < b[1] end);
+		for _, t in ipairs(timers) do
+			print(t[1], t[2])
 		end
 	end
 	if server.event_base then
