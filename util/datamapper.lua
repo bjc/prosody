@@ -13,6 +13,9 @@ local function toboolean(s)
 end
 
 local function totype(t, s)
+	if not s then
+		return nil
+	end
 	if t == "string" then
 		return s
 	elseif t == "boolean" then

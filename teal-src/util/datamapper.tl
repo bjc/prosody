@@ -37,6 +37,7 @@ local function toboolean ( s : string ) : boolean
 end
 
 local function totype(t : json_type_name, s : string) : any
+	if not s then return nil end
 	if t == "string" then
 		return s;
 	elseif t == "boolean" then
