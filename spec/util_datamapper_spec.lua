@@ -57,6 +57,17 @@ describe("util.datampper", function()
 						reactions = {type = "array"; items = {type = "string"; xml = {name = "reaction"}}};
 					};
 				};
+				stanza_ids = {
+					type = "array";
+					items = {
+						xml = {name = "stanza-id"; namespace = "urn:xmpp:sid:0"};
+						type = "object";
+						properties = {
+							id = {xml = {attribute = true}; type = "string"};
+							by = {xml = {attribute = true}; type = "string"};
+						};
+					};
+				};
 			};
 		};
 
@@ -68,6 +79,8 @@ describe("util.datampper", function()
 				<active xmlns='http://jabber.org/protocol/chatstates'/>
 				<fallback xmlns='urn:xmpp:fallback:0'/>
 				<origin-id xmlns='urn:xmpp:sid:0' id='qgkmMdPB'/>
+				<stanza-id xmlns='urn:xmpp:sid:0' id='abc1' by='muc'/>
+				<stanza-id xmlns='urn:xmpp:sid:0' id='xyz2' by='host'/>
 				<reactions id='744f6e18-a57a-11e9-a656-4889e7820c76' xmlns='urn:xmpp:reactions:0'>
 					<reaction>👋</reaction>
 					<reaction>🐢</reaction>
@@ -86,6 +99,7 @@ describe("util.datampper", function()
 			state = "active";
 			fallback = true;
 			origin_id = "qgkmMdPB";
+			stanza_ids = {{id = "abc1"; by = "muc"}; {id = "xyz2"; by = "host"}};
 			react = {
 				to = "744f6e18-a57a-11e9-a656-4889e7820c76";
 				reactions = {
