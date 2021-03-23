@@ -168,7 +168,10 @@ function parse_object (schema : schema_t, s : st.stanza_t) : { string : any }
 						out[prop] = parse_object(propschema, c);
 					end
 				elseif proptype == "array" then
-					out[prop] = parse_array(propschema, s);
+					local a = parse_array(propschema, s);
+					if a and a[1] ~= nil then
+						out[prop] = a;
+					end
 				else
 					error "unreachable"
 				end
