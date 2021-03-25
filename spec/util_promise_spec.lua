@@ -459,6 +459,32 @@ describe("util.promise", function ()
 			assert.same({ foo = true }, result);
 		end);
 	end);
+	describe("join()", function ()
+		it("works", function ()
+			local r1, r2;
+			local res1, res2;
+			local p1, p2 = promise.new(function (resolve) r1 = resolve end), promise.new(function (resolve) r2 = resolve end);
+
+			local p = promise.join(p1, p2, function (_res1, _res2)
+				res1, res2 = _res1, _res2;
+				return promise.resolve("works");
+			end);
+
+			local result;
+			local cb = spy.new(function (v)
+				result = v;
+			end);
+			p:next(cb);
+			assert.spy(cb).was_called(0);
+			r2("yep");
+			assert.spy(cb).was_called(0);
+			r1("nope");
+			assert.spy(cb).was_called(1);
+			assert.same("works", result);
+			assert.equals("nope", res1);
+			assert.equals("yep", res2);
+		end);
+	end);
 	it("promises may be resolved by other promises", function ()
 		local r1, r2;
 		local p1, p2 = promise.new(function (resolve) r1 = resolve end), promise.new(function (resolve) r2 = resolve end);

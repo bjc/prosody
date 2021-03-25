@@ -2,6 +2,7 @@ local promise_methods = {};
 local promise_mt = { __name = "promise", __index = promise_methods };
 
 local xpcall = require "util.xpcall".xpcall;
+local unpack = table.unpack or unpack; --luacheck: ignore 113
 
 function promise_mt:__tostring()
 	return  "promise (" .. (self._state or "invalid") .. ")";
@@ -137,6 +138,15 @@ local function all_settled(promises)
 	end);
 end
 
+local function join(...)
+	local promises, n = { ... }, select("#", ...);
+	local handler = promises[n];
+	promises[n] = nil;
+	return all(promises):next(function (results)
+		return handler(unpack(results, 1, n - 1));
+	end);
+end
+
 local function race(promises)
 	return new(function (resolve, reject)
 		for i = 1, #promises do
@@ -180,6 +190,7 @@ end
 return {
 	new = new;
 	resolve = resolve;
+	join = join;
 	reject = reject;
 	all = all;
 	all_settled = all_settled;
