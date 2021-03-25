@@ -498,10 +498,10 @@ describe("util.promise", function ()
 			local res1, res2;
 			local p1, p2 = promise.new(function (resolve) r1 = resolve end), promise.new(function (resolve) r2 = resolve end);
 
-			local p = promise.join(p1, p2, function (_res1, _res2)
+			local p = promise.join(function (_res1, _res2)
 				res1, res2 = _res1, _res2;
 				return promise.resolve("works");
-			end);
+			end, p1, p2);
 
 			local result;
 			local cb = spy.new(function (v)

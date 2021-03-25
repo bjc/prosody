@@ -146,12 +146,10 @@ local function all_settled(promises)
 	end);
 end
 
-local function join(...)
+local function join(handler, ...)
 	local promises, n = { ... }, select("#", ...);
-	local handler = promises[n];
-	promises[n] = nil;
 	return all(promises):next(function (results)
-		return handler(unpack(results, 1, n - 1));
+		return handler(unpack(results, 1, n));
 	end);
 end
 
