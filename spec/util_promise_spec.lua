@@ -352,6 +352,23 @@ describe("util.promise", function ()
 			assert.spy(cb_err).was_called(1);
 			assert.equal("fail", result);
 		end);
+		it("works with non-numeric keys", function ()
+			local r1, r2;
+			local p1, p2 = promise.new(function (resolve) r1 = resolve end), promise.new(function (resolve) r2 = resolve end);
+			local p = promise.all({ [true] = p1, [false] = p2 });
+
+			local result;
+			local cb = spy.new(function (v)
+				result = v;
+			end);
+			p:next(cb);
+			assert.spy(cb).was_called(0);
+			r2("yep");
+			assert.spy(cb).was_called(0);
+			r1("nope");
+			assert.spy(cb).was_called(1);
+			assert.same({ [true] = "nope", [false] = "yep" }, result);
+		end);
 	end);
 	describe("all_settled()", function ()
 		it("works with fulfilled promises", function ()
@@ -404,6 +421,26 @@ describe("util.promise", function ()
 			assert.same({
 				{ status = "fulfilled", value = "this succeeds" };
 				{ status = "rejected", reason = "this fails" };
+			}, result);
+		end);
+		it("works with non-numeric keys", function ()
+			local r1, r2;
+			local p1, p2 = promise.new(function (resolve) r1 = resolve end), promise.new(function (resolve) r2 = resolve end);
+			local p = promise.all_settled({ foo = p1, bar = p2 });
+
+			local result;
+			local cb = spy.new(function (v)
+				result = v;
+			end);
+			p:next(cb);
+			assert.spy(cb).was_called(0);
+			r2("yep");
+			assert.spy(cb).was_called(0);
+			r1("nope");
+			assert.spy(cb).was_called(1);
+			assert.same({
+				foo = { status = "fulfilled", value = "nope" };
+				bar = { status = "fulfilled", value = "yep" };
 			}, result);
 		end);
 	end);

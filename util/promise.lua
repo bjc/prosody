@@ -91,36 +91,48 @@ end
 
 local function all(promises)
 	return new(function (resolve, reject)
-		local count, total, results = 0, #promises, {};
-		for i = 1, total do
-			promises[i]:next(function (v)
-				results[i] = v;
-				count = count + 1;
-				if count == total then
+		local settled, results, loop_finished = 0, {}, false;
+		local total = 0;
+		for k, v in pairs(promises) do
+			total = total + 1;
+			v:next(function (value)
+				results[k] = value;
+				settled = settled + 1;
+				if settled == total and loop_finished then
 					resolve(results);
 				end
 			end, reject);
+		end
+		loop_finished = true;
+		if settled == total then
+			resolve(results);
 		end
 	end);
 end
 
 local function all_settled(promises)
 	return new(function (resolve)
-		local count, total, results = 0, #promises, {};
-		for i = 1, total do
-			promises[i]:next(function (v)
-				results[i] = { status = "fulfilled", value = v };
-				count = count + 1;
-				if count == total then
+		local settled, results, loop_finished = 0, {}, false;
+		local total = 0;
+		for k, v in pairs(promises) do
+			total = total + 1;
+			v:next(function (value)
+				results[k] = { status = "fulfilled", value = value };
+				settled = settled + 1;
+				if settled == total and loop_finished then
 					resolve(results);
 				end
 			end, function (e)
-				results[i] = { status = "rejected", reason = e };
-				count = count + 1;
-				if count == total then
+				results[k] = { status = "rejected", reason = e };
+				settled = settled + 1;
+				if settled == total and loop_finished then
 					resolve(results);
 				end
 			end);
+		end
+		loop_finished = true;
+		if settled == total then
+			resolve(results);
 		end
 	end);
 end
