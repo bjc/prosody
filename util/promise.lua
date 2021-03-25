@@ -95,14 +95,18 @@ local function all(promises)
 		local settled, results, loop_finished = 0, {}, false;
 		local total = 0;
 		for k, v in pairs(promises) do
-			total = total + 1;
-			v:next(function (value)
-				results[k] = value;
-				settled = settled + 1;
-				if settled == total and loop_finished then
-					resolve(results);
-				end
-			end, reject);
+			if is_promise(v) then
+				total = total + 1;
+				v:next(function (value)
+					results[k] = value;
+					settled = settled + 1;
+					if settled == total and loop_finished then
+						resolve(results);
+					end
+				end, reject);
+			else
+				results[k] = v;
+			end
 		end
 		loop_finished = true;
 		if settled == total then
@@ -116,20 +120,24 @@ local function all_settled(promises)
 		local settled, results, loop_finished = 0, {}, false;
 		local total = 0;
 		for k, v in pairs(promises) do
-			total = total + 1;
-			v:next(function (value)
-				results[k] = { status = "fulfilled", value = value };
-				settled = settled + 1;
-				if settled == total and loop_finished then
-					resolve(results);
-				end
-			end, function (e)
-				results[k] = { status = "rejected", reason = e };
-				settled = settled + 1;
-				if settled == total and loop_finished then
-					resolve(results);
-				end
-			end);
+			if is_promise(v) then
+				total = total + 1;
+				v:next(function (value)
+					results[k] = { status = "fulfilled", value = value };
+					settled = settled + 1;
+					if settled == total and loop_finished then
+						resolve(results);
+					end
+				end, function (e)
+					results[k] = { status = "rejected", reason = e };
+					settled = settled + 1;
+					if settled == total and loop_finished then
+						resolve(results);
+					end
+				end);
+			else
+				results[k] = v;
+			end
 		end
 		loop_finished = true;
 		if settled == total then

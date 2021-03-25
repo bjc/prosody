@@ -369,6 +369,21 @@ describe("util.promise", function ()
 			assert.spy(cb).was_called(1);
 			assert.same({ [true] = "nope", [false] = "yep" }, result);
 		end);
+		it("passes through non-promise values", function ()
+			local r1;
+			local p1 = promise.new(function (resolve) r1 = resolve end);
+			local p = promise.all({ [true] = p1, [false] = "yep" });
+
+			local result;
+			local cb = spy.new(function (v)
+				result = v;
+			end);
+			p:next(cb);
+			assert.spy(cb).was_called(0);
+			r1("nope");
+			assert.spy(cb).was_called(1);
+			assert.same({ [true] = "nope", [false] = "yep" }, result);
+		end);
 	end);
 	describe("all_settled()", function ()
 		it("works with fulfilled promises", function ()
@@ -441,6 +456,24 @@ describe("util.promise", function ()
 			assert.same({
 				foo = { status = "fulfilled", value = "nope" };
 				bar = { status = "fulfilled", value = "yep" };
+			}, result);
+		end);
+		it("passes through non-promise values", function ()
+			local r1;
+			local p1 = promise.new(function (resolve) r1 = resolve end);
+			local p = promise.all_settled({ foo = p1, bar = "yep" });
+
+			local result;
+			local cb = spy.new(function (v)
+				result = v;
+			end);
+			p:next(cb);
+			assert.spy(cb).was_called(0);
+			r1("nope");
+			assert.spy(cb).was_called(1);
+			assert.same({
+				foo = { status = "fulfilled", value = "nope" };
+				bar = "yep";
 			}, result);
 		end);
 	end);
