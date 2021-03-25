@@ -1186,10 +1186,15 @@ function room_mt:handle_groupchat_to_room(origin, stanza)
 	if not stanza.attr.id then
 		stanza.attr.id = new_id()
 	end
-	if module:fire_event("muc-occupant-groupchat", {
-		room = self; origin = origin; stanza = stanza; from = from; occupant = occupant;
-	}) then return true; end
-	stanza.attr.from = occupant.nick;
+	local event_data = {room = self; origin = origin; stanza = stanza; from = from; occupant = occupant};
+	if module:fire_event("muc-occupant-groupchat", event_data) then
+		return true;
+	end
+	if event_data.occupant then
+		stanza.attr.from = event_data.occupant.nick;
+	else
+		stanza.attr.from = self.jid;
+	end
 	self:broadcast_message(stanza);
 	stanza.attr.from = from;
 	return true;
