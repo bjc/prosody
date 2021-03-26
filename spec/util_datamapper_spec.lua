@@ -14,6 +14,7 @@ describe("util.datampper", function()
 	local disco, disco_info, disco_schema
 	setup(function()
 
+		-- a convenience function for simple attributes, there's a few of them
 		local function attr() return {type = "string"; xml = {attribute = true}} end
 		s = {
 			type = "object";
@@ -53,7 +54,7 @@ describe("util.datampper", function()
 					type = "object";
 					xml = {namespace = "urn:xmpp:reactions:0"; name = "reactions"};
 					properties = {
-						to = {type = "string"; xml = {attribute = true; name = "id"}};
+						to = attr();
 						reactions = {type = "array"; items = {type = "string"; xml = {name = "reaction"}}};
 					};
 				};
@@ -63,8 +64,8 @@ describe("util.datampper", function()
 						xml = {name = "stanza-id"; namespace = "urn:xmpp:sid:0"};
 						type = "object";
 						properties = {
-							id = {xml = {attribute = true}; type = "string"};
-							by = {xml = {attribute = true}; type = "string"};
+							id = attr();
+							by = attr();
 						};
 					};
 				};
