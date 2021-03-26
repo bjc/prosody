@@ -54,7 +54,7 @@ describe("util.datampper", function()
 					type = "object";
 					xml = {namespace = "urn:xmpp:reactions:0"; name = "reactions"};
 					properties = {
-						to = attr();
+						to = {type = "string"; xml = {attribute = true; name = "id"}};
 						reactions = {type = "array"; items = {type = "string"; xml = {name = "reaction"}}};
 					};
 				};
