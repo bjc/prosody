@@ -75,7 +75,7 @@ describe("util.datampper", function()
 		x = xml.parse [[
 				<message xmlns="jabber:client" xml:lang="en" to="a@test" from="b@test" type="chat" id="1">
 				<body>Hello</body>
-				<delay xmlns='urn:xmpp:delay' from='test' stamp='2021-03-07T15:59:08+00:00'>Becasue</delay>
+				<delay xmlns='urn:xmpp:delay' from='test' stamp='2021-03-07T15:59:08+00:00'>Because</delay>
 				<UNRELATED xmlns='http://jabber.org/protocol/chatstates'/>
 				<active xmlns='http://jabber.org/protocol/chatstates'/>
 				<fallback xmlns='urn:xmpp:fallback:0'/>
@@ -96,7 +96,7 @@ describe("util.datampper", function()
 			id = "1";
 			lang = "en";
 			body = "Hello";
-			delay = {from = "test"; stamp = "2021-03-07T15:59:08+00:00"; reason = "Becasue"};
+			delay = {from = "test"; stamp = "2021-03-07T15:59:08+00:00"; reason = "Because"};
 			state = "active";
 			fallback = true;
 			origin_id = "qgkmMdPB";
