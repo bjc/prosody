@@ -62,6 +62,14 @@ local upload_errors = errors.init(module.name, namespace, {
 local upload_cache = cache.new(1024);
 local quota_cache = cache.new(1024);
 
+local measure_upload_cache_size = module:measure("upload_cache", "amount");
+local measure_quota_cache_size = module:measure("quota_cache", "amount");
+
+module:hook_global("stats-update", function ()
+	measure_upload_cache_size(upload_cache:count());
+	measure_quota_cache_size(quota_cache:count());
+end);
+
 local measure_uploads = module:measure("upload", "sizes");
 
 -- Convenience wrapper for logging file sizes
