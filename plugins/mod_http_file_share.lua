@@ -18,6 +18,7 @@ local dataform = require "util.dataforms".new;
 local dt = require "util.datetime";
 local hi = require "util.human.units";
 local cache = require "util.cache";
+local lfs = require "lfs";
 
 local namespace = "urn:xmpp:http:upload:0";
 
@@ -453,6 +454,23 @@ if expiry >= 0 and not external_base_url then
 		reaper_task:run(os.time()-expiry);
 		return 60*60;
 	end);
+end
+
+-- Reachable from the console
+function check_files(query)
+	local issues = {};
+	local iter = assert(uploads:find(nil, query));
+	for slot_id, file in iter do
+		local filename = get_filename(slot_id);
+		local size, err = lfs.attributes(filename, "size");
+		if not size then
+			issues[filename] = err;
+		elseif tonumber(file.attr.size) ~= size then
+			issues[filename] = "file size mismatch";
+		end
+	end
+
+	return next(issues) == nil, issues;
 end
 
 module:hook("iq-get/host/urn:xmpp:http:upload:0:request", handle_slot_request);
