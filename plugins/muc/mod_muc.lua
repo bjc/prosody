@@ -182,6 +182,11 @@ local rooms = cache.new(max_rooms or max_live_rooms, function (jid, room)
 	end
 end);
 
+local measure_rooms_size = module:measure("live_room", "amount");
+module:hook_global("stats-update", function ()
+	measure_rooms_size(rooms:count());
+end);
+
 -- Automatically destroy empty non-persistent rooms
 module:hook("muc-occupant-left",function(event)
 	local room = event.room
