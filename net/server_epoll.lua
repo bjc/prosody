@@ -179,18 +179,18 @@ function interface_mt:__tostring()
 end
 
 interface.log = log;
-function interface:debug(msg, ...) --luacheck: ignore 212/self
+function interface:debug(msg, ...)
 	self.log("debug", msg, ...);
 end
 
 interface.noise = interface.debug;
-function interface:noise(msg, ...) --luacheck: ignore 212/self
+function interface:noise(msg, ...)
 	if cfg.verbose then
 		return self:debug(msg, ...);
 	end
 end
 
-function interface:error(msg, ...) --luacheck: ignore 212/self
+function interface:error(msg, ...)
 	self.log("error", msg, ...);
 end
 
