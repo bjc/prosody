@@ -342,7 +342,7 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 	local filename = get_filename(slot_id);
 	local handle, ferr = io.open(filename);
 	if not handle then
-		module:log("error", "Could not open file: %s", filename, ferr);
+		module:log("error", "Could not open file for reading: %s", ferr);
 		-- This can be because the upload slot wasn't used, or the file disappeared
 		-- somehow, or permission issues.
 		return 410;
