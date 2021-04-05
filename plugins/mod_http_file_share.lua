@@ -142,6 +142,7 @@ local now = os.time();
 
 		-- slot properties
 		slot = slot;
+		expires = expiry >= 0 and (now+expiry) or nil;
 		-- file properties
 		filename = filename;
 		filesize = filesize;
