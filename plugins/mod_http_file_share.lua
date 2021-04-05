@@ -134,12 +134,16 @@ end
 
 function get_authz(slot, uploader, filename, filesize, filetype)
 	return jwt.sign(secret, {
+		-- token properties
 		sub = uploader;
+		exp = os.time()+300;
+
+		-- slot properties
+		slot = slot;
+		-- file properties
 		filename = filename;
 		filesize = filesize;
 		filetype = filetype;
-		slot = slot;
-		exp = os.time()+300;
 	});
 end
 
