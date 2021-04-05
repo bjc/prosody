@@ -245,9 +245,10 @@ function handle_upload(event, path) -- PUT /upload/:slot
 
 	if not request.body_sink then
 		module:log("debug", "Preparing to receive upload into %q, expecting %s", filename, B(upload_info.filesize));
-		local fh, err = errors.coerce(io.open(filename.."~", "w"));
+		local fh, err = io.open(filename.."~", "w");
 		if not fh then
-			return err;
+			module:log("error", "Could not open file for writing: %s", err);
+			return 500;
 		end
 		request.body_sink = fh;
 		if request.body == false then
