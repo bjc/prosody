@@ -133,10 +133,12 @@ function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
 end
 
 function get_authz(slot, uploader, filename, filesize, filetype)
+local now = os.time();
 	return jwt.sign(secret, {
 		-- token properties
 		sub = uploader;
-		exp = os.time()+300;
+		iat = now;
+		exp = now+300;
 
 		-- slot properties
 		slot = slot;
