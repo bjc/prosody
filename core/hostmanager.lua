@@ -133,7 +133,6 @@ function deactivate(host, reason)
 		for remotehost, session in pairs(host_session.s2sout) do
 			if session.close then
 				log("debug", "Closing outgoing connection to %s", remotehost);
-				if session.srv_hosts then session.srv_hosts = nil; end
 				session:close(reason);
 			end
 		end
