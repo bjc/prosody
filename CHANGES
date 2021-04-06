@@ -21,6 +21,7 @@ TRUNK
 -   util.error for encapsulating errors
 -   MUC: support for XEP-0421 occupant identifiers
 -   mod_http_file_share: File sharing via HTTP (XEP-0363)
+-   statistics scheduling can be done by plugin
 
 0.11.0
 ======

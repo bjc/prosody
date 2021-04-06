@@ -6,7 +6,7 @@ local fire_event = prosody.events.fire_event;
 
 local stats_interval_config = config.get("*", "statistics_interval");
 local stats_interval = tonumber(stats_interval_config);
-if stats_interval_config and not stats_interval then
+if stats_interval_config and not stats_interval and stats_interval_config ~= "manual" then
 	log("error", "Invalid 'statistics_interval' setting, statistics will be disabled");
 end
 
@@ -18,6 +18,9 @@ if not stats_provider and stats_interval then
 	stats_provider = "internal";
 elseif stats_provider and not stats_interval then
 	stats_interval = 60;
+end
+if stats_interval_config == "manual" then
+	stats_interval = nil;
 end
 
 local builtin_providers = {
@@ -65,8 +68,7 @@ if stats then
 		return f(name, conf);
 	end
 
-	if stats_interval then
-		log("debug", "Statistics enabled using %s provider, collecting every %d seconds", stats_provider_name, stats_interval);
+	if stats_interval or stats_interval_config == "manual" then
 
 		local mark_collection_start = measure("times", "stats.collection");
 		local mark_processing_start = measure("times", "stats.processing");
@@ -96,9 +98,14 @@ if stats then
 			end
 			return stats_interval;
 		end
-		timer.add_task(stats_interval, collect);
-		prosody.events.add_handler("server-started", function () collect() end, -1);
-		prosody.events.add_handler("server-stopped", function () collect() end, -1);
+		if stats_interval then
+			log("debug", "Statistics enabled using %s provider, collecting every %d seconds", stats_provider_name, stats_interval);
+			timer.add_task(stats_interval, collect);
+			prosody.events.add_handler("server-started", function () collect() end, -1);
+			prosody.events.add_handler("server-stopped", function () collect() end, -1);
+		else
+			log("debug", "Statistics enabled using %s provider, no scheduled collection", stats_provider_name);
+		end
 	else
 		log("debug", "Statistics enabled using %s provider, collection is disabled", stats_provider_name);
 	end
@@ -107,8 +114,13 @@ else
 	function measure() return measure; end
 end
 
+local exported_collect = nil;
+if stats_interval_config == "manual" then
+	exported_collect = collect;
+end
 
 return {
+	collect = exported_collect;
 	measure = measure;
 	get_stats = function ()
 		return latest_stats, changed_stats, stats_extra;
