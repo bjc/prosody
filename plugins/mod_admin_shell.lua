@@ -756,20 +756,7 @@ function def_env.s2s:show(match_jid, annotate)
 				print("There are "..#session.sendq.." queued outgoing stanzas for this connection");
 			end
 			if session.type == "s2sout_unauthed" then
-				if session.connecting then
-					print("Connection not yet established");
-					if not session.srv_hosts then
-						if not session.conn then
-							print("We do not yet have a DNS answer for this host's SRV records");
-						else
-							print("This host has no SRV records, using A record instead");
-						end
-					elseif session.srv_choice then
-						print("We are on SRV record "..session.srv_choice.." of "..#session.srv_hosts);
-						local srv_choice = session.srv_hosts[session.srv_choice];
-						print("Using "..(srv_choice.target or ".")..":"..(srv_choice.port or 5269));
-					end
-				elseif session.notopen then
+				if session.notopen then
 					print("The <stream> has not yet been opened");
 				elseif not session.dialback_key then
 					print("Dialback has not been initiated yet");
