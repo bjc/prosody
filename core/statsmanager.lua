@@ -77,6 +77,7 @@ if stats then
 			mark_collection_done();
 
 			if stats.get_stats then
+				local mark_processing_done = mark_processing_start();
 				changed_stats, stats_extra = {}, {};
 				for stat_name, getter in pairs(stats.get_stats()) do
 					-- luacheck: ignore 211/type
@@ -90,7 +91,6 @@ if stats then
 						stats_extra[stat_name] = extra;
 					end
 				end
-				local mark_processing_done = mark_processing_start();
 				fire_event("stats-updated", { stats = latest_stats, changed_stats = changed_stats, stats_extra = stats_extra });
 				mark_processing_done();
 			end
