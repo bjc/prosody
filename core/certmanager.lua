@@ -24,12 +24,17 @@ local ssl_newcontext = ssl.newcontext;
 local new_config = require"util.sslconfig".new;
 local stat = require "lfs".attributes;
 
+local x509 = require "util.x509";
+local lfs = require "lfs";
+
 local tonumber, tostring = tonumber, tostring;
 local pairs = pairs;
 local t_remove = table.remove;
 local type = type;
 local io_open = io.open;
 local select = select;
+local now = os.time;
+local next = next;
 
 local prosody = prosody;
 local resolve_path = require"util.paths".resolve_relative_path;
@@ -92,12 +97,83 @@ local function find_cert(user_certs, name)
 	log("debug", "No certificate/key found for %s", name);
 end
 
+local function index_certs(dir, files_by_name, depth_limit)
+	files_by_name = files_by_name or {};
+	depth_limit = depth_limit or 3;
+	if depth_limit <= 0 then return files_by_name; end
+
+	for file in lfs.dir(dir) do
+		local full = dir.."/"..file
+		if lfs.attributes(full, "mode") == "directory" then
+			if file:sub(1,1) ~= "." then
+				index_certs(full, files_by_name, depth_limit-1);
+			end
+			-- TODO support more filename patterns?
+		elseif full:match("%.crt$") or full:match("/fullchain%.pem$") then
+			local f = io_open(full);
+			if f then
+				-- TODO look for chained certificates
+				local firstline = f:read();
+				if firstline == "-----BEGIN CERTIFICATE-----" then
+					f:seek("set")
+					local cert = ssl.loadcertificate(f:read("*a"))
+					-- TODO if more than one cert is found for a name, the most recently
+					-- issued one should be used.
+					-- for now, just filter out expired certs
+					-- TODO also check if there's a corresponding key
+					if cert:validat(now()) then
+						local names = x509.get_identities(cert);
+						log("debug", "Found certificate %s with identities %q", full, names);
+						for name, services in pairs(names) do
+							-- TODO check services
+							if files_by_name[name] then
+								files_by_name[name][full] = services;
+							else
+								files_by_name[name] = { [full] = services; };
+							end
+						end
+					end
+				end
+				f:close();
+			end
+		end
+	end
+	log("debug", "Certificate index: %q", files_by_name);
+	-- | hostname | filename | service |
+	return files_by_name;
+end
+
+local cert_index;
+
 local function find_host_cert(host)
 	if not host then return nil; end
+	if not cert_index then
+		cert_index = index_certs(global_certificates);
+	end
+	local certs = cert_index[host];
+	if certs then
+		local cert_filename, services = next(certs);
+		if services["*"] then
+			log("debug", "Using cert %q from index", cert_filename);
+			return find_cert(cert_filename, host);
+		end
+	end
+
 	return find_cert(configmanager.get(host, "certificate"), host) or find_host_cert(host:match("%.(.+)$"));
 end
 
 local function find_service_cert(service, port)
+	if not cert_index then
+		cert_index = index_certs(global_certificates);
+	end
+	for _, certs in pairs(cert_index) do
+		for cert_filename, services in pairs(certs) do
+			if services[service] or services["*"] then
+				log("debug", "Using cert %q from index", cert_filename);
+				return find_cert(cert_filename, service);
+			end
+		end
+	end
 	local cert_config = configmanager.get("*", service.."_certificate");
 	if type(cert_config) == "table" then
 		cert_config = cert_config[port] or cert_config.default;
@@ -160,8 +236,10 @@ local function create_context(host, mode, ...)
 	cfg:apply(core_defaults);
 	local service_name, port = host:match("^(%S+) port (%d+)$");
 	if service_name then
+		log("debug", "Automatically locating certs for service %s on port %s", service_name, port);
 		cfg:apply(find_service_cert(service_name, tonumber(port)));
 	else
+		log("debug", "Automatically locating certs for host %s", host);
 		cfg:apply(find_host_cert(host));
 	end
 	cfg:apply({
@@ -252,6 +330,7 @@ local function reload_ssl_config()
 	if luasec_has.options.no_compression then
 		core_defaults.options.no_compression = configmanager.get("*", "ssl_compression") ~= true;
 	end
+	cert_index = index_certs(global_certificates);
 end
 
 prosody.events.add_handler("config-reloaded", reload_ssl_config);
