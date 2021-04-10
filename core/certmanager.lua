@@ -78,7 +78,7 @@ local function find_cert(user_certs, name)
 			if crt_path == key_path then
 				if key_path:sub(-4) == ".crt" then
 					key_path = key_path:sub(1, -4) .. "key";
-				elseif key_path:sub(-13) == "fullchain.pem" then
+				elseif key_path:sub(-14) == "/fullchain.pem" then
 					key_path = key_path:sub(1, -14) .. "privkey.pem";
 				end
 			end
