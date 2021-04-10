@@ -210,12 +210,12 @@ local function session_close(session, reason)
 				if not session.destroyed then
 					session.log("warn", "Failed to receive a stream close response, closing connection anyway...");
 					sm_destroy_session(session, reason_text);
-					conn:close();
+					if conn then conn:close(); end
 				end
 			end);
 		else
 			sm_destroy_session(session, reason_text);
-			conn:close();
+			if conn then conn:close(); end
 		end
 	else
 		local reason_text = (reason and (reason.name or reason.text or reason.condition)) or reason;
@@ -246,11 +246,19 @@ module:hook_global("user-password-changed", function(event)
 end, 200);
 
 function runner_callbacks:ready()
-	self.data.conn:resume();
+	if self.data.conn then
+		self.data.conn:resume();
+	else
+		(self.data.log or log)("debug", "Session has no connection to resume");
+	end
 end
 
 function runner_callbacks:waiting()
-	self.data.conn:pause();
+	if self.data.conn then
+		self.data.conn:pause();
+	else
+		(self.data.log or log)("debug", "Session has no connection to pause while waiting");
+	end
 end
 
 function runner_callbacks:error(err)
