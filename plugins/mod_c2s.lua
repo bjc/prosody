@@ -92,6 +92,9 @@ function stream_callbacks._streamopened(session, attr)
 
 	session:open_stream(host, attr.from);
 
+	-- Opening the stream can cause the stream to be closed
+	if session.destroyed then return end
+
 	(session.log or log)("debug", "Sent reply <stream:stream> to client");
 	session.notopen = nil;
 
