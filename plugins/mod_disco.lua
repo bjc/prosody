@@ -14,6 +14,8 @@ local jid_bare = require "util.jid".bare;
 local st = require "util.stanza"
 local calculate_hash = require "util.caps".calculate_hash;
 
+local expose_admins = module:get_option_boolean("disco_expose_admins", false);
+
 local disco_items = module:get_option_array("disco_items", {})
 do -- validate disco_items
 	for _, item in ipairs(disco_items) do
@@ -166,7 +168,8 @@ module:hook("iq-get/bare/http://jabber.org/protocol/disco#info:query", function(
 	local origin, stanza = event.origin, event.stanza;
 	local node = stanza.tags[1].attr.node;
 	local username = jid_split(stanza.attr.to) or origin.username;
-	if not stanza.attr.to or is_contact_subscribed(username, module.host, jid_bare(stanza.attr.from)) then
+	local is_admin = um_is_admin(stanza.attr.to or origin.full_jid, module.host)
+	if not stanza.attr.to or (expose_admins and is_admin) or is_contact_subscribed(username, module.host, jid_bare(stanza.attr.from)) then
 		if node and node ~= "" then
 			local reply = st.reply(stanza):tag('query', {xmlns='http://jabber.org/protocol/disco#info', node=node});
 			if not reply.attr.from then reply.attr.from = origin.username.."@"..origin.host; end -- COMPAT To satisfy Psi when querying own account
@@ -182,7 +185,7 @@ module:hook("iq-get/bare/http://jabber.org/protocol/disco#info:query", function(
 		end
 		local reply = st.reply(stanza):tag('query', {xmlns='http://jabber.org/protocol/disco#info'});
 		if not reply.attr.from then reply.attr.from = origin.username.."@"..origin.host; end -- COMPAT To satisfy Psi when querying own account
-		if um_is_admin(stanza.attr.to or origin.full_jid, module.host) then
+		if is_admin then
 			reply:tag('identity', {category='account', type='admin'}):up();
 		elseif prosody.hosts[module.host].users.name == "anonymous" then
 			reply:tag('identity', {category='account', type='anonymous'}):up();
