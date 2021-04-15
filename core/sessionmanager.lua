@@ -86,6 +86,7 @@ local function retire_session(session)
 	end
 
 	function session.send(data) log("debug", "Discarding data sent to resting session: %s", data); return false; end
+	function session.rawsend(data) log("debug", "Discarding data sent to resting session: %s", data); return false; end
 	function session.data(data) log("debug", "Discarding data received from resting session: %s", data); end
 	session.thread = { run = function (_, data) return session.data(data) end };
 	return setmetatable(session, resting_session);
