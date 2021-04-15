@@ -121,6 +121,7 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-tls:starttls", function(event)
 	local origin = event.origin;
 	if can_do_tls(origin) then
 		(origin.sends2s or origin.send)(starttls_proceed);
+		if origin.destroyed then return end
 		origin:reset_stream();
 		origin.conn:starttls(origin.ssl_ctx);
 		origin.log("debug", "TLS negotiation started for %s...", origin.type);
