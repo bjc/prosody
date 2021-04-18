@@ -41,8 +41,16 @@ local secure_domains, insecure_domains =
 local require_encryption = module:get_option_boolean("s2s_require_encryption", false);
 local stanza_size_limit = module:get_option_number("s2s_stanza_size_limit"); -- TODO come up with a sensible default (util.xmppstream defaults to 10M)
 
-local measure_connections = module:measure("connections", "amount");
-local measure_ipv6 = module:measure("ipv6", "amount");
+local measure_connections_inbound = module:metric(
+	"gauge", "connections_inbound", "",
+	"Established incoming s2s connections",
+	{"host", "type", "ip_family"}
+);
+local measure_connections_outbound = module:metric(
+	"gauge", "connections_outbound", "",
+	"Established outgoing s2s connections",
+	{"host", "type", "ip_family"}
+);
 
 local sessions = module:shared("sessions");
 
@@ -60,16 +68,24 @@ local s2s_service_options = {
 };
 
 module:hook("stats-update", function ()
-	local count = 0;
-	local ipv6 = 0;
+	measure_connections_inbound:clear()
+	measure_connections_outbound:clear()
+	-- TODO: init all expected metrics once?
+	-- or maybe create/delete them in host-activate/host-deactivate? requires
+	-- extra API in openmetrics.lua tho
 	for _, session in pairs(sessions) do
-		count = count + 1;
-		if session.ip and session.ip:match(":") then
-			ipv6 = ipv6 + 1;
-		end
+		local is_inbound = string.sub(session.type, 4, 5) == "in"
+		local metric_family = is_inbound and measure_connections_inbound or measure_connections_outbound
+		local host = is_inbound and session.to_host or session.from_host or ""
+		local type_ = session.type or "other"
+
+		-- we want to expose both v4 and v6 counters in all cases to make
+		-- queries smoother
+		local is_ipv6 = session.ip and session.ip:match(":") and 1 or 0
+		local is_ipv4 = 1 - is_ipv6
+		metric_family:with_labels(host, type_, "ipv4"):add(is_ipv4)
+		metric_family:with_labels(host, type_, "ipv6"):add(is_ipv6)
 	end
-	measure_connections(count);
-	measure_ipv6(ipv6);
 end);
 
 --- Handle stanzas to remote domains
