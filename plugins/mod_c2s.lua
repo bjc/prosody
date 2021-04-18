@@ -12,6 +12,7 @@ local add_task = require "util.timer".add_task;
 local new_xmpp_stream = require "util.xmppstream".new;
 local nameprep = require "util.encodings".stringprep.nameprep;
 local sessionmanager = require "core.sessionmanager";
+local statsmanager = require "core.statsmanager";
 local st = require "util.stanza";
 local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionmanager.destroy_session;
 local uuid_generate = require "util.uuid".generate;
@@ -28,8 +29,7 @@ local stream_close_timeout = module:get_option_number("c2s_close_timeout", 5);
 local opt_keepalives = module:get_option_boolean("c2s_tcp_keepalives", module:get_option_boolean("tcp_keepalives", true));
 local stanza_size_limit = module:get_option_number("c2s_stanza_size_limit"); -- TODO come up with a sensible default (util.xmppstream defaults to 10M)
 
-local measure_connections = module:measure("connections", "amount");
-local measure_ipv6 = module:measure("ipv6", "amount");
+local measure_connections = module:metric("gauge", "connections", "", "Established c2s connections", {"host", "type", "ip_family"});
 
 local sessions = module:shared("sessions");
 local core_process_stanza = prosody.core_process_stanza;
@@ -40,16 +40,22 @@ local listener = {};
 local runner_callbacks = {};
 
 module:hook("stats-update", function ()
-	local count = 0;
-	local ipv6 = 0;
+	-- for push backends, avoid sending out updates for each increment of
+	-- the metric below.
+	statsmanager.cork()
+	measure_connections:clear()
 	for _, session in pairs(sessions) do
-		count = count + 1;
-		if session.ip and session.ip:match(":") then
-			ipv6 = ipv6 + 1;
-		end
+		local host = session.host or ""
+		local type_ = session.type or "other"
+
+		-- we want to expose both v4 and v6 counters in all cases to make
+		-- queries smoother
+		local is_ipv6 = session.ip and session.ip:match(":") and 1 or 0
+		local is_ipv4 = 1 - is_ipv6
+		measure_connections:with_labels(host, type_, "ipv4"):add(is_ipv4)
+		measure_connections:with_labels(host, type_, "ipv6"):add(is_ipv6)
 	end
-	measure_connections(count);
-	measure_ipv6(ipv6);
+	statsmanager.uncork()
 end);
 
 --- Stream events handlers
