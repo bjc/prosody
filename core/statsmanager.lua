@@ -3,6 +3,8 @@ local config = require "core.configmanager";
 local log = require "util.logger".init("stats");
 local timer = require "util.timer";
 local fire_event = prosody.events.fire_event;
+local array = require "util.array";
+local timed = require "util.openmetrics".timed;
 
 local stats_interval_config = config.get("*", "statistics_interval");
 local stats_interval = tonumber(stats_interval_config);
@@ -57,15 +59,149 @@ if stats == nil then
 	log("error", "Error loading statistics provider '%s': %s", stats_provider, stats_err);
 end
 
-local measure, collect;
-local latest_stats = {};
-local changed_stats = {};
-local stats_extra = {};
+local measure, collect, metric, cork, uncork;
 
 if stats then
-	function measure(type, name, conf)
-		local f = assert(stats[type], "unknown stat type: "..type);
-		return f(name, conf);
+	function metric(type_, name, unit, description, labels, extra)
+		local registry = stats.metric_registry
+		local f = assert(registry[type_], "unknown metric family type: "..type_);
+		return f(registry, name, unit or "", description or "", labels, extra);
+	end
+
+	local function new_legacy_metric(stat_type, name, unit, description, fixed_label_key, fixed_label_value, extra)
+		local label_keys = array()
+		local conf = extra or {}
+		if fixed_label_key then
+			label_keys:push(fixed_label_key)
+		end
+		unit = unit or ""
+		local mf = metric(stat_type, "prosody_" .. name, unit, description, label_keys, conf);
+		if fixed_label_key then
+			mf = mf:with_partial_label(fixed_label_value)
+		end
+		return mf:with_labels()
+	end
+
+	local function unwrap_legacy_extra(extra, type_, name, unit)
+		local description = extra and extra.description or "Legacy "..type_.." metric "..name
+		unit = extra and extra.unit or unit
+		return description, unit
+	end
+
+	-- These wrappers provide the pre-OpenMetrics interface of statsmanager
+	-- and moduleapi (module:measure).
+	local legacy_metric_wrappers = {
+		amount = function(name, fixed_label_key, fixed_label_value, extra)
+			local initial = 0
+			if type(extra) == "number" then
+				initial = extra
+			else
+				initial = extra and extra.initial or initial
+			end
+			local description, unit = unwrap_legacy_extra(extra, "amount", name)
+
+			local m = new_legacy_metric("gauge", name, unit, description, fixed_label_key, fixed_label_value)
+			m:set(initial or 0)
+			return function(v)
+				m:set(v)
+			end
+		end;
+
+		counter = function(name, fixed_label_key, fixed_label_value, extra)
+			if type(extra) == "number" then
+				-- previous versions of the API allowed passing an initial
+				-- value here; we do not allow that anymore, it is not a thing
+				-- which makes sense with counters
+				extra = nil
+			end
+
+			local description, unit = unwrap_legacy_extra(extra, "counter", name)
+
+			local m = new_legacy_metric("counter", name, unit, description, fixed_label_key, fixed_label_value)
+			m:set(0)
+			return function(v)
+				m:add(v)
+			end
+		end;
+
+		rate = function(name, fixed_label_key, fixed_label_value, extra)
+			if type(extra) == "number" then
+				-- previous versions of the API allowed passing an initial
+				-- value here; we do not allow that anymore, it is not a thing
+				-- which makes sense with counters
+				extra = nil
+			end
+
+			local description, unit = unwrap_legacy_extra(extra, "counter", name)
+
+			local m = new_legacy_metric("counter", name, unit, description, fixed_label_key, fixed_label_value)
+			m:set(0)
+			return function()
+				m:add(1)
+			end
+		end;
+
+		times = function(name, fixed_label_key, fixed_label_value, extra)
+			local conf = {}
+			if extra and extra.buckets then
+				conf.buckets = extra.buckets
+			else
+				conf.buckets = { 0.001, 0.01, 0.1, 1.0, 10.0, 100.0 }
+			end
+			local description, _ = unwrap_legacy_extra(extra, "times", name)
+
+			local m = new_legacy_metric("histogram", name, "seconds", description, fixed_label_key, fixed_label_value, conf)
+			return function()
+				return timed(m)
+			end
+		end;
+
+		sizes = function(name, fixed_label_key, fixed_label_value, extra)
+			local conf = {}
+			if extra and extra.buckets then
+				conf.buckets = extra.buckets
+			else
+				conf.buckets = { 1024, 4096, 32768, 131072, 1048576, 4194304, 33554432, 134217728, 1073741824 }
+			end
+			local description, _ = unwrap_legacy_extra(extra, "sizes", name)
+
+			local m = new_legacy_metric("histogram", name, "bytes", description, fixed_label_key, fixed_label_value, conf)
+			return function(v)
+				m:sample(v)
+			end
+		end;
+
+		distribution = function(name, fixed_label_key, fixed_label_value, extra)
+			if type(extra) == "string" then
+				-- compat with previous API
+				extra = { unit = extra }
+			end
+			local description, unit = unwrap_legacy_extra(extra, "distribution", name, "")
+			local m = new_legacy_metric("summary", name, unit, description, fixed_label_key, fixed_label_value)
+			return function(v)
+				m:sample(v)
+			end
+		end;
+	};
+
+	-- Argument order switched here to support the legacy statsmanager.measure
+	-- interface.
+	function measure(stat_type, name, extra, fixed_label_key, fixed_label_value)
+		local wrapper = assert(legacy_metric_wrappers[stat_type], "unknown legacy metric type "..stat_type)
+		return wrapper(name, fixed_label_key, fixed_label_value, extra)
+	end
+
+	if stats.cork then
+		function cork()
+			return stats:cork()
+		end
+
+		function uncork()
+			return stats:uncork()
+		end
+	else
+		function cork() end
+		function uncork() end
 	end
 
 	if stats_interval or stats_interval_config == "manual" then
@@ -76,27 +212,23 @@ if stats then
 		function collect()
 			local mark_collection_done = mark_collection_start();
 			fire_event("stats-update");
+			-- ensure that the backend is uncorked, in case it got stuck at
+			-- some point, to avoid infinite resource use
+			uncork()
 			mark_collection_done();
+			local manual_result = nil
 
-			if stats.get_stats then
+			if stats.metric_registry then
+				-- only if supported by the backend, we fire the event which
+				-- provides the current metric values
 				local mark_processing_done = mark_processing_start();
-				changed_stats, stats_extra = {}, {};
-				for stat_name, getter in pairs(stats.get_stats()) do
-					-- luacheck: ignore 211/type
-					local type, value, extra = getter();
-					local old_value = latest_stats[stat_name];
-					latest_stats[stat_name] = value;
-					if value ~= old_value then
-						changed_stats[stat_name] = value;
-					end
-					if extra then
-						stats_extra[stat_name] = extra;
-					end
-				end
-				fire_event("stats-updated", { stats = latest_stats, changed_stats = changed_stats, stats_extra = stats_extra });
+				local metric_registry = stats.metric_registry;
+				fire_event("openmetrics-updated", { metric_registry = metric_registry })
 				mark_processing_done();
+				manual_result = metric_registry;
 			end
-			return stats_interval;
+
+			return stats_interval, manual_result;
 		end
 		if stats_interval then
 			log("debug", "Statistics enabled using %s provider, collecting every %d seconds", stats_provider_name, stats_interval);
@@ -112,6 +244,22 @@ if stats then
 else
 	log("debug", "Statistics disabled");
 	function measure() return measure; end
+
+	local dummy_mt = {}
+	function dummy_mt.__newindex()
+	end
+	function dummy_mt:__index()
+		return self
+	end
+	function dummy_mt:__call()
+		return self
+	end
+	local dummy = {}
+	setmetatable(dummy, dummy_mt)
+
+	function metric() return dummy; end
+	function cork() end
+	function uncork() end
 end
 
 local exported_collect = nil;
@@ -122,10 +270,10 @@ end
 return {
 	collect = exported_collect;
 	measure = measure;
-	get_stats = function ()
-		return latest_stats, changed_stats, stats_extra;
-	end;
-	get = function (name)
-		return latest_stats[name], stats_extra[name];
+	cork = cork;
+	uncork = uncork;
+	metric = metric;
+	get_metric_registry = function ()
+		return stats and stats.metric_registry or nil
 	end;
 };

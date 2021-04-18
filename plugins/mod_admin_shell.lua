@@ -36,6 +36,9 @@ local serialization = require "util.serialization";
 local serialize_config = serialization.new ({ fatal = false, unquoted = true});
 local time = require "util.time";
 
+local t_insert = table.insert;
+local t_concat = table.concat;
+
 local format_number = require "util.human.units".format;
 local format_table = require "util.human.io".table;
 
@@ -1342,187 +1345,112 @@ local short_units = {
 	bytes = "B",
 };
 
-local function format_stat(type, unit, value, ref_value)
-	ref_value = ref_value or value;
-	--do return tostring(value) end
-	if not unit then
-		if type == "duration" then
-			unit = "seconds"
-		elseif type == "size" then
-			unit = "bytes";
-		elseif type == "rate" then
-			unit = " events/sec"
-			if ref_value < 0.9 then
-				unit = "events/min"
-				value = value*60;
-				if ref_value < 0.6/60 then
-					unit = "events/h"
-					value = value*60;
-				end
-			end
-			return ("%.3g %s"):format(value, unit);
-		end
-	end
-	return format_number(value, short_units[unit] or unit or "", unit == "bytes" and 'b' or nil);
-end
-
 local stats_methods = {};
-function stats_methods:bounds(_lower, _upper)
-	for _, stat_info in ipairs(self) do
-		local data = stat_info[4];
-		if data then
-			local lower = _lower or data.min;
-			local upper = _upper or data.max;
-			local new_data = {
-				min = lower;
-				max = upper;
-				samples = {};
-				sample_count = 0;
-				count = data.count;
-				units = data.units;
-			};
-			local sum = 0;
-			for _, v in ipairs(data.samples) do
-				if v > upper then
-					break;
-				elseif v>=lower then
-					table.insert(new_data.samples, v);
-					sum = sum + v;
-				end
+
+function stats_methods:render_single_fancy_histogram_ex(print, prefix, metric_family, metric, cumulative)
+	local creation_timestamp, sum, count
+	local buckets = {}
+	local prev_bucket_count = 0
+	for suffix, extra_labels, value in metric:iter_samples() do
+		if suffix == "_created" then
+			creation_timestamp = value
+		elseif suffix == "_sum" then
+			sum = value
+		elseif suffix == "_count" then
+			count = value
+		else
+			local bucket_threshold = extra_labels["le"]
+			local bucket_count
+			if cumulative then
+				bucket_count = value
+			else
+				bucket_count = value - prev_bucket_count
+				prev_bucket_count = value
 			end
-			new_data.sample_count = #new_data.samples;
-			stat_info[4] = new_data;
-			stat_info[3] = sum/new_data.sample_count;
-		end
-	end
-	return self;
-end
-
-function stats_methods:trim(lower, upper)
-	upper = upper or (100-lower);
-	local statistics = require "util.statistics";
-	for _, stat_info in ipairs(self) do
-		-- Strip outliers
-		local data = stat_info[4];
-		if data then
-			local new_data = {
-				min = statistics.get_percentile(data, lower);
-				max = statistics.get_percentile(data, upper);
-				samples = {};
-				sample_count = 0;
-				count = data.count;
-				units = data.units;
-			};
-			local sum = 0;
-			for _, v in ipairs(data.samples) do
-				if v > new_data.max then
-					break;
-				elseif v>=new_data.min then
-					table.insert(new_data.samples, v);
-					sum = sum + v;
-				end
+			if bucket_threshold == "+Inf" then
+				t_insert(buckets, {threshold = 1/0, count = bucket_count})
+			elseif bucket_threshold ~= nil then
+				t_insert(buckets, {threshold = tonumber(bucket_threshold), count = bucket_count})
 			end
-			new_data.sample_count = #new_data.samples;
-			stat_info[4] = new_data;
-			stat_info[3] = sum/new_data.sample_count;
 		end
 	end
-	return self;
-end
 
-function stats_methods:max(upper)
-	return self:bounds(nil, upper);
-end
+	if #buckets == 0 or not creation_timestamp or not sum or not count then
+		print("[no data or not a histogram]")
+		return false
+	end
 
-function stats_methods:min(lower)
-	return self:bounds(lower, nil);
-end
+	local graph_width, graph_height, wscale = #buckets, 10, 1;
+	if graph_width < 8 then
+		wscale = 8
+	elseif graph_width < 16 then
+		wscale = 4
+	elseif graph_width < 32 then
+		wscale = 2
+	end
+	local eighth_chars = "   ▁▂▃▄▅▆▇█";
 
-function stats_methods:summary()
-	local statistics = require "util.statistics";
-	for _, stat_info in ipairs(self) do
-		local type, value, data = stat_info[2], stat_info[3], stat_info[4];
-		if data and data.samples then
-			table.insert(stat_info.output, string.format("Count: %d (%d captured)",
-				data.count,
-				data.sample_count
-			));
-			table.insert(stat_info.output, string.format("Min: %s  Mean: %s  Max: %s",
-				format_stat(type, data.units, data.min),
-				format_stat(type, data.units, value),
-				format_stat(type, data.units, data.max)
-			));
-			table.insert(stat_info.output, string.format("Q1: %s  Median: %s  Q3: %s",
-				format_stat(type, data.units, statistics.get_percentile(data, 25)),
-				format_stat(type, data.units, statistics.get_percentile(data, 50)),
-				format_stat(type, data.units, statistics.get_percentile(data, 75))
-			));
+	local max_bin_samples = 0
+	for _, bucket in ipairs(buckets) do
+		if bucket.count > max_bin_samples then
+			max_bin_samples = bucket.count
 		end
 	end
-	return self;
+
+	print("");
+	print(prefix)
+	print(("_"):rep(graph_width*wscale).." "..max_bin_samples);
+	for row = graph_height, 1, -1 do
+		local row_chars = {};
+		local min_eighths, max_eighths = 8, 0;
+		for i = 1, #buckets do
+			local char_eighths = math.ceil(math.max(math.min((graph_height/(max_bin_samples/buckets[i].count))-(row-1), 1), 0)*8);
+			if char_eighths < min_eighths then
+				min_eighths = char_eighths;
+			end
+			if char_eighths > max_eighths then
+				max_eighths = char_eighths;
+			end
+			if char_eighths == 0 then
+				row_chars[i] = ("-"):rep(wscale);
+			else
+				local char = eighth_chars:sub(char_eighths*3+1, char_eighths*3+3);
+				row_chars[i] = char:rep(wscale);
+			end
+		end
+		print(table.concat(row_chars).."|- "..string.format("%.8g", math.ceil((max_bin_samples/graph_height)*(row-0.5))));
+	end
+
+	local legend_pat = string.format("%%%d.%dg", wscale-1, wscale-1)
+	local row = {}
+	for i = 1, #buckets do
+		local threshold = buckets[i].threshold
+		t_insert(row, legend_pat:format(threshold))
+	end
+	t_insert(row, " " .. metric_family.unit)
+	print(t_concat(row, "/"))
+
+	return true
+end
+
+function stats_methods:render_single_fancy_histogram(print, prefix, metric_family, metric)
+	return self:render_single_fancy_histogram_ex(print, prefix, metric_family, metric, false)
+end
+
+function stats_methods:render_single_fancy_histogram_cf(print, prefix, metric_family, metric)
+	-- cf = cumulative frequency
+	return self:render_single_fancy_histogram_ex(print, prefix, metric_family, metric, true)
 end
 
 function stats_methods:cfgraph()
 	for _, stat_info in ipairs(self) do
-		local name, type, value, data = unpack(stat_info, 1, 4); -- luacheck: ignore 211
+		local family_name, metric_family = unpack(stat_info, 1, 2)
 		local function print(s)
 			table.insert(stat_info.output, s);
 		end
 
-		if data and data.sample_count and data.sample_count > 0 then
-			local raw_histogram = require "util.statistics".get_histogram(data);
-
-			local graph_width, graph_height = 50, 10;
-			local eighth_chars = "   ▁▂▃▄▅▆▇█";
-
-			local range = data.max - data.min;
-
-			if range > 0 then
-				local x_scaling = #raw_histogram/graph_width;
-				local histogram = {};
-				for i = 1, graph_width do
-					histogram[i] = math.max(raw_histogram[i*x_scaling-1] or 0, raw_histogram[i*x_scaling] or 0);
-				end
-
-				print("");
-				print(("_"):rep(52)..format_stat(type, data.units, data.max));
-				for row = graph_height, 1, -1 do
-					local row_chars = {};
-					local min_eighths, max_eighths = 8, 0;
-					for i = 1, #histogram do
-						local char_eighths = math.ceil(math.max(math.min((graph_height/(data.max/histogram[i]))-(row-1), 1), 0)*8);
-						if char_eighths < min_eighths then
-							min_eighths = char_eighths;
-						end
-						if char_eighths > max_eighths then
-							max_eighths = char_eighths;
-						end
-						if char_eighths == 0 then
-							row_chars[i] = "-";
-						else
-							local char = eighth_chars:sub(char_eighths*3+1, char_eighths*3+3);
-							row_chars[i] = char;
-						end
-					end
-					print(table.concat(row_chars).."|-"..format_stat(type, data.units, data.max/(graph_height/(row-0.5))));
-				end
-				print(("\\    "):rep(11));
-				local x_labels = {};
-				for i = 1, 11 do
-					local s = ("%-4s"):format((i-1)*10);
-					if #s > 4 then
-						s = s:sub(1, 3).."…";
-					end
-					x_labels[i] = s;
-				end
-				print(" "..table.concat(x_labels, " "));
-				local units = "%";
-				local margin = math.floor((graph_width-#units)/2);
-				print((" "):rep(margin)..units);
-			else
-				print("[range too small to graph]");
-			end
-			print("");
+		if not self:render_family(print, family_name, metric_family, self.render_single_fancy_histogram_cf) then
+			return self
 		end
 	end
 	return self;
@@ -1530,81 +1458,90 @@ end
 
 function stats_methods:histogram()
 	for _, stat_info in ipairs(self) do
-		local name, type, value, data = unpack(stat_info, 1, 4); -- luacheck: ignore 211
+		local family_name, metric_family = unpack(stat_info, 1, 2)
 		local function print(s)
 			table.insert(stat_info.output, s);
 		end
 
-		if not data then
-			print("[no data]");
-			return self;
-		elseif not data.sample_count then
-			print("[not a sampled metric type]");
-			return self;
+		if not self:render_family(print, family_name, metric_family, self.render_single_fancy_histogram) then
+			return self
 		end
-
-		local graph_width, graph_height = 50, 10;
-		local eighth_chars = "   ▁▂▃▄▅▆▇█";
-
-		local range = data.max - data.min;
-
-		if range > 0 then
-			local n_buckets = graph_width;
-
-			local histogram = {};
-			for i = 1, n_buckets do
-				histogram[i] = 0;
-			end
-			local max_bin_samples = 0;
-			for _, d in ipairs(data.samples) do
-				local bucket = math.floor(1+(n_buckets-1)/(range/(d-data.min)));
-				histogram[bucket] = histogram[bucket] + 1;
-				if histogram[bucket] > max_bin_samples then
-					max_bin_samples = histogram[bucket];
-				end
-			end
-
-			print("");
-			print(("_"):rep(52)..max_bin_samples);
-			for row = graph_height, 1, -1 do
-				local row_chars = {};
-				local min_eighths, max_eighths = 8, 0;
-				for i = 1, #histogram do
-					local char_eighths = math.ceil(math.max(math.min((graph_height/(max_bin_samples/histogram[i]))-(row-1), 1), 0)*8);
-					if char_eighths < min_eighths then
-						min_eighths = char_eighths;
-					end
-					if char_eighths > max_eighths then
-						max_eighths = char_eighths;
-					end
-					if char_eighths == 0 then
-						row_chars[i] = "-";
-					else
-						local char = eighth_chars:sub(char_eighths*3+1, char_eighths*3+3);
-						row_chars[i] = char;
-					end
-				end
-				print(table.concat(row_chars).."|-"..math.ceil((max_bin_samples/graph_height)*(row-0.5)));
-			end
-			print(("\\    "):rep(11));
-			local x_labels = {};
-			for i = 1, 11 do
-				local s = ("%-4s"):format(format_stat(type, data.units, data.min+range*i/11, data.min):match("^%S+"));
-				if #s > 4 then
-					s = s:sub(1, 3).."…";
-				end
-				x_labels[i] = s;
-			end
-			print(" "..table.concat(x_labels, " "));
-			local units = format_stat(type, data.units, data.min):match("%s+(.+)$") or data.units or "";
-			local margin = math.floor((graph_width-#units)/2);
-			print((" "):rep(margin)..units);
-		else
-			print("[range too small to graph]");
-		end
-		print("");
 	end
 	return self;
+end
+
+function stats_methods:render_single_counter(print, prefix, metric_family, metric)
+	local created_timestamp, current_value
+	for suffix, _, value in metric:iter_samples() do
+		if suffix == "_created" then
+			created_timestamp = value
+		elseif suffix == "_total" then
+			current_value = value
+		end
+	end
+	if current_value and created_timestamp then
+		local base_unit = short_units[metric_family.unit] or metric_family.unit
+		local unit = base_unit .. "/s"
+		local factor = 1
+		if base_unit == "s" then
+			-- be smart!
+			unit = "%"
+			factor = 100
+		elseif base_unit == "" then
+			unit = "events/s"
+		end
+		print(("%-50s %s"):format(prefix, format_number(factor * current_value / (self.now - created_timestamp), unit.." [avg]")));
+	end
+end
+
+function stats_methods:render_single_gauge(print, prefix, metric_family, metric)
+	local current_value
+	for _, _, value in metric:iter_samples() do
+		current_value = value
+	end
+	if current_value then
+		local unit = short_units[metric_family.unit] or metric_family.unit
+		print(("%-50s %s"):format(prefix, format_number(current_value, unit)));
+	end
+end
+
+function stats_methods:render_single_summary(print, prefix, metric_family, metric)
+	local sum, count
+	for suffix, _, value in metric:iter_samples() do
+		if suffix == "_sum" then
+			sum = value
+		elseif suffix == "_count" then
+			count = value
+		end
+	end
+	if sum and count then
+		local unit = short_units[metric_family.unit] or metric_family.unit
+		if count == 0 then
+			print(("%-50s %s"):format(prefix, "no obs."));
+		else
+			print(("%-50s %s"):format(prefix, format_number(sum / count, unit.."/event [avg]")));
+		end
+	end
+end
+
+function stats_methods:render_family(print, family_name, metric_family, render_func)
+	local labelkeys = metric_family.label_keys
+	if #labelkeys > 0 then
+		print(family_name)
+		for labelset, metric in metric_family:iter_metrics() do
+			local labels = {}
+			for i, k in ipairs(labelkeys) do
+				local v = labelset[i]
+				t_insert(labels, ("%s=%s"):format(k, v))
+			end
+			local prefix = "  "..t_concat(labels, " ")
+			render_func(self, print, prefix, metric_family, metric)
+		end
+	else
+		for _, metric in metric_family:iter_metrics() do
+			render_func(self, print, family_name, metric_family, metric)
+		end
+	end
 end
 
 local function stats_tostring(stats)
@@ -1618,7 +1555,14 @@ local function stats_tostring(stats)
 			end
 			print("");
 		else
-			print(("%-50s %s"):format(stat_info[1], format_stat(stat_info[2], (stat_info[4] or {}).units, stat_info[3])));
+			local metric_family = stat_info[2]
+			if metric_family.type_ == "counter" then
+				stats:render_family(print, stat_info[1], metric_family, stats.render_single_counter)
+			elseif metric_family.type_ == "gauge" or metric_family.type_ == "unknown" then
+				stats:render_family(print, stat_info[1], metric_family, stats.render_single_gauge)
+			elseif metric_family.type_ == "summary" or metric_family.type_ == "histogram" then
+				stats:render_family(print, stat_info[1], metric_family, stats.render_single_summary)
+			end
 		end
 	end
 	return #stats.." statistics displayed";
@@ -1626,23 +1570,29 @@ end
 
 local stats_mt = {__index = stats_methods, __tostring = stats_tostring }
 local function new_stats_context(self)
-	return setmetatable({ session = self.session, stats = true }, stats_mt);
+	-- TODO: instead of now(), it might be better to take the time of the last
+	-- interval, if the statistics backend is set to use periodic collection
+	-- Otherwise we get strange stuff like average cpu usage decreasing until
+	-- the next sample and so on.
+	return setmetatable({ session = self.session, stats = true, now = time.now() }, stats_mt);
 end
 
-function def_env.stats:show(filter)
-	-- luacheck: ignore 211/changed
-	local stats, changed, extra = require "core.statsmanager".get_stats();
-	local available, displayed = 0, 0;
+function def_env.stats:show(name_filter)
+	local statsman = require "core.statsmanager"
+	local collect = statsman.collect
+	if collect then
+		-- force collection if in manual mode
+		collect()
+	end
+	local metric_registry = statsman.get_metric_registry();
 	local displayed_stats = new_stats_context(self);
-	for name, value in iterators.sorted_pairs(stats) do
-		available = available + 1;
-		if not filter or name:match(filter) then
-			displayed = displayed + 1;
-			local type = name:match(":(%a+)$");
+	for family_name, metric_family in iterators.sorted_pairs(metric_registry:get_metric_families()) do
+		if not name_filter or family_name:match(name_filter) then
 			table.insert(displayed_stats, {
-				name, type, value, extra[name];
-				output = {};
-			});
+				family_name,
+				metric_family,
+				output = {}
+			})
 		end
 	end
 	return displayed_stats;

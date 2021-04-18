@@ -1,171 +1,191 @@
-local t_sort = table.sort
-local m_floor = math.floor;
 local time = require "util.time".now;
+local new_metric_registry = require "util.openmetrics".new_metric_registry;
+local render_histogram_le = require "util.openmetrics".render_histogram_le;
 
-local function nop_function() end
+-- BEGIN of Metric implementations
 
-local function percentile(arr, length, pc)
-	local n = pc/100 * (length + 1);
-	local k, d = m_floor(n), n%1;
-	if k == 0 then
-		return arr[1] or 0;
-	elseif k >= length then
-		return arr[length];
-	end
-	return arr[k] + d*(arr[k+1] - arr[k]);
+-- Gauges
+local gauge_metric_mt = {}
+gauge_metric_mt.__index = gauge_metric_mt
+
+local function new_gauge_metric()
+	local metric = { value = 0 }
+	setmetatable(metric, gauge_metric_mt)
+	return metric
 end
 
-local function new_registry(config)
-	config = config or {};
-	local duration_sample_interval = config.duration_sample_interval or 5;
-	local duration_max_samples = config.duration_max_stored_samples or 5000;
+function gauge_metric_mt:set(value)
+	self.value = value
+end
 
-	local function get_distribution_stats(events, n_actual_events, since, new_time, units)
-		local n_stored_events = #events;
-		t_sort(events);
-		local sum = 0;
-		for i = 1, n_stored_events do
-			sum = sum + events[i];
+function gauge_metric_mt:add(delta)
+	self.value = self.value + delta
+end
+
+function gauge_metric_mt:reset()
+	self.value = 0
+end
+
+function gauge_metric_mt:iter_samples()
+	local done = false
+	return function(_s)
+		if done then
+			return nil, true
 		end
+		done = true
+		return "", nil, _s.value
+	end, self
+end
 
-		return {
-			samples = events;
-			sample_count = n_stored_events;
-			count = n_actual_events,
-			rate = n_actual_events/(new_time-since);
-			average = n_stored_events > 0 and sum/n_stored_events or 0,
-			min = events[1] or 0,
-			max = events[n_stored_events] or 0,
-			units = units,
-		};
+-- Counters
+local counter_metric_mt = {}
+counter_metric_mt.__index = counter_metric_mt
+
+local function new_counter_metric()
+	local metric = {
+		_created = time(),
+		value = 0,
+	}
+	setmetatable(metric, counter_metric_mt)
+	return metric
+end
+
+function counter_metric_mt:set(value)
+	self.value = value
+end
+
+function counter_metric_mt:add(value)
+	self.value = (self.value or 0) + value
+end
+
+function counter_metric_mt:iter_samples()
+	local step = 0
+	return function(_s)
+		step = step + 1
+		if step == 1 then
+			return "_created", nil, _s._created
+		elseif step == 2 then
+			return "_total", nil, _s.value
+		else
+			return nil, nil, true
+		end
+	end, self
+end
+
+function counter_metric_mt:reset()
+	self.value = 0
+end
+
+-- Histograms
+local histogram_metric_mt = {}
+histogram_metric_mt.__index = histogram_metric_mt
+
+local function new_histogram_metric(buckets)
+	local metric = {
+		_created = time(),
+		_sum = 0,
+		_count = 0,
+	}
+	-- the order of buckets matters unfortunately, so we cannot directly use
+	-- the thresholds as table keys
+	for i, threshold in ipairs(buckets) do
+		metric[i] = {
+			threshold = threshold,
+			threshold_s = render_histogram_le(threshold),
+			count = 0
+		}
 	end
+	setmetatable(metric, histogram_metric_mt)
+	return metric
+end
 
+function histogram_metric_mt:sample(value)
+	-- According to the I-D, values must be part of all buckets
+	for i, bucket in pairs(self) do
+		if "number" == type(i) and bucket.threshold > value then
+			bucket.count = bucket.count + 1
+		end
+	end
+	self._sum = self._sum + value
+	self._count = self._count + 1
+end
 
-	local registry = {};
-	local methods;
-	methods = {
-		amount = function (name, conf)
-			local v = conf and conf.initial or 0;
-			registry[name..":amount"] = function ()
-				return "amount", v, conf;
-			end
-			return function (new_v) v = new_v; end
-		end;
-		counter = function (name, conf)
-			local v = conf and conf.initial or 0;
-			registry[name..":amount"] = function ()
-				return "amount", v, conf;
-			end
-			return function (delta)
-				v = v + delta;
-			end;
-		end;
-		rate = function (name, conf)
-			local since, n, total = time(), 0, 0;
-			registry[name..":rate"] = function ()
-				total = total + n;
-				local t = time();
-				local stats = {
-					rate = n/(t-since);
-					count = n;
-					total = total;
-					units = conf and conf.units;
-					type = conf and conf.type;
-				};
-				since, n = t, 0;
-				return "rate", stats.rate, stats;
-			end;
-			return function ()
-				n = n + 1;
-			end;
-		end;
-		distribution = function (name, conf)
-			local units = conf and conf.units;
-			local type = conf and conf.type or "distribution";
-			local events, last_event = {}, 0;
-			local n_actual_events = 0;
-			local since = time();
+function histogram_metric_mt:iter_samples()
+	local key = nil
+	return function (_s)
+		local data
+		key, data = next(_s, key)
+		if key == "_created" or key == "_sum" or key == "_count" then
+			return key, nil, data
+		elseif key ~= nil then
+			return "_bucket", {["le"] = data.threshold_s}, data.count
+		else
+			return nil, nil, nil
+		end
+	end, self
+end
 
-			registry[name..":"..type] = function ()
-				local new_time = time();
-				local stats = get_distribution_stats(events, n_actual_events, since, new_time, units);
-				events, last_event = {}, 0;
-				n_actual_events = 0;
-				since = new_time;
-				return type, stats.average, stats;
-			end;
+function histogram_metric_mt:reset()
+	self._created = time()
+	self._count = 0
+	self._sum = 0
+	for i, bucket in pairs(self) do
+		if "number" == type(i) then
+			bucket.count = 0
+		end
+	end
+end
 
-			return function (value)
-				n_actual_events = n_actual_events + 1;
-				if n_actual_events%duration_sample_interval == 1 then
-					last_event = (last_event%duration_max_samples) + 1;
-					events[last_event] = value;
-				end
-			end;
-		end;
-		sizes = function (name, conf)
-			conf = conf or { units = "bytes", type = "size" }
-			return methods.distribution(name, conf);
-		end;
-		times = function (name, conf)
-			local units = conf and conf.units or "seconds";
-			local events, last_event = {}, 0;
-			local n_actual_events = 0;
-			local since = time();
+-- Summary
+local summary_metric_mt = {}
+summary_metric_mt.__index = summary_metric_mt
 
-			registry[name..":duration"] = function ()
-				local new_time = time();
-				local stats = get_distribution_stats(events, n_actual_events, since, new_time, units);
-				events, last_event = {}, 0;
-				n_actual_events = 0;
-				since = new_time;
-				return "duration", stats.average, stats;
-			end;
+local function new_summary_metric()
+	-- quantiles are not supported yet
+	local metric = {
+		_created = time(),
+		_sum = 0,
+		_count = 0,
+	}
+	setmetatable(metric, summary_metric_mt)
+	return metric
+end
 
-			return function ()
-				n_actual_events = n_actual_events + 1;
-				if n_actual_events%duration_sample_interval ~= 1 then
-					return nop_function;
-				end
+function summary_metric_mt:sample(value)
+	self._sum = self._sum + value
+	self._count = self._count + 1
+end
 
-				local start_time = time();
-				return function ()
-					local end_time = time();
-					local duration = end_time - start_time;
-					last_event = (last_event%duration_max_samples) + 1;
-					events[last_event] = duration;
-				end
-			end;
-		end;
+function summary_metric_mt:iter_samples()
+	local key = nil
+	return function (_s)
+		local data
+		key, data = next(_s, key)
+		return key, nil, data
+	end, self
+end
 
-		get_stats = function ()
-			return registry;
-		end;
-	};
-	return methods;
+function summary_metric_mt:reset()
+	self._created = time()
+	self._count = 0
+	self._sum = 0
+end
+
+local pull_backend = {
+	gauge = new_gauge_metric,
+	counter = new_counter_metric,
+	histogram = new_histogram_metric,
+	summary = new_summary_metric,
+}
+
+-- END of Metric implementations
+
+local function new()
+	return {
+		metric_registry = new_metric_registry(pull_backend),
+	}
 end
 
 return {
-	new = new_registry;
-	get_histogram = function (duration, n_buckets)
-		n_buckets = n_buckets or 100;
-		local events, n_events = duration.samples, duration.sample_count;
-		if not (events and n_events) then
-			return nil, "not a valid distribution stat";
-		end
-		local histogram = {};
-
-		for i = 1, 100, 100/n_buckets do
-			histogram[i] = percentile(events, n_events, i);
-		end
-		return histogram;
-	end;
-
-	get_percentile = function (duration, pc)
-		local events, n_events = duration.samples, duration.sample_count;
-		if not (events and n_events) then
-			return nil, "not a valid distribution stat";
-		end
-		return percentile(events, n_events, pc);
-	end;
+	new = new;
 }

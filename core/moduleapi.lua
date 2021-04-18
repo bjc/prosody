@@ -510,26 +510,33 @@ end
 
 function api:measure(name, stat_type, conf)
 	local measure = require "core.statsmanager".measure;
-	return measure(stat_type, "/"..self.host.."/mod_"..self.name.."/"..name, conf);
-end
-
-function api:measure_object_event(events_object, event_name, stat_name)
-	local m = self:measure(stat_name or event_name, "times");
-	local function handler(handlers, _event_name, _event_data)
-		local finished = m();
-		local ret = handlers(_event_name, _event_data);
-		finished();
-		return ret;
+	local fixed_label_key, fixed_label_value
+	if self.host ~= "*" then
+		fixed_label_key = "host"
+		fixed_label_value = self.host
 	end
-	return self:hook_object_event(events_object, event_name, handler);
+	-- new_legacy_metric takes care of scoping for us, as it does not accept
+	-- an array of labels
+	-- the prosody_ prefix is automatically added by statsmanager for legacy
+	-- metrics.
+	return measure(stat_type, "mod_"..self.name.."/"..name, conf, fixed_label_key, fixed_label_value)
 end
 
-function api:measure_event(event_name, stat_name)
-	return self:measure_object_event((hosts[self.host] or prosody).events.wrappers, event_name, stat_name);
-end
-
-function api:measure_global_event(event_name, stat_name)
-	return self:measure_object_event(prosody.events.wrappers, event_name, stat_name);
+function api:metric(type_, name, unit, description, label_keys, conf)
+	local metric = require "core.statsmanager".metric;
+	local is_scoped = self.host ~= "*"
+	if is_scoped then
+		-- prepend `host` label to label keys if this is not a global module
+		local orig_labels = label_keys
+		label_keys = array { "host" }
+		label_keys:append(orig_labels)
+	end
+	local mf = metric(type_, "prosody_mod_"..self.name.."/"..name, unit, description, label_keys, conf)
+	if is_scoped then
+		-- make sure to scope the returned metric family to the current host
+		return mf:with_partial_label(self.host)
+	end
+	return mf
 end
 
 local status_priorities = { error = 3, warn = 2, info = 1, core = 0 };
