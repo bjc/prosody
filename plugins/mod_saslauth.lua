@@ -91,7 +91,7 @@ module:hook_tag(xmlns_sasl, "success", function (session)
 	session:reset_stream();
 	session:open_stream(session.from_host, session.to_host);
 
-	module:fire_event("s2s-authenticated", { session = session, host = session.to_host });
+	module:fire_event("s2s-authenticated", { session = session, host = session.to_host, mechanism = "EXTERNAL" });
 	return true;
 end)
 
@@ -192,7 +192,7 @@ local function s2s_external_auth(session, stanza)
 	session.external_auth = "succeeded";
 	session.sends2s(build_reply("success"));
 	module:log("info", "Accepting SASL EXTERNAL identity from %s", session.from_host);
-	module:fire_event("s2s-authenticated", { session = session, host = session.from_host });
+	module:fire_event("s2s-authenticated", { session = session, host = session.from_host, mechanism = mechanism });
 	session:reset_stream();
 	return true;
 end

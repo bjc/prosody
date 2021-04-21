@@ -52,6 +52,26 @@ local measure_connections_outbound = module:metric(
 	{"host", "type", "ip_family"}
 );
 
+local m_accepted_tcp_connections = module:metric(
+	"counter", "accepted_tcp", "",
+	"Accepted incoming connections on the TCP layer"
+);
+local m_authn_connections = module:metric(
+	"counter", "authenticated", "",
+	"Authenticated incoming connections",
+	{"host", "direction", "mechanism"}
+);
+local m_initiated_connections = module:metric(
+	"counter", "initiated", "",
+	"Initiated outbound connections",
+	{"host"}
+);
+local m_closed_connections = module:metric(
+	"counter", "closed", "",
+	"Closed connections",
+	{"host", "direction", "error"}
+);
+
 local sessions = module:shared("sessions");
 
 local runner_callbacks = {};
@@ -190,6 +210,7 @@ function route_to_new_session(event)
 	host_session.sendq = { {tostring(stanza), stanza.attr.type ~= "error" and stanza.attr.type ~= "result" and st.reply(stanza)} };
 	log("debug", "stanza [%s] queued until connection complete", stanza.name);
 	connect(service.new(to_host, "xmpp-server", "tcp", s2s_service_options), listener, nil, { session = host_session });
+	m_initiated_connections:with_labels(from_host):add(1)
 	return true;
 end
 
@@ -309,6 +330,9 @@ function make_authenticated(event)
 		session.hosts[host].authed = true;
 	end
 	session.log("debug", "connection %s->%s is now authenticated for %s", session.from_host, session.to_host, host);
+
+	local local_host = session.direction == "incoming" and session.to_host or session.from_host
+	m_authn_connections:with_labels(local_host, session.direction, event.mechanism or "other"):add(1)
 
 	if (session.type == "s2sout" and session.external_auth ~= "succeeded") or session.type == "s2sin" then
 		-- Stream either used dialback for authentication or is an incoming stream.
@@ -528,18 +552,30 @@ local function session_close(session, reason, remote_reason, bounce_reason)
 				session:open_stream(session.from_host, session.to_host);
 			end
 		end
+
+		local this_host = session.direction == "incoming" and session.to_host or session.from_host
+
 		if reason then -- nil == no err, initiated by us, false == initiated by remote
 			local stream_error;
+			local condition, text, extra
 			if type(reason) == "string" then -- assume stream error
-				stream_error = st.stanza("stream:error"):tag(reason, {xmlns = 'urn:ietf:params:xml:ns:xmpp-streams' });
+				condition = reason
 			elseif type(reason) == "table" and not st.is_stanza(reason) then
-				stream_error = st.stanza("stream:error"):tag(reason.condition or "undefined-condition", stream_xmlns_attr):up();
-				if reason.text then
-					stream_error:tag("text", stream_xmlns_attr):text(reason.text):up();
+				condition = reason.condition or "undefined-condition"
+				text = reason.text
+				extra = reason.extra
+			end
+			if condition then
+				stream_error = st.stanza("stream:error"):tag(condition, stream_xmlns_attr):up();
+				if text then
+					stream_error:tag("text", stream_xmlns_attr):text(text):up();
 				end
-				if reason.extra then
-					stream_error:add_child(reason.extra);
+				if extra then
+					stream_error:add_child(extra);
 				end
+			end
+			if this_host and condition then
+				m_closed_connections:with_labels(this_host, session.direction, condition):add(1)
 			end
 			if st.is_stanza(stream_error) then
 				-- to and from are never unknown on outgoing connections
@@ -547,6 +583,8 @@ local function session_close(session, reason, remote_reason, bounce_reason)
 					session.from_host or "(unknown host)" or session.ip, session.to_host or "(unknown host)", session.type, reason);
 				session.sends2s(stream_error);
 			end
+		else
+			m_closed_connections:with_labels(this_host, session.direction, reason == false and ":remote-choice" or ":local-choice"):add(1)
 		end
 
 		session.sends2s("</stream:stream>");
@@ -690,6 +728,7 @@ function listener.onconnect(conn)
 		sessions[conn] = session;
 		session.log("debug", "Incoming s2s connection");
 		initialize_session(session);
+		m_accepted_tcp_connections:with_labels():add(1)
 	else -- Outgoing session connected
 		session:open_stream(session.from_host, session.to_host);
 	end

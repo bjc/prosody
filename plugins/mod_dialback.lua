@@ -115,7 +115,7 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 				return
 			elseif origin.cert_chain_status == "valid" and origin.cert_identity_status == "valid" then
 				origin.sends2s(st.stanza("db:result", { to = from, from = to, id = attr.id, type = "valid" }));
-				module:fire_event("s2s-authenticated", { session = origin, host = from });
+				module:fire_event("s2s-authenticated", { session = origin, host = from, mechanism = "dialback" });
 				return true;
 			end
 		end
@@ -151,7 +151,7 @@ module:hook("stanza/jabber:server:dialback:verify", function(event)
 		if dialback_verifying and attr.from == origin.to_host then
 			local valid;
 			if attr.type == "valid" then
-				module:fire_event("s2s-authenticated", { session = dialback_verifying, host = attr.from });
+				module:fire_event("s2s-authenticated", { session = dialback_verifying, host = attr.from, mechanism = "dialback" });
 				valid = "valid";
 			else
 				-- Warn the original connection that is was not verified successfully
@@ -188,7 +188,7 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 			return true;
 		end
 		if stanza.attr.type == "valid" then
-			module:fire_event("s2s-authenticated", { session = origin, host = attr.from });
+			module:fire_event("s2s-authenticated", { session = origin, host = attr.from, mechanism = "dialback" });
 		else
 			origin:close("not-authorized", "dialback authentication failed");
 		end
