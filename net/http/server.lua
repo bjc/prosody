@@ -256,6 +256,7 @@ function handle_request(conn, request, finish_cb)
 		persistent = persistent;
 		conn = conn;
 		send = _M.send_response;
+		write_headers = _M.write_headers;
 		send_file = _M.send_file;
 		done = _M.finish_response;
 		finish_cb = finish_cb;
@@ -329,10 +330,14 @@ local function prepare_header(response)
 	return output;
 end
 _M.prepare_header = prepare_header;
-function _M.send_head_response(response)
+function _M.write_headers(response)
 	if response.finished then return; end
 	local output = prepare_header(response);
 	response.conn:write(t_concat(output));
+end
+function _M.send_head_response(response)
+	if response.finished then return; end
+	_M.write_headers(response);
 	response:done();
 end
 function _M.send_response(response, body)
@@ -381,7 +386,7 @@ function _M.send_file(response, f)
 			return response:done();
 		end
 	end
-	response.conn:write(t_concat(prepare_header(response)));
+	_M.write_headers(response);
 	return true;
 end
 function _M.finish_response(response)
