@@ -73,9 +73,8 @@ local function start(arg) --luacheck: ignore 212/arg
 
 	if arg[1] then
 		if arg[2] then
-			-- TODO send each arg[] and wait for reply?
-			print("Only one command is supported as argument");
-			os.exit(1);
+			-- prosodyctl shell module reload foo bar.com --> module:reload("foo", "bar.com")
+			arg[1] = string.format("%s:%s("..string.rep("%q", #arg-2, ", ")..")", table.unpack(arg));
 		end
 
 		client.events.add_handler("connected", function()
