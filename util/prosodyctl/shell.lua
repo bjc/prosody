@@ -3,6 +3,7 @@ local server = require "net.server";
 local st = require "util.stanza";
 local path = require "util.paths";
 local parse_args = require "util.argparse".parse;
+local unpack = table.unpack or _G.unpack;
 
 local have_readline, readline = pcall(require, "readline");
 
@@ -75,7 +76,7 @@ local function start(arg) --luacheck: ignore 212/arg
 		if arg[2] then
 			-- prosodyctl shell module reload foo bar.com --> module:reload("foo", "bar.com")
 			-- COMPAT Lua 5.1 doesn't have the separator argument to string.rep
-			arg[1] = string.format("%s:%s("..string.rep("%q, ", #arg-2):sub(1, -3)..")", table.unpack(arg));
+			arg[1] = string.format("%s:%s("..string.rep("%q, ", #arg-2):sub(1, -3)..")", unpack(arg));
 		end
 
 		client.events.add_handler("connected", function()
