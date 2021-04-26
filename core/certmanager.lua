@@ -36,6 +36,10 @@ local prosody = prosody;
 local resolve_path = require"util.paths".resolve_relative_path;
 local config_path = prosody.paths.config or ".";
 
+local function test_option(option)
+	return not not ssl_newcontext({mode="server",protocol="sslv23",options={ option }});
+end
+
 local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
 local luasec_version = tonumber(luasec_major) * 100 + tonumber(luasec_minor);
 local luasec_has = ssl.config or softreq"ssl.config" or {
@@ -46,11 +50,11 @@ local luasec_has = ssl.config or softreq"ssl.config" or {
 		curves_list = luasec_version >= 7;
 	};
 	options = {
-		cipher_server_preference = luasec_version >= 2;
-		no_ticket = luasec_version >= 4;
-		no_compression = luasec_version >= 5;
-		single_dh_use = luasec_version >= 2;
-		single_ecdh_use = luasec_version >= 2;
+		cipher_server_preference = test_option("cipher_server_preference");
+		no_ticket = test_option("no_ticket");
+		no_compression = test_option("no_compression");
+		single_dh_use = test_option("single_dh_use");
+		single_ecdh_use = test_option("single_ecdh_use");
 	};
 };
 
