@@ -38,7 +38,7 @@ local config_path = prosody.paths.config or ".";
 
 local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
 local luasec_version = tonumber(luasec_major) * 100 + tonumber(luasec_minor);
-local luasec_has = softreq"ssl.config" or {
+local luasec_has = ssl.config or softreq"ssl.config" or {
 	algorithms = {
 		ec = luasec_version >= 5;
 	};
