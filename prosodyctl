@@ -837,7 +837,7 @@ function commands.check(arg)
 		local known_global_options = set.new({
 			"pidfile", "log", "plugin_paths", "prosody_user", "prosody_group", "daemonize",
 			"umask", "prosodyctl_timeout", "use_ipv6", "use_libevent", "network_settings",
-			"network_backend", "http_default_host",
+			"network_backend", "http_default_host", "gc",
 			"statistics_interval", "statistics", "statistics_config",
 		});
 		local config = configmanager.getconfig();
