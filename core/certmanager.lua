@@ -98,6 +98,15 @@ local function find_cert(user_certs, name)
 	log("debug", "No certificate/key found for %s", name);
 end
 
+local function find_matching_key(cert_path)
+	-- FIXME we shouldn't need to guess the key filename
+	if cert_path:sub(-4) == ".crt" then
+		return cert_path:sub(1, -4) .. "key";
+	elseif cert_path:sub(-14) == "/fullchain.pem" then
+		return cert_path:sub(1, -14) .. "privkey.pem";
+	end
+end
+
 local function index_certs(dir, files_by_name, depth_limit)
 	files_by_name = files_by_name or {};
 	depth_limit = depth_limit or 3;
@@ -156,7 +165,10 @@ local function find_host_cert(host)
 		local cert_filename, services = next(certs);
 		if services["*"] then
 			log("debug", "Using cert %q from index", cert_filename);
-			return find_cert(cert_filename, host);
+			return {
+				certificate = cert_filename,
+				key = find_matching_key(cert_filename),
+			}
 		end
 	end
 
@@ -171,7 +183,10 @@ local function find_service_cert(service, port)
 		for cert_filename, services in pairs(certs) do
 			if services[service] or services["*"] then
 				log("debug", "Using cert %q from index", cert_filename);
-				return find_cert(cert_filename, service);
+				return {
+					certificate = cert_filename,
+					key = find_matching_key(cert_filename),
+				}
 			end
 		end
 	end
