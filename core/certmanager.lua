@@ -37,7 +37,8 @@ local now = os.time;
 local next = next;
 
 local prosody = prosody;
-local resolve_path = require"util.paths".resolve_relative_path;
+local pathutil = require"util.paths";
+local resolve_path = pathutil.resolve_relative_path;
 local config_path = prosody.paths.config or ".";
 
 local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
@@ -103,7 +104,7 @@ local function index_certs(dir, files_by_name, depth_limit)
 	if depth_limit <= 0 then return files_by_name; end
 
 	for file in lfs.dir(dir) do
-		local full = dir.."/"..file
+		local full = pathutil.join(dir, file);
 		if lfs.attributes(full, "mode") == "directory" then
 			if file:sub(1,1) ~= "." then
 				index_certs(full, files_by_name, depth_limit-1);
