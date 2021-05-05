@@ -237,11 +237,12 @@ local function add_sni_host(host, service)
 			local config_prefix = (active_service.config_prefix or name).."_";
 			if config_prefix == "_" then config_prefix = ""; end
 			local prefix_ssl_config = config.get(host, config_prefix.."ssl");
-			local autocert = certmanager.find_host_cert(host);
+			local alternate_host = service and config.get(host, service.."_host");
+			local autocert = certmanager.find_host_cert(alternate_host or host);
 			-- luacheck: ignore 211/cfg
 			local ssl, err, cfg = certmanager.create_context(host, "server", prefix_ssl_config, autocert, active_service.tls_cfg);
 			if ssl then
-				active_service.server.hosts[host] = ssl;
+				active_service.server.hosts[alternate_host or host] = ssl;
 			else
 				log("error", "Error creating TLS context for SNI host %s: %s", host, err);
 			end
