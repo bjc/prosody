@@ -27,6 +27,7 @@ local hosts = prosody.hosts;
 local log = module._log;
 
 local opt_keepalives = module:get_option_boolean("component_tcp_keepalives", module:get_option_boolean("tcp_keepalives", true));
+local stanza_size_limit = module:get_option_number("component_stanza_size_limit", module:get_option_number("s2s_stanza_size_limit", 1024*512));
 
 local sessions = module:shared("sessions");
 
@@ -297,7 +298,7 @@ function listener.onconnect(conn)
 
 	session.log("info", "Incoming Jabber component connection");
 
-	local stream = new_xmpp_stream(session, stream_callbacks);
+	local stream = new_xmpp_stream(session, stream_callbacks, stanza_size_limit);
 	session.stream = stream;
 
 	session.notopen = true;

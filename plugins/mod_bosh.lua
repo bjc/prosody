@@ -45,6 +45,7 @@ local bosh_max_wait = module:get_option_number("bosh_max_wait", 120);
 
 local consider_bosh_secure = module:get_option_boolean("consider_bosh_secure");
 local cross_domain = module:get_option("cross_domain_bosh", false);
+local stanza_size_limit = module:get_option_number("c2s_stanza_size_limit", 1024*256);
 
 if cross_domain == true then cross_domain = "*"; end
 if type(cross_domain) == "table" then cross_domain = table.concat(cross_domain, ", "); end
@@ -115,7 +116,7 @@ function handle_POST(event)
 	local body = request.body;
 
 	local context = { request = request, response = response, notopen = true };
-	local stream = new_xmpp_stream(context, stream_callbacks);
+	local stream = new_xmpp_stream(context, stream_callbacks, stanza_size_limit);
 	response.context = context;
 
 	local headers = response.headers;
