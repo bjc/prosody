@@ -12,7 +12,13 @@ local dependencies = require "util.dependencies";
 
 local original_logging_config;
 
-local default_gc_params = { mode = "incremental", threshold = 105, speed = 250 };
+local default_gc_params = {
+	mode = "incremental";
+	-- Incremental mode defaults
+	threshold = 105, speed = 500;
+	-- Generational mode defaults
+	minor_threshold = 20, major_threshold = 50;
+};
 
 local short_params = { D = "daemonize", F = "no-daemonize" };
 local value_params = { config = true };
