@@ -35,6 +35,7 @@ local io_open = io.open;
 local select = select;
 local now = os.time;
 local next = next;
+local pcall = pcall;
 
 local prosody = prosody;
 local pathutil = require"util.paths";
@@ -112,7 +113,16 @@ local function index_certs(dir, files_by_name, depth_limit)
 	depth_limit = depth_limit or 3;
 	if depth_limit <= 0 then return files_by_name; end
 
-	for file in lfs.dir(dir) do
+	local ok, iter, v, i = pcall(lfs.dir, dir);
+	if not ok then
+		log("error", "Error indexing certificate directory %s: %s", dir, iter);
+		-- Return an empty index, otherwise this just triggers a nil indexing
+		-- error, plus this function would get called again.
+		-- Reloading the config after correcting the problem calls this again so
+		-- that's what should be done.
+		return {}, iter;
+	end
+	for file in iter, v, i do
 		local full = pathutil.join(dir, file);
 		if lfs.attributes(full, "mode") == "directory" then
 			if file:sub(1,1) ~= "." then
