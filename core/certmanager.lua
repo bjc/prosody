@@ -158,7 +158,7 @@ local cert_index;
 local function find_host_cert(host)
 	if not host then return nil; end
 	if not cert_index then
-		cert_index = index_certs(global_certificates);
+		cert_index = index_certs(resolve_path(config_path, global_certificates));
 	end
 	local certs = cert_index[host];
 	if certs then
@@ -177,7 +177,7 @@ end
 
 local function find_service_cert(service, port)
 	if not cert_index then
-		cert_index = index_certs(global_certificates);
+		cert_index = index_certs(resolve_path(config_path, global_certificates));
 	end
 	for _, certs in pairs(cert_index) do
 		for cert_filename, services in pairs(certs) do
@@ -346,7 +346,7 @@ local function reload_ssl_config()
 	if luasec_has.options.no_compression then
 		core_defaults.options.no_compression = configmanager.get("*", "ssl_compression") ~= true;
 	end
-	cert_index = index_certs(global_certificates);
+	cert_index = index_certs(resolve_path(config_path, global_certificates));
 end
 
 prosody.events.add_handler("config-reloaded", reload_ssl_config);
