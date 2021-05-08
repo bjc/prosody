@@ -136,6 +136,10 @@ function stanza_mt:up()
 	return self;
 end
 
+function stanza_mt:at_top()
+	return self.last_add == nil or #self.last_add == 0
+end
+
 function stanza_mt:reset()
 	self.last_add = nil;
 	return self;
