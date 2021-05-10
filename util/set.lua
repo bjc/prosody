@@ -6,8 +6,8 @@
 -- COPYING file in the source package for more information.
 --
 
-local ipairs, pairs, setmetatable, next, tostring =
-      ipairs, pairs, setmetatable, next, tostring;
+local ipairs, pairs, getmetatable, setmetatable, next, tostring =
+      ipairs, pairs, getmetatable, setmetatable, next, tostring;
 local t_concat = table.concat;
 
 local _ENV = nil;
@@ -29,6 +29,11 @@ function set_mt:__freeze()
 		a[i], i = item, i+1;
 	end
 	return a;
+end
+
+local function is_set(o)
+	local mt = getmetatable(o);
+	return mt == set_mt;
 end
 
 local function new(list)
@@ -171,6 +176,7 @@ end
 
 return {
 	new = new;
+	is_set = is_set;
 	union = union;
 	difference = difference;
 	intersection = intersection;
