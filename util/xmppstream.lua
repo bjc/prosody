@@ -188,6 +188,9 @@ local function new_sax_handlers(session, stream_callbacks, cb_handleprogress)
 				stanza = t_remove(stack);
 			end
 		else
+			if lxp_supports_bytecount then
+				cb_handleprogress(stanza_size);
+			end
 			if cb_streamclosed then
 				cb_streamclosed(session);
 			end
