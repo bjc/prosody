@@ -293,6 +293,9 @@ local function new(session, stream_callbacks, stanza_size_limit)
 			return ok, err;
 		end,
 		set_session = meta.set_session;
+		set_stanza_size_limit = function (_, new_stanza_size_limit)
+			stanza_size_limit = new_stanza_size_limit;
+		end;
 	};
 end
 
