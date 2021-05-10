@@ -16,6 +16,7 @@ local new_sasl = require "util.sasl".new;
 local hex = require"util.hex";
 local to_hex, from_hex = hex.to, hex.from;
 local saslprep = require "util.encodings".stringprep.saslprep;
+local secure_equals = require "util.hashes".equals;
 
 local log = module._log;
 local host = module.host;
@@ -39,7 +40,7 @@ function provider.test_password(username, password)
 	end
 
 	if credentials.password ~= nil and string.len(credentials.password) ~= 0 then
-		if saslprep(credentials.password) ~= password then
+		if not secure_equals(saslprep(credentials.password), password) then
 			return nil, "Auth failed. Provided password is incorrect.";
 		end
 
@@ -59,7 +60,7 @@ function provider.test_password(username, password)
 	local stored_key_hex = to_hex(stored_key);
 	local server_key_hex = to_hex(server_key);
 
-	if valid and stored_key_hex == credentials.stored_key and server_key_hex == credentials.server_key then
+	if valid and secure_equals(stored_key_hex, credentials.stored_key) and secure_equals(server_key_hex, credentials.server_key) then
 		return true;
 	else
 		return nil, "Auth failed. Invalid username, password, or password hash information.";

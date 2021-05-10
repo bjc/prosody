@@ -9,6 +9,7 @@
 local usermanager = require "core.usermanager";
 local new_sasl = require "util.sasl".new;
 local saslprep = require "util.encodings".stringprep.saslprep;
+local secure_equals = require "util.hashes".equals;
 
 local log = module._log;
 local host = module.host;
@@ -26,7 +27,7 @@ function provider.test_password(username, password)
 		return nil, "Password fails SASLprep.";
 	end
 
-	if password == saslprep(credentials.password) then
+	if secure_equals(password, saslprep(credentials.password)) then
 		return true;
 	else
 		return nil, "Auth failed. Invalid username or password.";
