@@ -22,7 +22,7 @@ local lxp_supports_doctype = pcall(lxp.new, { StartDoctypeDecl = false });
 local lxp_supports_xmldecl = pcall(lxp.new, { XmlDecl = false });
 local lxp_supports_bytecount = not not lxp.new({}).getcurrentbytecount;
 
-local default_stanza_size_limit = 1024*1024*10; -- 10MB
+local default_stanza_size_limit = 1024*1024*1; -- 1MB
 
 local _ENV = nil;
 -- luacheck: std none
