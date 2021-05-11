@@ -51,6 +51,7 @@ modules_enabled = {
 		"blocklist"; -- Allow users to block communications with other users
 		"vcard4"; -- User profiles (stored in PEP)
 		"vcard_legacy"; -- Conversion between legacy vCard and PEP Avatar, vcard
+		"limits"; -- Enable bandwidth limiting for XMPP connections
 
 	-- Nice to have
 		"version"; -- Replies to server version requests
@@ -71,7 +72,6 @@ modules_enabled = {
 		--"http_files"; -- Serve static files from a directory over HTTP
 
 	-- Other specific functionality
-		--"limits"; -- Enable bandwidth limiting for XMPP connections
 		--"groups"; -- Shared roster support
 		--"server_contact_info"; -- Publish contact information for this service
 		--"announce"; -- Send announcement to all online users
@@ -120,6 +120,17 @@ s2s_secure_auth = false
 -- certificates for some domains by specifying a list here.
 
 --s2s_secure_domains = { "jabber.org" }
+
+-- Enable rate limits for incoming client and server connections
+
+limits = {
+  c2s = {
+    rate = "10kb/s";
+  };
+  s2sin = {
+    rate = "30kb/s";
+  };
+}
 
 -- Select the authentication backend to use. The 'internal' providers
 -- use Prosody's configured data storage to store the authentication data.
