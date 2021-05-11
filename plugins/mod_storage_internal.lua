@@ -122,6 +122,31 @@ function archive:append(username, key, value, when, with)
 	return key;
 end
 
+local function binary_search(haystack, test, min, max)
+	if min == nil then
+		min = 1;
+	end
+	if max == nil then
+		max = #haystack;
+	end
+
+	local floor = math.floor;
+	while min < max do
+		local mid = floor((max + min) / 2);
+
+		local result = test(haystack[mid]);
+		if result < 0 then
+			max = mid;
+		elseif result > 0 then
+			min = mid + 1;
+		else
+			return mid, haystack[mid];
+		end
+	end
+
+	return min, nil;
+end
+
 function archive:find(username, query)
 	local list, err = datamanager.list_open(username, host, self.store);
 	if not list then
@@ -171,16 +196,38 @@ function archive:find(username, query)
 			end, iter);
 		end
 		if query.start then
-			iter = it.filter(function(item)
-				local when = item.when or datetime.parse(item.attr.stamp);
-				return when >= query.start;
-			end, iter);
+			if not query.reverse then
+				local wi, exact = binary_search(list, function(item)
+					local when = item.when or datetime.parse(item.attr.stamp);
+					return query.start - when;
+				end);
+				if exact then
+					i = wi - 1;
+				elseif wi then
+					i = wi;
+				end
+			else
+				iter = it.filter(function(item)
+					local when = item.when or datetime.parse(item.attr.stamp);
+					return when >= query.start;
+				end, iter);
+			end
 		end
 		if query["end"] then
-			iter = it.filter(function(item)
-				local when = item.when or datetime.parse(item.attr.stamp);
-				return when <= query["end"];
-			end, iter);
+			if query.reverse then
+				local wi = binary_search(list, function(item)
+					local when = item.when or datetime.parse(item.attr.stamp);
+					return query["end"] - when;
+				end);
+				if wi then
+					i = wi + 1;
+				end
+			else
+				iter = it.filter(function(item)
+					local when = item.when or datetime.parse(item.attr.stamp);
+					return when <= query["end"];
+				end, iter);
+			end
 		end
 		if query.after then
 			local found = false;
