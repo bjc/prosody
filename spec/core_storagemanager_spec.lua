@@ -341,13 +341,13 @@ describe("storagemanager", function ()
 				local test_time = 1539204123;
 
 				local test_data = {
-					{ nil, test_stanza, test_time, "contact@example.com" };
-					{ nil, test_stanza, test_time+1, "contact2@example.com" };
-					{ nil, test_stanza, test_time+2, "contact2@example.com" };
+					{ nil, test_stanza, test_time-3, "contact@example.com" };
+					{ nil, test_stanza, test_time-2, "contact2@example.com" };
 					{ nil, test_stanza, test_time-1, "contact2@example.com" };
-					{ nil, test_stanza, test_time-1, "contact3@example.com" };
-					{ nil, test_stanza, test_time+0, "contact3@example.com" };
+					{ nil, test_stanza, test_time+0, "contact2@example.com" };
 					{ nil, test_stanza, test_time+1, "contact3@example.com" };
+					{ nil, test_stanza, test_time+2, "contact3@example.com" };
+					{ nil, test_stanza, test_time+3, "contact3@example.com" };
 				};
 
 				it("can be added to", function ()
@@ -390,7 +390,7 @@ describe("storagemanager", function ()
 							assert.equal("test", item.name);
 							assert.equal("urn:example:foo", item.attr.xmlns);
 							assert.equal(2, #item.tags);
-							assert.equal(test_time, when);
+							assert.equal(test_time-3, when);
 						end
 						assert.equal(1, count);
 					end);
@@ -428,16 +428,16 @@ describe("storagemanager", function ()
 							assert.equal("test", item.name);
 							assert.equal("urn:example:foo", item.attr.xmlns);
 							assert.equal(2, #item.tags);
-							assert(test_time <= when);
+							assert(when >= test_time, ("%d >= %d"):format(when, test_time));
 						end
-						assert.equal(#test_data - 2, count);
+						assert.equal(#test_data - 3, count);
 					end);
 
 					it("by time (start+end)", function ()
 						-- luacheck: ignore 211/err
 						local data, err = archive:find("user", {
-							["start"] = test_time;
-							["end"] = test_time+1;
+							["start"] = test_time-1;
+							["end"] = test_time+2;
 						});
 						assert.truthy(data);
 						local count = 0;
@@ -448,8 +448,8 @@ describe("storagemanager", function ()
 							assert.equal("test", item.name);
 							assert.equal("urn:example:foo", item.attr.xmlns);
 							assert.equal(2, #item.tags);
-							assert(when >= test_time, ("%d >= %d"):format(when, test_time));
-							assert(when <= test_time+1, ("%d <= %d"):format(when, test_time+1));
+							assert(when >= test_time-1, ("%d >= %d"):format(when, test_time));
+							assert(when <= test_time+2, ("%d <= %d"):format(when, test_time+1));
 						end
 						assert.equal(4, count);
 					end);
@@ -596,7 +596,7 @@ describe("storagemanager", function ()
 					local data, err = archive:find("user", {
 						with = "contact@example.com";
 					});
-					assert.truthy(data);
+					assert.truthy(data, err);
 					local count = 0;
 					for id, item, when in data do -- luacheck: ignore id item when
 						count = count + 1;
