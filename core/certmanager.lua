@@ -55,6 +55,7 @@ local luasec_has = ssl.config or softreq"ssl.config" or {
 		no_compression = test_option("no_compression");
 		single_dh_use = test_option("single_dh_use");
 		single_ecdh_use = test_option("single_ecdh_use");
+		no_renegotiation = test_option("no_renegotiation");
 	};
 };
 
@@ -119,6 +120,7 @@ local core_defaults = {
 		no_compression = luasec_has.options.no_compression and configmanager.get("*", "ssl_compression") ~= true;
 		single_dh_use = luasec_has.options.single_dh_use;
 		single_ecdh_use = luasec_has.options.single_ecdh_use;
+		no_renegotiation = luasec_has.options.no_renegotiation;
 	};
 	verifyext = { "lsec_continue", "lsec_ignore_purpose" };
 	curve = luasec_has.algorithms.ec and not luasec_has.capabilities.curves_list and "secp384r1";
