@@ -39,7 +39,16 @@ end
 
 -- Process config option into limits table:
 -- limits = { c2s = { bytes_per_second = X, burst_seconds = Y } }
-local limits = {};
+local limits = {
+	c2s = {
+		bytes_per_second = 10 * 1024;
+		burst_seconds = 2;
+	};
+	s2sin = {
+		bytes_per_second = 30 * 1024;
+		burst_seconds = 2;
+	};
+};
 
 for sess_type, sess_limits in pairs(limits_cfg) do
 	limits[sess_type] = {
