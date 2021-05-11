@@ -7,6 +7,7 @@ local now = require "prosody.util.time".now;
 local id = require "prosody.util.id".medium;
 local jid_join = require "prosody.util.jid".join;
 local set = require "prosody.util.set";
+local it = require "prosody.util.iterators";
 
 local host = module.host;
 
@@ -122,99 +123,96 @@ function archive:append(username, key, value, when, with)
 end
 
 function archive:find(username, query)
-	local items, err = datamanager.list_load(username, host, self.store);
-	if not items then
+	local list, err = datamanager.list_open(username, host, self.store);
+	if not list then
 		if err then
-			return items, err;
+			return list, err;
 		elseif query then
 			if query.before or query.after then
 				return nil, "item-not-found";
 			end
 			if query.total then
-				return function () end, 0;
+				return function()
+				end, 0;
 			end
 		end
-		return function () end;
+		return function()
+		end;
 	end
-	local count = nil;
-	local i, last_key = 0;
+
+	local i = 0;
+	local iter = function()
+		i = i + 1;
+		return list[i]
+	end
+
 	if query then
-		items = array(items);
+		if query.reverse then
+			i = #list + 1
+			iter = function()
+				i = i - 1
+				return list[i]
+			end
+		end
 		if query.key then
-			items:filter(function (item)
+			iter = it.filter(function(item)
 				return item.key == query.key;
-			end);
+			end, iter);
 		end
 		if query.ids then
 			local ids = set.new(query.ids);
-			items:filter(function (item)
+			iter = it.filter(function(item)
 				return ids:contains(item.key);
-			end);
+			end, iter);
 		end
 		if query.with then
-			items:filter(function (item)
+			iter = it.filter(function(item)
 				return item.with == query.with;
-			end);
+			end, iter);
 		end
 		if query.start then
-			items:filter(function (item)
+			iter = it.filter(function(item)
 				local when = item.when or datetime.parse(item.attr.stamp);
 				return when >= query.start;
-			end);
+			end, iter);
 		end
 		if query["end"] then
-			items:filter(function (item)
+			iter = it.filter(function(item)
 				local when = item.when or datetime.parse(item.attr.stamp);
 				return when <= query["end"];
-			end);
+			end, iter);
 		end
-		if query.total then
-			count = #items;
-		end
-		if query.reverse then
-			items:reverse();
-			if query.before then
-				local found = false;
-				for j = 1, #items do
-					if (items[j].key or tostring(j)) == query.before then
-						found = true;
-						i = j;
-						break;
-					end
-				end
-				if not found then
-					return nil, "item-not-found";
-				end
-			end
-			last_key = query.after;
-		elseif query.after then
+		if query.after then
 			local found = false;
-			for j = 1, #items do
-				if (items[j].key or tostring(j)) == query.after then
-					found = true;
-					i = j;
-					break;
+			iter = it.filter(function(item)
+				local found_after = found;
+				if item.key == query.after then
+					found = true
 				end
-			end
-			if not found then
-				return nil, "item-not-found";
-			end
-			last_key = query.before;
-		elseif query.before then
-			last_key = query.before;
+				return found_after;
+			end, iter);
 		end
-		if query.limit and #items - i > query.limit then
-			items[i+query.limit+1] = nil;
+		if query.before then
+			local found = false;
+			iter = it.filter(function(item)
+				if item.key == query.before then
+					found = true
+				end
+				return not found;
+			end, iter);
+		end
+		if query.limit then
+			iter = it.head(query.limit, iter);
 		end
 	end
-	return function ()
-		i = i + 1;
-		local item = items[i];
-		if not item or (last_key and item.key == last_key) then
-			return;
+
+	return function()
+		local item = iter();
+		if item == nil then
+			return
 		end
-		local key = item.key or tostring(i);
-		local when = item.when or datetime.parse(item.attr.stamp);
+		local key = item.key;
+		local when = item.when or item.attr and datetime.parse(item.attr.stamp);
 		local with = item.with;
 		item.key, item.when, item.with = nil, nil, nil;
 		item.attr.stamp = nil;
@@ -222,7 +220,7 @@ function archive:find(username, query)
 		item.attr.stamp_legacy = nil;
 		item = st.deserialize(item);
 		return key, item, when, with;
-	end, count;
+	end
 end
 
 function archive:get(username, wanted_key)
