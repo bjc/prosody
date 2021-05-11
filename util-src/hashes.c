@@ -172,5 +172,9 @@ LUALIB_API int luaopen_util_hashes(lua_State *L) {
 	luaL_setfuncs(L, Reg, 0);
 	lua_pushliteral(L, "-3.14");
 	lua_setfield(L, -2, "version");
+#ifdef OPENSSL_VERSION
+	lua_pushstring(L, OpenSSL_version(OPENSSL_VERSION));
+	lua_setfield(L, -2, "_LIBCRYPTO_VERSION");
+#endif
 	return 1;
 }
