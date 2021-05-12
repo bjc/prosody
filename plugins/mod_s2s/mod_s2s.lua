@@ -276,7 +276,7 @@ function make_authenticated(event)
 end
 
 --- Helper to check that a session peer's certificate is valid
-function check_cert_status(session)
+local function check_cert_status(session)
 	local host = session.direction == "outgoing" and session.to_host or session.from_host
 	local conn = session.conn:socket()
 	local cert
