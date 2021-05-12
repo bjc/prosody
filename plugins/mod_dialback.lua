@@ -13,6 +13,7 @@ local log = module._log;
 local st = require "util.stanza";
 local sha256_hash = require "util.hashes".sha256;
 local sha256_hmac = require "util.hashes".hmac_sha256;
+local secure_equals = require "util.hashes".equals;
 local nameprep = require "util.encodings".stringprep.nameprep;
 local uuid_gen = require"util.uuid".generate;
 
@@ -56,7 +57,7 @@ function initiate_dialback(session)
 end
 
 function verify_dialback(id, to, from, key)
-	return key == generate_dialback(id, to, from);
+	return secure_equals(key, generate_dialback(id, to, from));
 end
 
 module:hook("stanza/jabber:server:dialback:verify", function(event)
