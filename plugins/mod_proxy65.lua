@@ -94,6 +94,7 @@ function module.add_host(module)
 
 	local proxy_address = module:get_option_string("proxy65_address", host);
 	local proxy_acl = module:get_option_array("proxy65_acl");
+	local proxy_open_access = module:get_option_boolean("proxy65_open_access", false);
 
 	-- COMPAT w/pre-0.9 where proxy65_port was specified in the components section of the config
 	local legacy_config = module:get_option_number("proxy65_port");
@@ -110,13 +111,20 @@ function module.add_host(module)
 
 		-- check ACL
 		-- using 'while' instead of 'if' so we can break out of it
-		while proxy_acl and #proxy_acl > 0 do --luacheck: ignore 512
+		local allow;
+		if proxy_acl and #proxy_acl > 0 then
 			local jid = stanza.attr.from;
-			local allow;
 			for _, acl in ipairs(proxy_acl) do
-				if jid_compare(jid, acl) then allow = true; break; end
+				if jid_compare(jid, acl) then
+					allow = true;
+					break;
+				end
 			end
-			if allow then break; end
+		elseif proxy_open_access or origin.type == "c2s" then
+			allow = true;
+		end
+
+		if not allow then
 			module:log("warn", "Denying use of proxy for %s", tostring(stanza.attr.from));
 			origin.send(st.error_reply(stanza, "auth", "forbidden"));
 			return true;
