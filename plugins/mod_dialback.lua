@@ -13,6 +13,7 @@ local log = module._log;
 local st = require "util.stanza";
 local sha256_hash = require "util.hashes".sha256;
 local sha256_hmac = require "util.hashes".hmac_sha256;
+local secure_equals = require "util.hashes".equals;
 local nameprep = require "util.encodings".stringprep.nameprep;
 local uuid_gen = require"util.uuid".generate;
 
@@ -21,20 +22,6 @@ local xmlns_stream = "http://etherx.jabber.org/streams";
 local dialback_requests = setmetatable({}, { __mode = 'v' });
 
 local dialback_secret = sha256_hash(module:get_option_string("dialback_secret", uuid_gen()), true);
-local dwd = module:get_option_boolean("dialback_without_dialback", false);
-
---- Helper to check that a session peer's certificate is valid
-function check_cert_status(session)
-	local host = session.direction == "outgoing" and session.to_host or session.from_host
-	local conn = session.conn:socket()
-	local cert
-	if conn.getpeercertificate then
-		cert = conn:getpeercertificate()
-	end
-
-	return module:fire_event("s2s-check-certificate", { host = host, session = session, cert = cert });
-end
-
 
 function module.save()
 	return { dialback_secret = dialback_secret };
@@ -56,7 +43,7 @@ function initiate_dialback(session)
 end
 
 function verify_dialback(id, to, from, key)
-	return key == generate_dialback(id, to, from);
+	return secure_equals(key, generate_dialback(id, to, from));
 end
 
 module:hook("stanza/jabber:server:dialback:verify", function(event)
@@ -110,15 +97,6 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 			return true;
 		end
 
-		if dwd and origin.secure then
-			if check_cert_status(origin, from) == false then
-				return
-			elseif origin.cert_chain_status == "valid" and origin.cert_identity_status == "valid" then
-				origin.sends2s(st.stanza("db:result", { to = from, from = to, id = attr.id, type = "valid" }));
-				module:fire_event("s2s-authenticated", { session = origin, host = from, mechanism = "dialback" });
-				return true;
-			end
-		end
 
 		origin.hosts[from] = { dialback_key = stanza[1] };
 

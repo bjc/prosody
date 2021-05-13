@@ -61,12 +61,20 @@ local function set_allow_member_invites(room, allow_member_invites)
 end
 
 module:hook("muc-disco#info", function(event)
-	event.reply:tag("feature", {var = get_members_only(event.room) and "muc_membersonly" or "muc_open"}):up();
+	local members_only_room = not not get_members_only(event.room);
+	local members_can_invite = not not get_allow_member_invites(event.room);
+	event.reply:tag("feature", {var = members_only_room and "muc_membersonly" or "muc_open"}):up();
 	table.insert(event.form, {
 		name = "{http://prosody.im/protocol/muc}roomconfig_allowmemberinvites";
 		label = "Allow members to invite new members";
 		type = "boolean";
-		value = not not get_allow_member_invites(event.room);
+		value = members_can_invite;
+	});
+	table.insert(event.form, {
+		name = "muc#roomconfig_allowinvites";
+		label = "Allow users to invite other users";
+		type = "boolean";
+		value = not members_only_room or members_can_invite;
 	});
 end);
 

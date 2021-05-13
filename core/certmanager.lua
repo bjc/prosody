@@ -42,12 +42,13 @@ local pathutil = require"util.paths";
 local resolve_path = pathutil.resolve_relative_path;
 local config_path = prosody.paths.config or ".";
 
+local function test_option(option)
+	return not not ssl_newcontext({mode="server",protocol="sslv23",options={ option }});
+end
+
 local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
 local luasec_version = tonumber(luasec_major) * 100 + tonumber(luasec_minor);
--- TODO Use ssl.config instead of require here once we are sure that the fix
--- in LuaSec has been widely distributed
--- https://github.com/brunoos/luasec/issues/149
-local luasec_has = softreq"ssl.config" or {
+local luasec_has = ssl.config or softreq"ssl.config" or {
 	algorithms = {
 		ec = luasec_version >= 5;
 	};
@@ -55,11 +56,12 @@ local luasec_has = softreq"ssl.config" or {
 		curves_list = luasec_version >= 7;
 	};
 	options = {
-		cipher_server_preference = luasec_version >= 2;
-		no_ticket = luasec_version >= 4;
-		no_compression = luasec_version >= 5;
-		single_dh_use = luasec_version >= 2;
-		single_ecdh_use = luasec_version >= 2;
+		cipher_server_preference = test_option("cipher_server_preference");
+		no_ticket = test_option("no_ticket");
+		no_compression = test_option("no_compression");
+		single_dh_use = test_option("single_dh_use");
+		single_ecdh_use = test_option("single_ecdh_use");
+		no_renegotiation = test_option("no_renegotiation");
 	};
 };
 
@@ -219,6 +221,7 @@ local core_defaults = {
 		no_compression = luasec_has.options.no_compression and configmanager.get("*", "ssl_compression") ~= true;
 		single_dh_use = luasec_has.options.single_dh_use;
 		single_ecdh_use = luasec_has.options.single_ecdh_use;
+		no_renegotiation = luasec_has.options.no_renegotiation;
 	};
 	verifyext = {
 		"lsec_continue", -- Continue past certificate verification errors

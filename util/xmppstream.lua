@@ -22,7 +22,7 @@ local lxp_supports_doctype = pcall(lxp.new, { StartDoctypeDecl = false });
 local lxp_supports_xmldecl = pcall(lxp.new, { XmlDecl = false });
 local lxp_supports_bytecount = not not lxp.new({}).getcurrentbytecount;
 
-local default_stanza_size_limit = 1024*1024*10; -- 10MB
+local default_stanza_size_limit = 1024*1024*1; -- 1MB
 
 local _ENV = nil;
 -- luacheck: std none
@@ -194,6 +194,9 @@ local function new_sax_handlers(session, stream_callbacks, cb_handleprogress)
 				stanza = t_remove(stack);
 			end
 		else
+			if lxp_supports_bytecount then
+				cb_handleprogress(stanza_size);
+			end
 			if cb_streamclosed then
 				cb_streamclosed(session);
 			end
@@ -295,6 +298,9 @@ local function new(session, stream_callbacks, stanza_size_limit)
 			return ok, err;
 		end,
 		set_session = meta.set_session;
+		set_stanza_size_limit = function (_, new_stanza_size_limit)
+			stanza_size_limit = new_stanza_size_limit;
+		end;
 	};
 end
 

@@ -32,6 +32,11 @@ function set_mt:__freeze()
 	return a;
 end
 
+local function is_set(o)
+	local mt = getmetatable(o);
+	return mt == set_mt;
+end
+
 local function new(list)
 	local items = setmetatable({}, items_mt);
 	local set = { _items = items };
@@ -177,6 +182,7 @@ end
 
 return {
 	new = new;
+	is_set = is_set;
 	union = union;
 	difference = difference;
 	intersection = intersection;

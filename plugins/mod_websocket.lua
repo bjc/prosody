@@ -28,7 +28,7 @@ local parse_close = websocket_frames.parse_close;
 
 local t_concat = table.concat;
 
-local stanza_size_limit = module:get_option_number("c2s_stanza_size_limit", 10 * 1024 * 1024);
+local stanza_size_limit = module:get_option_number("c2s_stanza_size_limit", 1024 * 256);
 local frame_buffer_limit = module:get_option_number("websocket_frame_buffer_limit", 2 * stanza_size_limit);
 local frame_fragment_limit = module:get_option_number("websocket_frame_fragment_limit", 8);
 local stream_close_timeout = module:get_option_number("c2s_close_timeout", 5);

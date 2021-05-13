@@ -23,6 +23,7 @@ typedef unsigned __int32 uint32_t;
 
 #include "lua.h"
 #include "lauxlib.h"
+#include <openssl/crypto.h>
 #include <openssl/sha.h>
 #include <openssl/md5.h>
 #include <openssl/hmac.h>
@@ -133,6 +134,18 @@ static int Lpbkdf2_sha256(lua_State *L) {
 	return 1;
 }
 
+static int Lhash_equals(lua_State *L) {
+	size_t len1, len2;
+	const char *s1 = luaL_checklstring(L, 1, &len1);
+	const char *s2 = luaL_checklstring(L, 2, &len2);
+	if(len1 == len2) {
+		lua_pushboolean(L, CRYPTO_memcmp(s1, s2, len1) == 0);
+	} else {
+		lua_pushboolean(L, 0);
+	}
+	return 1;
+}
+
 static const luaL_Reg Reg[] = {
 	{ "sha1",		Lsha1		},
 	{ "sha224",		Lsha224		},
@@ -147,6 +160,7 @@ static const luaL_Reg Reg[] = {
 	{ "scram_Hi_sha1",	Lpbkdf2_sha1	}, /* COMPAT */
 	{ "pbkdf2_hmac_sha1",	Lpbkdf2_sha1	},
 	{ "pbkdf2_hmac_sha256",	Lpbkdf2_sha256	},
+	{ "equals",             Lhash_equals    },
 	{ NULL,			NULL		}
 };
 

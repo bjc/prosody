@@ -31,7 +31,7 @@ local function parse_burst(burst, sess_type)
 		burst = burst:match("^(%d+) ?s$");
 	end
 	local n_burst = tonumber(burst);
-	if not n_burst then
+	if burst and not n_burst then
 		module:log("error", "Unable to parse burst for %s: %q, using default burst interval (%ds)", sess_type, burst, default_burst);
 	end
 	return n_burst or default_burst;
@@ -39,7 +39,16 @@ end
 
 -- Process config option into limits table:
 -- limits = { c2s = { bytes_per_second = X, burst_seconds = Y } }
-local limits = {};
+local limits = {
+	c2s = {
+		bytes_per_second = 10 * 1024;
+		burst_seconds = 2;
+	};
+	s2sin = {
+		bytes_per_second = 30 * 1024;
+		burst_seconds = 2;
+	};
+};
 
 for sess_type, sess_limits in pairs(limits_cfg) do
 	limits[sess_type] = {

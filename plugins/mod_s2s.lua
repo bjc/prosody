@@ -39,7 +39,7 @@ local secure_auth = module:get_option_boolean("s2s_secure_auth", false); -- One 
 local secure_domains, insecure_domains =
 	module:get_option_set("s2s_secure_domains", {})._items, module:get_option_set("s2s_insecure_domains", {})._items;
 local require_encryption = module:get_option_boolean("s2s_require_encryption", false);
-local stanza_size_limit = module:get_option_number("s2s_stanza_size_limit"); -- TODO come up with a sensible default (util.xmppstream defaults to 10M)
+local stanza_size_limit = module:get_option_number("s2s_stanza_size_limit", 1024*512);
 
 local measure_connections_inbound = module:metric(
 	"gauge", "connections_inbound", "",
@@ -343,7 +343,7 @@ function make_authenticated(event)
 end
 
 --- Helper to check that a session peer's certificate is valid
-function check_cert_status(session)
+local function check_cert_status(session)
 	local host = session.direction == "outgoing" and session.to_host or session.from_host
 	local conn = session.conn:socket()
 	local cert

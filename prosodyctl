@@ -466,6 +466,7 @@ function commands.about(arg)
 		ssl = "LuaSec";
 	};
 	local lunbound = dependencies.softreq"lunbound";
+	local lxp = dependencies.softreq"lxp";
 	for name, module in pairs(package.loaded) do
 		if type(module) == "table" and rawget(module, "_VERSION")
 			and name ~= "_G" and not name:match("%.") then
@@ -485,6 +486,9 @@ function commands.about(arg)
 			module_versions["luaunbound"] = "0.5 (?)";
 		end
 		library_versions["libunbound"] = lunbound._LIBVER;
+	end
+	if lxp then
+		library_versions["libexpat"] = lxp._EXPAT_VERSION;
 	end
 	for name, version in sorted_pairs(module_versions) do
 		print(name..":"..string.rep(" ", longest_name-#name), version);
