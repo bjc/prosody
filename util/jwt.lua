@@ -3,6 +3,7 @@ local json = require "util.json";
 local hashes = require "util.hashes";
 local base64_encode = require "util.encodings".base64.encode;
 local base64_decode = require "util.encodings".base64.decode;
+local secure_equals = require "util.hashes".equals;
 
 local b64url_rep = { ["+"] = "-", ["/"] = "_", ["="] = "", ["-"] = "+", ["_"] = "/" };
 local function b64url(data)
@@ -33,7 +34,7 @@ local function verify(key, blob)
 	elseif header.alg ~= "HS256" then
 		return nil, "unsupported-algorithm";
 	end
-	if b64url(hashes.hmac_sha256(key, signed)) ~= signature then
+	if not secure_equals(b64url(hashes.hmac_sha256(key, signed)), signature) then
 		return false, "signature-mismatch";
 	end
 	local payload, err = json.decode(unb64url(bpayload));
