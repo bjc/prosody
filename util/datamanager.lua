@@ -260,9 +260,9 @@ end
 
 local index_fmt, index_item_size, index_magic;
 if string.packsize then
-	index_fmt = "TT"; -- struct { size_t start, size_t length }
+	index_fmt = "T"; -- offset to the end of the item, length can be derived from two index items
 	index_item_size = string.packsize(index_fmt);
-	index_magic = string.pack(index_fmt, 7767639, 1); -- Magic string: T9 for "prosody", version number
+	index_magic = string.pack(index_fmt, 7767639 + 1); -- Magic string: T9 for "prosody", version number
 end
 
 local function list_append(username, host, datastore, data)
@@ -279,7 +279,7 @@ local function list_append(username, host, datastore, data)
 	end
 	if string.packsize then
 		local offset = type(msg) == "number" and msg or 0;
-		local index_entry = string.pack(index_fmt, offset, #data);
+		local index_entry = string.pack(index_fmt, offset + #data);
 		if offset == 0 then
 			index_entry = index_magic .. index_entry;
 		end
@@ -358,7 +358,7 @@ end
 local function store_list_index(username, host, datastore, index)
 	local data = { index_magic };
 	for i, v in ipairs(index) do
-		data[i + 1] = string.pack(index_fmt, v.start, v.length);
+		data[i + 1] = string.pack(index_fmt, v.start + v.length);
 	end
 	local filename = getpath(username, host, datastore, "lidx");
 	return atomic_store(filename, t_concat(data));
@@ -366,22 +366,26 @@ end
 
 local index_mt = {
 	__index = function(t, i)
-		if type(i) ~= "number" or i % 1 ~= 0 or i < 1 then
+		if type(i) ~= "number" or i % 1 ~= 0 or i < 0 then
 			return
 		end
-		if i < 0 then
-			return
+		if i <= 0 then
+			return 0
 		end
 		local fh = t.file;
-		local pos = i * index_item_size;
+		local pos = (i - 1) * index_item_size;
 		if fh:seek("set", pos) ~= pos then
 			return nil
 		end
-		local data = fh:read(index_item_size);
-		if not data then
+		local data = fh:read(index_item_size * 2);
+		if not data or #data ~= index_item_size * 2 then
 			return nil
 		end
-		local start, length = string.unpack(index_fmt, data);
+		local start, next_pos = string.unpack(index_fmt .. index_fmt, data);
+		if pos == 0 then
+			start = 0
+		end
+		local length = next_pos - start;
 		local v = { start = start; length = length };
 		t[i] = v;
 		return v;
