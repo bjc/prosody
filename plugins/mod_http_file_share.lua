@@ -356,6 +356,20 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 		return 410;
 	end
 
+	local request_range = request.headers.range;
+	local response_range;
+	if request_range then
+		local range_start, range_end = request_range:match("^bytes=(%d+)%-(%d*)$")
+		-- Only support resumption, ie ranges from somewhere in the middle until the end of the file.
+		if (range_start and range_start ~= "0" and range_start ~= filesize) and (range_end == "" or range_end == filesize) then
+			if handle:seek("set", tonumber(range_start)) then
+				response_range = "bytes "..range_start.."-"..filesize.."/"..filesize;
+				filesize = string.format("%d", tonumber(filesize)-tonumber(range_start));
+			end
+		end
+	end
+
+
 	if not filetype then
 		filetype = "application/octet-stream";
 	end
@@ -368,6 +382,12 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 	response.headers.content_length = filesize;
 	response.headers.content_type = filetype;
 	response.headers.content_disposition = string.format("%s; filename=%q", disposition, basename);
+
+	if response_range then
+		response.status_code = 206;
+		response.headers.content_range = response_range;
+	end
+	response.headers.accept_ranges = "bytes";
 
 	response.headers.cache_control = "max-age=31556952, immutable";
 	response.headers.content_security_policy =  "default-src 'none'; frame-ancestors 'none';"
