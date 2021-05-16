@@ -555,6 +555,10 @@ function service:publish(node, actor, id, item, requested_config) --> ok, err
 		return nil, "invalid-item";
 	end
 	local node_data = self.data[node];
+	if not node_data then
+		-- FIXME how is this possible?  #1657
+		return nil, "internal-server-error";
+	end
 	local ok = node_data:set(id, item);
 	if not ok then
 		return nil, "internal-server-error";
