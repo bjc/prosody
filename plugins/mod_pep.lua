@@ -214,18 +214,6 @@ function get_pep_service(username)
 
 		check_node_config = check_node_config;
 	});
-	local nodes, err = known_nodes:get(username);
-	if nodes then
-		module:log("debug", "Restoring nodes for user %s", username);
-		for node in pairs(nodes) do
-			module:log("debug", "Restoring node %q", node);
-			service:create(node, true);
-		end
-	elseif err then
-		module:log("error", "Could not restore nodes for %s: %s", username, err);
-	else
-		module:log("debug", "No known nodes");
-	end
 	services[username] = service;
 	module:add_item("pep-service", { service = service, jid = user_bare });
 	return service;
