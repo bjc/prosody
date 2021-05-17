@@ -4,6 +4,7 @@
 
 local s_format, print = string.format, print;
 local printf = function(fmt, ...) return print(s_format(fmt, ...)); end
+local it = require "util.iterators";
 local serialization = require"util.serialization";
 local serialize = serialization.new and serialization.new({ unquoted = true }) or serialization.serialize;
 local configmanager = require"core.configmanager";
@@ -37,9 +38,9 @@ end
 local config = configmanager.getconfig();
 
 
-for host, hostcfg in pairs(config) do
+for host, hostcfg in it.sorted_pairs(config) do
 	local fixed = {};
-	for option, value in pairs(hostcfg) do
+	for option, value in it.sorted_pairs(hostcfg) do
 		fixed[option] = value;
 		if option:match("ports?$") or option:match("interfaces?$") then
 			if option:match("s$") then
@@ -61,7 +62,7 @@ local globals = config["*"]; config["*"] = nil;
 
 local function printsection(section)
 	local out, n = {}, 1;
-	for k,v in pairs(section) do
+	for k,v in it.sorted_pairs(section) do
 		out[n], n = s_format("%s = %s", k, serialize(v)), n + 1;
 	end
 	table.sort(out);
@@ -79,7 +80,7 @@ local has_components = nil;
 
 print("------------------------ Virtual hosts -------------------------");
 
-for host, hostcfg in pairs(config) do
+for host, hostcfg in it.sorted_pairs(config) do
 	setmetatable(hostcfg, nil);
 	hostcfg.defined = nil;
 
@@ -97,7 +98,7 @@ print();
 if has_components then
 print("------------------------- Components ---------------------------");
 
-	for host, hostcfg in pairs(config) do
+	for host, hostcfg in it.sorted_pairs(config) do
 		local component_module = hostcfg.component_module;
 		hostcfg.component_module = nil;
 
