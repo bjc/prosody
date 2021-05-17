@@ -5,8 +5,15 @@
 local s_format, print = string.format, print;
 local printf = function(fmt, ...) return print(s_format(fmt, ...)); end
 local it = require "util.iterators";
-local serialization = require"util.serialization";
-local serialize = serialization.new and serialization.new({ unquoted = true }) or serialization.serialize;
+local function sort_anything(a, b)
+	local typeof_a, typeof_b = type(a), type(b);
+	if typeof_a ~= typeof_b then return typeof_a < typeof_b end
+	return a < b -- should work for everything in a config file
+end
+local serialization = require "util.serialization";
+local serialize = serialization.new and serialization.new({
+	unquoted = true, table_iterator = function(t) return it.sorted_pairs(t, sort_anything); end,
+}) or serialization.serialize;
 local configmanager = require"core.configmanager";
 local startup = require "util.startup";
 
