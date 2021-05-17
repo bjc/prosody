@@ -361,10 +361,15 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 	if request_range then
 		local range_start, range_end = request_range:match("^bytes=(%d+)%-(%d*)$")
 		-- Only support resumption, ie ranges from somewhere in the middle until the end of the file.
-		if (range_start and range_start ~= "0" and range_start ~= filesize) and (range_end == "" or range_end == filesize) then
-			if handle:seek("set", tonumber(range_start)) then
+		if (range_start and range_start ~= "0") and (range_end == "" or range_end == filesize) then
+			local pos, size = tonumber(range_start), tonumber(filesize);
+			local new_pos = pos < size and handle:seek("set", pos);
+			if new_pos and new_pos < size then
 				response_range = "bytes "..range_start.."-"..filesize.."/"..filesize;
-				filesize = string.format("%d", tonumber(filesize)-tonumber(range_start));
+				filesize = string.format("%d", size-pos);
+			else
+				handle:close();
+				return 416;
 			end
 		end
 	end
