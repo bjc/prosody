@@ -128,12 +128,12 @@ s2s_secure_auth = false
 -- Enable rate limits for incoming client and server connections
 
 limits = {
-  c2s = {
-    rate = "10kb/s";
-  };
-  s2sin = {
-    rate = "30kb/s";
-  };
+	c2s = {
+		rate = "10kb/s";
+	};
+	s2sin = {
+		rate = "30kb/s";
+	};
 }
 
 -- Select the authentication backend to use. The 'internal' providers
