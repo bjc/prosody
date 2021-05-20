@@ -16,6 +16,8 @@ local record lib
 	scram_Hi_sha1 : kdf
 	pbkdf2_hmac_sha1 : kdf
 	pbkdf2_hmac_sha256 : kdf
+	equals : function (string, string) : boolean
 	version : string
+	_LIBCRYPTO_VERSION : string
 end
 return lib
