@@ -83,7 +83,7 @@ if stats then
 	end
 
 	local function unwrap_legacy_extra(extra, type_, name, unit)
-		local description = extra and extra.description or "Legacy "..type_.." metric "..name
+		local description = extra and extra.description or name.." "..type_
 		unit = extra and extra.unit or unit
 		return description, unit
 	end
