@@ -6,7 +6,7 @@ local enum type_strings
 end
 
 local record lib
-	local_addresses : function (type_strings, boolean)
+	local_addresses : function (type_strings, boolean) : { string }
 	pton : function (string):string
 	ntop : function (string):string
 end
