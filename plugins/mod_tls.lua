@@ -174,3 +174,9 @@ module:hook_tag(xmlns_starttls, "proceed", function (session, stanza) -- luachec
 		return true;
 	end
 end);
+
+module:hook_tag(xmlns_starttls, "failure", function (session, stanza) -- luacheck: ignore 212/stanza
+	module:log("warn", "TLS negotiation with %s failed.", session.to_host);
+	session:close(nil, "TLS negotiation failed");
+	return false;
+end);
