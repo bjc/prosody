@@ -92,7 +92,10 @@ external_services = {
 modules_disabled = {
 	"s2s";
 }
-certificate = "certs"
+
+-- TLS is not used during the test, set certificate dir to the config directory
+-- (spec/scansion) to silence an error from the certificate indexer
+certificate = "."
 
 allow_registration = false
 
