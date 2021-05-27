@@ -127,7 +127,6 @@ Component "conference.localhost" "muc"
 	admins = { "Admin@localhost" }
 	modules_enabled = {
 		"muc_mam";
-		"server_contact_info";
 	}
 
 
