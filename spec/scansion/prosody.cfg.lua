@@ -95,7 +95,7 @@ modules_disabled = {
 
 -- TLS is not used during the test, set certificate dir to the config directory
 -- (spec/scansion) to silence an error from the certificate indexer
-certificate = "."
+certificates = "."
 
 allow_registration = false
 
