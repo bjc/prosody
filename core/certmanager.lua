@@ -264,7 +264,8 @@ local function create_context(host, mode, ...)
 	local cfg = new_config();
 	cfg:apply(core_defaults);
 	local service_name, port = host:match("^(%S+) port (%d+)$");
-	if service_name then
+	-- port 0 is used with client-only things that normally don't need certificates, e.g. https
+	if service_name and port ~= "0" then
 		log("debug", "Automatically locating certs for service %s on port %s", service_name, port);
 		cfg:apply(find_service_cert(service_name, tonumber(port)));
 	else
