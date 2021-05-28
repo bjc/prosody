@@ -237,8 +237,8 @@ local function add_sni_host(host, service)
 			local config_prefix = (active_service.config_prefix or name).."_";
 			if config_prefix == "_" then config_prefix = ""; end
 			local prefix_ssl_config = config.get(host, config_prefix.."ssl");
-			local alternate_host = service and config.get(host, service.."_host");
-			if not alternate_host and service == "https" then
+			local alternate_host = name and config.get(host, name.."_host");
+			if not alternate_host and name == "https" then
 				-- TODO should this be some generic thing? e.g. in the service definition
 				alternate_host = config.get(host, "http_host");
 			end
