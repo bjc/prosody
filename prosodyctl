@@ -662,7 +662,14 @@ local command_runner = async.runner(function ()
 				"start"; "stop"; "restart"; "reload"; "status";
 			"Informative:",
 				"about",
+				"check",
 		};
+		-- These live in util.prosodyctl.$command so we have their short help here.
+		local external_commands = {
+			cert = "Manage certificates",
+			check = "Perform basic checks on your Prosody installation",
+			shell = "Lorem ipsum dolor sit amet", -- FIXME
+		}
 
 		local done = {};
 
@@ -670,6 +677,9 @@ local command_runner = async.runner(function ()
 			local command_func = commands[command_name];
 			if command_func then
 				command_func{ "--help" };
+				done[command_name] = true;
+			elseif external_commands[command_name] then
+				show_usage(command_name, external_commands[command_name]);
 				done[command_name] = true;
 			else
 				print""
