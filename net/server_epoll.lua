@@ -416,6 +416,8 @@ function interface:onreadable()
 		elseif err == "wantwrite" then
 			self:set(nil, true);
 			err = "timeout";
+		elseif err == "timeout" and not self._connected then
+			err = "connection timeout";
 		end
 		if partial and partial ~= "" then
 			self:onconnect();
