@@ -58,7 +58,7 @@ local function render_histogram_le(v)
 		return "+Inf"
 	end
 
-	return string.format("%g", v)
+	return string.format("%.14g", v)
 end
 
 -- BEGIN of generic MetricFamily implementation
