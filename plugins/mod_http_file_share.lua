@@ -71,7 +71,13 @@ module:hook_global("stats-update", function ()
 	measure_quota_cache_size(quota_cache:count());
 end);
 
-local measure_uploads = module:measure("upload", "sizes");
+local buckets = {};
+for n = 10, 40, 2 do
+	local exp = math.floor(2 ^ n);
+	table.insert(buckets, exp);
+	if exp >= file_size_limit then break end
+end
+local measure_uploads = module:measure("upload", "sizes", {buckets = buckets});
 
 -- Convenience wrapper for logging file sizes
 local function B(bytes) return hi.format(bytes, "B", "b"); end
