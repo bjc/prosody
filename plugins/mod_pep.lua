@@ -35,6 +35,13 @@ local known_nodes = module:open_store("pep");
 
 local max_max_items = module:get_option_number("pep_max_items", 256);
 
+local function tonumber_max_items(n)
+	if n == "max" then
+		return max_max_items;
+	end
+	return tonumber(n);
+end
+
 function module.save()
 	return {
 		services = services;
@@ -56,7 +63,7 @@ function is_item_stanza(item)
 end
 
 function check_node_config(node, actor, new_config) -- luacheck: ignore 212/node 212/actor
-	if (new_config["max_items"] or 1) > max_max_items then
+	if (tonumber_max_items(new_config["max_items"]) or 1) > max_max_items then
 		return false;
 	end
 	if new_config["access_model"] ~= "presence"
@@ -102,13 +109,14 @@ end
 local function simple_itemstore(username)
 	local driver = storagemanager.get_driver(module.host, "pep_data");
 	return function (config, node)
+		local max_items = tonumber_max_items(config["max_items"]);
 		if config["persist_items"] then
 			module:log("debug", "Creating new persistent item store for user %s, node %q", username, node);
 			local archive = driver:open("pep_"..node, "archive");
-			return lib_pubsub.archive_itemstore(archive, config, username, node, false);
+			return lib_pubsub.archive_itemstore(archive, max_items, username, node, false);
 		else
 			module:log("debug", "Creating new ephemeral item store for user %s, node %q", username, node);
-			return cache.new(tonumber(config["max_items"]));
+			return cache.new(max_items);
 		end
 	end
 end

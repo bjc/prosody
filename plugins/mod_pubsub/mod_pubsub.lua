@@ -39,13 +39,22 @@ end
 --   get(node_name)
 --   users(): iterator over (node_name)
 
+local max_max_items = module:get_option_number("pubsub_max_items", 256);
+
+local function tonumber_max_items(n)
+	if n == "max" then
+		return max_max_items;
+	end
+	return tonumber(n);
+end
 
 local node_store = module:open_store(module.name.."_nodes");
 
 local function create_simple_itemstore(node_config, node_name) --> util.cache like object
 	local driver = storagemanager.get_driver(module.host, "pubsub_data");
 	local archive = driver:open("pubsub_"..node_name, "archive");
-	return lib_pubsub.archive_itemstore(archive, node_config, nil, node_name);
+	local max_items = tonumber_max_items(node_config["max_items"]);
+	return lib_pubsub.archive_itemstore(archive, max_items, nil, node_name);
 end
 
 function simple_broadcast(kind, node, jids, item, actor, node_obj)
@@ -99,9 +108,8 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 	end
 end
 
-local max_max_items = module:get_option_number("pubsub_max_items", 256);
 function check_node_config(node, actor, new_config) -- luacheck: ignore 212/node 212/actor
-	if (new_config["max_items"] or 1) > max_max_items then
+	if (tonumber_max_items(new_config["max_items"]) or 1) > max_max_items then
 		return false;
 	end
 	if new_config["access_model"] ~= "whitelist"

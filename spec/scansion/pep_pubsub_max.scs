@@ -1,0 +1,47 @@
+# PEP max_items=max
+
+[Client] Romeo
+	jid: pep-test-maxitems@localhost
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<iq type="set" id="pub">
+		<pubsub xmlns="http://jabber.org/protocol/pubsub">
+			<publish node="urn:xmpp:microblog:0">
+				<item>
+					<entry xmlns='http://www.w3.org/2005/Atom'>
+						<title>Hello</title>
+					</entry>
+				</item>
+			</publish>
+			<publish-options>
+				<x xmlns="jabber:x:data" type="submit">
+					<field type="hidden" var="FORM_TYPE">
+						<value>http://jabber.org/protocol/pubsub#publish-options</value>
+					</field>
+					<field var="pubsub#persist_items">
+						<value>true</value>
+					</field>
+					<field var="pubsub#access_model">
+						<value>open</value>
+					</field>
+					<field var="pubsub#max_items">
+						<value>max</value>
+					</field>
+				</x>
+			</publish-options>
+		</pubsub>
+	</iq>
+
+Romeo receives:
+	<iq type="result" id="pub">
+		<pubsub xmlns="http://jabber.org/protocol/pubsub">
+			<publish node="urn:xmpp:microblog:0">
+				<item id="{scansion:any}"/>
+			</publish>
+		</pubsub>
+	</iq>

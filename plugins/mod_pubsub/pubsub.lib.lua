@@ -83,7 +83,7 @@ local node_config_form = dataform {
 	};
 	{
 		type = "text-single";
-		datatype = "xs:integer";
+		datatype = "pubsub:integer-or-max";
 		name = "max_items";
 		var = "pubsub#max_items";
 		label = "Max # of items to persist";
@@ -801,10 +801,9 @@ local function create_encapsulating_item(id, payload)
 	return item;
 end
 
-local function archive_itemstore(archive, config, user, node)
-	module:log("debug", "Creation of archive itemstore for node %s with config %q", node, config);
+local function archive_itemstore(archive, max_items, user, node)
+	module:log("debug", "Creation of archive itemstore for node %s with limit %d", node, max_items);
 	local get_set = {};
-	local max_items = config["max_items"];
 	function get_set:items() -- luacheck: ignore 212/self
 		local data, err = archive:find(user, {
 			limit = tonumber(max_items);

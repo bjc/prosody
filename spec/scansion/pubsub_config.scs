@@ -48,7 +48,7 @@ Romeo receives:
 					<field var="pubsub#description" label="Description" type="text-single"/>
 					<field var="pubsub#type" label="The type of node data, usually specified by the namespace of the payload (if any)" type="text-single"/>
 					<field var="pubsub#max_items" label="Max # of items to persist" type="text-single">
-						<validate xmlns="http://jabber.org/protocol/xdata-validate" datatype="xs:integer"/>
+						<validate xmlns="http://jabber.org/protocol/xdata-validate" datatype="pubsub:integer-or-max"/>
 						<value>1</value>
 					</field>
 					<field var="pubsub#persist_items" label="Persist items to storage" type="boolean">
@@ -124,7 +124,7 @@ Romeo sends:
 					<field var="pubsub#description" type="text-single" label="Description"/>
 					<field var="pubsub#type" type="text-single" label="The type of node data, usually specified by the namespace of the payload (if any)"/>
 					<field var="pubsub#max_items" type="text-single" label="Max # of items to persist">
-						<validate xmlns="http://jabber.org/protocol/xdata-validate" datatype="xs:integer"/>
+						<validate xmlns="http://jabber.org/protocol/xdata-validate" datatype="pubsub:integer-or-max"/>
 						<value>1</value>
 					</field>
 					<field var="pubsub#persist_items" type="boolean" label="Persist items to storage">
