@@ -280,6 +280,27 @@ prosody.events.add_handler("host-deactivated", function (host)
 	end
 end);
 
+prosody.events.add_handler("config-reloaded", function ()
+	for service_name, interface, port, _, active_service in active_services:iter(nil, nil, nil, nil) do
+		if active_service.tls_cfg then
+			local service_info = active_service.service;
+			local config_prefix = (service_info.config_prefix or service_name).."_";
+			if config_prefix == "_" then
+				config_prefix = "";
+			end
+			local ssl, cfg, err = get_port_ssl_ctx(port, interface, config_prefix, service_info);
+			if ssl then
+				active_service.server:set_sslctx(ssl);
+				active_service.tls_cfg = cfg;
+			else
+				log("error", "Error reloading certificate for encrypted port for %s: %s", service_info.name,
+					error_to_friendly_message(service_name, port, err) or "unknown error");
+			end
+		end
+	end
+	-- TODO Update SNI too
+end, -1);
+
 return {
 	activate = activate;
 	deactivate = deactivate;
