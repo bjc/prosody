@@ -298,7 +298,9 @@ prosody.events.add_handler("config-reloaded", function ()
 			end
 		end
 	end
-	-- TODO Update SNI too
+	for host in pairs(prosody.hosts) do
+		add_sni_host(host, nil);
+	end
 end, -1);
 
 return {
