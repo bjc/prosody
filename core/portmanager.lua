@@ -65,6 +65,20 @@ local function error_to_friendly_message(service_name, port, err) --luacheck: ig
 	return friendly_message;
 end
 
+local function get_port_ssl_ctx(port, interface, config_prefix, service_info)
+	local global_ssl_config = config.get("*", "ssl") or {};
+	local prefix_ssl_config = config.get("*", config_prefix.."ssl") or global_ssl_config;
+	log("debug", "Creating context for direct TLS service %s on port %d", service_info.name, port);
+	local ssl, err, cfg = certmanager.create_context(service_info.name.." port "..port, "server",
+		prefix_ssl_config[interface],
+		prefix_ssl_config[port],
+		prefix_ssl_config,
+		service_info.ssl_config or {},
+		global_ssl_config[interface],
+		global_ssl_config[port]);
+	return ssl, cfg, err;
+end
+
 --- Public API
 
 local function activate(service_name)
@@ -111,16 +125,7 @@ local function activate(service_name)
 				local ssl, cfg, err;
 				-- Create SSL context for this service/port
 				if service_info.encryption == "ssl" then
-					local global_ssl_config = config.get("*", "ssl") or {};
-					local prefix_ssl_config = config.get("*", config_prefix.."ssl") or global_ssl_config;
-					log("debug", "Creating context for direct TLS service %s on port %d", service_info.name, port);
-					ssl, err, cfg = certmanager.create_context(service_info.name.." port "..port, "server",
-						prefix_ssl_config[interface],
-						prefix_ssl_config[port],
-						prefix_ssl_config,
-						service_info.ssl_config or {},
-						global_ssl_config[interface],
-						global_ssl_config[port]);
+					ssl, cfg, err = get_port_ssl_ctx(port, interface, config_prefix, service_info);
 					if not ssl then
 						log("error", "Error binding encrypted port for %s: %s", service_info.name,
 							error_to_friendly_message(service_name, port_number, err) or "unknown error");
