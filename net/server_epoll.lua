@@ -543,6 +543,10 @@ function interface:ssl()
 	return self._tls;
 end
 
+function interface:set_sslctx(sslctx)
+	self._sslctx = sslctx;
+end
+
 function interface:starttls(tls_ctx)
 	if tls_ctx then self.tls_ctx = tls_ctx; end
 	self.starttls = false;
