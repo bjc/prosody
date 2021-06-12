@@ -407,14 +407,8 @@ function def_env.module:info(name, hosts)
 		local mod = modulemanager.get_module(host, name);
 		if mod.module.host == "*" then
 			print("in global context");
-		elseif mod.module:get_host_type() == "local" then
-			print("on VirtualHost " .. mod.module.host);
-		elseif mod.module:get_host_type() == "component" then
-			local component_type = module:context(host):get_option_string("component_module", type);
-			if component_type == "component" then
-				component_type = "external";
-			end
-			print("on " .. component_type .. " Component " .. mod.module.host);
+		else
+			print("on " .. tostring(prosody.hosts[mod.module.host]));
 		end
 		print("  path: " .. (mod.module.path or "n/a"));
 		if mod.module.status_message then
