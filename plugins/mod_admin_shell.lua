@@ -403,6 +403,13 @@ function def_env.module:info(name, hosts)
 		return false, "mod_" .. name .. " does not appear to be loaded on the specified hosts";
 	end
 
+	local friendly_descriptions = {
+		["adhoc-provider"] = "Ad-hoc commands",
+		["auth-provider"] = "Authentication provider",
+		["http-provider"] = "HTTP services",
+		["net-provider"] = "Network service",
+		["storage-provider"] = "Storage driver",
+	};
 	for host in hosts do
 		local mod = modulemanager.get_module(host, name);
 		if mod.module.host == "*" then
@@ -417,7 +424,8 @@ function def_env.module:info(name, hosts)
 		if mod.module.items and next(mod.module.items) ~= nil then
 			print("  provides:");
 			for kind, items in pairs(mod.module.items) do
-				print(string.format("  - %s (%d item%s)", kind, #items, #items > 1 and "s" or ""));
+				local label = friendly_descriptions[kind] or kind:gsub("%-", " "):gsub("^%a", string.upper);
+				print(string.format("  - %s (%d item%s)", label, #items, #items > 1 and "s" or ""));
 			end
 		end
 		if mod.module.dependencies and next(mod.module.dependencies) ~= nil then
