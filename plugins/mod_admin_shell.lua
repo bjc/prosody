@@ -414,6 +414,12 @@ function def_env.module:info(name, hosts)
 		if mod.module.status_message then
 			print("  status: [" .. mod.module.status_type .. "] " .. mod.module.status_message);
 		end
+		if mod.module.items and next(mod.module.items) ~= nil then
+			print("  provides:");
+			for kind, items in pairs(mod.module.items) do
+				print(string.format("  - %s (%d item%s)", kind, #items, #items > 1 and "s" or ""));
+			end
+		end
 		if mod.module.dependencies and next(mod.module.dependencies) ~= nil then
 			print("  dependencies:");
 			for dep in pairs(mod.module.dependencies) do
