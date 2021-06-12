@@ -216,6 +216,7 @@ function commands.help(session, data)
 	elseif section == "http" then
 		print [[http:list(hosts) - Show HTTP endpoints]]
 	elseif section == "module" then
+		print [[module:info(module, host) - Show information about a loaded module]]
 		print [[module:load(module, host) - Load the specified module on the specified host (or all hosts if none given)]]
 		print [[module:reload(module, host) - The same, but unloads and loads the module (saving state if the module supports it)]]
 		print [[module:unload(module, host) - The same, but just unloads the module from memory]]
@@ -390,6 +391,34 @@ local function get_hosts_with_module(hosts, module)
 		hosts_set:add("*");
 	end
 	return hosts_set;
+end
+
+function def_env.module:info(name, hosts)
+	if not name then
+		return nil, "module name expected";
+	end
+	local print = self.session.print;
+	hosts = get_hosts_with_module(hosts, name);
+	if hosts:empty() then
+		return false, "mod_" .. name .. " does not appear to be loaded on the specified hosts";
+	end
+
+	for host in hosts do
+		local mod = modulemanager.get_module(host, name);
+		if mod.module.host == "*" then
+			print("in global context");
+		elseif mod.module:get_host_type() == "local" then
+			print("on VirtualHost " .. mod.module.host);
+		elseif mod.module:get_host_type() == "component" then
+			local component_type = module:context(host):get_option_string("component_module", type);
+			if component_type == "component" then
+				component_type = "external";
+			end
+			print("on " .. component_type .. " Component " .. mod.module.host);
+		end
+		print("  path: " .. (mod.module.path or "n/a"));
+	end
+	return true;
 end
 
 function def_env.module:load(name, hosts, config)
