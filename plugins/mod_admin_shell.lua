@@ -410,6 +410,14 @@ function def_env.module:info(name, hosts)
 		["net-provider"] = "Network service",
 		["storage-provider"] = "Storage driver",
 	};
+	local item_formatters = {
+		["feature"] = tostring,
+		["identity"] = function(ident) return ident.type .. "/" .. ident.category; end,
+		["adhoc-provider"] = function(item) return item.name; end,
+		["auth-provider"] = function(item) return item.name; end,
+		["storage-provider"] = function(item) return item.name; end,
+	};
+
 	for host in hosts do
 		local mod = modulemanager.get_module(host, name);
 		if mod.module.host == "*" then
@@ -426,6 +434,12 @@ function def_env.module:info(name, hosts)
 			for kind, items in pairs(mod.module.items) do
 				local label = friendly_descriptions[kind] or kind:gsub("%-", " "):gsub("^%a", string.upper);
 				print(string.format("  - %s (%d item%s)", label, #items, #items > 1 and "s" or ""));
+				local formatter = item_formatters[kind];
+				if formatter then
+					for _, item in ipairs(items) do
+						print("    - " .. formatter(item));
+					end
+				end
 			end
 		end
 		if mod.module.dependencies and next(mod.module.dependencies) ~= nil then
