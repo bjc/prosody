@@ -420,6 +420,12 @@ function def_env.module:info(name, hosts)
 		if mod.module.status_message then
 			print("  status: [" .. mod.module.status_type .. "] " .. mod.module.status_message);
 		end
+		if mod.module.dependencies and next(mod.module.dependencies) ~= nil then
+			print("  dependencies:");
+			for dep in pairs(mod.module.dependencies) do
+				print("  - mod_" .. dep);
+			end
+		end
 	end
 	return true;
 end
