@@ -417,6 +417,9 @@ function def_env.module:info(name, hosts)
 			print("on " .. component_type .. " Component " .. mod.module.host);
 		end
 		print("  path: " .. (mod.module.path or "n/a"));
+		if mod.module.status_message then
+			print("  status: [" .. mod.module.status_type .. "] " .. mod.module.status_message);
+		end
 	end
 	return true;
 end
