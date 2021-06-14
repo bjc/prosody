@@ -25,6 +25,7 @@ local array = require "util.array";
 local log = require "util.logger".init("util.openmetrics");
 local new_multitable = require "util.multitable".new;
 local iter_multitable = require "util.multitable".iter;
+local t_pack, t_unpack = require "util.table".pack, table.unpack or unpack; --luacheck: ignore 113/unpack
 
 -- BEGIN of Utility: "metric proxy"
 -- This allows to wrap a MetricFamily in a proxy which only provides the
@@ -129,10 +130,10 @@ function metric_family_mt:with_labels(...)
 	end
 	local metric = self.data:get(...)
 	if not metric then
-		local values = table.pack(...)
+		local values = t_pack(...)
 		metric = self:new_metric(values)
 		values[values.n+1] = metric
-		self.data:set(table.unpack(values, 1, values.n+1))
+		self.data:set(t_unpack(values, 1, values.n+1))
 	end
 	return metric
 end
@@ -159,9 +160,9 @@ function metric_family_mt:iter_metrics()
 	for i=1,nlabels do
 		searchkeys[i] = nil;
 	end
-	local it, state = iter_multitable(self.data, table.unpack(searchkeys, 1, nlabels))
+	local it, state = iter_multitable(self.data, t_unpack(searchkeys, 1, nlabels))
 	return function(_s)
-		local label_values = table.pack(it(_s))
+		local label_values = t_pack(it(_s))
 		if label_values.n == 0 then
 			return nil, nil
 		end
