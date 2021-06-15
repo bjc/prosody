@@ -15,5 +15,10 @@ describe("util.format", function()
 			assert.equal("[1.5]", format("%d", 1.5));
 			assert.equal("[7.3786976294838e+19]", format("%d", 73786976294838206464));
 		end);
+
+		it("escapes ascii control stuff", function ()
+			assert.equal("␁", format("%s", "\1"));
+		end);
+
 	end);
 end);
