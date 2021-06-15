@@ -71,6 +71,11 @@ local m_closed_connections = module:metric(
 	"Closed connections",
 	{"host", "direction", "error"}
 );
+local m_tls_params = module:metric(
+	"counter", "encrypted", "",
+	"Encrypted connections",
+	{"protocol"; "cipher"}
+);
 
 local sessions = module:shared("sessions");
 
@@ -384,6 +389,7 @@ function stream_callbacks._streamopened(session, attr)
 			local info = sock:info();
 			(session.log or log)("info", "Stream encrypted (%s with %s)", info.protocol, info.cipher);
 			session.compressed = info.compression;
+			m_tls_params:with_labels(info.protocol, info.cipher):add(1)
 		else
 			(session.log or log)("info", "Stream encrypted");
 		end
