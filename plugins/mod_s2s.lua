@@ -461,6 +461,11 @@ function stream_callbacks._streamopened(session, attr)
 		end
 
 		session:open_stream(session.to_host, session.from_host)
+		if session.destroyed then
+			-- sending the stream opening could have failed during an opportunistic write
+			return
+		end
+
 		session.notopen = nil;
 		if session.version >= 1.0 then
 			local features = st.stanza("stream:features");
