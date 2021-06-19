@@ -24,6 +24,7 @@ TRUNK
 -   mod_http_file_share: File sharing via HTTP (XEP-0363)
 -   statistics scheduling can be done by plugin
 -   mod_server_contact_info now loaded on components if enabled
+-   Statistics now based on OpenMetrics
 
 0.11.0
 ======
