@@ -426,6 +426,16 @@ module:provides("net", {
 });
 
 module:provides("net", {
+	name = "direct_tls";
+	listener = listener;
+	encryption = "ssl";
+	multiplex = {
+		pattern = "^<.*:stream.*%sxmlns%s*=%s*(['\"])jabber:client%1.*>";
+	};
+});
+
+-- COMPAT
+module:provides("net", {
 	name = "legacy_ssl";
 	listener = listener;
 	encryption = "ssl";
