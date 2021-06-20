@@ -44,7 +44,7 @@ local function check(arg)
 		});
 		local known_global_options = set.new({
 			"pidfile", "log", "plugin_paths", "prosody_user", "prosody_group", "daemonize",
-			"umask", "prosodyctl_timeout", "use_ipv6", "use_libevent", "network_settings",
+			"umask", "prosodyctl_timeout", "use_ipv6", "use_ipv4", "use_libevent", "network_settings",
 			"network_backend", "http_default_host",
 			"statistics_interval", "statistics", "statistics_config",
 			"plugin_server", "installer_plugin_path", "gc", "limits",
