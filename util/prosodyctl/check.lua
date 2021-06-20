@@ -41,6 +41,7 @@ local function check(arg)
 		local deprecated = set.new({
 			"bosh_ports", "disallow_s2s", "no_daemonize", "anonymous_login", "require_encryption",
 			"vcard_compatibility", "cross_domain_bosh", "cross_domain_websocket", "daemonize",
+			"legacy_ssl_port", "legacy_ssl_ports", "legacy_ssl_interfaces", "legacy_ssl_ssl",
 		});
 		local known_global_options = set.new({
 			"pidfile", "log", "plugin_paths", "prosody_user", "prosody_group", "daemonize",
