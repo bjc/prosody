@@ -295,7 +295,12 @@ function listener.onconnect(conn)
 		-- Check if TLS compression is used
 		local sock = conn:socket();
 		if sock.info then
-			session.compressed = sock:info"compression";
+			local info = sock:info();
+			(session.log or log)("info", "Stream encrypted (%s with %s)", info.protocol, info.cipher);
+			session.compressed = info.compression;
+			m_tls_params:with_labels(info.protocol, info.cipher):add(1)
+		else
+			(session.log or log)("info", "Stream encrypted");
 		end
 	end
 
