@@ -228,6 +228,9 @@ local function check(arg)
 	if not what or what == "dns" then
 		local dns = require "net.dns";
 		pcall(function ()
+			local unbound_config = configmanager.get("*", "unbound") or {};
+			unbound_config.hoststxt = false; -- don't look at /etc/hosts
+			configmanager.set("*", "unbound", unbound_config);
 			dns = require"net.unbound".dns;
 		end)
 		local idna = require "util.encodings".idna;
