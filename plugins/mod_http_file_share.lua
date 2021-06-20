@@ -404,7 +404,7 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 	response.headers.content_security_policy =  "default-src 'none'; frame-ancestors 'none';"
 	response.headers.strict_transport_security = "max-age=31556952";
 	response.headers.x_content_type_options = "nosniff";
-	response.headers.x_frame_options = "DENY"; -- replaced by frame-ancestors in CSP?
+	response.headers.x_frame_options = "DENY"; -- COMPAT IE missing support for CSP frame-ancestors
 	response.headers.x_xss_protection = "1; mode=block";
 
 	return response:send_file(handle);
