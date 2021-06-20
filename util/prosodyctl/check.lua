@@ -233,13 +233,17 @@ local function check(arg)
 		local ip = require "util.ip";
 		local c2s_ports = set.new(configmanager.get("*", "c2s_ports") or {5222});
 		local s2s_ports = set.new(configmanager.get("*", "s2s_ports") or {5269});
+		local c2s_tls_ports = set.new(configmanager.get("*", "direct_tls_ports") or {});
 
-		local c2s_srv_required, s2s_srv_required;
+		local c2s_srv_required, s2s_srv_required, c2s_tls_srv_required;
 		if not c2s_ports:contains(5222) then
 			c2s_srv_required = true;
 		end
 		if not s2s_ports:contains(5269) then
 			s2s_srv_required = true;
+		end
+		if not c2s_tls_ports:empty() then
+			c2s_tls_srv_required = true;
 		end
 
 		local problem_hosts = set.new();
@@ -319,6 +323,24 @@ local function check(arg)
 					else
 						target_hosts:add(host);
 					end
+				end
+			end
+			if modules:contains("c2s") and c2s_tls_srv_required then
+				local res = dns.lookup("_xmpps-client._tcp."..idna.to_ascii(host)..".", "SRV");
+				if res and #res > 0 then
+					for _, record in ipairs(res) do
+						if record.srv.target == "." then -- TODO is this an error if mod_c2s is enabled?
+							print("    'xmpps-client' service disabled by pointing to '.'"); -- FIXME Explain better what this is
+							break;
+						end
+						target_hosts:add(record.srv.target);
+						if not c2s_tls_ports:contains(record.srv.port) then
+							print("    SRV target "..record.srv.target.." contains unknown Direct TLS client port: "..record.srv.port);
+						end
+					end
+				else
+					print("    No _xmpps-client SRV record found for "..host..", but it looks like you need one.");
+					all_targets_ok = false;
 				end
 			end
 			if modules:contains("s2s") then
