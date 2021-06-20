@@ -287,7 +287,7 @@ function listener.onconnect(conn)
 
 	session.log("info", "Client connected");
 
-	-- Client is using legacy SSL (otherwise mod_tls sets this flag)
+	-- Client is using Direct TLS or legacy SSL (otherwise mod_tls sets this flag)
 	if conn:ssl() then
 		session.secure = true;
 		session.encrypted = true;
