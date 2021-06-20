@@ -301,7 +301,7 @@ local function check(arg)
 			local target_hosts = set.new();
 			if modules:contains("c2s") then
 				local res = dns.lookup("_xmpp-client._tcp."..idna.to_ascii(host)..".", "SRV");
-				if res then
+				if res and #res > 0 then
 					for _, record in ipairs(res) do
 						if record.srv.target == "." then -- TODO is this an error if mod_c2s is enabled?
 							print("    'xmpp-client' service disabled by pointing to '.'"); -- FIXME Explain better what this is
@@ -323,7 +323,7 @@ local function check(arg)
 			end
 			if modules:contains("s2s") then
 				local res = dns.lookup("_xmpp-server._tcp."..idna.to_ascii(host)..".", "SRV");
-				if res then
+				if res and #res > 0 then
 					for _, record in ipairs(res) do
 						if record.srv.target == "." then -- TODO Is this an error if mod_s2s is enabled?
 							print("    'xmpp-server' service disabled by pointing to '.'"); -- FIXME Explain better what this is
