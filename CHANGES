@@ -25,6 +25,7 @@ TRUNK
 -   statistics scheduling can be done by plugin
 -   mod_server_contact_info now loaded on components if enabled
 -   Statistics now based on OpenMetrics
+-   Direct TLS support
 
 0.11.0
 ======
