@@ -856,7 +856,7 @@ end
 
 function module.command(arg)
 	local config = require "core.configmanager";
-	local prosodyctl = require "util.prosodyctl";
+	local hi = require "util.human.io";
 	local command = table.remove(arg, 1);
 	if command == "upgrade" then
 		-- We need to find every unique dburi in the config
@@ -871,7 +871,7 @@ function module.command(arg)
 		end
 		print("");
 		print("Ensure you have working backups of the above databases before continuing! ");
-		if not prosodyctl.show_yesno("Continue with the database upgrade? [yN]") then
+		if not hi.show_yesno("Continue with the database upgrade? [yN]") then
 			print("Ok, no upgrade. But you do have backups, don't you? ...don't you?? :-)");
 			return;
 		end
