@@ -543,13 +543,17 @@ local function GET_response(event)
 	}) or "This is the Prosody BOSH endpoint.";
 end
 
-module:depends("http");
-module:provides("http", {
-	default_path = "/http-bind";
-	route = {
-		["GET"] = GET_response;
-		["GET /"] = GET_response;
-		["POST"] = handle_POST;
-		["POST /"] = handle_POST;
-	};
-});
+function module.add_host(module)
+	module:depends("http");
+	module:provides("http", {
+		default_path = "/http-bind";
+		route = {
+			["GET"] = GET_response;
+			["GET /"] = GET_response;
+			["POST"] = handle_POST;
+			["POST /"] = handle_POST;
+		};
+	});
+end
+
+module:add_host();
