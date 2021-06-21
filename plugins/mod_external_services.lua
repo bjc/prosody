@@ -103,12 +103,14 @@ function module.load()
 	local extras = module:get_host_items("external_service");
 	local services = ( configured_services + extras ) / prepare;
 	if #services == 0 then
-		module:log("warn", "No services configured or all had errors");
+		module:set_status("warn", "No services configured or all had errors");
 	end
 end
 
 module:handle_items("external_service", function(added)
-	prepare(added.item);
+	if prepare(added.item) then
+		module:set_status("core", "OK");
+	end
 end, module.load);
 
 -- Ensure only valid items are added in events
