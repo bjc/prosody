@@ -385,7 +385,8 @@ function stream_callbacks._streamopened(session, attr)
 		session.encrypted = true;
 
 		local sock = session.conn:socket();
-		if sock.info then
+		local info = sock.info and sock:info();
+		if type(info) == "table" then
 			local info = sock:info();
 			(session.log or log)("info", "Stream encrypted (%s with %s)", info.protocol, info.cipher);
 			session.compressed = info.compression;
