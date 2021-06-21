@@ -100,7 +100,8 @@ end
 
 function module.load()
 	-- Trigger errors on startup
-	local services = configured_services / prepare;
+	local extras = module:get_host_items("external_service");
+	local services = ( configured_services + extras ) / prepare;
 	if #services == 0 then
 		module:log("warn", "No services configured or all had errors");
 	end
