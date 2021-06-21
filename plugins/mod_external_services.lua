@@ -107,6 +107,10 @@ function module.load()
 	end
 end
 
+module:handle_items("external_service", function(added)
+	prepare(added.item);
+end, module.load);
+
 -- Ensure only valid items are added in events
 local services_mt = {
 	__index = getmetatable(array()).__index;
