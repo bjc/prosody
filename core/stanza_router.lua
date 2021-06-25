@@ -194,14 +194,14 @@ function core_post_stanza(origin, stanza, preevents)
 end
 
 function core_route_stanza(origin, stanza)
-	local host = jid_host(stanza.attr.to);
+	local to_host = jid_host(stanza.attr.to);
 	local from_host = jid_host(stanza.attr.from);
 
 	-- Auto-detect origin if not specified
 	origin = origin or hosts[from_host];
 	if not origin then return false; end
 
-	if hosts[host] then
+	if hosts[to_host] then
 		-- old stanza routing code removed
 		core_post_stanza(origin, stanza);
 	else
@@ -212,7 +212,7 @@ function core_route_stanza(origin, stanza)
 			local xmlns = stanza.attr.xmlns;
 			stanza.attr.xmlns = nil;
 			local routed = host_session.events.fire_event("route/remote", {
-				origin = origin, stanza = stanza, from_host = from_host, to_host = host });
+				origin = origin, stanza = stanza, from_host = from_host, to_host = to_host });
 			stanza.attr.xmlns = xmlns; -- reset
 			if not routed then
 				log("debug", "Could not route stanza to remote");
