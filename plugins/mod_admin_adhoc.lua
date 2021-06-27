@@ -18,7 +18,6 @@ local keys = require "util.iterators".keys;
 local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_create_user = require "core.usermanager".create_user;
 local usermanager_delete_user = require "core.usermanager".delete_user;
-local usermanager_get_password = require "core.usermanager".get_password;
 local usermanager_set_password = require "core.usermanager".set_password;
 local hostmanager_activate = require "core.hostmanager".activate;
 local hostmanager_deactivate = require "core.hostmanager".deactivate;
@@ -191,39 +190,6 @@ local end_user_session_handler = adhoc_simple(end_user_session_layout, function(
 		"The following accounts were successfully disconnected:\n"..t_concat(succeeded, "\n").."\n" or "")..
 		(#failed ~= 0 and
 		"The following accounts could not be disconnected:\n"..t_concat(failed, "\n") or "") };
-end);
-
--- Getting a user's password
-local get_user_password_layout = dataforms_new{
-	title = "Getting User's Password";
-	instructions = "Fill out this form to get a user's password.";
-
-	{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/admin" };
-	{ name = "accountjid", type = "jid-single", required = true, label = "The Jabber ID for which to retrieve the password" };
-};
-
-local get_user_password_result_layout = dataforms_new{
-	{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/admin" };
-	{ name = "accountjid", type = "jid-single", label = "JID" };
-	{ name = "password", type = "text-single", label = "Password" };
-};
-
-local get_user_password_handler = adhoc_simple(get_user_password_layout, function(fields, err)
-	if err then
-		return generate_error_message(err);
-	end
-	local user, host = jid.split(fields.accountjid);
-	local accountjid;
-	local password;
-	if host ~= module_host then
-		return { status = "completed", error = { message = "Tried to get password for a user on " .. host .. " but command was sent to " .. module_host } };
-	elseif usermanager_user_exists(user, host) then
-		accountjid = fields.accountjid;
-		password = usermanager_get_password(user, host);
-	else
-		return { status = "completed", error = { message = "User does not exist" } };
-	end
-	return { status = "completed", result = { layout = get_user_password_result_layout, values = {accountjid = accountjid, password = password} } };
 end);
 
 -- Getting a user's roster
@@ -827,7 +793,6 @@ local change_user_password_desc = adhoc_new("Change User Password", "http://jabb
 local config_reload_desc = adhoc_new("Reload configuration", "http://prosody.im/protocol/config#reload", config_reload_handler, "global_admin");
 local delete_user_desc = adhoc_new("Delete User", "http://jabber.org/protocol/admin#delete-user", delete_user_command_handler, "admin");
 local end_user_session_desc = adhoc_new("End User Session", "http://jabber.org/protocol/admin#end-user-session", end_user_session_handler, "admin");
-local get_user_password_desc = adhoc_new("Get User Password", "http://jabber.org/protocol/admin#get-user-password", get_user_password_handler, "admin");
 local get_user_roster_desc = adhoc_new("Get User Roster","http://jabber.org/protocol/admin#get-user-roster", get_user_roster_handler, "admin");
 local get_user_stats_desc = adhoc_new("Get User Statistics","http://jabber.org/protocol/admin#user-stats", get_user_stats_handler, "admin");
 local get_online_users_desc = adhoc_new("Get List of Online Users", "http://jabber.org/protocol/admin#get-online-users-list", get_online_users_command_handler, "admin");
@@ -848,7 +813,6 @@ module:provides("adhoc", change_user_password_desc);
 module:provides("adhoc", config_reload_desc);
 module:provides("adhoc", delete_user_desc);
 module:provides("adhoc", end_user_session_desc);
-module:provides("adhoc", get_user_password_desc);
 module:provides("adhoc", get_user_roster_desc);
 module:provides("adhoc", get_user_stats_desc);
 module:provides("adhoc", get_online_users_desc);
