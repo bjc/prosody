@@ -54,7 +54,7 @@ local add_user_layout = dataforms_new{
 	{ name = "password-verify", type = "text-private", label = "Retype password" };
 };
 
-local add_user_command_handler = adhoc_simple(add_user_layout, function(fields, err)
+local add_user_command_handler = adhoc_simple(add_user_layout, function(fields, err, data)
 	if err then
 		return generate_error_message(err);
 	end
@@ -67,7 +67,7 @@ local add_user_command_handler = adhoc_simple(add_user_layout, function(fields, 
 			return { status = "completed", error = { message = "Account already exists" } };
 		else
 			if usermanager_create_user(username, fields.password, host) then
-				module:log("info", "Created new account %s@%s", username, host);
+				module:log("info", "Created new account %s@%s by %s", username, host, jid.bare(data.from));
 				return { status = "completed", info = "Account successfully created" };
 			else
 				return { status = "completed", error = { message = "Failed to write data to disk" } };
@@ -89,7 +89,7 @@ local change_user_password_layout = dataforms_new{
 	{ name = "password", type = "text-private", required = true, label = "The password for this account" };
 };
 
-local change_user_password_command_handler = adhoc_simple(change_user_password_layout, function(fields, err)
+local change_user_password_command_handler = adhoc_simple(change_user_password_layout, function(fields, err, data)
 	if err then
 		return generate_error_message(err);
 	end
@@ -103,6 +103,7 @@ local change_user_password_command_handler = adhoc_simple(change_user_password_l
 		};
 	end
 	if usermanager_user_exists(username, host) and usermanager_set_password(username, fields.password, host, nil) then
+		module:log("info", "Password of account %s@%s changed by %s", username, host, jid.bare(data.from));
 		return { status = "completed", info = "Password successfully changed" };
 	else
 		return { status = "completed", error = { message = "User does not exist" } };
@@ -111,6 +112,7 @@ end);
 
 -- Reloading the config
 local function config_reload_handler(self, data, state)
+	module:log("info", "%s reloads the config", jid.bare(data.from));
 	local ok, err = prosody.reload_config();
 	if ok then
 		return { status = "completed", info = "Configuration reloaded (modules may need to be reloaded for this to have an effect)" };
@@ -128,7 +130,7 @@ local delete_user_layout = dataforms_new{
 	{ name = "accountjids", type = "jid-multi", required = true, label = "The Jabber ID(s) to delete" };
 };
 
-local delete_user_command_handler = adhoc_simple(delete_user_layout, function(fields, err)
+local delete_user_command_handler = adhoc_simple(delete_user_layout, function(fields, err, data)
 	if err then
 		return generate_error_message(err);
 	end
@@ -137,7 +139,7 @@ local delete_user_command_handler = adhoc_simple(delete_user_layout, function(fi
 	for _, aJID in ipairs(fields.accountjids) do
 		local username, host = jid.split(aJID);
 		if (host == module_host) and  usermanager_user_exists(username, host) and usermanager_delete_user(username, host) then
-			module:log("debug", "User %s has been deleted", aJID);
+			module:log("info", "User %s has been deleted by %s", aJID, jid.bare(data.from));
 			succeeded[#succeeded+1] = aJID;
 		else
 			module:log("debug", "Tried to delete non-existant user %s", aJID);
@@ -473,7 +475,7 @@ local globally_load_module_layout = dataforms_new {
 	{ name = "module", type = "text-single", required = true, label = "Module to globally load:"};
 };
 
-local globally_load_module_handler = adhoc_simple(globally_load_module_layout, function(fields, err)
+local globally_load_module_handler = adhoc_simple(globally_load_module_layout, function(fields, err, data)
 	local ok_list, err_list = {}, {};
 
 	if err then
@@ -489,6 +491,7 @@ local globally_load_module_handler = adhoc_simple(globally_load_module_layout, f
 
 	-- Is this a global module?
 	if modulemanager.is_loaded("*", fields.module) and not modulemanager.is_loaded(module_host, fields.module) then
+		module:log("info", "mod_%s loaded by %s", fields.module, jid.bare(data.from));
 		return { status = "completed", info = 'Global module '..fields.module..' loaded.' };
 	end
 
@@ -504,6 +507,7 @@ local globally_load_module_handler = adhoc_simple(globally_load_module_layout, f
 		end
 	end
 
+	module:log("info", "mod_%s loaded by %s", fields.module, jid.bare(data.from));
 	local info = (#ok_list > 0 and ("The module "..fields.module.." was successfully loaded onto the hosts:\n"..t_concat(ok_list, "\n")) or "")
 		.. ((#ok_list > 0 and #err_list > 0) and "\n" or "") ..
 		(#err_list > 0 and ("Failed to load the module "..fields.module.." onto the hosts:\n"..t_concat(err_list, "\n")) or "");
@@ -521,7 +525,7 @@ local reload_modules_layout = dataforms_new {
 
 local reload_modules_handler = adhoc_initial(reload_modules_layout, function()
 	return { modules = array.collect(keys(hosts[module_host].modules)):sort() };
-end, function(fields, err)
+end, function(fields, err, data)
 	if err then
 		return generate_error_message(err);
 	end
@@ -534,6 +538,7 @@ end, function(fields, err)
 			err_list[#err_list + 1] = module .. "(Error: " .. tostring(err) .. ")";
 		end
 	end
+	module:log("info", "mod_%s reloaded by %s", fields.module, jid.bare(data.from));
 	local info = (#ok_list > 0 and ("The following modules were successfully reloaded on host "..module_host..":\n"..t_concat(ok_list, "\n")) or "")
 		.. ((#ok_list > 0 and #err_list > 0) and "\n" or "") ..
 		(#err_list > 0 and ("Failed to reload the following modules on host "..module_host..":\n"..t_concat(err_list, "\n")) or "");
@@ -556,7 +561,7 @@ local globally_reload_module_handler = adhoc_initial(globally_reload_module_layo
 	end
 	loaded_modules = array(set.new(loaded_modules):items()):sort();
 	return { module = loaded_modules };
-end, function(fields, err)
+end, function(fields, err, data)
 	local is_global = false;
 
 	if err then
@@ -591,6 +596,7 @@ end, function(fields, err)
 		end
 	end
 
+	module:log("info", "mod_%s reloaded by %s", fields.module, jid.bare(data.from));
 	local info = (#ok_list > 0 and ("The module "..fields.module.." was successfully reloaded on the hosts:\n"..t_concat(ok_list, "\n")) or "")
 		.. ((#ok_list > 0 and #err_list > 0) and "\n" or "") ..
 		(#err_list > 0 and ("Failed to reload the module "..fields.module.." on the hosts:\n"..t_concat(err_list, "\n")) or "");
@@ -640,10 +646,12 @@ local shut_down_service_layout = dataforms_new{
 	{ name = "announcement", type = "text-multi", label = "Announcement" };
 };
 
-local shut_down_service_handler = adhoc_simple(shut_down_service_layout, function(fields, err)
+local shut_down_service_handler = adhoc_simple(shut_down_service_layout, function(fields, err, data)
 	if err then
 		return generate_error_message(err);
 	end
+
+	module:log("info", "Server being shut down by %s", jid.bare(data.from));
 
 	if fields.announcement and #fields.announcement > 0 then
 		local message = st.message({type = "headline"}, fields.announcement):up()
@@ -667,7 +675,7 @@ local unload_modules_layout = dataforms_new {
 
 local unload_modules_handler = adhoc_initial(unload_modules_layout, function()
 	return { modules = array.collect(keys(hosts[module_host].modules)):sort() };
-end, function(fields, err)
+end, function(fields, err, data)
 	if err then
 		return generate_error_message(err);
 	end
@@ -680,6 +688,7 @@ end, function(fields, err)
 			err_list[#err_list + 1] = module .. "(Error: " .. tostring(err) .. ")";
 		end
 	end
+	module:log("info", "mod_%s unloaded by %s", fields.module, jid.bare(data.from));
 	local info = (#ok_list > 0 and ("The following modules were successfully unloaded on host "..module_host..":\n"..t_concat(ok_list, "\n")) or "")
 		.. ((#ok_list > 0 and #err_list > 0) and "\n" or "") ..
 		(#err_list > 0 and ("Failed to unload the following modules on host "..module_host..":\n"..t_concat(err_list, "\n")) or "");
@@ -702,7 +711,7 @@ local globally_unload_module_handler = adhoc_initial(globally_unload_module_layo
 	end
 	loaded_modules = array(set.new(loaded_modules):items()):sort();
 	return { module = loaded_modules };
-end, function(fields, err)
+end, function(fields, err, data)
 	local is_global = false;
 	if err then
 		return generate_error_message(err);
@@ -736,6 +745,7 @@ end, function(fields, err)
 		end
 	end
 
+	module:log("info", "mod_%s globally unloaded by %s", fields.module, jid.bare(data.from));
 	local info = (#ok_list > 0 and ("The module "..fields.module.." was successfully unloaded on the hosts:\n"..t_concat(ok_list, "\n")) or "")
 		.. ((#ok_list > 0 and #err_list > 0) and "\n" or "") ..
 		(#err_list > 0 and ("Failed to unload the module "..fields.module.." on the hosts:\n"..t_concat(err_list, "\n")) or "");
@@ -751,13 +761,14 @@ local activate_host_layout = dataforms_new {
 	{ name = "host", type = "text-single", required = true, label = "Host:"};
 };
 
-local activate_host_handler = adhoc_simple(activate_host_layout, function(fields, err)
+local activate_host_handler = adhoc_simple(activate_host_layout, function(fields, err, data)
 	if err then
 		return generate_error_message(err);
 	end
 	local ok, err = hostmanager_activate(fields.host);
 
 	if ok then
+		module:log("info", "Host '%s' activated by %s", fields.host, jid.bare(data.from));
 		return { status = "completed", info = fields.host .. " activated" };
 	else
 		return { status = "canceled", error = err }
@@ -773,13 +784,14 @@ local deactivate_host_layout = dataforms_new {
 	{ name = "host", type = "text-single", required = true, label = "Host:"};
 };
 
-local deactivate_host_handler = adhoc_simple(deactivate_host_layout, function(fields, err)
+local deactivate_host_handler = adhoc_simple(deactivate_host_layout, function(fields, err, data)
 	if err then
 		return generate_error_message(err);
 	end
 	local ok, err = hostmanager_deactivate(fields.host);
 
 	if ok then
+		module:log("info", "Host '%s' deactivated by %s", fields.host, jid.bare(data.from));
 		return { status = "completed", info = fields.host .. " deactivated" };
 	else
 		return { status = "canceled", error = err }
