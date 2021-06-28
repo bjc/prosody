@@ -15,6 +15,9 @@ local base64 = require "prosody.util.encodings".base64;
 local set = require "prosody.util.set";
 local errors = require "prosody.util.error";
 local hex = require "prosody.util.hex";
+local pem2der = require"util.x509".pem2der;
+local hashes = require"util.hashes";
+local ssl = require "ssl"; -- FIXME Isolate LuaSec from the rest of the code
 
 local usermanager_get_sasl_handler = require "prosody.core.usermanager".get_sasl_handler;
 
@@ -260,6 +263,30 @@ end
 local function tls_server_end_point(self)
 	local cert_hash = self.userdata["tls-server-end-point"];
 	if cert_hash then return hex.from(cert_hash); end
+
+	-- Hash function selection, see RFC 5929 §4.1
+	local certfile = self.userdata["tls-server-end-point-cert"];
+	if not certfile then return end
+	local f = io.open(certfile);
+	if not f then return end
+	local hash = hashes.sha256;
+
+	-- FIXME TOCTOU
+	-- We don't know that this is the right cert, it could have been replaced on
+	-- disk since we started. Best would be if we could extract the cert used
+	-- from the SSL context.
+	local certdata = f:read("*");
+	local cert = ssl.loadcertificate(certdata);
+
+	if cert.getsignaturename then
+		local sigalg = cert:getsignaturename():lower():match("sha%d+");
+		if sigalg and sigalg ~= "sha1" and hashes[sigalg] then
+			-- This should have ruled out MD5 and SHA1
+			hash = hashes[sigalg];
+		end
+	end
+
+	return hash(pem2der(cert));
 end
 
 local mechanisms_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-sasl' };
@@ -295,14 +322,21 @@ module:hook("stream-features", function(event)
 				else
 					log("debug", "Channel binding 'tls-unique' not supported (by LuaSec?)");
 				end
+				local certfile = origin.ssl_cfg and origin.ssl_cfg.certificate;
+				-- FIXME .ssl_cfg is set by mod_tls and thus only available with starttls
 				if tls_server_end_point_hash then
 					log("debug", "Channel binding 'tls-server-end-point' can be offered with the configured certificate hash");
+					sasl_handler:add_cb_handler("tls-server-end-point", tls_server_end_point);
+					channel_bindings:add("tls-server-end-point");
+				elseif certfile then
+					log("debug", "Channel binding 'tls-server-end-point' can be offered based on the certificate used");
 					sasl_handler:add_cb_handler("tls-server-end-point", tls_server_end_point);
 					channel_bindings:add("tls-server-end-point");
 				end
 				sasl_handler["userdata"] = {
 					["tls-unique"] = origin.conn;
 					["tls-exporter"] = origin.conn;
+					["tls-server-end-point-cert"] = certfile;
 					["tls-server-end-point"] = tls_server_end_point_hash;
 				};
 			else
