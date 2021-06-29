@@ -14,6 +14,7 @@ local io_open = io.open;
 local math_max, rep = math.max, string.rep;
 local os_date = os.date;
 local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
+local st = require "util.stanza";
 
 local config = require "core.configmanager";
 local logger = require "util.logger";
@@ -214,20 +215,23 @@ log_sink_types.stdout = log_to_stdout;
 
 local do_pretty_printing = true;
 
-local logstyles;
+local logstyles, pretty;
 if do_pretty_printing then
 	logstyles = {};
 	logstyles["info"] = getstyle("bold");
 	logstyles["warn"] = getstyle("bold", "yellow");
 	logstyles["error"] = getstyle("bold", "red");
+
+	pretty = st.pretty_print;
 end
 
 local function log_to_console(sink_config)
 	-- Really if we don't want pretty colours then just use plain stdout
-	local logstdout = log_to_stdout(sink_config);
 	if not do_pretty_printing then
-		return logstdout;
+		return log_to_stdout(sink_config);
 	end
+	sink_config.filter = pretty;
+	local logstdout = log_to_stdout(sink_config);
 	return function (name, level, message, ...)
 		local logstyle = logstyles[level];
 		if logstyle then
