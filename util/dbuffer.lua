@@ -80,12 +80,12 @@ end
 function dbuffer_methods:read_until(char)
 	local buffer_pos = 0;
 	for i, chunk in self.items:items() do
-		local start = 1 + self.front_consumed;
+		local start = 1 + ((i == 1) and self.front_consumed or 0);
 		local char_pos = chunk:find(char, start, true);
 		if char_pos then
-			return self:read(buffer_pos + (char_pos - start) + #char);
+			return self:read(1 + buffer_pos + char_pos - start);
 		end
-		buffer_pos = buffer_pos + #chunk;
+		buffer_pos = buffer_pos + #chunk - (start - 1);
 	end
 	return nil;
 end

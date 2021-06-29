@@ -57,27 +57,6 @@ describe("util.dbuffer", function ()
 			assert.equal(nil, b:read_until("\n"));
 			assert.equal("and more", b:read_chunk());
 		end);
-
-		it("works with multi-character sequences", function ()
-			local b = dbuffer.new();
-			b:write("hello\r\n");
-			b:write("world");
-			b:write("\r\n");
-			b:write("\r\n\r\n");
-			b:write("stuff");
-			b:write("more\r\nand more");
-
-			assert.equal(nil, b:read_until("."));
-			assert.equal(nil, b:read_until("%"));
-			assert.equal("hello\r\n", b:read_until("\r\n"));
-			assert.equal("world\r\n", b:read_until("\r\n"));
-			assert.equal("\r\n", b:read_until("\r\n"));
-			assert.equal("\r\n", b:read_until("\r\n"));
-			assert.equal("stu", b:read(3));
-			assert.equal("ffmore\r\n", b:read_until("\r\n"));
-			assert.equal(nil, b:read_until("\r\n"));
-			assert.equal("and more", b:read_chunk());
-		end);
 	end);
 
 	describe(":discard", function ()
