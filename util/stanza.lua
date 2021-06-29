@@ -488,6 +488,7 @@ local function presence(attr)
 	return new_stanza("presence", attr);
 end
 
+local pretty;
 if do_pretty_printing then
 	local getstyle, getstring = termcolours.getstyle, termcolours.getstring;
 
@@ -512,7 +513,7 @@ if do_pretty_printing then
 		getstring(green1, "%3") -- ;
 	);
 
-	local function pretty(s)
+	function pretty(s)
 		-- Tag soup color
 		-- Outer gsub call takes each <tag>, applies colour to the brackets, the
 		-- tag name, then applies one inner gsub call to colour the attributes and
@@ -581,4 +582,5 @@ return {
 	error_reply = error_reply;
 	presence = presence;
 	xml_escape = xml_escape;
+	pretty_print = pretty;
 };

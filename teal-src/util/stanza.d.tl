@@ -56,6 +56,7 @@ local record lib
 	error_reply : function ( stanza_t, string, string, string, string )
 	presence : function ( { string : string } ) : stanza_t
 	xml_escape : function ( string ) : string
+	pretty_print : function ( string ) : string
 end
 
 return lib
