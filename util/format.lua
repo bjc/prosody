@@ -55,7 +55,7 @@ local function format(formatstring, ...)
 			local option = spec:sub(-1);
 			if arg == nil then
 				args[i] = "nil";
-				spec = "<%s>";
+				spec = "(%s)";
 			elseif option == "q" then
 				args[i] = dump(arg);
 				spec = "%s";
@@ -77,7 +77,7 @@ local function format(formatstring, ...)
 		i = i + 1;
 		local arg = args[i];
 		if arg == nil then
-			args[i] = "<nil>";
+			args[i] = "(nil)";
 		else
 			args[i] = tostring(arg);
 		end
