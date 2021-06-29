@@ -76,6 +76,20 @@ function dbuffer_methods:read(requested_bytes)
 	return table.concat(chunks);
 end
 
+-- Read to, and including, the specified character sequence (return nil if not found)
+function dbuffer_methods:read_until(char)
+	local buffer_pos = 0;
+	for i, chunk in self.items:items() do
+		local start = 1 + self.front_consumed;
+		local char_pos = chunk:find(char, start, true);
+		if char_pos then
+			return self:read(buffer_pos + (char_pos - start) + #char);
+		end
+		buffer_pos = buffer_pos + #chunk;
+	end
+	return nil;
+end
+
 function dbuffer_methods:discard(requested_bytes)
 	if requested_bytes > self._length then
 		return nil;
