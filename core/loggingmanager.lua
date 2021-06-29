@@ -36,6 +36,8 @@ local log_sink_types = setmetatable({}, { __newindex = function (t, k, v) rawset
 local get_levels;
 local logging_levels = { "debug", "info", "warn", "error" }
 
+local function id(x) return x end
+
 -- Put a rule into action. Requires that the sink type has already been registered.
 -- This function is called automatically when a new sink type is added [see apply_sink_rules()]
 local function add_rule(sink_config)
@@ -184,15 +186,16 @@ local function log_to_file(sink_config, logfile)
 
 	-- Column width for "source" (used by stdout and console)
 	local sourcewidth = sink_config.source_width;
+	local filter = sink_config.filter or id;
 
 	if sourcewidth then
 		return function (name, level, message, ...)
 			sourcewidth = math_max(#name+2, sourcewidth);
-			write(logfile, timestamps and os_date(timestamps) or "", name, rep(" ", sourcewidth-#name), level, "\t", format(message, ...), "\n");
+			write(logfile, timestamps and os_date(timestamps) or "", name, rep(" ", sourcewidth-#name), level, "\t", filter(format(message, ...)), "\n");
 		end
 	else
 		return function (name, level, message, ...)
-			write(logfile, timestamps and os_date(timestamps) or "", name, "\t", level, "\t", format(message, ...), "\n");
+			write(logfile, timestamps and os_date(timestamps) or "", name, "\t", level, "\t", filter(format(message, ...)), "\n");
 		end
 	end
 end
