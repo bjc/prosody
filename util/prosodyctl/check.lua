@@ -446,6 +446,8 @@ local function check(arg)
 				target_hosts:add(host);
 			end
 
+			target_hosts = target_hosts / function(target) return target:gsub("%.$", ""); end
+
 			if target_hosts:contains("localhost") then
 				print("    Target 'localhost' cannot be accessed from other servers");
 				target_hosts:remove("localhost");
