@@ -518,6 +518,16 @@ local function check(arg)
 					end
 				end
 
+				if host_ok_v4 and not use_ipv4 then
+					print("    Host "..target_host.." does seem to resolve to this server but IPv4 has been disabled");
+					all_targets_ok = false;
+				end
+
+				if host_ok_v6 and not use_ipv6 then
+					print("    Host "..target_host.." does seem to resolve to this server but IPv6 has been disabled");
+					all_targets_ok = false;
+				end
+
 				local bad_protos = {}
 				if use_ipv4 and not host_ok_v4 then
 					table.insert(bad_protos, "IPv4");
