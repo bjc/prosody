@@ -60,7 +60,7 @@ local function format(formatstring, ...)
 				args[i] = dump(arg);
 				spec = "%s";
 			elseif option == "s" then
-				args[i] = tostring(arg):gsub("[%z\1-31\127]", control_symbols);
+				args[i] = tostring(arg):gsub("[%z\1-\31\127]", control_symbols);
 			elseif type(arg) ~= "number" then -- arg isn't number as expected?
 				args[i] = tostring(arg);
 				spec = "[%s]";
