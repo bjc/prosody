@@ -471,6 +471,8 @@ local function check(arg)
 				end
 			end
 
+			local use_ipv4 = configmanager.get("*", "use_ipv4") ~= false;
+			local use_ipv6 = configmanager.get("*", "use_ipv6") ~= false;
 			for target_host in target_hosts do
 				local host_ok_v4, host_ok_v6;
 				do
@@ -511,10 +513,10 @@ local function check(arg)
 				end
 
 				local bad_protos = {}
-				if not host_ok_v4 then
+				if use_ipv4 and not host_ok_v4 then
 					table.insert(bad_protos, "IPv4");
 				end
-				if not host_ok_v6 then
+				if use_ipv6 and not host_ok_v6 then
 					table.insert(bad_protos, "IPv6");
 				end
 				if #bad_protos > 0 then
