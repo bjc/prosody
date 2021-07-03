@@ -79,7 +79,7 @@ local function format(formatstring, ...)
 		if arg == nil then
 			args[i] = "(nil)";
 		else
-			args[i] = tostring(arg);
+			args[i] = tostring(arg):gsub("[%z\1-\8\11-\31\127]", control_symbols):gsub("\n\t?", "\n\t");
 		end
 		formatstring = formatstring .. " [%s]"
 	end
