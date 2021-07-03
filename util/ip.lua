@@ -106,7 +106,7 @@ local ipv6mapped = new_ip("::ffff:0:0");
 local function v4scope(ip)
 	if match(ip, loopback4, 8) then
 		return 0x2;
-	elseif match(ip, linklocal4) then
+	elseif match(ip, linklocal4, 16) then
 		return 0x2;
 	else -- Global unicast
 		return 0xE;
