@@ -213,7 +213,7 @@ local function log_to_stdout(sink_config)
 end
 log_sink_types.stdout = log_to_stdout;
 
-local do_pretty_printing = true;
+local do_pretty_printing = not have_pposix or pposix.isatty(stdout);
 
 local logstyles, pretty;
 if do_pretty_printing then
