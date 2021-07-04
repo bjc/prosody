@@ -812,6 +812,13 @@ static int lc_atomic_append(lua_State *L) {
 	return 3;
 }
 
+static int lc_isatty(lua_State *L) {
+	FILE *f = *(FILE **) luaL_checkudata(L, 1, LUA_FILEHANDLE);
+	const int fd = fileno(f);
+	lua_pushboolean(L, isatty(fd));
+	return 1;
+}
+
 /* Register functions */
 
 int luaopen_util_pposix(lua_State *L) {
@@ -852,6 +859,8 @@ int luaopen_util_pposix(lua_State *L) {
 #endif
 
 		{ "atomic_append", lc_atomic_append },
+
+		{ "isatty", lc_isatty },
 
 		{ NULL, NULL }
 	};

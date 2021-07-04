@@ -98,6 +98,8 @@ local record pposix
 
 	atomic_append : function (f : FILE, s : string) : boolean, string, integer
 
+	isatty : function(FILE) : boolean
+
 	ENOENT : integer
 	_NAME : string
 	_VESRION : string
