@@ -365,6 +365,10 @@ local function check(arg)
 
 		local v6_supported = not not socket.tcp6;
 
+		local function trim_dns_name(n)
+			return (n:gsub("%.$", ""));
+		end
+
 		for jid, host_options in enabled_hosts() do
 			local all_targets_ok, some_targets_ok = true, false;
 			local node, host = jid_split(jid);
@@ -388,9 +392,10 @@ local function check(arg)
 							print("    'xmpp-client' service disabled by pointing to '.'"); -- FIXME Explain better what this is
 							break;
 						end
-						target_hosts:add(record.srv.target);
+						local target = trim_dns_name(record.srv.target);
+						target_hosts:add(target);
 						if not c2s_ports:contains(record.srv.port) then
-							print("    SRV target "..record.srv.target.." contains unknown client port: "..record.srv.port);
+							print("    SRV target "..target.." contains unknown client port: "..record.srv.port);
 						end
 					end
 				else
@@ -410,9 +415,10 @@ local function check(arg)
 							print("    'xmpps-client' service disabled by pointing to '.'"); -- FIXME Explain better what this is
 							break;
 						end
-						target_hosts:add(record.srv.target);
+						local target = trim_dns_name(record.srv.target);
+						target_hosts:add(target);
 						if not c2s_tls_ports:contains(record.srv.port) then
-							print("    SRV target "..record.srv.target.." contains unknown Direct TLS client port: "..record.srv.port);
+							print("    SRV target "..target.." contains unknown Direct TLS client port: "..record.srv.port);
 						end
 					end
 				else
@@ -428,9 +434,10 @@ local function check(arg)
 							print("    'xmpp-server' service disabled by pointing to '.'"); -- FIXME Explain better what this is
 							break;
 						end
-						target_hosts:add(record.srv.target);
+						local target = trim_dns_name(record.srv.target);
+						target_hosts:add(target);
 						if not s2s_ports:contains(record.srv.port) then
-							print("    SRV target "..record.srv.target.." contains unknown server port: "..record.srv.port);
+							print("    SRV target "..target.." contains unknown server port: "..record.srv.port);
 						end
 					end
 				else
@@ -445,8 +452,6 @@ local function check(arg)
 			if target_hosts:empty() then
 				target_hosts:add(host);
 			end
-
-			target_hosts = target_hosts / function(target) return target:gsub("%.$", ""); end
 
 			if target_hosts:contains("localhost") then
 				print("    Target 'localhost' cannot be accessed from other servers");
