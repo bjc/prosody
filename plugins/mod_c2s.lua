@@ -108,7 +108,10 @@ function stream_callbacks.streamopened(session, attr)
 		send(features);
 	else
 		(session.log or log)("warn", "No stream features to offer");
-		session:close{ condition = "undefined-condition", text = "No stream features to proceed with" };
+		session:close({
+			condition = "undefined-condition";
+			text = "No stream features to proceed with on "..(session.secure and "" or "in").."secure stream";
+		});
 	end
 end
 
