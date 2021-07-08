@@ -562,6 +562,8 @@ function interface:starttls(tls_ctx)
 		self.onwritable = interface.tlshandshake;
 		self.onreadable = interface.tlshandshake;
 		self:set(true, true);
+		self:setreadtimeout(cfg.ssl_handshake_timeout);
+		self:setwritetimeout(cfg.ssl_handshake_timeout);
 		self:debug("Prepared to start TLS");
 	end
 end
@@ -691,15 +693,17 @@ function interface:onacceptable()
 	end
 	local client = wrapsocket(conn, self, nil, self.listeners);
 	client:debug("New connection %s on server %s", client, self);
-	client:init();
 	if self.tls_direct then
+		client:add(true, true);
 		client:starttls(self.tls_ctx);
 	else
+		client:add(true, false);
+		client:setreadtimeout();
 		client:onconnect();
 	end
 end
 
--- Initialization
+-- Initialization for outgoing connections
 function interface:init()
 	self:setwritetimeout(cfg.connect_timeout);
 	return self:add(true, true);
