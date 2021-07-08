@@ -11,6 +11,7 @@ TRUNK
 
 - Honour 'weight' parameter during SRV record selection
 - Support for RFC 8305 "Happy Eyeballs" to improve IPv4/IPv6 connectivity
+- Support for TCP Fast Open in server_epoll (pending LuaSocket support)
 
 0.12.0
 ======

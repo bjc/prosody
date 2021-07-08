@@ -92,6 +92,9 @@ local default_config = { __index = {
 
 	--- How long to wait after getting the shutdown signal before forcefully tearing down every socket
 	shutdown_deadline = 5;
+
+	-- TCP Fast Open
+	tcp_fastopen = false;
 }};
 local cfg = default_config.__index;
 
@@ -906,6 +909,9 @@ local function wrapserver(conn, addr, port, listeners, config)
 		log = logger.init(("serv%s"):format(new_id()));
 	}, interface_mt);
 	server:debug("Server %s created", server);
+	if cfg.tcp_fastopen then
+		server:setoption("tcp-fastopen", cfg.tcp_fastopen);
+	end
 	server:add(true, false);
 	return server;
 end
@@ -962,6 +968,9 @@ local function addclient(addr, port, listeners, read_size, tls_ctx, typ, extra)
 	if not conn then return conn, err; end
 	local ok, err = conn:settimeout(0);
 	if not ok then return ok, err; end
+	if cfg.tcp_fastopen then
+		pcall(conn.setoption, conn, "tcp-fastopen-connect", 1);
+	end
 	local ok, err = conn:setpeername(addr, port);
 	if not ok and err ~= "timeout" then return ok, err; end
 	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx, extra)
