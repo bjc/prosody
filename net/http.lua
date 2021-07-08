@@ -164,13 +164,11 @@ function listener.onconnect(conn)
 		t_insert(request_line, 4, "?"..req.query);
 	end
 
-	conn:write(t_concat(request_line));
-	local t = { [2] = ": ", [4] = "\r\n" };
 	for k, v in pairs(req.headers) do
-		t[1], t[3] = k, v;
-		conn:write(t_concat(t));
+		t_insert(request_line, k .. ": " .. v .. "\r\n");
 	end
-	conn:write("\r\n");
+	t_insert(request_line, "\r\n")
+	conn:write(t_concat(request_line));
 
 	if req.body then
 		conn:write(req.body);
