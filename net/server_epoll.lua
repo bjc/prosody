@@ -698,8 +698,8 @@ function interface:onacceptable()
 		client:starttls(self.tls_ctx);
 	else
 		client:add(true, false);
-		client:setreadtimeout();
 		client:onconnect();
+		client:onreadable();
 	end
 end
 
