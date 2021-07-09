@@ -47,7 +47,7 @@ p.warning>span{background-color:inherit;color:yellow}
 </style>
 </head>
 <body>
-<h1>{title}</h1>
+<h1>{icon?{icon_raw!?}} {title}</h1>
 <p>{message}</p>
 {warning&<p class="warning"><span>&#9888; {warning?} &#9888;</span></p>}
 {extra&<p class="extra">{extra?}</p>}
