@@ -85,6 +85,15 @@ module:hook("http-message", function (event)
 	return render(html, event);
 end);
 
+local icon = [[
+<svg xmlns="http://www.w3.org/2000/svg" height="0.7em" viewBox="0 0 480 480" width="0.7em">
+<rect fill="#6197df" height="220" rx="60" ry="60" width="220" x="10" y="10"></rect>
+<rect fill="#f29b00" height="220" rx="60" ry="60" width="220" x="10" y="240"></rect>
+<rect fill="#f29b00" height="220" rx="60" ry="60" width="220" x="240" y="10"></rect>
+<rect fill="#6197df" height="220" rx="60" ry="60" width="220" x="240" y="240"></rect>
+</svg>
+]];
+
 -- Something nicer shown instead of 404 at the root path, if nothing else handles this path
 module:hook_object_event(server, "http-error", function (event)
 	local request, response = event.request, event.response;
@@ -92,6 +101,7 @@ module:hook_object_event(server, "http-error", function (event)
 		response.headers.content_type = "text/html; charset=utf-8";
 		local message = messages["/"];
 		return render(html, {
+				icon_raw = icon,
 				title = "Prosody is running!";
 				message = message[math.random(#message)];
 			});
