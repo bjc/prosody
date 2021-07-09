@@ -98,6 +98,7 @@ local icon = [[
 module:hook_object_event(server, "http-error", function (event)
 	local request, response = event.request, event.response;
 	if request and response and request.path == "/" and response.status_code == 404 then
+		response.status_code = 200;
 		response.headers.content_type = "text/html; charset=utf-8";
 		local message = messages["/"];
 		return render(html, {
