@@ -552,75 +552,77 @@ local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
 -- bounce_reason: stanza error to pass to bounce_sendq because stream- and stanza errors are different
 local function session_close(session, reason, remote_reason, bounce_reason)
 	local log = session.log or log;
-	if session.conn then
-		local conn = session.conn;
-		conn:pause_writes(); -- until :close
-		if session.notopen then
-			if session.direction == "incoming" then
-				session:open_stream(session.to_host, session.from_host);
-			else
-				session:open_stream(session.from_host, session.to_host);
-			end
-		end
+	if not session.conn then
+		return
+	end
 
-		local this_host = session.direction == "incoming" and session.to_host or session.from_host
-
-		if reason then -- nil == no err, initiated by us, false == initiated by remote
-			local stream_error;
-			local condition, text, extra
-			if type(reason) == "string" then -- assume stream error
-				condition = reason
-			elseif type(reason) == "table" and not st.is_stanza(reason) then
-				condition = reason.condition or "undefined-condition"
-				text = reason.text
-				extra = reason.extra
-			end
-			if condition then
-				stream_error = st.stanza("stream:error"):tag(condition, stream_xmlns_attr):up();
-				if text then
-					stream_error:tag("text", stream_xmlns_attr):text(text):up();
-				end
-				if extra then
-					stream_error:add_child(extra);
-				end
-			end
-			if this_host and condition then
-				m_closed_connections:with_labels(this_host, session.direction, condition):add(1)
-			end
-			if st.is_stanza(stream_error) then
-				-- to and from are never unknown on outgoing connections
-				log("debug", "Disconnecting %s->%s[%s], <stream:error> is: %s",
-					session.from_host or "(unknown host)" or session.ip, session.to_host or "(unknown host)", session.type, reason);
-				session.sends2s(stream_error);
-			end
+	local conn = session.conn;
+	conn:pause_writes(); -- until :close
+	if session.notopen then
+		if session.direction == "incoming" then
+			session:open_stream(session.to_host, session.from_host);
 		else
-			m_closed_connections:with_labels(this_host, session.direction, reason == false and ":remote-choice" or ":local-choice"):add(1)
+			session:open_stream(session.from_host, session.to_host);
 		end
+	end
 
-		session.sends2s("</stream:stream>");
-		function session.sends2s() return false; end
+	local this_host = session.direction == "incoming" and session.to_host or session.from_host
 
-		-- luacheck: ignore 422/reason
-		-- FIXME reason should be managed in a place common to c2s, s2s, bosh, component etc
-		local reason = remote_reason or (reason and (reason.text or reason.condition)) or reason;
-		session.log("info", "%s s2s stream %s->%s closed: %s", session.direction:gsub("^.", string.upper),
-			session.from_host or "(unknown host)", session.to_host or "(unknown host)", reason or "stream closed");
-
-		conn:resume_writes();
-
-		-- Authenticated incoming stream may still be sending us stanzas, so wait for </stream:stream> from remote
-		if reason == nil and not session.notopen and session.direction == "incoming" then
-			add_task(stream_close_timeout, function ()
-				if not session.destroyed then
-					session.log("warn", "Failed to receive a stream close response, closing connection anyway...");
-					s2s_destroy_session(session, reason, bounce_reason);
-					conn:close();
-				end
-			end);
-		else
-			s2s_destroy_session(session, reason, bounce_reason);
-			conn:close(); -- Close immediately, as this is an outgoing connection or is not authed
+	if reason then -- nil == no err, initiated by us, false == initiated by remote
+		local stream_error;
+		local condition, text, extra
+		if type(reason) == "string" then -- assume stream error
+			condition = reason
+		elseif type(reason) == "table" and not st.is_stanza(reason) then
+			condition = reason.condition or "undefined-condition"
+			text = reason.text
+			extra = reason.extra
 		end
+		if condition then
+			stream_error = st.stanza("stream:error"):tag(condition, stream_xmlns_attr):up();
+			if text then
+				stream_error:tag("text", stream_xmlns_attr):text(text):up();
+			end
+			if extra then
+				stream_error:add_child(extra);
+			end
+		end
+		if this_host and condition then
+			m_closed_connections:with_labels(this_host, session.direction, condition):add(1)
+		end
+		if st.is_stanza(stream_error) then
+			-- to and from are never unknown on outgoing connections
+			log("debug", "Disconnecting %s->%s[%s], <stream:error> is: %s",
+				session.from_host or "(unknown host)" or session.ip, session.to_host or "(unknown host)", session.type, reason);
+			session.sends2s(stream_error);
+		end
+	else
+		m_closed_connections:with_labels(this_host, session.direction, reason == false and ":remote-choice" or ":local-choice"):add(1)
+	end
+
+	session.sends2s("</stream:stream>");
+	function session.sends2s() return false; end
+
+	-- luacheck: ignore 422/reason 412/reason
+	-- FIXME reason should be managed in a place common to c2s, s2s, bosh, component etc
+	local reason = remote_reason or (reason and (reason.text or reason.condition)) or reason;
+	session.log("info", "%s s2s stream %s->%s closed: %s", session.direction:gsub("^.", string.upper),
+		session.from_host or "(unknown host)", session.to_host or "(unknown host)", reason or "stream closed");
+
+	conn:resume_writes();
+
+	-- Authenticated incoming stream may still be sending us stanzas, so wait for </stream:stream> from remote
+	if reason == nil and not session.notopen and session.direction == "incoming" then
+		add_task(stream_close_timeout, function ()
+			if not session.destroyed then
+				session.log("warn", "Failed to receive a stream close response, closing connection anyway...");
+				s2s_destroy_session(session, reason, bounce_reason);
+				conn:close();
+			end
+		end);
+	else
+		s2s_destroy_session(session, reason, bounce_reason);
+		conn:close(); -- Close immediately, as this is an outgoing connection or is not authed
 	end
 end
 
