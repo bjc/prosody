@@ -25,7 +25,6 @@ local s2s_new_incoming = require "core.s2smanager".new_incoming;
 local s2s_new_outgoing = require "core.s2smanager".new_outgoing;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
 local uuid_gen = require "util.uuid".generate;
-local fire_global_event = prosody.events.fire_event;
 local runner = require "util.async".runner;
 local connect = require "net.connect".connect;
 local service = require "net.resolvers.service";
@@ -272,12 +271,12 @@ function mark_connected(session)
 
 	local event_data = { session = session };
 	if session.type == "s2sout" then
-		fire_global_event("s2sout-established", event_data);
-		hosts[from].events.fire_event("s2sout-established", event_data);
+		module:fire_event("s2sout-established", event_data);
+		module:context(from):fire_event("s2sout-established", event_data);
 
 		if session.incoming then
 			session.send = function(stanza)
-				return hosts[from].events.fire_event("route/remote", { from_host = from, to_host = to, stanza = stanza });
+				return module:context(from):fire_event("route/remote", { from_host = from, to_host = to, stanza = stanza });
 			end;
 		end
 
@@ -291,8 +290,8 @@ function mark_connected(session)
 			return host_session.events.fire_event("route/remote", { from_host = to, to_host = from, stanza = stanza });
 		end;
 
-		fire_global_event("s2sin-established", event_data);
-		hosts[to].events.fire_event("s2sin-established", event_data);
+		module:fire_event("s2sin-established", event_data);
+		module:context(to):fire_event("s2sin-established", event_data);
 	end
 
 	if session.direction == "outgoing" then
@@ -471,10 +470,10 @@ function stream_callbacks._streamopened(session, attr)
 			local features = st.stanza("stream:features");
 
 			if to then
-				hosts[to].events.fire_event("s2s-stream-features", { origin = session, features = features });
+				module:context(to):fire_event("s2s-stream-features", { origin = session, features = features });
 			else
 				(session.log or log)("warn", "No 'to' on stream header from %s means we can't offer any features", from or session.ip or "unknown host");
-				fire_global_event("s2s-stream-features-legacy", { origin = session, features = features });
+				module:fire_event("s2s-stream-features-legacy", { origin = session, features = features });
 			end
 
 			if ( session.type == "s2sin" or session.type == "s2sout" ) or features.tags[1] then
@@ -503,7 +502,7 @@ function stream_callbacks._streamopened(session, attr)
 		-- If server is pre-1.0, don't wait for features, just do dialback
 		if session.version < 1.0 then
 			if not session.dialback_verifying then
-				hosts[session.from_host].events.fire_event("s2sout-authenticate-legacy", { origin = session });
+				module:context(session.from_host):fire_event("s2sout-authenticate-legacy", { origin = session });
 			else
 				mark_connected(session);
 			end
