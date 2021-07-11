@@ -14,8 +14,7 @@ end
 admins = { "admin@localhost" }
 
 network_backend = ENV_PROSODY_NETWORK_BACKEND or "epoll"
-network_settings = {
-}
+network_settings = require"util.json".decode(ENV_PROSODY_NETWORK_SETTINGS or "{}")
 
 modules_enabled = {
 	-- Generally required
