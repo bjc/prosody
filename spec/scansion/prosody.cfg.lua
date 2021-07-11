@@ -13,7 +13,7 @@ end
 
 admins = { "admin@localhost" }
 
-network_backend = "epoll"
+network_backend = ENV_PROSODY_NETWORK_BACKEND or "epoll"
 network_settings = {
 }
 
