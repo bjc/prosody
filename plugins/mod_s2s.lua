@@ -553,6 +553,7 @@ local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
 local function session_close(session, reason, remote_reason, bounce_reason)
 	local log = session.log or log;
 	if not session.conn then
+		log("debug", "Attempt to close without associated connection with reason %q", reason);
 		return
 	end
 
