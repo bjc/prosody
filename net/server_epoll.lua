@@ -499,8 +499,10 @@ function interface:write(data)
 		self.writebuffer = { data };
 	end
 	if not self._write_lock then
-		if cfg.opportunistic_writes then
+		if cfg.opportunistic_writes and not self._opportunistic_write then
+			self._opportunistic_write = true;
 			self:onwritable();
+			self._opportunistic_write = nil;
 			return #data;
 		end
 		self:setwritetimeout();
