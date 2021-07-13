@@ -613,7 +613,9 @@ function interface:inittls(tls_ctx)
 	self.ondrain = nil;
 	self.onwritable = interface.tlshandshake;
 	self.onreadable = interface.tlshandshake;
-	return self:init();
+	self:setreadtimeout(cfg.ssl_handshake_timeout);
+	self:setwritetimeout(cfg.ssl_handshake_timeout);
+	self:add(true, true);
 end
 
 function interface:tlshandshake()
