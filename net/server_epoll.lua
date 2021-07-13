@@ -570,7 +570,7 @@ function interface:starttls(tls_ctx)
 	end
 end
 
-function interface:inittls(tls_ctx)
+function interface:inittls(tls_ctx, now)
 	if self._tls then return end
 	if tls_ctx then self.tls_ctx = tls_ctx; end
 	self._tls = true;
@@ -612,6 +612,9 @@ function interface:inittls(tls_ctx)
 	self.ondrain = nil;
 	self.onwritable = interface.tlshandshake;
 	self.onreadable = interface.tlshandshake;
+	if now then
+		return self:tlshandshake()
+	end
 	self:setreadtimeout(cfg.ssl_handshake_timeout);
 	self:setwritetimeout(cfg.ssl_handshake_timeout);
 	self:set(true, true);
@@ -701,11 +704,7 @@ function interface:onacceptable()
 	client:debug("New connection %s on server %s", client, self);
 	if self.tls_direct then
 		client:add(true, true);
-		if client:inittls(self.tls_ctx) then
-			client:setreadtimeout(cfg.ssl_handshake_timeout);
-			client:setwritetimeout(cfg.ssl_handshake_timeout);
-			client:tlshandshake();
-		end
+		client:inittls(self.tls_ctx, true);
 	else
 		client:add(true, false);
 		client:onconnect();
