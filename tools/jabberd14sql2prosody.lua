@@ -468,7 +468,7 @@ function store_vcard(username, host, stanza)
 end
 
 function store_roster(username, host, roster_items)
-	-- fetch current roster-table for username@host if he already has one
+	-- fetch current roster-table for username@host if they already have one
 	local roster = dm.load(username, host, "roster") or {};
 	-- merge imported roster-items with loaded roster
 	for item_tag in roster_items:childtags() do
@@ -508,7 +508,7 @@ end
 function store_subscription_request(username, host, presence_stanza)
 	local from_bare = presence_stanza.attr.from;
 
-	-- fetch current roster-table for username@host if he already has one
+	-- fetch current roster-table for username@host if they already have one
 	local roster = dm.load(username, host, "roster") or {};
 
 	local item = roster[from_bare];
