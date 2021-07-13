@@ -575,7 +575,6 @@ function interface:inittls(tls_ctx)
 	if tls_ctx then self.tls_ctx = tls_ctx; end
 	self._tls = true;
 	self:debug("Starting TLS now");
-	self:del();
 	self:updatenames(); -- Can't getpeer/sockname after wrap()
 	local ok, conn, err = pcall(luasec.wrap, self.conn, self.tls_ctx);
 	if not ok then
@@ -615,7 +614,7 @@ function interface:inittls(tls_ctx)
 	self.onreadable = interface.tlshandshake;
 	self:setreadtimeout(cfg.ssl_handshake_timeout);
 	self:setwritetimeout(cfg.ssl_handshake_timeout);
-	self:add(true, true);
+	self:set(true, true);
 end
 
 function interface:tlshandshake()
