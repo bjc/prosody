@@ -17,6 +17,7 @@ local t_insert = table.insert;
 local traceback = debug.traceback;
 
 local add_task = require "util.timer".add_task;
+local stop_timer = require "util.timer".stop;
 local st = require "util.stanza";
 local initialize_filters = require "util.filters".initialize;
 local nameprep = require "util.encodings".stringprep.nameprep;
@@ -304,6 +305,11 @@ function mark_connected(session)
 			end
 			session.sendq = nil;
 		end
+	end
+
+	if session.connect_timeout then
+		stop_timer(session.connect_timeout);
+		session.connect_timeout = nil;
 	end
 end
 
@@ -612,6 +618,11 @@ local function session_close(session, reason, remote_reason, bounce_reason)
 
 	conn:resume_writes();
 
+	if session.connect_timeout then
+		stop_timer(session.connect_timeout);
+		session.connect_timeout = nil;
+	end
+
 	-- Authenticated incoming stream may still be sending us stanzas, so wait for </stream:stream> from remote
 	if reason == nil and not session.notopen and session.direction == "incoming" then
 		add_task(stream_close_timeout, function ()
@@ -706,7 +717,7 @@ local function initialize_session(session)
 
 	module:fire_event("s2s-created", { session = session });
 
-	add_task(connect_timeout, function ()
+	session.connect_timeout = add_task(connect_timeout, function ()
 		if session.type == "s2sin" or session.type == "s2sout" then
 			return; -- Ok, we're connected
 		elseif session.type == "s2s_destroyed" then
