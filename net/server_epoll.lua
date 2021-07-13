@@ -635,8 +635,9 @@ function interface:tlshandshake()
 		self.onwritable = nil;
 		self.onreadable = nil;
 		self:on("status", "ssl-handshake-complete");
-		self:setwritetimeout();
 		self:set(true, true);
+		self:onconnect();
+		self:onreadable();
 	elseif err == "wantread" then
 		self:noise("TLS handshake to wait until readable");
 		self:set(true, false);
