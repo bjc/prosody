@@ -54,7 +54,7 @@ local default_config = { __index = {
 	-- If accepting a new incoming connection fails, wait this long before trying again
 	accept_retry_interval = 10;
 
-	-- If there is still more data to read from LuaSocktes buffer, wait this long and read again
+	-- If there is still more data to read from LuaSockets buffer, wait this long and read again
 	read_retry_delay = 1e-06;
 
 	-- Size of chunks to read from sockets
