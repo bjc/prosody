@@ -703,6 +703,7 @@ function interface:onacceptable()
 		if client:inittls(self.tls_ctx) then
 			client:setreadtimeout(cfg.ssl_handshake_timeout);
 			client:setwritetimeout(cfg.ssl_handshake_timeout);
+			client:tlshandshake();
 		end
 	else
 		client:add(true, false);
