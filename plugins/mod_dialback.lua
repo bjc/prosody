@@ -77,7 +77,7 @@ module:hook("stanza/jabber:server:dialback:result", function(event)
 	local origin, stanza = event.origin, event.stanza;
 
 	if origin.type == "s2sin_unauthed" or origin.type == "s2sin" then
-		-- he wants to be identified through dialback
+		-- They want to be identified through dialback
 		-- We need to check the key with the Authoritative server
 		local attr = stanza.attr;
 		if not attr.to or not attr.from then
