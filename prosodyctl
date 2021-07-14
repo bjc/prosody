@@ -664,10 +664,12 @@ local command_runner = async.runner(function ()
 			"Informative:",
 				"about",
 				"check",
+			"Other:",
+				"cert",
 		};
 		-- These live in util.prosodyctl.$command so we have their short help here.
 		local external_commands = {
-			cert = "Manage certificates",
+			cert = "Certificate management commands",
 			check = "Perform basic checks on your Prosody installation",
 			shell = "Interact with a running Prosody",
 		}
