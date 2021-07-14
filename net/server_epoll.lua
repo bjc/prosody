@@ -281,9 +281,15 @@ end
 
 function interface:setoption(k, v)
 	-- LuaSec doesn't expose setoption :(
-	if self.conn.setoption then
-		self.conn:setoption(k, v);
+	local ok, ret, err = pcall(self.conn.setoption, self.conn, k, v);
+	if not ok then
+		self:noise("Setting option %q = %q failed: %s", k, v, ret);
+		return ok, ret;
+	elseif not ret then
+		self:noise("Setting option %q = %q failed: %s", k, v, err);
+		return ret, err;
 	end
+	return ret;
 end
 
 -- Timeout for detecting dead or idle sockets
