@@ -660,6 +660,7 @@ local command_runner = async.runner(function ()
 				"adduser"; "passwd"; "deluser";
 			"Process management:",
 				"start"; "stop"; "restart"; "reload"; "status";
+				"shell",
 			"Informative:",
 				"about",
 				"check",
@@ -668,7 +669,7 @@ local command_runner = async.runner(function ()
 		local external_commands = {
 			cert = "Manage certificates",
 			check = "Perform basic checks on your Prosody installation",
-			shell = "Lorem ipsum dolor sit amet", -- FIXME
+			shell = "Interact with a running Prosody",
 		}
 
 		local done = {};
