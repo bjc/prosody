@@ -733,6 +733,9 @@ end
 function interface:defaultoptions()
 	if cfg.tcp_keepalive then
 		self:setoption("keepalive", true);
+		if type(cfg.tcp_keepalive) == "number" then
+			self:setoption("tcp-keepidle", cfg.tcp_keepalive);
+		end
 	end
 end
 
