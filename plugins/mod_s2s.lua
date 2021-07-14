@@ -261,6 +261,7 @@ function module.add_host(module)
 	end, -1);
 
 	function module.unload()
+		if module.reloading then return end
 		for _, session in pairs(sessions) do
 			if session.to_host == module.host or session.from_host == module.host then
 				session:close("host-gone");
