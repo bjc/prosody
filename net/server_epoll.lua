@@ -80,6 +80,9 @@ local default_config = { __index = {
 
 	-- Attempt writes instantly
 	opportunistic_writes = false;
+
+	-- TCP Keepalives
+	tcp_keepalive = false; -- boolean | number
 }};
 local cfg = default_config.__index;
 
@@ -727,8 +730,10 @@ function interface:init()
 	return self:add(true, true);
 end
 
--- luacheck: ignore 212/self
 function interface:defaultoptions()
+	if cfg.tcp_keepalive then
+		self:setoption("keepalive", true);
+	end
 end
 
 function interface:pause()
