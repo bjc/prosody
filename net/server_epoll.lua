@@ -709,6 +709,7 @@ function interface:onacceptable()
 	end
 	local client = wrapsocket(conn, self, nil, self.listeners);
 	client:debug("New connection %s on server %s", client, self);
+	client:defaultoptions();
 	if self.tls_direct then
 		client:add(true, true);
 		client:inittls(self.tls_ctx, true);
@@ -722,7 +723,12 @@ end
 -- Initialization for outgoing connections
 function interface:init()
 	self:setwritetimeout(cfg.connect_timeout);
+	self:defaultoptions();
 	return self:add(true, true);
+end
+
+-- luacheck: ignore 212/self
+function interface:defaultoptions()
 end
 
 function interface:pause()
