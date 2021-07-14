@@ -83,6 +83,9 @@ local default_config = { __index = {
 
 	-- TCP Keepalives
 	tcp_keepalive = false; -- boolean | number
+
+	-- Whether to let the Nagle algorithm stay enabled
+	nagle = true;
 }};
 local cfg = default_config.__index;
 
@@ -731,6 +734,9 @@ function interface:init()
 end
 
 function interface:defaultoptions()
+	if cfg.nagle == false then
+		self:setoption("tcp-nodelay", true);
+	end
 	if cfg.tcp_keepalive then
 		self:setoption("keepalive", true);
 		if type(cfg.tcp_keepalive) == "number" then
