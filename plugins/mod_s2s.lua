@@ -259,6 +259,14 @@ function module.add_host(module)
 			return true;
 		end
 	end, -1);
+
+	function module.unload()
+		for _, session in pairs(sessions) do
+			if session.to_host == module.host or session.from_host == module.host then
+				session:close("host-gone");
+			end
+		end
+	end
 end
 
 -- Stream is authorised, and ready for normal stanzas
