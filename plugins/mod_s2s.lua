@@ -526,6 +526,38 @@ function stream_callbacks.streamclosed(session, attr)
 	session.thread:run({ stream = "closed", attr = attr });
 end
 
+-- Some stream conditions indicate a problem on our end, e.g. that we sent
+-- something invalid. Those should be investigated. Others are problems or
+-- events in the remote host that don't affect us, or simply that the
+-- connection was closed for being idle.
+local stream_condition_severity = {
+	["bad-format"] = "warn";
+	["bad-namespace-prefix"] = "warn";
+	["conflict"] = "warn";
+	["connection-timeout"] = "debug";
+	["host-gone"] = "info";
+	["host-unknown"] = "info";
+	["improper-addressing"] = "warn";
+	["internal-server-error"] = "warn";
+	["invalid-from"] = "warn";
+	["invalid-namespace"] = "warn";
+	["invalid-xml"] = "warn";
+	["not-authorized"] = "warn";
+	["not-well-formed"] = "warn";
+	["policy-violation"] = "warn";
+	["remote-connection-failed"] = "warn";
+	["reset"] = "info";
+	["resource-constraint"] = "info";
+	["restricted-xml"] = "warn";
+	["see-other-host"] = "info";
+	["system-shutdown"] = "info";
+	["undefined-condition"] = "warn";
+	["unsupported-encoding"] = "warn";
+	["unsupported-feature"] = "warn";
+	["unsupported-stanza-type"] = "warn";
+	["unsupported-version"] = "warn";
+}
+
 function stream_callbacks.error(session, error, data)
 	if error == "no-stream" then
 		session.log("debug", "Invalid opening stream header (%s)", (data:gsub("^([^\1]+)\1", "{%1}")));
@@ -546,7 +578,7 @@ function stream_callbacks.error(session, error, data)
 			end
 		end
 		text = condition .. (text and (" ("..text..")") or "");
-		session.log("info", "Session closed by remote with error: %s", text);
+		session.log(stream_condition_severity[condition] or "info", "Session closed by remote with error: %s", text);
 		session:close(nil, text);
 	end
 end
