@@ -65,7 +65,7 @@ local default_config = { __index = {
 
 	-- Maximum and minimum amount of time to sleep waiting for events (adjusted for pending timers)
 	max_wait = 86400;
-	min_wait = 1e-06;
+	min_wait = 0.001;
 
 	-- Enable extra noisy debug logging
 	-- TODO disable once considered stable
