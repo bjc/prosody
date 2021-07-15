@@ -765,7 +765,6 @@ local function wrapsocket(client, server, read_size, listeners, tls_ctx, extra) 
 		end
 	end
 
-	conn:updatenames();
 	return conn;
 end
 
@@ -791,6 +790,7 @@ function interface:onacceptable()
 		return;
 	end
 	local client = wrapsocket(conn, self, nil, self.listeners);
+	client:updatenames();
 	client:debug("New connection %s on server %s", client, self);
 	client:defaultoptions();
 	client._writable = cfg.opportunistic_writes;
@@ -935,6 +935,7 @@ end
 -- COMPAT
 local function wrapclient(conn, addr, port, listeners, read_size, tls_ctx, extra)
 	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx, extra);
+	client:updatenames();
 	if not client.peername then
 		client.peername, client.peerport = addr, port;
 	end
@@ -974,6 +975,7 @@ local function addclient(addr, port, listeners, read_size, tls_ctx, typ, extra)
 	local ok, err = conn:setpeername(addr, port);
 	if not ok and err ~= "timeout" then return ok, err; end
 	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx, extra)
+	client:updatenames();
 	local ok, err = client:init();
 	if not client.peername then
 		-- otherwise not set until connected
