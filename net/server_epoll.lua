@@ -969,12 +969,12 @@ local function addclient(addr, port, listeners, read_size, tls_ctx, typ, extra)
 	if not conn then return conn, err; end
 	local ok, err = conn:settimeout(0);
 	if not ok then return ok, err; end
+	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx, extra)
 	if cfg.tcp_fastopen then
-		pcall(conn.setoption, conn, "tcp-fastopen-connect", 1);
+		client:setoption("tcp-fastopen-connect", 1);
 	end
 	local ok, err = conn:setpeername(addr, port);
 	if not ok and err ~= "timeout" then return ok, err; end
-	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx, extra)
 	client:updatenames();
 	local ok, err = client:init();
 	if not client.peername then
