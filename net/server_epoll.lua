@@ -477,7 +477,7 @@ function interface:onwritable()
 		end
 		self:setwritetimeout(false);
 		self:ondrain(); -- Be aware of writes in ondrain
-		return;
+		return ok;
 	elseif partial then
 		self:debug("Sent %d out of %d buffered bytes", partial, #data);
 		buffer[1] = data:sub(partial+1);
@@ -494,6 +494,7 @@ function interface:onwritable()
 	elseif err ~= "timeout" then
 		self:on("disconnect", err);
 		self:destroy();
+		return ok, err;
 	end
 end
 
@@ -513,9 +514,9 @@ function interface:write(data)
 	if not self._write_lock then
 		if cfg.opportunistic_writes and not self._opportunistic_write then
 			self._opportunistic_write = true;
-			self:onwritable();
+			local ret, err = self:onwritable();
 			self._opportunistic_write = nil;
-			return #data;
+			return ret, err;
 		end
 		self:setwritetimeout();
 		self:set(nil, true);
