@@ -600,7 +600,7 @@ function interface:starttls(tls_ctx)
 		self.onwritable = interface.inittls;
 		self.onreadable = interface.inittls;
 		self:set(true, true);
-		self:setreadtimeout(cfg.ssl_handshake_timeout);
+		self:setreadtimeout(false);
 		self:setwritetimeout(cfg.ssl_handshake_timeout);
 		self:debug("Prepared to start TLS");
 	end
@@ -651,7 +651,7 @@ function interface:inittls(tls_ctx, now)
 	if now then
 		return self:tlshandshake()
 	end
-	self:setreadtimeout(cfg.ssl_handshake_timeout);
+	self:setreadtimeout(false);
 	self:setwritetimeout(cfg.ssl_handshake_timeout);
 	self:set(true, true);
 end
@@ -677,7 +677,7 @@ function interface:tlshandshake()
 	elseif err == "wantread" then
 		self:noise("TLS handshake to wait until readable");
 		self:set(true, false);
-		self:setreadtimeout(cfg.ssl_handshake_timeout);
+		self:setwritetimeout(cfg.ssl_handshake_timeout);
 	elseif err == "wantwrite" then
 		self:noise("TLS handshake to wait until writable");
 		self:set(false, true);
