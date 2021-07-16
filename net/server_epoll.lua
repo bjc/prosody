@@ -473,8 +473,10 @@ function interface:onwritable()
 	local buffer = self.writebuffer;
 	local data = buffer or "";
 	if type(buffer) == "table" then
-		if buffer[2] then
+		if buffer[3] then
 			data = t_concat(data);
+		elseif buffer[2] then
+			data = buffer[1] .. buffer[2];
 		else
 			data = buffer[1] or "";
 		end
