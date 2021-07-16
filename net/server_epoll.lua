@@ -86,6 +86,9 @@ local default_config = { __index = {
 
 	-- Whether to let the Nagle algorithm stay enabled
 	nagle = true;
+
+	-- Reuse write buffer tables
+	keep_buffers = true;
 }};
 local cfg = default_config.__index;
 
@@ -472,17 +475,25 @@ function interface:onwritable()
 	local ok, err, partial = self.conn:send(data);
 	if ok then
 		self:set(nil, false);
-		for i = #buffer, 1, -1 do
-			buffer[i] = nil;
+		if cfg.keep_buffers then
+			for i = #buffer, 1, -1 do
+				buffer[i] = nil;
+			end
+		else
+			self.writebuffer = nil;
 		end
 		self:setwritetimeout(false);
 		self:ondrain(); -- Be aware of writes in ondrain
 		return ok;
 	elseif partial then
 		self:debug("Sent %d out of %d buffered bytes", partial, #data);
-		buffer[1] = data:sub(partial+1);
-		for i = #buffer, 2, -1 do
-			buffer[i] = nil;
+		if cfg.keep_buffers then
+			buffer[1] = data:sub(partial+1);
+			for i = #buffer, 2, -1 do
+				buffer[i] = nil;
+			end
+		else
+			data.writebuffer = { data:sub(partial+1) };
 		end
 		self:set(nil, true);
 		self:setwritetimeout();
@@ -509,6 +520,7 @@ function interface:write(data)
 	if buffer then
 		t_insert(buffer, data);
 	else
+		self:noise("Allocating buffer!")
 		self.writebuffer = { data };
 	end
 	if not self._write_lock then
