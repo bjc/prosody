@@ -471,11 +471,18 @@ function interface:onwritable()
 	self:onconnect();
 	if not self.conn then return; end -- could have been closed in onconnect
 	local buffer = self.writebuffer;
-	local data = #buffer == 1 and buffer[1] or t_concat(buffer);
+	local data = buffer or "";
+	if type(buffer) == "table" then
+		if buffer[2] then
+			data = t_concat(data);
+		else
+			data = buffer[1] or "";
+		end
+	end
 	local ok, err, partial = self.conn:send(data);
 	if ok then
 		self:set(nil, false);
-		if cfg.keep_buffers then
+		if cfg.keep_buffers and type(buffer) == "table" then
 			for i = #buffer, 1, -1 do
 				buffer[i] = nil;
 			end
@@ -487,13 +494,13 @@ function interface:onwritable()
 		return ok;
 	elseif partial then
 		self:debug("Sent %d out of %d buffered bytes", partial, #data);
-		if cfg.keep_buffers then
+		if cfg.keep_buffers and type(buffer) == "table" then
 			buffer[1] = data:sub(partial+1);
 			for i = #buffer, 2, -1 do
 				buffer[i] = nil;
 			end
 		else
-			data.writebuffer = { data:sub(partial+1) };
+			data.writebuffer = data:sub(partial+1);
 		end
 		self:set(nil, true);
 		self:setwritetimeout();
@@ -517,11 +524,13 @@ end
 -- Add data to write buffer and set flag for wanting to write
 function interface:write(data)
 	local buffer = self.writebuffer;
-	if buffer then
+	if type(buffer) == "table" then
 		t_insert(buffer, data);
-	else
+	elseif type(buffer) == "string" then
 		self:noise("Allocating buffer!")
-		self.writebuffer = { data };
+		self.writebuffer = { buffer, data };
+	elseif buffer == nil then
+		self.writebuffer = data;
 	end
 	if not self._write_lock then
 		if cfg.opportunistic_writes and not self._opportunistic_write then
@@ -539,7 +548,7 @@ interface.send = interface.write;
 
 -- Close, possibly after writing is done
 function interface:close()
-	if self.writebuffer and self.writebuffer[1] then
+	if self.writebuffer and (self.writebuffer[1] or type(self.writebuffer) == "string") then
 		self:set(false, true); -- Flush final buffer contents
 		self:setwritetimeout();
 		self.write, self.send = noop, noop; -- No more writing
@@ -578,7 +587,7 @@ end
 function interface:starttls(tls_ctx)
 	if tls_ctx then self.tls_ctx = tls_ctx; end
 	self.starttls = false;
-	if self.writebuffer and self.writebuffer[1] then
+	if self.writebuffer and (self.writebuffer[1] or type(self.writebuffer) == "string") then
 		self:debug("Start TLS after write");
 		self.ondrain = interface.starttls;
 		self:set(nil, true); -- make sure wantwrite is set
@@ -687,7 +696,7 @@ local function wrapsocket(client, server, read_size, listeners, tls_ctx, extra) 
 		created = realtime();
 		listeners = listeners;
 		read_size = read_size or (server and server.read_size);
-		writebuffer = {};
+		writebuffer = nil;
 		tls_ctx = tls_ctx or (server and server.tls_ctx);
 		tls_direct = server and server.tls_direct;
 		id = conn_id;
@@ -811,7 +820,7 @@ function interface:resume_writes()
 	end
 	self:noise("Resume writes");
 	self._write_lock = nil;
-	if self.writebuffer[1] then
+	if self.writebuffer and (self.writebuffer[1] or type(self.writebuffer) == "string") then
 		self:setwritetimeout();
 		self:set(nil, true);
 	end
