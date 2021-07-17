@@ -218,3 +218,12 @@ VirtualHost "localhost"
 --
 --Component "gateway.example.com"
 --	component_secret = "password"
+
+
+---------- End of the Prosody Configuration file ----------
+-- You usually **DO NOT** want to add settings here at the end, as they would
+-- only apply to the last defined VirtualHost or Component.
+--
+-- Settings for the global section should go higher up, before the first
+-- VirtualHost or Component line, while settings intended for specific hosts
+-- should go under the corresponding VirtualHost or Component line.
