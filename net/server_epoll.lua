@@ -657,7 +657,6 @@ function interface:inittls(tls_ctx, now)
 end
 
 function interface:tlshandshake()
-	self:setwritetimeout(false);
 	self:setreadtimeout(false);
 	self:noise("Continuing TLS handshake");
 	local ok, err = self.conn:dohandshake();
@@ -668,6 +667,7 @@ function interface:tlshandshake()
 		else
 			self:debug("TLS handshake complete");
 		end
+		self:setwritetimeout(false);
 		self.onwritable = nil;
 		self.onreadable = nil;
 		self:on("status", "ssl-handshake-complete");
