@@ -227,3 +227,5 @@ VirtualHost "localhost"
 -- Settings for the global section should go higher up, before the first
 -- VirtualHost or Component line, while settings intended for specific hosts
 -- should go under the corresponding VirtualHost or Component line.
+--
+-- For more information see https://prosody.im/doc/configure
