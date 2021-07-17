@@ -458,7 +458,8 @@ function interface:onreadable()
 			return;
 		end
 	end
-	if self._wantread and self.conn:dirty() then
+	if not self._wantread then return end
+	if self.conn:dirty() then
 		self:setreadtimeout(false);
 		self:pausefor(cfg.read_retry_delay);
 	else
