@@ -430,6 +430,7 @@ function interface:onreadable()
 			err = "timeout";
 		elseif err == "wantwrite" then
 			self:set(nil, true);
+			self:setwritetimeout();
 			err = "timeout";
 		elseif err == "timeout" and not self._connected then
 			err = "connection timeout";
@@ -510,8 +511,10 @@ function interface:onwritable()
 	end
 	if err == "wantwrite" or err == "timeout" then
 		self:set(nil, true);
+		self:setwritetimeout();
 	elseif err == "wantread" then
 		self:set(true, nil);
+		self:setreadtimeout();
 	elseif err ~= "timeout" then
 		self:on("disconnect", err);
 		self:destroy();
@@ -553,6 +556,7 @@ interface.send = interface.write;
 function interface:close()
 	if self.writebuffer and (self.writebuffer[1] or type(self.writebuffer) == "string") then
 		self:set(false, true); -- Flush final buffer contents
+		self:setreadtimeout(false);
 		self:setwritetimeout();
 		self.write, self.send = noop, noop; -- No more writing
 		self:debug("Close after writing remaining buffered data");
@@ -772,11 +776,13 @@ end
 
 function interface:pause()
 	self:noise("Pause reading");
+	self:setreadtimeout(false);
 	return self:set(false);
 end
 
 function interface:resume()
 	self:noise("Resume reading");
+	self:setreadtimeout();
 	return self:set(true);
 end
 
