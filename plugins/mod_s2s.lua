@@ -91,6 +91,7 @@ local s2s_service_options = {
 	use_ipv6 = module:get_option_boolean("use_ipv6", true);
 	use_dane = module:get_option_boolean("use_dane", false);
 };
+local s2s_service_options_mt = { __index = s2s_service_options }
 
 module:hook("stats-update", function ()
 	measure_connections_inbound:clear()
@@ -214,7 +215,10 @@ function route_to_new_session(event)
 	host_session.bounce_sendq = bounce_sendq;
 	host_session.sendq = { {tostring(stanza), stanza.attr.type ~= "error" and stanza.attr.type ~= "result" and st.reply(stanza)} };
 	log("debug", "stanza [%s] queued until connection complete", stanza.name);
-	connect(service.new(to_host, "xmpp-server", "tcp", s2s_service_options), listener, nil, { session = host_session });
+	-- FIXME Cleaner solution to passing extra data from resolvers to net.server
+	-- This mt-clone allows resolvers to add extra data, currently used for DANE TLSA records
+	local extra = setmetatable({}, s2s_service_options_mt);
+	connect(service.new(to_host, "xmpp-server", "tcp", extra), listener, nil, { session = host_session });
 	m_initiated_connections:with_labels(from_host):add(1)
 	return true;
 end
