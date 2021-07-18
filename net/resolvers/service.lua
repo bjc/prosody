@@ -50,6 +50,10 @@ function methods:next(cb)
 			answer = {};
 		end
 		if answer then
+			if self.extra and not answer.secure then
+				self.extra.use_dane = false;
+			end
+
 			if #answer == 0 then
 				if self.extra and self.extra.default_port then
 					table.insert(targets, { self.hostname, self.extra.default_port, self.conn_type, self.extra });
