@@ -645,7 +645,7 @@ local function session_close(session, reason, remote_reason, bounce_reason)
 			session.sends2s(stream_error);
 		end
 	else
-		m_closed_connections:with_labels(this_host, session.direction, reason == false and ":remote-choice" or ":local-choice"):add(1)
+		m_closed_connections:with_labels(this_host or ":unknown", session.direction, reason == false and ":remote-choice" or ":local-choice"):add(1)
 	end
 
 	session.sends2s("</stream:stream>");
