@@ -504,7 +504,7 @@ function interface:onwritable()
 				buffer[i] = nil;
 			end
 		else
-			data.writebuffer = data:sub(partial+1);
+			self.writebuffer = data:sub(partial+1);
 		end
 		self:set(nil, true);
 		self:setwritetimeout();
