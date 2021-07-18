@@ -614,7 +614,7 @@ local function session_close(session, reason, remote_reason, bounce_reason)
 		end
 	end
 
-	local this_host = session.direction == "incoming" and session.to_host or session.from_host
+	local this_host = session.direction == "outgoing" and session.from_host or session.to_host
 
 	if reason then -- nil == no err, initiated by us, false == initiated by remote
 		local stream_error;
