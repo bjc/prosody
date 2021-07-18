@@ -244,6 +244,7 @@ local core_defaults = {
 		"!3DES",       -- 3DES - slow and of questionable security
 		"!aNULL",      -- Ciphers that does not authenticate the connection
 	};
+	dane = configmanager.get("*", "use_dane");
 }
 
 if luasec_has.curves then
@@ -360,6 +361,7 @@ local function reload_ssl_config()
 	if luasec_has.options.no_compression then
 		core_defaults.options.no_compression = configmanager.get("*", "ssl_compression") ~= true;
 	end
+	core_defaults.dane = configmanager.get("*", "use_dane") or false;
 	cert_index = index_certs(resolve_path(config_path, global_certificates));
 end
 
