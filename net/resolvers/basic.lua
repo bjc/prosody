@@ -36,14 +36,15 @@ function methods:next(cb)
 		n = n - 1;
 		if n > 0 then return; end
 		self.targets = targets;
-		--[[
-		-- TODO stash tlsa somewhere per connection
-		-- FIXME 'extra' here is not per connection
 		if self.extra and self.extra.use_dane then
 			if secure and tlsa[1] then
+				self.extra.tlsa = tlsa;
+				self.extra.dane_hostname = self.hostname;
+			else
+				self.extra.tlsa = nil;
+				self.extra.dane_hostname = nil;
 			end
 		end
-		--]]
 		self:next(cb);
 	end
 

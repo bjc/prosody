@@ -17,6 +17,7 @@ TRUNK
 -   `daemonize` option deprecated
 -   SASL DIGEST-MD5 removed
 -   Switch to libunbound for DNS queries
+-   DANE Support (low-level network layer)
 -   mod_external_services (generic XEP-0215)
 -   mod_turn_external for easy STUN+TURN XEP-0215 setup
 -   util.error for encapsulating errors
