@@ -173,6 +173,10 @@ end, 50); -- Before subject(20)
 -- add to history
 module:hook("muc-add-history", function(event)
 	local room = event.room
+	if get_historylength(room) == 0 then
+		room._history = nil;
+		return;
+	end
 	local history = room._history;
 	if not history then history = {}; room._history = history; end
 	local stanza = st.clone(event.stanza);
