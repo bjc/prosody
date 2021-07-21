@@ -565,15 +565,13 @@ function service:publish(node, actor, id, item, requested_config) --> ok, err
 		return nil, "invalid-item";
 	end
 	local node_data = self.data[node];
-	if not node_data then
-		-- FIXME how is this possible?  #1657
-		return nil, "internal-server-error";
+	if node_data then
+		local ok = node_data:set(id, item);
+		if not ok then
+			return nil, "internal-server-error";
+		end
+		if type(ok) == "string" then id = ok; end
 	end
-	local ok = node_data:set(id, item);
-	if not ok then
-		return nil, "internal-server-error";
-	end
-	if type(ok) == "string" then id = ok; end
 	local event_data = { service = self, node = node, actor = actor, id = id, item = item };
 	self.events.fire_event("item-published/"..node, event_data);
 	self.events.fire_event("item-published", event_data);
@@ -593,12 +591,17 @@ function service:retract(node, actor, id, retract) --> ok, err
 	end
 	--
 	local node_obj = self.nodes[node];
-	if (not node_obj) or (not self.data[node]:get(id)) then
+	if not node_obj then
 		return false, "item-not-found";
 	end
-	local ok = self.data[node]:set(id, nil);
-	if not ok then
-		return nil, "internal-server-error";
+	if self.data[node] then
+		if not self.data[node]:get(id) then
+			return false, "item-not-found";
+		end
+		local ok = self.data[node]:set(id, nil);
+		if not ok then
+			return nil, "internal-server-error";
+		end
 	end
 	self.events.fire_event("item-retracted", { service = self, node = node, actor = actor, id = id });
 	if retract then
@@ -617,10 +620,12 @@ function service:purge(node, actor, notify) --> ok, err
 	if not node_obj then
 		return false, "item-not-found";
 	end
-	if self.data[node] and self.data[node].clear then
-		self.data[node]:clear()
-	else
-		self.data[node] = self.config.itemstore(self.nodes[node].config, node);
+	if self.data[node] then
+		if self.data[node].clear then
+			self.data[node]:clear()
+		else
+			self.data[node] = self.config.itemstore(self.nodes[node].config, node);
+		end
 	end
 	self.events.fire_event("node-purged", { service = self, node = node, actor = actor });
 	if notify then
@@ -643,6 +648,9 @@ function service:get_items(node, actor, ids) --> (true, { id, [id] = node }) or 
 		ids = { ids };
 	end
 	local data = {};
+	if not self.data[node] then
+		return true, data;
+	end
 	if ids then
 		for _, key in ipairs(ids) do
 			local value = self.data[node]:get(key);
@@ -670,6 +678,11 @@ function service:get_last_item(node, actor) --> (true, id, node) or (false, err)
 	-- Check node exists
 	if not self.nodes[node] then
 		return false, "item-not-found";
+	end
+
+	if not self.data[node] then
+		-- FIXME Should this be a success or failure?
+		return true, nil;
 	end
 
 	-- Returns success, id, item
@@ -805,7 +818,9 @@ function service:set_node_config(node, actor, new_config) --> ok, err
 	if old_config["persist_items"] ~= node_obj.config["persist_items"] then
 		self.data[node] = self.config.itemstore(self.nodes[node].config, node);
 	elseif old_config["max_items"] ~= node_obj.config["max_items"] then
-		self.data[node]:resize(self.nodes[node].config["max_items"]);
+		if self.data[node] then
+			self.data[node]:resize(self.nodes[node].config["max_items"]);
+		end
 	end
 
 	return true;
