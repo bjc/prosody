@@ -110,14 +110,9 @@ local function simple_itemstore(username)
 	local driver = storagemanager.get_driver(module.host, "pep_data");
 	return function (config, node)
 		local max_items = tonumber_max_items(config["max_items"]);
-		if config["persist_items"] then
-			module:log("debug", "Creating new persistent item store for user %s, node %q", username, node);
-			local archive = driver:open("pep_"..node, "archive");
-			return lib_pubsub.archive_itemstore(archive, max_items, username, node, false);
-		else
-			module:log("debug", "Creating new ephemeral item store for user %s, node %q", username, node);
-			return cache.new(max_items);
-		end
+		module:log("debug", "Creating new persistent item store for user %s, node %q", username, node);
+		local archive = driver:open("pep_"..node, "archive");
+		return lib_pubsub.archive_itemstore(archive, max_items, username, node, false);
 	end
 end
 
