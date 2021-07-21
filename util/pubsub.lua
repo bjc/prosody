@@ -132,7 +132,7 @@ local default_config = {
 local default_config_mt = { __index = default_config };
 
 local default_node_config = {
-	["persist_items"] = false;
+	["persist_items"] = true;
 	["max_items"] = 20;
 	["access_model"] = "open";
 	["publish_model"] = "publishers";

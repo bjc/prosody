@@ -47,7 +47,7 @@ Alice receives:
 		  <value>20</value>
 		</field>
 		<field var="pubsub#persist_items" label="Persist items to storage" type="boolean">
-		  <value>0</value>
+		  <value>1</value>
 		</field>
 		<field var="pubsub#access_model" label="Specify the subscriber model" type="list-single">
 		  <option label="authorize">

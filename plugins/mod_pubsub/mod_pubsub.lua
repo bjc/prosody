@@ -203,6 +203,9 @@ function module.load()
 		autocreate_on_subscribe = autocreate_on_subscribe;
 		expose_publisher = expose_publisher;
 
+		node_defaults = {
+			["persist_items"] = true;
+		};
 		nodestore = node_store;
 		itemstore = create_simple_itemstore;
 		broadcaster = simple_broadcast;
