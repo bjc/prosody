@@ -652,13 +652,14 @@ function service:get_items(node, actor, ids) --> (true, { id, [id] = node }) or 
 	if not node_obj then
 		return false, "item-not-found";
 	end
+	if not self.data[node] then
+		-- Disabled rather than unsupported, but close enough.
+		return false, "persistent-items-unsupported";
+	end
 	if type(ids) == "string" then -- COMPAT see #1305
 		ids = { ids };
 	end
 	local data = {};
-	if not self.data[node] then
-		return true, data;
-	end
 	if ids then
 		for _, key in ipairs(ids) do
 			local value = self.data[node]:get(key);

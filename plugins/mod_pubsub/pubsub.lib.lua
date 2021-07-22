@@ -32,6 +32,7 @@ local pubsub_errors = {
 	["internal-server-error"] = { "wait", "internal-server-error" };
 	["precondition-not-met"] = { "cancel", "conflict", nil, "precondition-not-met" };
 	["invalid-item"] = { "modify", "bad-request", "invalid item" };
+	["persistent-items-unsupported"] = { "cancel", "feature-not-implemented", nil, "persistent-items" };
 };
 local function pubsub_error_reply(stanza, error)
 	local e = pubsub_errors[error];

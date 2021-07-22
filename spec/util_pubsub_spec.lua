@@ -523,8 +523,8 @@ describe("util.pubsub", function ()
 			assert.spy(broadcaster).was_called();
 
 			local ok, items = service:get_items("node", true);
-			assert.truthy(ok);
-			assert.same(items, {});
+			assert.not_truthy(ok);
+			assert.equal(items, "persistent-items-unsupported");
 		end);
 
 	end)
