@@ -509,4 +509,23 @@ describe("util.pubsub", function ()
 		end);
 	end);
 
+	describe("persist_items", function()
+		it("can be disabled", function()
+			local broadcaster = spy.new(function(notif_type, node_name, subscribers, item) -- luacheck: ignore 212
+			end);
+			local service = pubsub.new { node_defaults = { persist_items = false }, broadcaster = broadcaster }
+
+			local ok = service:create("node", true)
+			assert.truthy(ok);
+
+			local ok = service:publish("node", true, "1", "item");
+			assert.truthy(ok);
+			assert.spy(broadcaster).was_called();
+
+			local ok, items = service:get_items("node", true);
+			assert.truthy(ok);
+			assert.same(items, {});
+		end);
+
+	end)
 end);

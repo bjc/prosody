@@ -177,8 +177,11 @@ local function new(config)
 	-- Load nodes from storage, if we have a store and it supports iterating over stored items
 	if config.nodestore and config.nodestore.users then
 		for node_name in config.nodestore:users() do
-			service.nodes[node_name] = load_node_from_store(service, node_name);
-			service.data[node_name] = config.itemstore(service.nodes[node_name].config, node_name);
+			local node = load_node_from_store(service, node_name);
+			service.nodes[node_name] = node;
+			if node.config.persist_items then
+				service.data[node_name] = config.itemstore(service.nodes[node_name].config, node_name);
+			end
 
 			for jid in pairs(service.nodes[node_name].subscribers) do
 				local normal_jid = service.config.normalize_jid(jid);
@@ -466,7 +469,10 @@ function service:create(node, actor, options) --> ok, err
 		end
 	end
 
-	self.data[node] = self.config.itemstore(self.nodes[node].config, node);
+	if config.persist_items then
+		self.data[node] = self.config.itemstore(self.nodes[node].config, node);
+	end
+
 	self.events.fire_event("node-created", { service = self, node = node, actor = actor });
 	if actor ~= true then
 		local ok, err = self:set_affiliation(node, true, actor, "owner");
@@ -564,9 +570,11 @@ function service:publish(node, actor, id, item, requested_config) --> ok, err
 	if not self.config.itemcheck(item) then
 		return nil, "invalid-item";
 	end
-	local node_data = self.data[node];
-	if node_data then
-		local ok = node_data:set(id, item);
+	if node_obj.config.persist_items then
+		if not self.data[node] then
+			self.data[node] = self.config.itemstore(self.nodes[node].config, node);
+		end
+		local ok = self.data[node]:set(id, item);
 		if not ok then
 			return nil, "internal-server-error";
 		end
@@ -816,7 +824,14 @@ function service:set_node_config(node, actor, new_config) --> ok, err
 	end
 
 	if old_config["persist_items"] ~= node_obj.config["persist_items"] then
-		self.data[node] = self.config.itemstore(self.nodes[node].config, node);
+		if node_obj.config["persist_items"] then
+			self.data[node] = self.config.itemstore(self.nodes[node].config, node);
+		elseif self.data[node] then
+			if self.data[node].clear then
+				self.data[node]:clear()
+			end
+			self.data[node] = nil;
+		end
 	elseif old_config["max_items"] ~= node_obj.config["max_items"] then
 		if self.data[node] then
 			self.data[node]:resize(self.nodes[node].config["max_items"]);
