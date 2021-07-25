@@ -328,9 +328,16 @@ function handlers.get_items(origin, stanza, items, service)
 		return true;
 	end
 
+	local expose_publisher = service.config.expose_publisher;
+
 	local data = st.stanza("items", { node = node });
 	for _, id in ipairs(results) do
-		data:add_child(results[id]);
+		local item = results[id];
+		if not expose_publisher then
+			item = st.clone(item);
+			item.attr.publisher = nil;
+		end
+		data:add_child(item);
 	end
 	local reply = st.reply(stanza)
 		:tag("pubsub", { xmlns = xmlns_pubsub })

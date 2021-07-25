@@ -199,6 +199,7 @@ function module.load()
 	set_service(pubsub.new({
 		autocreate_on_publish = autocreate_on_publish;
 		autocreate_on_subscribe = autocreate_on_subscribe;
+		expose_publisher = expose_publisher;
 
 		nodestore = node_store;
 		itemstore = create_simple_itemstore;
