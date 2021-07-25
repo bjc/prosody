@@ -57,7 +57,7 @@ local function create_simple_itemstore(node_config, node_name) --> util.cache li
 	return lib_pubsub.archive_itemstore(archive, max_items, nil, node_name);
 end
 
-function simple_broadcast(kind, node, jids, item, actor, node_obj, service)
+function simple_broadcast(kind, node, jids, item, actor, node_obj, service) --luacheck: ignore 431/service
 	if node_obj then
 		if node_obj.config["notify_"..kind] == false then
 			return;
