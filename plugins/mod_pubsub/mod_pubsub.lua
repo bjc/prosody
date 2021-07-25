@@ -74,7 +74,9 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj, service)
 			if node_obj and node_obj.config.include_payload == false then
 				item:maptags(function () return nil; end);
 			end
-			if expose_publisher and actor then
+			if not expose_publisher then
+				item.attr.publisher = nil;
+			elseif not item.attr.publisher then
 				item.attr.publisher = service.config.normalize_jid(actor);
 			end
 		end
