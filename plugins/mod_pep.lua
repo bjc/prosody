@@ -6,7 +6,6 @@ local set_new = require "util.set".new;
 local st = require "util.stanza";
 local calculate_hash = require "util.caps".calculate_hash;
 local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed;
-local cache = require "util.cache";
 local set = require "util.set";
 local new_id = require "util.id".medium;
 local storagemanager = require "core.storagemanager";
