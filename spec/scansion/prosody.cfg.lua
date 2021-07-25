@@ -134,6 +134,7 @@ Component "conference.localhost" "muc"
 
 Component "pubsub.localhost" "pubsub"
 	storage = "memory"
+	expose_publisher = true
 
 Component "upload.localhost" "http_file_share"
 http_file_share_size_limit = 10000000
