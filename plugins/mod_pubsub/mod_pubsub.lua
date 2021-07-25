@@ -183,6 +183,9 @@ end
 
 function set_service(new_service)
 	service = new_service;
+	service.config.autocreate_on_publish = autocreate_on_publish;
+	service.config.autocreate_on_subscribe = autocreate_on_subscribe;
+	service.config.expose_publisher = expose_publisher;
 	module.environment.service = service;
 	add_disco_features_from_service(service);
 end
