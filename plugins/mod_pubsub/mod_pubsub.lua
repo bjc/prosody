@@ -57,7 +57,7 @@ local function create_simple_itemstore(node_config, node_name) --> util.cache li
 	return lib_pubsub.archive_itemstore(archive, max_items, nil, node_name);
 end
 
-function simple_broadcast(kind, node, jids, item, actor, node_obj)
+function simple_broadcast(kind, node, jids, item, actor, node_obj, service)
 	if node_obj then
 		if node_obj.config["notify_"..kind] == false then
 			return;
@@ -75,7 +75,7 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj)
 				item:maptags(function () return nil; end);
 			end
 			if expose_publisher and actor then
-				item.attr.publisher = actor
+				item.attr.publisher = service.config.normalize_jid(actor);
 			end
 		end
 	end
