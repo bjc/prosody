@@ -388,7 +388,7 @@ local function message_handler(event, c2s)
 	local orig_to = stanza.attr.to or orig_from;
 	-- Stanza without 'to' are treated as if it was to their own bare jid
 
-	-- Whos storage do we put it in?
+	-- Whose storage do we put it in?
 	local store_user = c2s and origin.username or jid_split(orig_to);
 	-- And who are they chatting with?
 	local with = jid_bare(c2s and orig_to or orig_from);

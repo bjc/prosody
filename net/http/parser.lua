@@ -30,7 +30,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 	if not parser_type or parser_type == "server" then client = false; else assert(parser_type == "client", "Invalid parser type"); end
 	local bodylimit = tonumber(options_cb and options_cb().body_size_limit) or 10*1024*1024;
 	-- https://stackoverflow.com/a/686243
-	-- Indiviual headers can be up to 16k? What madness?
+	-- Individual headers can be up to 16k? What madness?
 	local headlimit = tonumber(options_cb and options_cb().head_size_limit) or 10*1024;
 	local buflimit = tonumber(options_cb and options_cb().buffer_size_limit) or bodylimit * 2;
 	local buffer = dbuffer.new(buflimit);

@@ -30,7 +30,7 @@ server.set_default_host(module:get_option_string("http_default_host"));
 server.set_option("body_size_limit", module:get_option_number("http_max_content_size"));
 server.set_option("buffer_size_limit", module:get_option_number("http_max_buffer_size"));
 
--- CORS settigs
+-- CORS settings
 local opt_methods = module:get_option_set("access_control_allow_methods", { "GET", "OPTIONS" });
 local opt_headers = module:get_option_set("access_control_allow_headers", { "Content-Type" });
 local opt_credentials = module:get_option_boolean("access_control_allow_credentials", false);

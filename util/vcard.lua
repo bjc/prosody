@@ -29,7 +29,7 @@ local function vCard_unesc(s)
 		["\\n"] = "\n",
 		["\\r"] = "\r",
 		["\\t"] = "\t",
-		["\\:"] = ":", -- FIXME Shouldn't need to espace : in values, just params
+		["\\:"] = ":", -- FIXME Shouldn't need to escape : in values, just params
 		["\\;"] = ";",
 		["\\,"] = ",",
 		[":"] = "\29",

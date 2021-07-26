@@ -17,7 +17,7 @@ describe("util.promise", function ()
 		p:next(cb);
 		assert.spy(cb).was_called(1);
 	end);
-	it("notifies on fulfilment of pending promises", function ()
+	it("notifies on fulfillment of pending promises", function ()
 		local r;
 		local p = promise.new(function (resolve)
 			r = resolve;

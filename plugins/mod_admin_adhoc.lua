@@ -142,7 +142,7 @@ local delete_user_command_handler = adhoc_simple(delete_user_layout, function(fi
 			module:log("info", "User %s has been deleted by %s", aJID, jid.bare(data.from));
 			succeeded[#succeeded+1] = aJID;
 		else
-			module:log("debug", "Tried to delete non-existant user %s", aJID);
+			module:log("debug", "Tried to delete non-existent user %s", aJID);
 			failed[#failed+1] = aJID;
 		end
 	end

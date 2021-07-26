@@ -767,7 +767,7 @@ on other resources.
 ## Static checking
 
 All code should pass [luacheck](https://github.com/mpeterv/luacheck) using
-the `.luacheckrc` provided in the Prosody repository, and using miminal
+the `.luacheckrc` provided in the Prosody repository, and using minimal
 inline exceptions.
 
 * luacheck warnings of class 211, 212, 213 (unused variable, argument or loop

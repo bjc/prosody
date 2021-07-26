@@ -134,7 +134,7 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-tls:starttls", function(event)
 	return true;
 end);
 
--- Advertize stream feature
+-- Advertise stream feature
 module:hook("stream-features", function(event)
 	local origin, features = event.origin, event.features;
 	if can_do_tls(origin) then

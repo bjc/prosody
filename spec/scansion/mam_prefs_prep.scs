@@ -1,4 +1,4 @@
-# mod_mam shold apply JIDprep in prefs
+# mod_mam should apply JIDprep in prefs
 
 [Client] Romeo
 	jid: romeo@localhost

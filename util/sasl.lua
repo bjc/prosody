@@ -27,7 +27,7 @@ Authentication Backend Prototypes:
 
 state = false : disabled
 state = true : enabled
-state = nil : non-existant
+state = nil : non-existent
 
 Channel Binding:
 
