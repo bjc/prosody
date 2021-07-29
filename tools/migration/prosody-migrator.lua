@@ -51,6 +51,7 @@ do
 	startup.switch_user();
 	startup.check_dependencies();
 	startup.log_startup_warnings();
+	prosody.config_loaded = true;
 	startup.load_libraries();
 	startup.init_http_client();
 end
