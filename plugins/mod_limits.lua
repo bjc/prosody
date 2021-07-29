@@ -111,23 +111,27 @@ function module.unload()
 	filters.remove_filter_hook(filter_hook);
 end
 
+function unlimited(session)
+	local session_type = session.type:match("^[^_]+");
+	if session.conn and session.conn.setlimit then
+		session.conn:setlimit(0);
+		-- Currently no burst support
+	else
+		local filter_set = type_filters[session_type];
+		filters.remove_filter(session, "bytes/in", filter_set.bytes_in);
+		session.throttle = nil;
+	end
+end
+
 function module.add_host(module)
 	local unlimited_jids = module:get_option_inherited_set("unlimited_jids", {});
 
 	if not unlimited_jids:empty() then
 		module:hook("authentication-success", function (event)
 			local session = event.session;
-			local session_type = session.type:match("^[^_]+");
 			local jid = session.username .. "@" .. session.host;
 			if unlimited_jids:contains(jid) then
-				if session.conn and session.conn.setlimit then
-					session.conn:setlimit(0);
-					-- Currently no burst support
-				else
-					local filter_set = type_filters[session_type];
-					filters.remove_filter(session, "bytes/in", filter_set.bytes_in);
-					session.throttle = nil;
-				end
+				unlimited(session);
 			end
 		end);
 	end
