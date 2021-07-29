@@ -57,20 +57,7 @@ do
 end
 
 -- Command-line parsing
-local options = {};
-local i = 1;
-while arg[i] do
-	if arg[i]:sub(1,2) == "--" then
-		local opt, val = arg[i]:match("([%w-]+)=?(.*)");
-		if opt then
-			options[(opt:sub(3):gsub("%-", "_"))] = #val > 0 and val or true;
-		end
-		table.remove(arg, i);
-	else
-		i = i + 1;
-	end
-end
-
+local options = prosody.opts;
 
 local envloadfile = require "util.envload".envloadfile;
 
