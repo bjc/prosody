@@ -54,6 +54,10 @@ do
 	prosody.config_loaded = true;
 	startup.load_libraries();
 	startup.init_http_client();
+	prosody.core_post_stanza = function ()
+		-- silence assert in core.moduleapi
+		error("Attempt to send stanzas from inside migrator.", 0);
+	end
 end
 
 -- Command-line parsing
