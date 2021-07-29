@@ -134,5 +134,20 @@ function module.add_host(module)
 				unlimited(session);
 			end
 		end);
+
+		module:hook("s2sout-established", function (event)
+			local session = event.session;
+			if unlimited_jids:contains(session.to_host) then
+				unlimited(session);
+			end
+		end);
+
+		module:hook("s2sin-established", function (event)
+			local session = event.session;
+			if session.from_host and unlimited_jids:contains(session.from_host) then
+				unlimited(session);
+			end
+		end);
+
 	end
 end
