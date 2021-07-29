@@ -323,6 +323,7 @@ function stream_callbacks.streamopened(context, attr)
 
 		-- New session
 		sid = new_uuid();
+		-- TODO use util.sesssion
 		local session = {
 			type = "c2s_unauthed", conn = request.conn, sid = sid, host = attr.to,
 			rid = rid - 1, -- Hack for initial session setup, "previous" rid was $current_request - 1
