@@ -35,8 +35,25 @@ end
 local default_config = (CFG_CONFIGDIR or ".").."/migrator.cfg.lua";
 
 local startup = require "util.startup";
-startup.prosodyctl();
--- TODO startup.migrator ?
+do
+	startup.parse_args();
+	startup.init_global_state();
+	prosody.process_type = "migrator";
+	startup.force_console_logging();
+	startup.init_logging();
+	startup.init_gc();
+	startup.init_errors();
+	startup.setup_plugindir();
+	startup.setup_plugin_install_path();
+	startup.setup_datadir();
+	startup.chdir();
+	startup.read_version();
+	startup.switch_user();
+	startup.check_dependencies();
+	startup.log_startup_warnings();
+	startup.load_libraries();
+	startup.init_http_client();
+end
 
 -- Command-line parsing
 local options = {};
