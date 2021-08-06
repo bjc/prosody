@@ -273,7 +273,7 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 
 
 	origin.send(st.reply(stanza)
-		:tag("fin", { xmlns = xmlns_mam, queryid = qid, complete = complete })
+		:tag("fin", { xmlns = xmlns_mam, complete = complete })
 			:add_child(rsm.generate {
 				first = first, last = last, count = total }));
 
