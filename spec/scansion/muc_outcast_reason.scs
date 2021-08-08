@@ -1,0 +1,72 @@
+# Save ban reason
+
+[Client] Romeo
+	password: password
+	jid: user@localhost
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<presence to="muc-outcast-reason@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc"/>
+	</presence>
+
+Romeo receives:
+	<presence from="muc-outcast-reason@conference.localhost/Romeo">
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<status code="201"/>
+			<item jid="${Romeo's full JID}" role="moderator" affiliation="owner"/>
+			<status code="110"/>
+		</x>
+	</presence>
+
+Romeo receives:
+	<message type="groupchat" from="muc-outcast-reason@conference.localhost">
+		<subject/>
+	</message>
+
+Romeo sends:
+	<iq id="lx5" to="muc-outcast-reason@conference.localhost" type="set">
+		<query xmlns="http://jabber.org/protocol/muc#admin">
+			<item affiliation="outcast" jid="tybalt@localhost">
+				<reason>Hey calm down</reason>
+			</item>
+		</query>
+	</iq>
+
+Romeo receives:
+	<message from="muc-outcast-reason@conference.localhost">
+		<x xmlns="http://jabber.org/protocol/muc#user">
+			<status code="301"/>
+			<item jid="tybalt@localhost" affiliation="outcast">
+				<reason>Hey calm down</reason>
+			</item>
+		</x>
+	</message>
+
+Romeo receives:
+	<iq id="lx5" type="result" from="muc-outcast-reason@conference.localhost"/>
+
+Romeo sends:
+	<iq id="lx6" to="muc-outcast-reason@conference.localhost" type="get">
+		<query xmlns="http://jabber.org/protocol/muc#admin">
+			<item affiliation="outcast"/>
+		</query>
+	</iq>
+
+Romeo receives:
+	<iq id="lx6" type="result" from="muc-outcast-reason@conference.localhost">
+		<query xmlns="http://jabber.org/protocol/muc#admin">
+			<item jid="tybalt@localhost" affiliation="outcast">
+				<reason>Hey calm down</reason>
+			</item>
+		</query>
+	</iq>
+
+Romeo disconnects
+
+Romeo sends:
+	<presence type='unavailable'/>
+

@@ -1079,7 +1079,10 @@ function room_mt:handle_admin_query_set_command(origin, stanza)
 	local reason = item:get_child_text("reason");
 	local success, errtype, err
 	if item.attr.affiliation and item.attr.jid and not item.attr.role then
-		local registration_data;
+		local registration_data = self:get_affiliation_data(item.attr.jid) or {};
+		if reason then
+			registration_data.reason = reason;
+		end
 		if item.attr.nick then
 			local room_nick = self.jid.."/"..item.attr.nick;
 			local existing_occupant = self:get_occupant_by_nick(room_nick);
@@ -1088,7 +1091,7 @@ function room_mt:handle_admin_query_set_command(origin, stanza)
 				self:set_role(true, room_nick, nil, "This nickname is reserved");
 			end
 			module:log("debug", "Reserving %s for %s (%s)", item.attr.nick, item.attr.jid, item.attr.affiliation);
-			registration_data = { reserved_nickname = item.attr.nick };
+			registration_data.reserved_nickname = item.attr.nick;
 		end
 		success, errtype, err = self:set_affiliation(actor, item.attr.jid, item.attr.affiliation, reason, registration_data);
 	elseif item.attr.role and item.attr.nick and not item.attr.affiliation then
@@ -1119,9 +1122,13 @@ function room_mt:handle_admin_query_get_command(origin, stanza)
 		if (affiliation_rank >= valid_affiliations.admin and affiliation_rank >= _aff_rank)
 		or (self:get_members_only() and self:get_whois() == "anyone" and affiliation_rank >= valid_affiliations.member) then
 			local reply = st.reply(stanza):query("http://jabber.org/protocol/muc#admin");
-			for jid in self:each_affiliation(_aff or "none") do
+			for jid, _, data in self:each_affiliation(_aff or "none") do
 				local nick = self:get_registered_nick(jid);
-				reply:tag("item", {affiliation = _aff, jid = jid, nick = nick }):up();
+				reply:tag("item", {affiliation = _aff, jid = jid, nick = nick });
+				if data and data.reason then
+					reply:text_tag("reason", data.reason);
+				end
+				reply:up();
 			end
 			origin.send(reply:up());
 			return true;
