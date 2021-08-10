@@ -967,3 +967,17 @@ module:provides("net", {
 	};
 });
 
+
+module:provides("net", {
+	name = "direct_tls_s2s";
+	listener = listener;
+	encryption = "ssl";
+	ssl_config = {
+		verify = { "peer", "client_once", };
+	};
+	multiplex = {
+		protocol = "xmpp-server";
+		pattern = "^<.*:stream.*%sxmlns%s*=%s*(['\"])jabber:server%1.*>";
+	};
+});
+
