@@ -730,6 +730,10 @@ local function initialize_session(session)
 	local conn = session.conn;
 	local w = conn.write;
 
+	if conn:ssl() then
+		session_secure(session);
+	end
+
 	function session.sends2s(t)
 		log("debug", "Sending[%s]: %s", session.type, t.top_tag and t:top_tag() or t:match("^[^>]*>?"));
 		if t.name then
