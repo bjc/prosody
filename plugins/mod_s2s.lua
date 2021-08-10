@@ -379,6 +379,21 @@ end
 
 --- XMPP stream event handlers
 
+local function session_secure(session)
+	session.secure = true;
+	session.encrypted = true;
+
+	local sock = session.conn:socket();
+	local info = sock.info and sock:info();
+	if type(info) == "table" then
+		(session.log or log)("info", "Stream encrypted (%s with %s)", info.protocol, info.cipher);
+		session.compressed = info.compression;
+		m_tls_params:with_labels(info.protocol, info.cipher):add(1)
+	else
+		(session.log or log)("info", "Stream encrypted");
+	end
+end
+
 local stream_callbacks = { default_ns = "jabber:server" };
 
 function stream_callbacks.handlestanza(session, stanza)
@@ -399,18 +414,7 @@ function stream_callbacks._streamopened(session, attr)
 
 	-- TODO: Rename session.secure to session.encrypted
 	if session.secure == false then
-		session.secure = true;
-		session.encrypted = true;
-
-		local sock = session.conn:socket();
-		local info = sock.info and sock:info();
-		if type(info) == "table" then
-			(session.log or log)("info", "Stream encrypted (%s with %s)", info.protocol, info.cipher);
-			session.compressed = info.compression;
-			m_tls_params:with_labels(info.protocol, info.cipher):add(1)
-		else
-			(session.log or log)("info", "Stream encrypted");
-		end
+		session_secure(session);
 	end
 
 	if session.direction == "incoming" then
