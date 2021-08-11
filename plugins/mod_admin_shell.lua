@@ -135,8 +135,12 @@ local function handle_line(event)
 		return;
 	end
 
+	if useglobalenv and not session.globalenv then
+		session.globalenv = redirect_output(_G, session);
+	end
+
 	local chunkname = "=console";
-	local env = (useglobalenv and redirect_output(_G, session)) or session.env or nil
+	local env = (useglobalenv and session.globalenv) or session.env or nil
 	-- luacheck: ignore 311/err
 	local chunk, err = envload("return "..line, chunkname, env);
 	if not chunk then
