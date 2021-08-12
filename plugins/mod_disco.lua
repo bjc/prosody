@@ -153,6 +153,12 @@ module:hook("stream-features", function (event)
 	end
 end);
 
+module:hook("s2s-stream-features", function (event)
+	if event.origin.type == "s2sin" then
+		event.features:add_child(get_server_caps_feature());
+	end
+end);
+
 -- Handle disco requests to user accounts
 if module:get_host_type() ~= "local" then	return end -- skip for components
 module:hook("iq-get/bare/http://jabber.org/protocol/disco#info:query", function(event)
