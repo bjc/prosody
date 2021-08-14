@@ -484,6 +484,7 @@ function interface:onwritable()
 		end
 	end
 	local ok, err, partial = self.conn:send(data);
+	self._writable = ok;
 	if ok then
 		self:set(nil, false);
 		if cfg.keep_buffers and type(buffer) == "table" then
@@ -539,7 +540,7 @@ function interface:write(data)
 		self.writebuffer = data;
 	end
 	if not self._write_lock then
-		if cfg.opportunistic_writes and not self._opportunistic_write then
+		if self._writable and cfg.opportunistic_writes and not self._opportunistic_write then
 			self._opportunistic_write = true;
 			local ret, err = self:onwritable();
 			self._opportunistic_write = nil;
@@ -745,6 +746,7 @@ function interface:onacceptable()
 	local client = wrapsocket(conn, self, nil, self.listeners);
 	client:debug("New connection %s on server %s", client, self);
 	client:defaultoptions();
+	client._writable = cfg.opportunistic_writes;
 	if self.tls_direct then
 		client:add(true, true);
 		client:inittls(self.tls_ctx, true);
