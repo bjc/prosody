@@ -497,8 +497,9 @@ describe("storagemanager", function ()
 				it("overwrites existing keys with new data", function ()
 					local prefix = ("a"):rep(50);
 					local username = "user-overwrite";
-					assert(archive:append(username, prefix.."-1", test_stanza, test_time, "contact@example.com"));
-					assert(archive:append(username, prefix.."-2", test_stanza, test_time, "contact@example.com"));
+					local a1 = assert(archive:append(username, prefix.."-1", test_stanza, test_time, "contact@example.com"));
+					local a2 = assert(archive:append(username, prefix.."-2", test_stanza, test_time, "contact@example.com"));
+					local ids = { a1, a2, };
 
 					do
 						local data = assert(archive:find(username, {}));
@@ -506,7 +507,7 @@ describe("storagemanager", function ()
 						for id, item, when in data do --luacheck: ignore 213/when
 							count = count + 1;
 							assert.truthy(id);
-							assert.equals(("%s-%d"):format(prefix, count), id);
+							assert.equals(ids[count], id);
 							assert(st.is_stanza(item));
 						end
 						assert.equal(2, count);
@@ -514,7 +515,7 @@ describe("storagemanager", function ()
 
 					local new_stanza = st.clone(test_stanza);
 					new_stanza.attr.foo = "bar";
-					assert(archive:append(username, prefix.."-2", new_stanza, test_time+1, "contact2@example.com"));
+					assert(archive:append(username, a2, new_stanza, test_time+1, "contact2@example.com"));
 
 					do
 						local data = assert(archive:find(username, {}));
@@ -522,7 +523,7 @@ describe("storagemanager", function ()
 						for id, item, when in data do
 							count = count + 1;
 							assert.truthy(id);
-							assert.equals(("%s-%d"):format(prefix, count), id);
+							assert.equals(ids[count], id);
 							assert(st.is_stanza(item));
 							if count == 2 then
 								assert.equals(test_time+1, when);
