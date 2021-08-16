@@ -853,6 +853,13 @@ function listener.onreadtimeout(conn)
 	end
 end
 
+function listener.ondrain(conn)
+	local session = sessions[conn];
+	if session then
+		return (hosts[session.host] or prosody).events.fire_event("s2s-ondrain", { session = session });
+	end
+end
+
 function listener.register_outgoing(conn, session)
 	sessions[conn] = session;
 	initialize_session(session);
