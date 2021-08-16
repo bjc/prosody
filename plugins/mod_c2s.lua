@@ -393,6 +393,13 @@ function listener.ondrain(conn)
 	end
 end
 
+function listener.onpredrain(conn)
+	local session = sessions[conn];
+	if session then
+		return (hosts[session.host] or prosody).events.fire_event("c2s-pre-ondrain", { session = session });
+	end
+end
+
 local function keepalive(event)
 	local session = event.session;
 	if not session.notopen then

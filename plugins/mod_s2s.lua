@@ -860,6 +860,13 @@ function listener.ondrain(conn)
 	end
 end
 
+function listener.onpredrain(conn)
+	local session = sessions[conn];
+	if session then
+		return (hosts[session.host] or prosody).events.fire_event("s2s-pre-ondrain", { session = session });
+	end
+end
+
 function listener.register_outgoing(conn, session)
 	sessions[conn] = session;
 	initialize_session(session);
