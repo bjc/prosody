@@ -472,6 +472,7 @@ end
 function interface:onwritable()
 	self:onconnect();
 	if not self.conn then return; end -- could have been closed in onconnect
+	self:on("predrain");
 	local buffer = self.writebuffer;
 	local data = buffer or "";
 	if type(buffer) == "table" then

@@ -294,6 +294,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	local dispatch = listeners.onincoming
 	local status = listeners.onstatus
 	local disconnect = listeners.ondisconnect
+	local predrain = listeners.onpredrain
 	local drain = listeners.ondrain
 	local onreadtimeout = listeners.onreadtimeout;
 	local detach = listeners.ondetach
@@ -338,6 +339,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		dispatch = listeners.onincoming
 		disconnect = listeners.ondisconnect
 		status = listeners.onstatus
+		predrain = listeners.onpredrain
 		drain = listeners.ondrain
 		handler.onreadtimeout = listeners.onreadtimeout
 		detach = listeners.ondetach
@@ -551,6 +553,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 				if listeners.onconnect then
 					listeners.onconnect(handler);
 				end
+			end
+			if predrain then
+				predrain(handler);
 			end
 			buffer = table_concat( bufferqueue, "", 1, bufferqueuelen )
 			succ, err, byte = send( socket, buffer, 1, bufferlen )

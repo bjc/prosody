@@ -449,6 +449,7 @@ function interface_mt:setlistener(listener, data)
 	self.onstatus = listener.onstatus;
 	self.ondetach = listener.ondetach;
 	self.onattach = listener.onattach;
+	self.onpredrain = listener.onpredrain;
 	self.ondrain = listener.ondrain;
 	self:onattach(data);
 end
@@ -463,6 +464,8 @@ end
 function interface_mt:ontimeout()
 end
 function interface_mt:onreadtimeout()
+end
+function interface_mt:onpredrain()
 end
 function interface_mt:ondrain()
 end
@@ -490,6 +493,7 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 		onincoming = listener.onincoming;  -- will be called when client sends data
 		ontimeout = listener.ontimeout; -- called when fatal socket timeout occurs
 		onreadtimeout = listener.onreadtimeout; -- called when socket inactivity timeout occurs
+		onpredrain = listener.onpredrain; -- called before writes
 		ondrain = listener.ondrain; -- called when writebuffer is empty
 		ondetach = listener.ondetach; -- called when disassociating this listener from this connection
 		onstatus = listener.onstatus; -- called for status changes (e.g. of SSL/TLS)
@@ -540,6 +544,7 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 					interface.eventwritetimeout = false
 				end
 			end
+			interface:onpredrain();
 			interface.writebuffer = { t_concat(interface.writebuffer) }
 			local succ, err, byte = interface.conn:send( interface.writebuffer[1], 1, interface.writebufferlen )
 			--vdebug( "write data:", interface.writebuffer, "error:", err, "part:", byte )
