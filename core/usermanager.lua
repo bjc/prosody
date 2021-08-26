@@ -9,6 +9,7 @@
 local modulemanager = require "core.modulemanager";
 local log = require "util.logger".init("usermanager");
 local type = type;
+local it = require "util.iterators";
 local jid_bare = require "util.jid".bare;
 local jid_split = require "util.jid".split;
 local jid_prep = require "util.jid".prep;
@@ -48,6 +49,10 @@ local global_authz_provider = {
 		if global_admins:contains(jid) then
 			return admin_role;
 		end
+	end;
+	get_jids_with_role = function (role)
+		if role ~= "prosody:admin" then return {}; end
+		return it.to_array(global_admins);
 	end;
 };
 
@@ -180,6 +185,23 @@ local function is_admin(jid, host)
 	return roles and roles["prosody:admin"];
 end
 
+local function get_users_with_role(role, host)
+	if not hosts[host] then return false; end
+	if type(role) ~= "string" then return false; end
+
+	return hosts[host].authz.get_users_with_role(role);
+end
+
+local function get_jids_with_role(role, host)
+	if host and not hosts[host] then return false; end
+	if type(role) ~= "string" then return false; end
+
+	host = host or "*";
+
+	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
+	return authz_provider.get_jids_with_role(role);
+end
+
 return {
 	new_null_provider = new_null_provider;
 	initialize_host = initialize_host;
@@ -195,4 +217,6 @@ return {
 	get_roles = get_roles;
 	set_roles = set_roles;
 	is_admin = is_admin;
+	get_users_with_role = get_users_with_role;
+	get_jids_with_role = get_jids_with_role;
 };
