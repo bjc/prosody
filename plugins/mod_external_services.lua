@@ -122,6 +122,15 @@ local services_mt = {
 	end;
 }
 
+function get_services()
+	local extras = module:get_host_items("external_service");
+	local services = ( configured_services + extras ) / prepare;
+
+	setmetatable(services, services_mt);
+
+	return services;
+end
+
 local function handle_services(event)
 	local origin, stanza = event.origin, event.stanza;
 	local action = stanza.tags[1];
@@ -134,8 +143,7 @@ local function handle_services(event)
 	end
 
 	local reply = st.reply(stanza):tag("services", { xmlns = action.attr.xmlns });
-	local extras = module:get_host_items("external_service");
-	local services = ( configured_services + extras ) / prepare;
+	local services = get_services();
 
 	local requested_type = action.attr.type;
 	if requested_type then
@@ -143,8 +151,6 @@ local function handle_services(event)
 			return item.type == requested_type;
 		end);
 	end
-
-	setmetatable(services, services_mt);
 
 	module:fire_event("external_service/services", {
 			origin = origin;
@@ -181,8 +187,7 @@ local function handle_credentials(event)
 	end
 
 	local reply = st.reply(stanza):tag("credentials", { xmlns = action.attr.xmlns });
-	local extras = module:get_host_items("external_service");
-	local services = ( configured_services + extras ) / prepare;
+	local services = get_services();
 	services:filter(function (item)
 		return item.restricted;
 	end)
@@ -197,8 +202,6 @@ local function handle_credentials(event)
 		requested_credentials:add(string.format("%s:%s:%d", service.attr.type, service.attr.host,
 			tonumber(service.attr.port) or 0));
 	end
-
-	setmetatable(services, services_mt);
 
 	module:fire_event("external_service/credentials", {
 			origin = origin;
