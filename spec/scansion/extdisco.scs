@@ -52,6 +52,20 @@ Romeo receives:
 		</credentials>
 	</iq>
 
+Romeo sends:
+	<iq type='get' xml:lang='sv' id='lx5' to='localhost'>
+		<credentials xmlns='urn:xmpp:extdisco:2'>
+			<service host='default.example' />
+		</credentials>
+	</iq>
+
+Romeo receives:
+	<iq type='error' id='lx5' from='localhost'>
+		<error type='modify'>
+			<bad-request xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
+		</error>
+	</iq>
+
 Romeo disconnects
 
 # recording ended on 2020-07-18T16:47:57Z

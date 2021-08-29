@@ -175,7 +175,7 @@ local function handle_credentials(event)
 	local action = stanza.tags[1];
 
 	if origin.type ~= "c2s" then
-		origin.send(st.error_reply(stanza, "auth", "forbidden"));
+		origin.send(st.error_reply(stanza, "auth", "forbidden", "The 'port' and 'type' attributes are required."));
 		return true;
 	end
 
@@ -188,6 +188,11 @@ local function handle_credentials(event)
 
 	local requested_credentials = {};
 	for service in action:childtags("service") do
+		if not service.attr.type or not service.attr.host then
+			origin.send(st.error_reply(stanza, "modify", "bad-request"));
+			return true;
+		end
+
 		table.insert(requested_credentials, {
 				type = service.attr.type;
 				host = service.attr.host;
