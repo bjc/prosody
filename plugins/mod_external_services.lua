@@ -131,34 +131,8 @@ function get_services()
 	return services;
 end
 
-local function handle_services(event)
-	local origin, stanza = event.origin, event.stanza;
-	local action = stanza.tags[1];
-
-	local user_bare = jid.bare(stanza.attr.from);
-	local user_host = jid.host(user_bare);
-	if not ((access:empty() and origin.type == "c2s") or access:contains(user_bare) or access:contains(user_host)) then
-		origin.send(st.error_reply(stanza, "auth", "forbidden"));
-		return true;
-	end
-
-	local reply = st.reply(stanza):tag("services", { xmlns = action.attr.xmlns });
-	local services = get_services();
-
-	local requested_type = action.attr.type;
-	if requested_type then
-		services:filter(function(item)
-			return item.type == requested_type;
-		end);
-	end
-
-	module:fire_event("external_service/services", {
-			origin = origin;
-			stanza = stanza;
-			reply = reply;
-			requested_type = requested_type;
-			services = services;
-		});
+function services_xml(services, name, namespace)
+	local reply = st.stanza(name or "services", { xmlns = namespace or "urn:xmpp:extdisco:2" });
 
 	for _, srv in ipairs(services) do
 		reply:tag("service", {
@@ -173,6 +147,38 @@ local function handle_services(event)
 			}):up();
 	end
 
+	return reply;
+end
+
+local function handle_services(event)
+	local origin, stanza = event.origin, event.stanza;
+	local action = stanza.tags[1];
+
+	local user_bare = jid.bare(stanza.attr.from);
+	local user_host = jid.host(user_bare);
+	if not ((access:empty() and origin.type == "c2s") or access:contains(user_bare) or access:contains(user_host)) then
+		origin.send(st.error_reply(stanza, "auth", "forbidden"));
+		return true;
+	end
+
+	local services = get_services();
+
+	local requested_type = action.attr.type;
+	if requested_type then
+		services:filter(function(item)
+			return item.type == requested_type;
+		end);
+	end
+
+	module:fire_event("external_service/services", {
+			origin = origin;
+			stanza = stanza;
+			requested_type = requested_type;
+			services = services;
+		});
+
+	local reply = st.reply(stanza):add_child(services_xml(services, action.name, action.attr.xmlns));
+
 	origin.send(reply);
 	return true;
 end
@@ -186,7 +192,6 @@ local function handle_credentials(event)
 		return true;
 	end
 
-	local reply = st.reply(stanza):tag("credentials", { xmlns = action.attr.xmlns });
 	local services = get_services();
 	services:filter(function (item)
 		return item.restricted;
@@ -206,7 +211,6 @@ local function handle_credentials(event)
 	module:fire_event("external_service/credentials", {
 			origin = origin;
 			stanza = stanza;
-			reply = reply;
 			requested_credentials = requested_credentials;
 			services = services;
 		});
@@ -217,18 +221,7 @@ local function handle_credentials(event)
 		return requested_credentials:contains(port_key) or requested_credentials:contains(portless_key);
 	end);
 
-	for _, srv in ipairs(services) do
-		reply:tag("service", {
-				type = srv.type;
-				transport = srv.transport;
-				host = srv.host;
-				port = srv.port and string.format("%d", srv.port) or nil;
-				username = srv.username;
-				password = srv.password;
-				expires = srv.expires and dt.datetime(srv.expires) or nil;
-				restricted = srv.restricted and "1" or nil;
-			}):up();
-	end
+	local reply = st.reply(stanza):add_child(services_xml(services, action.name, action.attr.xmlns));
 
 	origin.send(reply);
 	return true;
