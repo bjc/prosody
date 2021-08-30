@@ -101,12 +101,12 @@ prosody.cfg.lua.install: prosody.cfg.lua.dist
 	sed 's|certs/|$(INSTALLEDCONFIG)/certs/|' prosody.cfg.lua.dist > $@
 
 prosody.version:
-	test -f prosody.release && \
-		cp prosody.release $@ || \
-		test -f .hg_archival.txt && \
-		sed -n 's/^node: \(............\).*/\1/p' .hg_archival.txt > $@ || \
-		test -f .hg/dirstate && \
-		hexdump -n6 -e'6/1 "%02x"' .hg/dirstate > $@ || \
-		echo unknown > $@
-
-
+	if [ -f prosody.release ]; then \
+		cp prosody.release $@; \
+	elif [ -f .hg_archival.txt ]; then \
+		sed -n 's/^node: \(............\).*/\1/p' .hg_archival.txt > $@; \
+	elif [ -f .hg/dirstate ]; then \
+		hexdump -n6 -e'6/1 "%02x"' .hg/dirstate > $@; \
+	else \
+		echo unknown > $@; \
+	fi
