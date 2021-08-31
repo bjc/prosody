@@ -155,8 +155,8 @@ local function runtimers(next_delay, min_wait)
 	end
 
 	if readd then
-		for _, timer in pairs(readd) do
-			timers:insert(timer[1], timer[2]);
+		for id, timer in pairs(readd) do
+			timers:insert(timer[1], timer[2], id);
 		end
 		peek = timers:peek();
 	end
@@ -489,9 +489,9 @@ function interface:onwritable()
 	if ok then
 		self:set(nil, false);
 		if cfg.keep_buffers and type(buffer) == "table" then
-			for i = #buffer, 1, -1 do
-				buffer[i] = nil;
-			end
+		for i = #buffer, 1, -1 do
+			buffer[i] = nil;
+		end
 		else
 			self.writebuffer = nil;
 		end
@@ -501,10 +501,10 @@ function interface:onwritable()
 	elseif partial then
 		self:debug("Sent %d out of %d buffered bytes", partial, #data);
 		if cfg.keep_buffers and type(buffer) == "table" then
-			buffer[1] = data:sub(partial+1);
-			for i = #buffer, 2, -1 do
-				buffer[i] = nil;
-			end
+		buffer[1] = data:sub(partial+1);
+		for i = #buffer, 2, -1 do
+			buffer[i] = nil;
+		end
 		else
 			self.writebuffer = data:sub(partial+1);
 		end
@@ -546,9 +546,9 @@ function interface:write(data)
 			local ret, err = self:onwritable();
 			self._opportunistic_write = nil;
 			return ret, err;
-		end
-		self:setwritetimeout();
-		self:set(nil, true);
+	end
+	self:setwritetimeout();
+	self:set(nil, true);
 	end
 	return #data;
 end
@@ -616,21 +616,21 @@ end
 function interface:inittls(tls_ctx, now)
 	if self._tls then return end
 	if tls_ctx then self.tls_ctx = tls_ctx; end
-	self._tls = true;
+		self._tls = true;
 	self:debug("Starting TLS now");
 	self:updatenames(); -- Can't getpeer/sockname after wrap()
-	local ok, conn, err = pcall(luasec.wrap, self.conn, self.tls_ctx);
-	if not ok then
-		conn, err = ok, conn;
+		local ok, conn, err = pcall(luasec.wrap, self.conn, self.tls_ctx);
+		if not ok then
+			conn, err = ok, conn;
 		self:debug("Failed to initialize TLS: %s", err);
-	end
-	if not conn then
-		self:on("disconnect", err);
-		self:destroy();
-		return conn, err;
-	end
-	conn:settimeout(0);
-	self.conn = conn;
+		end
+		if not conn then
+			self:on("disconnect", err);
+			self:destroy();
+			return conn, err;
+		end
+		conn:settimeout(0);
+		self.conn = conn;
 	if conn.sni then
 		if self.servername then
 			conn:sni(self.servername);
@@ -650,9 +650,9 @@ function interface:inittls(tls_ctx, now)
 				conn:settlsa(tlsa.use, tlsa.select, tlsa.match, tlsa.data);
 			end
 		end
-	end
-	self:on("starttls");
-	self.ondrain = nil;
+		end
+		self:on("starttls");
+		self.ondrain = nil;
 	self.onwritable = interface.tlshandshake;
 	self.onreadable = interface.tlshandshake;
 	if now then
@@ -961,10 +961,10 @@ local function link(from, to, read_size)
 	from:debug("Linking to %s", to.id);
 	function from:onincoming(data)
 		self:pause();
-		to:write(data);
+			to:write(data);
 	end
 	function to:ondrain() -- luacheck: ignore 212/self
-		from:resume();
+			from:resume();
 	end
 	from:set_mode(read_size);
 	from:set(true, nil);
