@@ -488,6 +488,13 @@ module:hook("message/offline/handle", function(event)
 	end
 end, -2);
 
+-- Don't broadcast offline messages to clients that have queried the archive.
+module:hook("message/offline/broadcast", function (event)
+	if event.origin.mam_requested then
+		return true;
+	end
+end);
+
 if cleanup_after ~= "never" then
 	local cleanup_storage = module:open_store("archive_cleanup");
 	local cleanup_map = module:open_store("archive_cleanup", "map");

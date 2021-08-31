@@ -27,6 +27,7 @@ TRUNK
 -   mod_server_contact_info now loaded on components if enabled
 -   Statistics now based on OpenMetrics
 -   Direct TLS support
+-   Offline messages aren't sent to MAM clients
 
 0.11.0
 ======
