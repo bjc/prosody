@@ -99,8 +99,14 @@ local fds = createtable(10, 0); -- FD -> conn
 local timers = indexedbheap.create();
 
 local function noop() end
+
+-- Keep track of recently closed timers to avoid re-adding them
+local closedtimers = {};
+
 local function closetimer(id)
-	timers:remove(id);
+	if timers:remove(id) then
+		closedtimers[id] = true;
+	end
 end
 
 local function reschedule(id, time)
@@ -138,7 +144,7 @@ local function runtimers(next_delay, min_wait)
 
 		local _, timer, id = timers:pop();
 		local ok, ret = xpcall(timer, traceback, now, id);
-		if ok and type(ret) == "number"  then
+		if ok and type(ret) == "number" and not closedtimers[id] then
 			local next_time = elapsed+ret;
 			-- Delay insertion of timers to be re-added
 			-- so they don't get called again this tick
@@ -159,6 +165,10 @@ local function runtimers(next_delay, min_wait)
 			timers:insert(timer[1], timer[2], id);
 		end
 		peek = timers:peek();
+	end
+
+	if next(closedtimers) ~= nil then
+		closedtimers = {};
 	end
 
 	if peek == nil then
