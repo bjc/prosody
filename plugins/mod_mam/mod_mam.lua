@@ -474,6 +474,10 @@ end
 module:hook("pre-message/bare", strip_stanza_id_after_other_events, -1);
 module:hook("pre-message/full", strip_stanza_id_after_other_events, -1);
 
+-- Catch messages not stored by mod_offline and mark them as stored if they
+-- have been archived. This would generally only happen if mod_offline is
+-- disabled.  Otherwise the message would generate a delivery failure report,
+-- which would not be accurate because it has been archived.
 module:hook("message/offline/handle", function(event)
 	local stanza = event.stanza;
 	if stanza:get_child("stanza-id", xmlns_st_id) then
