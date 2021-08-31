@@ -122,8 +122,8 @@ local function runtimers(next_delay, min_wait)
 	end
 
 	if readd then
-		for _, timer in pairs(readd) do
-			timers:insert(timer, timer[1]);
+		for id, timer in pairs(readd) do
+			timers:insert(timer, timer[1], id);
 		end
 		peek = timers:peek();
 	end
