@@ -480,8 +480,11 @@ module:hook("pre-message/full", strip_stanza_id_after_other_events, -1);
 -- which would not be accurate because it has been archived.
 module:hook("message/offline/handle", function(event)
 	local stanza = event.stanza;
-	if stanza:get_child("stanza-id", xmlns_st_id) then
-		return true;
+	local user = event.username .. "@" .. host;
+	for st_id in stanza:childtags("stanza-id", xmlns_st_id) do
+		if st_id.attr.by == user then
+			return true;
+		end
 	end
 end, -2);
 
