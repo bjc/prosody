@@ -165,6 +165,14 @@ module:hook_tag("http://etherx.jabber.org/streams", "features", function (sessio
 	end
 end, 500);
 
+module:hook("s2sout-authenticate-legacy", function(event)
+	local session = event.origin;
+	if s2s_require_encryption and can_do_tls(session) then
+		session.sends2s(starttls_initiate);
+		return true;
+	end
+end, 200);
+
 module:hook_tag(xmlns_starttls, "proceed", function (session, stanza) -- luacheck: ignore 212/stanza
 	if session.type == "s2sout_unauthed" and can_do_tls(session) then
 		module:log("debug", "Proceeding with TLS on s2sout...");
