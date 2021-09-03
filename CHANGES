@@ -28,6 +28,7 @@ TRUNK
 -   Statistics now based on OpenMetrics
 -   Direct TLS support
 -   Offline messages aren't sent to MAM clients
+-   Network backend server_select deprecated
 
 0.11.0
 ======

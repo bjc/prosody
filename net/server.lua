@@ -59,6 +59,8 @@ if server_type == "event" then
 		end
 	end
 elseif server_type == "select" then
+	-- TODO Remove completely.
+	log("warn", "select is deprecated, the new default is epoll. For more info see https://prosody.im/doc/network_backend");
 	server = require "net.server_select";
 
 	local defaults = {};
