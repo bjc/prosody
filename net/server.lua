@@ -25,8 +25,8 @@ end
 
 if server_type == "event" then
 	if not pcall(require, "luaevent.core") then
-		log("error", "libevent not found, falling back to select()");
-		server_type = "select"
+		log("error", "libevent not found, falling back to %s", default_backend);
+		server_type = default_backend;
 	end
 end
 
