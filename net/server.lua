@@ -14,8 +14,7 @@ end
 
 local log = require "util.logger".init("net.server");
 
-local have_util_poll = pcall(require, "util.poll");
-local default_backend = have_util_poll and "epoll" or "select";
+local default_backend = "epoll";
 
 local server_type = require "core.configmanager".get("*", "network_backend") or default_backend;
 
