@@ -66,7 +66,6 @@ function archive:append(username, key, value, when, with)
 	value.when = when;
 	value.with = with;
 	value.attr.stamp = datetime.datetime(when);
-	value.attr.stamp_legacy = datetime.legacy(when);
 
 	local cache_key = jid_join(username, host, self.store);
 	local item_count = archive_item_count_cache:get(cache_key);
@@ -219,6 +218,7 @@ function archive:find(username, query)
 		local with = item.with;
 		item.key, item.when, item.with = nil, nil, nil;
 		item.attr.stamp = nil;
+		-- COMPAT Stored data may still contain legacy XEP-0091 timestamp
 		item.attr.stamp_legacy = nil;
 		item = st.deserialize(item);
 		return key, item, when, with;
@@ -256,7 +256,6 @@ function archive:set(username, key, new_value, new_when, new_with)
 			item.when = when;
 			item.with = new_with or old_item.with;
 			item.attr.stamp = datetime.datetime(when);
-			item.attr.stamp_legacy = datetime.legacy(when);
 			items[i] = item;
 			return datamanager.list_store(username, host, self.store, items);
 		end
