@@ -323,7 +323,11 @@ function handlers.get_items(origin, stanza, items, service)
 		origin.send(pubsub_error_reply(stanza, "nodeid-required"));
 		return true;
 	end
-	local ok, results = service:get_items(node, stanza.attr.from, requested_items);
+	local resultspec; -- TODO rsm.get()
+	if items.attr.max_items then
+		resultspec = { max = tonumber(items.attr.max_items) };
+	end
+	local ok, results = service:get_items(node, stanza.attr.from, requested_items, resultspec);
 	if not ok then
 		origin.send(pubsub_error_reply(stanza, results));
 		return true;

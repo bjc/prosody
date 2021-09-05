@@ -1,0 +1,196 @@
+# Pubsub: Requesting the Most Recent Items (#1608)
+
+[Client] Alice
+	jid: admin@localhost
+	password: password
+
+---------
+
+Alice connects
+
+Alice sends:
+	<presence xmlns:stream="http://etherx.jabber.org/streams" id=":7IoqYcT3191rfk_dZGo2"/>
+
+Alice receives:
+	<presence xmlns:stream="http://etherx.jabber.org/streams" from="${Alice's full JID}" id=":7IoqYcT3191rfk_dZGo2"/>
+
+Alice sends:
+	<iq xmlns:stream="http://etherx.jabber.org/streams" to="pubsub.localhost" id=":m0SM8Hn5JxP9BJJ_X4Mz" type="set">
+	  <pubsub xmlns="http://jabber.org/protocol/pubsub">
+	    <create node="5549ea47-ea53-4cc1-9e7c-37842fe4bc06"/>
+	  </pubsub>
+	</iq>
+
+Alice receives:
+	<iq xmlns:stream="http://etherx.jabber.org/streams" to="${Alice's full JID}" from="pubsub.localhost" type="result" id=":m0SM8Hn5JxP9BJJ_X4Mz"/>
+
+Alice sends:
+	<iq xmlns:stream="http://etherx.jabber.org/streams" to="pubsub.localhost" id=":gwZgEQmzAHcQz-FZOxi-" type="get">
+	  <pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
+	    <configure node="5549ea47-ea53-4cc1-9e7c-37842fe4bc06"/>
+	  </pubsub>
+	</iq>
+
+Alice receives:
+	<iq xmlns:stream="http://etherx.jabber.org/streams" to="${Alice's full JID}" from="pubsub.localhost" type="result" id=":gwZgEQmzAHcQz-FZOxi-">
+	  <pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
+	    <configure node="5549ea47-ea53-4cc1-9e7c-37842fe4bc06">
+	      <x xmlns="jabber:x:data" type="form">
+		<field var="FORM_TYPE" type="hidden">
+		  <value>http://jabber.org/protocol/pubsub#node_config</value>
+		</field>
+		<field var="pubsub#title" label="Title" type="text-single"/>
+		<field var="pubsub#description" label="Description" type="text-single"/>
+		<field var="pubsub#type" label="The type of node data, usually specified by the namespace of the payload (if any)" type="text-single"/>
+		<field var="pubsub#max_items" label="Max # of items to persist" type="text-single">
+		  <validate xmlns="http://jabber.org/protocol/xdata-validate" datatype="pubsub:integer-or-max"/>
+		  <value>20</value>
+		</field>
+		<field var="pubsub#persist_items" label="Persist items to storage" type="boolean">
+		  <value>1</value>
+		</field>
+		<field var="pubsub#access_model" label="Specify the subscriber model" type="list-single">
+		  <option label="authorize">
+		    <value>authorize</value>
+		  </option>
+		  <option label="open">
+		    <value>open</value>
+		  </option>
+		  <option label="presence">
+		    <value>presence</value>
+		  </option>
+		  <option label="roster">
+		    <value>roster</value>
+		  </option>
+		  <option label="whitelist">
+		    <value>whitelist</value>
+		  </option>
+		  <value>open</value>
+		</field>
+		<field var="pubsub#publish_model" label="Specify the publisher model" type="list-single">
+		  <option label="publishers">
+		    <value>publishers</value>
+		  </option>
+		  <option label="subscribers">
+		    <value>subscribers</value>
+		  </option>
+		  <option label="open">
+		    <value>open</value>
+		  </option>
+		  <value>publishers</value>
+		</field>
+		<field var="pubsub#deliver_notifications" label="Whether to deliver event notifications" type="boolean">
+		  <value>1</value>
+		</field>
+		<field var="pubsub#deliver_payloads" label="Whether to deliver payloads with event notifications" type="boolean">
+		  <value>1</value>
+		</field>
+		<field var="pubsub#notification_type" label="Specify the delivery style for notifications" type="list-single">
+		  <option label="Messages of type normal">
+		    <value>normal</value>
+		  </option>
+		  <option label="Messages of type headline">
+		    <value>headline</value>
+		  </option>
+		  <value>headline</value>
+		</field>
+		<field var="pubsub#notify_delete" label="Whether to notify subscribers when the node is deleted" type="boolean">
+		  <value>1</value>
+		</field>
+		<field var="pubsub#notify_retract" label="Whether to notify subscribers when items are removed from the node" type="boolean">
+		  <value>1</value>
+		</field>
+	      </x>
+	    </configure>
+	  </pubsub>
+	</iq>
+
+Alice sends:
+	<iq xmlns:stream="http://etherx.jabber.org/streams" to="pubsub.localhost" id=":pfWBQ2MNIq8ieul57Qp7" type="set">
+	  <pubsub xmlns="http://jabber.org/protocol/pubsub">
+	    <publish node="5549ea47-ea53-4cc1-9e7c-37842fe4bc06">
+	      <item id="20e9eb9e-8acb-436e-a486-40e80400faf1">
+		<foo xmlns="https://zombofant.net/xmlns/aioxmpp#test">foo</foo>
+	      </item>
+	    </publish>
+	  </pubsub>
+	</iq>
+
+Alice receives:
+	<iq xmlns:stream="http://etherx.jabber.org/streams" to="${Alice's full JID}" from="pubsub.localhost" type="result" id=":pfWBQ2MNIq8ieul57Qp7">
+	  <pubsub xmlns="http://jabber.org/protocol/pubsub">
+	    <publish node="5549ea47-ea53-4cc1-9e7c-37842fe4bc06">
+	      <item id="20e9eb9e-8acb-436e-a486-40e80400faf1"/>
+	    </publish>
+	  </pubsub>
+	</iq>
+
+Alice sends:
+	<iq xmlns:stream="http://etherx.jabber.org/streams" to="pubsub.localhost" id=":Q5TLT6nsW0HHdkDgrPPe" type="set">
+	  <pubsub xmlns="http://jabber.org/protocol/pubsub">
+	    <publish node="5549ea47-ea53-4cc1-9e7c-37842fe4bc06">
+	      <item id="4b94623d-1127-41c0-ac47-e283fd890557">
+		<foo xmlns="https://zombofant.net/xmlns/aioxmpp#test">bar</foo>
+	      </item>
+	    </publish>
+	  </pubsub>
+	</iq>
+
+Alice receives:
+	<iq xmlns:stream="http://etherx.jabber.org/streams" to="${Alice's full JID}" from="pubsub.localhost" type="result" id=":Q5TLT6nsW0HHdkDgrPPe">
+	  <pubsub xmlns="http://jabber.org/protocol/pubsub">
+	    <publish node="5549ea47-ea53-4cc1-9e7c-37842fe4bc06">
+	      <item id="4b94623d-1127-41c0-ac47-e283fd890557"/>
+	    </publish>
+	  </pubsub>
+	</iq>
+
+Alice sends:
+	<iq xmlns:stream="http://etherx.jabber.org/streams" to="pubsub.localhost" id=":3nvB2E20p1iuM6lOPaP6" type="get">
+	  <pubsub xmlns="http://jabber.org/protocol/pubsub">
+			<items node="5549ea47-ea53-4cc1-9e7c-37842fe4bc06" max_items="1"/>
+	  </pubsub>
+	</iq>
+
+Alice receives:
+	<iq xmlns:stream="http://etherx.jabber.org/streams" to="${Alice's full JID}" from="pubsub.localhost" type="result" id=":3nvB2E20p1iuM6lOPaP6">
+	  <pubsub xmlns="http://jabber.org/protocol/pubsub">
+	    <items node="5549ea47-ea53-4cc1-9e7c-37842fe4bc06">
+	      <item publisher="${Alice's JID}" xmlns="http://jabber.org/protocol/pubsub" id="4b94623d-1127-41c0-ac47-e283fd890557">
+		<foo xmlns="https://zombofant.net/xmlns/aioxmpp#test">bar</foo>
+	      </item>
+	    </items>
+	  </pubsub>
+	</iq>
+
+Alice sends:
+	<iq xmlns:stream="http://etherx.jabber.org/streams" to="pubsub.localhost" id=":XQdyK54iyOKiJvUoX9t_" type="get">
+	  <pubsub xmlns="http://jabber.org/protocol/pubsub">
+	    <items node="5549ea47-ea53-4cc1-9e7c-37842fe4bc06"/>
+	  </pubsub>
+	</iq>
+
+Alice receives:
+	<iq xmlns:stream="http://etherx.jabber.org/streams" to="${Alice's full JID}" from="pubsub.localhost" type="result" id=":XQdyK54iyOKiJvUoX9t_">
+	  <pubsub xmlns="http://jabber.org/protocol/pubsub">
+	    <items node="5549ea47-ea53-4cc1-9e7c-37842fe4bc06">
+	      <item xmlns="http://jabber.org/protocol/pubsub" publisher="${Alice's JID}" id="20e9eb9e-8acb-436e-a486-40e80400faf1">
+		<foo xmlns="https://zombofant.net/xmlns/aioxmpp#test">foo</foo>
+	      </item>
+	      <item xmlns="http://jabber.org/protocol/pubsub" publisher="${Alice's JID}" id="4b94623d-1127-41c0-ac47-e283fd890557">
+		<foo xmlns="https://zombofant.net/xmlns/aioxmpp#test">bar</foo>
+	      </item>
+	    </items>
+	  </pubsub>
+	</iq>
+
+Alice sends:
+	<iq xmlns:stream="http://etherx.jabber.org/streams" to="pubsub.localhost" id=":ySGQOz5tnyWT82idwJZP" type="set">
+	  <pubsub xmlns="http://jabber.org/protocol/pubsub#owner">
+	    <delete node="5549ea47-ea53-4cc1-9e7c-37842fe4bc06"/>
+	  </pubsub>
+	</iq>
+
+Alice receives:
+	<iq xmlns:stream="http://etherx.jabber.org/streams" to="${Alice's full JID}" from="pubsub.localhost" type="result" id=":ySGQOz5tnyWT82idwJZP"/>
+
