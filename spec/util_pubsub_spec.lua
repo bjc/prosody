@@ -528,4 +528,61 @@ describe("util.pubsub", function ()
 		end);
 
 	end)
+
+	describe("max_items", function ()
+		it("works", function ()
+			local service = pubsub.new { };
+
+			local ok = service:create("node", true)
+			assert.truthy(ok);
+
+			for i = 1, 20 do
+				assert.truthy(service:publish("node", true, "item"..tostring(i), "data"..tostring(i)));
+			end
+
+			do
+				local ok, items = service:get_items("node", true, nil, { max = 3 });
+				assert.truthy(ok, items);
+				assert.equal(3, #items);
+				assert.same({
+						"item20",
+						"item19",
+						"item18",
+						item20 = "data20",
+						item19 = "data19",
+						item18 = "data18",
+					}, items, "items should be ordered by oldest first");
+			end
+
+			do
+				local ok, items = service:get_items("node", true, nil, { max = 10 });
+				assert.truthy(ok, items);
+				assert.equal(10, #items);
+				assert.same({
+						"item20",
+						"item19",
+						"item18",
+						"item17",
+						"item16",
+						"item15",
+						"item14",
+						"item13",
+						"item12",
+						"item11",
+						item20 = "data20",
+						item19 = "data19",
+						item18 = "data18",
+						item17 = "data17",
+						item16 = "data16",
+						item15 = "data15",
+						item14 = "data14",
+						item13 = "data13",
+						item12 = "data12",
+						item11 = "data11",
+					}, items, "items should be ordered by oldest first");
+			end
+
+		end);
+
+	end)
 end);

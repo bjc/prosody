@@ -642,7 +642,7 @@ function service:purge(node, actor, notify) --> ok, err
 	return true
 end
 
-function service:get_items(node, actor, ids) --> (true, { id, [id] = node }) or (false, err)
+function service:get_items(node, actor, ids, resultspec) --> (true, { id, [id] = node }) or (false, err)
 	-- Access checking
 	if not self:may(node, actor, "get_items") then
 		return false, "forbidden";
@@ -660,18 +660,23 @@ function service:get_items(node, actor, ids) --> (true, { id, [id] = node }) or 
 		ids = { ids };
 	end
 	local data = {};
+	local limit = resultspec and resultspec.max;
 	if ids then
 		for _, key in ipairs(ids) do
 			local value = self.data[node]:get(key);
 			if value then
 				data[#data+1] = key;
 				data[key] = value;
+				-- Limits and ids seem like a problematic combination.
+				if limit and #data >= limit then break end
 			end
 		end
 	else
 		for key, value in self.data[node]:items() do
 			data[#data+1] = key;
 			data[key] = value;
+			if limit and #data >= limit then break
+			end
 		end
 	end
 	return true, data;
