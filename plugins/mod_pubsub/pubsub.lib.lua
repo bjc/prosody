@@ -336,7 +336,13 @@ function handlers.get_items(origin, stanza, items, service)
 	local expose_publisher = service.config.expose_publisher;
 
 	local data = st.stanza("items", { node = node });
-	for _, id in ipairs(results) do
+	local iter, v, i = ipairs(results);
+	if not requested_items then
+		-- XXX Hack to preserve order of explicitly requested items.
+		iter, v, i = it.reverse(iter, v, i);
+	end
+
+	for _, id in iter, v, i do
 		local item = results[id];
 		if not expose_publisher then
 			item = st.clone(item);
@@ -829,7 +835,7 @@ local function archive_itemstore(archive, max_items, user, node)
 			return true;
 		end
 		module:log("debug", "Listed items %s", data);
-		return it.reverse(function()
+		return function()
 			-- luacheck: ignore 211/when
 			local id, payload, when, publisher = data();
 			if id == nil then
@@ -837,7 +843,7 @@ local function archive_itemstore(archive, max_items, user, node)
 			end
 			local item = create_encapsulating_item(id, payload, publisher);
 			return id, item;
-		end);
+		end;
 	end
 	function get_set:get(key) -- luacheck: ignore 212/self
 		local data, err = archive:find(user, {
