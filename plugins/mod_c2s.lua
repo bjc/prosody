@@ -339,7 +339,11 @@ function listener.onconnect(conn)
 				if not ok then
 					log("debug", "Received invalid XML (%s) %d bytes: %q", err, #data, data:sub(1, 300));
 					if err == "stanza-too-large" then
-						session:close({ condition = "policy-violation", text = "XML stanza is too big" });
+						session:close({
+							condition = "policy-violation",
+							text = "XML stanza is too big",
+							extra = st.stanza("stanza-too-big", { xmlns = 'urn:xmpp:errors' }),
+						});
 					else
 						session:close("not-well-formed");
 					end
