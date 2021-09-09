@@ -969,7 +969,7 @@ module:provides("net", {
 
 
 module:provides("net", {
-	name = "direct_tls_s2s";
+	name = "s2s_direct_tls";
 	listener = listener;
 	encryption = "ssl";
 	ssl_config = {
