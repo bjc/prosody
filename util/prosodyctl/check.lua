@@ -311,8 +311,9 @@ local function check(arg)
 		local c2s_ports = set.new(configmanager.get("*", "c2s_ports") or {5222});
 		local s2s_ports = set.new(configmanager.get("*", "s2s_ports") or {5269});
 		local c2s_tls_ports = set.new(configmanager.get("*", "direct_tls_ports") or {});
+		local s2s_tls_ports = set.new(configmanager.get("*", "s2s_direct_tls_ports") or {});
 
-		local c2s_srv_required, s2s_srv_required, c2s_tls_srv_required;
+		local c2s_srv_required, s2s_srv_required, c2s_tls_srv_required, s2s_tls_srv_required;
 		if not c2s_ports:contains(5222) then
 			c2s_srv_required = true;
 		end
@@ -321,6 +322,9 @@ local function check(arg)
 		end
 		if not c2s_tls_ports:empty() then
 			c2s_tls_srv_required = true;
+		end
+		if not s2s_tls_ports:empty() then
+			s2s_tls_srv_required = true;
 		end
 
 		local problem_hosts = set.new();
@@ -447,6 +451,25 @@ local function check(arg)
 					else
 						target_hosts:add(host);
 					end
+				end
+			end
+			if modules:contains("s2s") and s2s_tls_srv_required then
+				local res = dns.lookup("_xmpps-server._tcp."..idna.to_ascii(host)..".", "SRV");
+				if res and #res > 0 then
+					for _, record in ipairs(res) do
+						if record.srv.target == "." then -- TODO is this an error if mod_s2s is enabled?
+							print("    'xmpps-server' service disabled by pointing to '.'"); -- FIXME Explain better what this is
+							break;
+						end
+						local target = trim_dns_name(record.srv.target);
+						target_hosts:add(target);
+						if not s2s_tls_ports:contains(record.srv.port) then
+							print("    SRV target "..target.." contains unknown Direct TLS server port: "..record.srv.port);
+						end
+					end
+				else
+					print("    No _xmpps-server SRV record found for "..host..", but it looks like you need one.");
+					all_targets_ok = false;
 				end
 			end
 			if target_hosts:empty() then
