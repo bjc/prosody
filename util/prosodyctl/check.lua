@@ -311,7 +311,7 @@ local function check(arg)
 		local ip = require "util.ip";
 		local c2s_ports = set.new(configmanager.get("*", "c2s_ports") or {5222});
 		local s2s_ports = set.new(configmanager.get("*", "s2s_ports") or {5269});
-		local c2s_tls_ports = set.new(configmanager.get("*", "direct_tls_ports") or {});
+		local c2s_tls_ports = set.new(configmanager.get("*", "c2s_direct_tls_ports") or {});
 		local s2s_tls_ports = set.new(configmanager.get("*", "s2s_direct_tls_ports") or {});
 
 		local c2s_srv_required, s2s_srv_required, c2s_tls_srv_required, s2s_tls_srv_required;

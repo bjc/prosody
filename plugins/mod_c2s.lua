@@ -442,7 +442,7 @@ module:provides("net", {
 });
 
 module:provides("net", {
-	name = "direct_tls";
+	name = "c2s_direct_tls";
 	listener = listener;
 	encryption = "ssl";
 	multiplex = {
