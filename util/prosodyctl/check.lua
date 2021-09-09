@@ -175,6 +175,7 @@ local function check(arg)
 			print("    You have some deprecated options in the global section:");
 			print("    "..tostring(deprecated_global_options))
 			ok = false;
+			-- FIXME show replacement options where applicable
 		end
 		for host, options in it.filter(function (h) return h ~= "*" end, pairs(configmanager.getconfig())) do
 			local host_options = set.new(it.to_array(it.keys(options)));
