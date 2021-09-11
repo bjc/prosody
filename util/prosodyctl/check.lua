@@ -1,6 +1,7 @@
 local configmanager = require "core.configmanager";
 local show_usage = require "util.prosodyctl".show_usage;
 local show_warning = require "util.prosodyctl".show_warning;
+local is_prosody_running = require "util.prosodyctl".isrunning;
 local dependencies = require "util.dependencies";
 local socket = require "socket";
 local jid_split = require "util.jid".prepped_split;
@@ -723,6 +724,14 @@ local function check(arg)
 	end
 	-- intentionally not doing this by default
 	if what == "connectivity" then
+		print(is_prosody_running())
+		local ok, prosody_is_running = is_prosody_running();
+		if configmanager.get("*", "pidfile") and not prosody_is_running then
+			print("Prosody does not appear to be running, which is required for this test.");
+			print("Start it and then try again.");
+			return 1;
+		end
+
 		for host in it.filter(skip_bare_jid_hosts, enabled_hosts()) do
 			local modules, component_module = modulemanager.get_modules_for_host(host);
 			if component_module then
