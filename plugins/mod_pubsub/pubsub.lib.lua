@@ -158,6 +158,7 @@ local node_config_form = dataform {
 		value = true;
 	};
 };
+_M.node_config_form = node_config_form;
 
 local subscribe_options_form = dataform {
 	{
@@ -171,6 +172,7 @@ local subscribe_options_form = dataform {
 		label = "Receive message body in addition to payload?";
 	};
 };
+_M.subscribe_options_form = subscribe_options_form;
 
 local node_metadata_form = dataform {
 	{
@@ -199,6 +201,7 @@ local node_metadata_form = dataform {
 		name = "pubsub#publish_model";
 	};
 };
+_M.node_metadata_form = node_metadata_form;
 
 local service_method_feature_map = {
 	add_subscription = { "subscribe", "subscription-options" };
