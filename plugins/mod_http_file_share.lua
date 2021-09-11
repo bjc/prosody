@@ -37,6 +37,7 @@ local file_types = module:get_option_set(module.name .. "_allowed_file_types", {
 local safe_types = module:get_option_set(module.name .. "_safe_file_types", {"image/*","video/*","audio/*","text/plain"});
 local expiry = module:get_option_number(module.name .. "_expires_after", 7 * 86400);
 local daily_quota = module:get_option_number(module.name .. "_daily_quota", file_size_limit*10); -- 100 MB / day
+local total_storage_limit = module:get_option_number(module.name.."_global_quota", nil);
 
 local access = module:get_option_set(module.name .. "_access", {});
 
@@ -58,10 +59,14 @@ local upload_errors = errors.init(module.name, namespace, {
 	};
 	filesizefmt = { type = "modify"; condition = "bad-request"; text = "File size must be positive integer"; };
 	quota = { type = "wait"; condition = "resource-constraint"; text = "Daily quota reached"; };
+	unknowntotal = { type = "wait"; condition = "undefined-condition"; text = "Server storage usage not yet calculated" };
+	outofdisk = { type = "wait"; condition = "resource-constraint"; text = "Server global storage quota reached" };
 });
 
 local upload_cache = cache.new(1024);
 local quota_cache = cache.new(1024);
+
+local total_storage_usage = nil;
 
 local measure_upload_cache_size = module:measure("upload_cache", "amount");
 local measure_quota_cache_size = module:measure("quota_cache", "amount");
@@ -124,6 +129,15 @@ function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
 	end
 	if filesize > file_size_limit then
 		return false, upload_errors.new("filesize");
+	end
+
+	if total_storage_limit then
+		if not total_storage_usage  then
+			return false, upload_errors.new("unknowntotal");
+		elseif total_storage_usage + filesize > total_storage_limit then
+			module:log("warn", "Global storage quota reached, at %s!", B(total_storage_usage));
+			return false, upload_errors.new("outofdisk");
+		end
 	end
 
 	local uploader_quota = get_daily_quota(uploader);
@@ -191,6 +205,11 @@ function handle_slot_request(event)
 	if not slot then
 		origin.send(st.error_reply(stanza, storage_err));
 		return true;
+	end
+
+	if total_storage_usage then
+		total_storage_usage = total_storage_usage + filesize;
+		module:log("debug", "Global quota %s / %s", B(total_storage_usage), B(total_storage_limit));
 	end
 
 	local cached_quota = quota_cache:get(uploader);
@@ -433,13 +452,16 @@ if expiry >= 0 and not external_base_url then
 		end
 
 		module:log("info", "Pruning expired files uploaded earlier than %s", dt.datetime(boundary_time));
+		module:log("debug", "Global quota %s / %s", B(total_storage_usage), B(total_storage_limit));
 
 		local obsolete_uploads = array();
 		local i = 0;
-		for slot_id in iter do
+		local size_sum = 0;
+		for slot_id, slot_info in iter do
 			i = i + 1;
 			obsolete_uploads:push(slot_id);
 			upload_cache:set(slot_id, nil);
+			size_sum = size_sum + tonumber(slot_info.attr.size);
 		end
 
 		sleep(0.1);
@@ -463,7 +485,11 @@ if expiry >= 0 and not external_base_url then
 
 		local deletion_query = {["end"] = boundary_time};
 		if not problem_deleting then
-			module:log("info", "All (%d) expired files successfully deleted", n);
+			module:log("info", "All (%d, %s) expired files successfully deleted", n, B(size_sum));
+			if total_storage_usage then
+				total_storage_usage = total_storage_usage - size_sum;
+		module:log("debug", "Global quota %s / %s", B(total_storage_usage), B(total_storage_limit));
+			end
 			-- we can delete based on time
 		else
 			module:log("warn", "%d out of %d expired files could not be deleted", n-#obsolete_uploads, n);
@@ -471,6 +497,7 @@ if expiry >= 0 and not external_base_url then
 			-- successfully deleted, and then try again with the failed ones.
 			-- eventually the admin ought to notice and fix the permissions or
 			-- whatever the problem is.
+			-- total_storage_limit will be inaccurate until this has been resolved
 			deletion_query = {ids = obsolete_uploads};
 		end
 
@@ -489,9 +516,34 @@ if expiry >= 0 and not external_base_url then
 		prune_done();
 	end);
 
-	module:add_timer(1, function ()
+	module:add_timer(5, function ()
 		reaper_task:run(os.time()-expiry);
 		return 60*60;
+	end);
+end
+
+if total_storage_limit then
+	local async = require "util.async";
+
+	local summarizer_task = async.runner(function()
+		local summary_done = module:measure("summary", "times");
+		local iter = assert(uploads:find(nil));
+
+		local count, sum = 0, 0;
+		for _, file in iter do
+			sum = sum + tonumber(file.attr.size);
+			count = count + 1;
+		end
+
+		module:log("info", "Uploaded files total: %s in %d files", B(sum), count);
+		total_storage_usage = sum;
+		module:log("debug", "Global quota %s / %s", B(total_storage_usage), B(total_storage_limit));
+		summary_done();
+	end);
+
+	module:add_timer(1, function()
+		summarizer_task:run(true);
+		return 11 * 60 * 60;
 	end);
 end
 
