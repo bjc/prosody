@@ -455,6 +455,26 @@ describe("util.stanza", function()
 		end);
 	end);
 
+	describe("get_child_with_attr", function ()
+		local s = st.message({ type = "chat" })
+			:text_tag("body", "Hello world", { ["xml:lang"] = "en" })
+			:text_tag("body", "Bonjour le monde", { ["xml:lang"] = "fr" })
+			:text_tag("body", "Hallo Welt", { ["xml:lang"] = "de" })
+
+		it("works", function ()
+			assert.equal(s:get_child_with_attr("body", nil, "xml:lang", "en"):get_text(), "Hello world");
+			assert.equal(s:get_child_with_attr("body", nil, "xml:lang", "de"):get_text(), "Hallo Welt");
+			assert.equal(s:get_child_with_attr("body", nil, "xml:lang", "fr"):get_text(), "Bonjour le monde");
+			assert.is_nil(s:get_child_with_attr("body", nil, "xml:lang", "FR"));
+			assert.is_nil(s:get_child_with_attr("body", nil, "xml:lang", "es"));
+		end);
+
+		it("supports normalization", function ()
+			assert.equal(s:get_child_with_attr("body", nil, "xml:lang", "EN", string.upper):get_text(), "Hello world");
+			assert.is_nil(s:get_child_with_attr("body", nil, "xml:lang", "ES", string.upper));
+		end);
+	end);
+
 	describe("#clone", function ()
 		it("works", function ()
 			local s = st.message({type="chat"}, "Hello"):reset();

@@ -191,6 +191,14 @@ function stanza_mt:child_with_ns(ns)
 	end
 end
 
+function stanza_mt:get_child_with_attr(name, xmlns, attr_name, attr_value, normalize)
+	for tag in self:childtags(name, xmlns) do
+		if (normalize and normalize(tag.attr[attr_name]) or tag.attr[attr_name]) == attr_value then
+			return tag;
+		end
+	end
+end
+
 function stanza_mt:children()
 	local i = 0;
 	return function (a)
