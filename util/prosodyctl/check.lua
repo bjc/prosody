@@ -724,7 +724,6 @@ local function check(arg)
 	end
 	-- intentionally not doing this by default
 	if what == "connectivity" then
-		print(is_prosody_running())
 		local _, prosody_is_running = is_prosody_running();
 		if configmanager.get("*", "pidfile") and not prosody_is_running then
 			print("Prosody does not appear to be running, which is required for this test.");
