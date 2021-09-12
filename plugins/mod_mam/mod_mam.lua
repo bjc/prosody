@@ -481,10 +481,8 @@ module:hook("pre-message/full", strip_stanza_id_after_other_events, -1);
 module:hook("message/offline/handle", function(event)
 	local stanza = event.stanza;
 	local user = event.username .. "@" .. host;
-	for st_id in stanza:childtags("stanza-id", xmlns_st_id) do
-		if st_id.attr.by == user then
-			return true;
-		end
+	if stanza:get_child_with_attr("stanza-id", xmlns_st_id, "by", user) then
+		return true;
 	end
 end, -2);
 
