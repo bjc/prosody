@@ -60,10 +60,8 @@ local function should_copy(stanza, c2s, user_bare) --> boolean, reason: string
 		return true, "jingle call";
 	end
 
-	for archived in stanza:childtags("stanza-id", "urn:xmpp:sid:0") do
-		if archived and archived.attr.by == user_bare then
-			return true, "archived";
-		end
+	if stanza:get_child_with_attr("stanza-id", "urn:xmpp:sid:0", "by", user_bare) then
+		return true, "archived";
 	end
 
 	return false, "default";
