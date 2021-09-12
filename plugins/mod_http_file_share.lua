@@ -70,10 +70,17 @@ local total_storage_usage = nil;
 
 local measure_upload_cache_size = module:measure("upload_cache", "amount");
 local measure_quota_cache_size = module:measure("quota_cache", "amount");
+local measure_total_storage_usage = nil;
+if total_storage_limit then
+	measure_total_storage_usage = module:measure("total_storage", "amount", { unit = "bytes" });
+end
 
 module:hook_global("stats-update", function ()
 	measure_upload_cache_size(upload_cache:count());
 	measure_quota_cache_size(quota_cache:count());
+	if total_storage_limit then
+		measure_total_storage_usage(total_storage_usage);
+	end
 end);
 
 local buckets = {};
