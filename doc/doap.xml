@@ -518,13 +518,6 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
-        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0277.html"/>
-        <xmpp:status>partial</xmpp:status>
-        <xmpp:note>mod_storage_0227</xmpp:note>
-      </xmpp:SupportedXep>
-    </implements>
-    <implements>
-      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0280.html"/>
         <xmpp:version>0.12.1</xmpp:version>
         <xmpp:status>complete</xmpp:status>
