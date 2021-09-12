@@ -452,7 +452,9 @@ if expiry >= 0 and not external_base_url then
 		end
 
 		module:log("info", "Pruning expired files uploaded earlier than %s", dt.datetime(boundary_time));
-		module:log("debug", "Global quota %s / %s", B(total_storage_usage), B(total_storage_limit));
+		if total_storage_limit then
+			module:log("debug", "Global quota %s / %s", B(total_storage_usage), B(total_storage_limit));
+		end
 
 		local obsolete_uploads = array();
 		local i = 0;
@@ -488,7 +490,7 @@ if expiry >= 0 and not external_base_url then
 			module:log("info", "All (%d, %s) expired files successfully deleted", n, B(size_sum));
 			if total_storage_usage then
 				total_storage_usage = total_storage_usage - size_sum;
-		module:log("debug", "Global quota %s / %s", B(total_storage_usage), B(total_storage_limit));
+				module:log("debug", "Global quota %s / %s", B(total_storage_usage), B(total_storage_limit));
 			end
 			-- we can delete based on time
 		else
