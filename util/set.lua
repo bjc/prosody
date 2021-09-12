@@ -52,6 +52,15 @@ local function new(list)
 		return items[item];
 	end
 
+	function set:contains_set(other_set)
+		for item in other_set do
+			if not self:contains(item) then
+				return false;
+			end
+		end
+		return true;
+	end
+
 	function set:items()
 		return next, items;
 	end
