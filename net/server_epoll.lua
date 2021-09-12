@@ -272,20 +272,24 @@ end
 
 -- Get a port number, doesn't matter which
 function interface:port()
-	return self.sockport or self.peerport;
+	return self.peerport or self.sockport;
 end
 
--- Get local port number
+-- Client-side port (usually a random high port)
 function interface:clientport()
-	return self.sockport;
+	if self._server then
+		return self.peerport;
+	else
+		return self.sockport;
+	end
 end
 
--- Get remote port
+-- Get port on the server
 function interface:serverport()
-	if self.sockport then
+	if self._server then
 		return self.sockport;
-	elseif self._server then
-		self._server:port();
+	else
+		return self.peerport;
 	end
 end
 
