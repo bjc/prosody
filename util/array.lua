@@ -114,6 +114,40 @@ function array_base.filter(outa, ina, func)
 	return outa;
 end
 
+function array_base.slice(outa, ina, i, j)
+	if j == nil then
+		j = -1;
+	end
+	if j < 0 then
+		j = #ina + (j+1);
+	end
+	if i < 0 then
+		i = #ina + (i+1);
+	end
+	if i < 1 then
+		i = 1;
+	end
+	if j > #ina then
+		j = #ina;
+	end
+	if i > j then
+		for idx = 1, #outa do
+			outa[idx] = nil;
+		end
+		return outa;
+	end
+
+	for idx = 1, 1+j-i do
+		outa[idx] = ina[i+(idx-1)];
+	end
+	if ina == outa then
+		for idx = 2+j-i, #outa do
+			outa[idx] = nil;
+		end
+	end
+	return outa;
+end
+
 function array_base.sort(outa, ina, ...)
 	if ina ~= outa then
 		outa:append(ina);

@@ -148,6 +148,25 @@ describe("util.array", function ()
 			end);
 		end);
 
+		describe("slice", function ()
+			it("works", function ()
+				local a = array({ "a", "b", "c" });
+				assert.equal(array.slice(a, 1, 2), array{ "a", "b" });
+				assert.equal(array.slice(a, 1, 3), array{ "a", "b", "c" });
+				assert.equal(array.slice(a, 2, 3), array{ "b", "c" });
+				assert.equal(array.slice(a, 2), array{ "b", "c" });
+				assert.equal(array.slice(a, -4), array{ "a", "b", "c" });
+				assert.equal(array.slice(a, -3), array{ "a", "b", "c" });
+				assert.equal(array.slice(a, -2), array{ "b", "c" });
+				assert.equal(array.slice(a, -1), array{ "c" });
+			end);
+
+			it("can mutate", function ()
+				local a = array({ "a", "b", "c" });
+				assert.equal(a:slice(-1), array{"c"});
+				assert.equal(a, array{"c"});
+			end);
+		end);
 	end);
 
 	-- TODO The various array.foo(array ina, array outa) functions
