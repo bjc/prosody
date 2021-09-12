@@ -498,7 +498,7 @@
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0227.html"/>
         <xmpp:version>1.1</xmpp:version>
         <xmpp:since>0.7.0</xmpp:since>
-        <xmpp:note>Used in migrator tools</xmpp:note>
+        <xmpp:note>Used in migrator tools and mod_storage_xep0227</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
