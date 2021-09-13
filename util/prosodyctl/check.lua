@@ -63,6 +63,7 @@ local function check(arg)
 		return 1;
 	end
 	local what = table.remove(arg, 1);
+	local array = require "util.array";
 	local set = require "util.set";
 	local it = require "util.iterators";
 	local ok = true;
@@ -90,21 +91,26 @@ local function check(arg)
 	end
 	if not what or what == "config" then
 		print("Checking config...");
-		local deprecated = set.new({
-			"anonymous_login",
-			"bosh_ports",
+		local obsolete = set.new({ --> remove
 			"cross_domain_bosh",
 			"cross_domain_websocket",
-			"daemonize",
-			"disallow_s2s",
-			"legacy_ssl_interfaces",
-			"legacy_ssl_port",
-			"legacy_ssl_ports",
-			"legacy_ssl_ssl",
-			"no_daemonize",
-			"require_encryption",
-			"vcard_compatibility",
 		});
+		local deprecated_replacements = {
+			anonymous_login = "use 'authentication = \"anonymous\"'",
+			daemonize = "use the --daemonize/-D or --foreground/-F command line flags",
+			disallow_s2s = "add \"s2s\" to 'modules_disabled'",
+			no_daemonize = "use the --daemonize/-D or --foreground/-F flags",
+			require_encryption = "use 'c2s_require_encryption' and 's2s_require_encryption'",
+			vcard_compatibility = "use 'mod_compat_vcard' from prosody-modules",
+		};
+		local deprecated_ports = { bosh = "http", legacy_ssl = "c2s_direct_tls" };
+		local port_suffixes = set.new({ "port", "ports", "interface", "interfaces", "ssl" });
+		for port, replacement in pairs(deprecated_ports) do
+			for suffix in port_suffixes do
+				deprecated_replacements[port.."_"..suffix] = "use '"..replacement.."_"..suffix.."'"
+			end
+		end
+		local deprecated = set.new(array.collect(it.keys(deprecated_replacements)));
 		local known_global_options = set.new({
 			"access_control_allow_credentials",
 			"access_control_allow_headers",
@@ -221,13 +227,21 @@ local function check(arg)
 
 		-- Check for global options under hosts
 		local global_options = set.new(it.to_array(it.keys(config["*"])));
+		local obsolete_global_options = set.intersection(global_options, obsolete);
+		if not obsolete_global_options:empty() then
+			print("");
+			print("    You have some obsolete options you can remove from the global section:");
+			print("    "..tostring(obsolete_global_options))
+			ok = false;
+		end
 		local deprecated_global_options = set.intersection(global_options, deprecated);
 		if not deprecated_global_options:empty() then
 			print("");
 			print("    You have some deprecated options in the global section:");
-			print("    "..tostring(deprecated_global_options))
+			for option in deprecated_global_options do
+				print(("    '%s' -- instead, %s"):format(option, deprecated_replacements[option]));
+			end
 			ok = false;
-			-- FIXME show replacement options where applicable
 		end
 		for host, options in it.filter(function (h) return h ~= "*" end, pairs(configmanager.getconfig())) do
 			local host_options = set.new(it.to_array(it.keys(options)));
