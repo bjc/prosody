@@ -253,6 +253,8 @@ local function check(arg)
 					misplaced_options:add(name);
 				end
 			end
+			-- FIXME These _could_ be misplaced, but we would have to check where the corresponding module is loaded to be sure
+			misplaced_options:exclude(set.new({ "external_service_port", "turn_external_port" }));
 			if not misplaced_options:empty() then
 				ok = false;
 				print("");
