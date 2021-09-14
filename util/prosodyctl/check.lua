@@ -103,11 +103,13 @@ local function check(arg)
 			require_encryption = "use 'c2s_require_encryption' and 's2s_require_encryption'",
 			vcard_compatibility = "use 'mod_compat_vcard' from prosody-modules",
 		};
+		-- FIXME all the singular _port and _interface options are supposed to be deprecated too
 		local deprecated_ports = { bosh = "http", legacy_ssl = "c2s_direct_tls" };
 		local port_suffixes = set.new({ "port", "ports", "interface", "interfaces", "ssl" });
 		for port, replacement in pairs(deprecated_ports) do
 			for suffix in port_suffixes do
-				deprecated_replacements[port.."_"..suffix] = "use '"..replacement.."_"..suffix.."'"
+				local rsuffix = (suffix == "port" or suffix == "interface") and suffix.."s" or suffix;
+				deprecated_replacements[port.."_"..suffix] = "use '"..replacement.."_"..rsuffix.."'"
 			end
 		end
 		local deprecated = set.new(array.collect(it.keys(deprecated_replacements)));
