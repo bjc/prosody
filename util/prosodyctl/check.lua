@@ -102,6 +102,7 @@ local function check(arg)
 			no_daemonize = "use the --daemonize/-D or --foreground/-F flags",
 			require_encryption = "use 'c2s_require_encryption' and 's2s_require_encryption'",
 			vcard_compatibility = "use 'mod_compat_vcard' from prosody-modules",
+			use_libevent = "use 'network_backend = \"event\"'",
 		};
 		-- FIXME all the singular _port and _interface options are supposed to be deprecated too
 		local deprecated_ports = { bosh = "http", legacy_ssl = "c2s_direct_tls" };
@@ -175,7 +176,6 @@ local function check(arg)
 			"use_dane",
 			"use_ipv4",
 			"use_ipv6",
-			"use_libevent",
 			"websocket_frame_buffer_limit",
 			"websocket_frame_fragment_limit",
 			"websocket_get_response_body",
