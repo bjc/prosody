@@ -448,8 +448,10 @@ if expiry >= 0 and not external_base_url then
 		wait();
 	end
 
+	local prune_start = module:measure("prune", "times");
+
 	local reaper_task = async.runner(function(boundary_time)
-		local prune_done = module:measure("prune", "times");
+		local prune_done = prune_start();
 		local iter, total = assert(uploads:find(nil, {["end"] = boundary_time; total = true}));
 
 		if total == 0 then
@@ -534,8 +536,10 @@ end
 if total_storage_limit then
 	local async = require "util.async";
 
+	local summary_start = module:measure("summary", "times");
+
 	local summarizer_task = async.runner(function()
-		local summary_done = module:measure("summary", "times");
+		local summary_done = summary_start();
 		local iter = assert(uploads:find(nil));
 
 		local count, sum = 0, 0;
