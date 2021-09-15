@@ -460,7 +460,7 @@ function interface:onreadable()
 				self:debug("Read error, closing (%s)", err);
 			end
 			self:on("disconnect", err);
-			self:destroy()
+			self:close();
 			return;
 		end
 	end
