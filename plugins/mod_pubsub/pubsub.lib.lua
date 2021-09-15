@@ -257,6 +257,10 @@ function _M.get_feature_set(service)
 		supported_features:add("persistent-items");
 	end
 
+	if true --[[ node_metadata_form[max_items].datatype == "pubsub:integer-or-max" ]] then
+		supported_features:add("config-node-max");
+	end
+
 	return supported_features;
 end
 
