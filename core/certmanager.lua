@@ -251,7 +251,7 @@ local core_defaults = {
 		"!3DES",       -- 3DES - slow and of questionable security
 		"!aNULL",      -- Ciphers that does not authenticate the connection
 	};
-	dane = configmanager.get("*", "use_dane");
+	dane = luasec_has.capabilities.dane and configmanager.get("*", "use_dane") and { "no_ee_namechecks" };
 }
 
 local mozilla_ssl_configs = {
