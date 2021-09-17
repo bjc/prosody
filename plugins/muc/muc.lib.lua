@@ -1050,6 +1050,9 @@ function room_mt:handle_admin_query_set_command(origin, stanza)
 		if not item.attr.jid then
 			origin.send(st.error_reply(stanza, "modify", "jid-malformed"));
 			return true;
+		elseif jid_resource(item.attr.jid) then
+			origin.send(st.error_reply(stanza, "modify", "jid-malformed", "Bare JID expected, got full JID"));
+			return true;
 		end
 	end
 	if item.attr.nick then -- Validate provided nick
