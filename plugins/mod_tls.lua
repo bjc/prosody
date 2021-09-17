@@ -193,7 +193,7 @@ module:hook_tag(xmlns_starttls, "proceed", function (session, stanza) -- luachec
 	if session.type == "s2sout_unauthed" and can_do_tls(session) then
 		module:log("debug", "Proceeding with TLS on s2sout...");
 		session:reset_stream();
-		session.conn:starttls(session.ssl_ctx);
+		session.conn:starttls(session.ssl_ctx, session.to_host);
 		session.secure = false;
 		return true;
 	end
