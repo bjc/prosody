@@ -80,6 +80,9 @@ end
 module:hook_global("config-reloaded", module.load);
 
 local function can_do_tls(session)
+	if session.secure then
+		return false;
+	end
 	if session.conn and not session.conn.starttls then
 		if not session.secure then
 			session.log("debug", "Underlying connection does not support STARTTLS");
