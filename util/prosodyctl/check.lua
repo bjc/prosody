@@ -103,6 +103,10 @@ local function check(arg)
 			require_encryption = "use 'c2s_require_encryption' and 's2s_require_encryption'",
 			vcard_compatibility = "use 'mod_compat_vcard' from prosody-modules",
 			use_libevent = "use 'network_backend = \"event\"'",
+			whitelist_registration_only = "use 'allowlist_registration_only'",
+			registration_whitelist = "use 'registration_allowlist'",
+			registration_blacklist = "use 'registration_blocklist'",
+			blacklist_on_registration_throttle_overload = "use 'blocklist_on_registration_throttle_overload'",
 		};
 		-- FIXME all the singular _port and _interface options are supposed to be deprecated too
 		local deprecated_ports = { bosh = "http", legacy_ssl = "c2s_direct_tls" };

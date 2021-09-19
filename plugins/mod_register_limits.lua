@@ -15,20 +15,22 @@ local match_ip = ip_util.match;
 local parse_cidr = ip_util.parse_cidr;
 local errors = require "util.error";
 
+-- COMPAT drop old option names
 local min_seconds_between_registrations = module:get_option_number("min_seconds_between_registrations");
-local whitelist_only = module:get_option_boolean("whitelist_registration_only");
-local whitelisted_ips = module:get_option_set("registration_whitelist", { "127.0.0.1", "::1" })._items;
-local blacklisted_ips = module:get_option_set("registration_blacklist", {})._items;
+local allowlist_only = module:get_option_boolean("allowlist_registration_only", module:get_option_boolean("whitelist_registration_only"));
+local allowlisted_ips = module:get_option_set("registration_allowlist", module:get_option("registration_whitelist", { "127.0.0.1", "::1" }))._items;
+local blocklisted_ips = module:get_option_set("registration_blocklist", module:get_option_set("registration_blacklist", {}))._items;
 
 local throttle_max = module:get_option_number("registration_throttle_max", min_seconds_between_registrations and 1);
 local throttle_period = module:get_option_number("registration_throttle_period", min_seconds_between_registrations);
 local throttle_cache_size = module:get_option_number("registration_throttle_cache_size", 100);
-local blacklist_overflow = module:get_option_boolean("blacklist_on_registration_throttle_overload", false);
+local blocklist_overflow = module:get_option_boolean("blocklist_on_registration_throttle_overload",
+	module:get_option_boolean("blacklist_on_registration_throttle_overload", false));
 
-local throttle_cache = new_cache(throttle_cache_size, blacklist_overflow and function (ip, throttle)
+local throttle_cache = new_cache(throttle_cache_size, blocklist_overflow and function (ip, throttle)
 	if not throttle:peek() then
-		module:log("info", "Adding ip %s to registration blacklist", ip);
-		blacklisted_ips[ip] = true;
+		module:log("info", "Adding ip %s to registration blocklist", ip);
+		blocklisted_ips[ip] = true;
 	end
 end or nil);
 
@@ -56,13 +58,13 @@ local function ip_in_set(set, ip)
 end
 
 local err_registry = {
-	blacklisted = {
-		text = "Your IP address is blacklisted";
+	blocklisted = {
+		text = "Your IP address is blocklisted";
 		type = "auth";
 		condition = "forbidden";
 	};
-	not_whitelisted = {
-		text = "Your IP address is not whitelisted";
+	not_allowlisted = {
+		text = "Your IP address is not allowlisted";
 		type = "auth";
 		condition = "forbidden";
 	};
@@ -78,16 +80,16 @@ module:hook("user-registering", function (event)
 	local ip = event.ip or session and session.ip;
 	local log = session and session.log or module._log;
 	if not ip then
-		log("warn", "IP not known; can't apply blacklist/whitelist");
-	elseif ip_in_set(blacklisted_ips, ip) then
-		log("debug", "Registration disallowed by blacklist");
+		log("warn", "IP not known; can't apply blocklist/allowlist");
+	elseif ip_in_set(blocklisted_ips, ip) then
+		log("debug", "Registration disallowed by blocklist");
 		event.allowed = false;
-		event.error = errors.new("blacklisted", event, err_registry);
-	elseif (whitelist_only and not ip_in_set(whitelisted_ips, ip)) then
-		log("debug", "Registration disallowed by whitelist");
+		event.error = errors.new("blocklisted", event, err_registry);
+	elseif (allowlist_only and not ip_in_set(allowlisted_ips, ip)) then
+		log("debug", "Registration disallowed by allowlist");
 		event.allowed = false;
-		event.error = errors.new("not_whitelisted", event, err_registry);
-	elseif throttle_max and not ip_in_set(whitelisted_ips, ip) then
+		event.error = errors.new("not_allowlisted", event, err_registry);
+	elseif throttle_max and not ip_in_set(allowlisted_ips, ip) then
 		if not check_throttle(ip) then
 			log("debug", "Registrations over limit for ip %s", ip or "?");
 			event.allowed = false;
