@@ -743,6 +743,12 @@ local function setquitting(quit)
 	if quit then
 		quitting = "quitting";
 		closeall();
+		addtimer(1, function ()
+			if quitting then
+				closeall();
+				return 1;
+			end
+		end);
 	else
 		quitting = nil;
 	end
