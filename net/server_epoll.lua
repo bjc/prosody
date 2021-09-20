@@ -58,6 +58,9 @@ local default_config = { __index = {
 	-- Maximum and minimum amount of time to sleep waiting for events (adjusted for pending timers)
 	max_wait = 86400;
 	min_wait = 1e-06;
+
+	--- How long to wait after getting the shutdown signal before forcefully tearing down every socket
+	shutdown_deadline = 5;
 }};
 local cfg = default_config.__index;
 
@@ -749,6 +752,15 @@ local function setquitting(quit)
 				return 1;
 			end
 		end);
+		if cfg.shutdown_deadline then
+			addtimer(cfg.shutdown_deadline, function ()
+				if quitting then
+					for fd, conn in pairs(fds) do -- luacheck: ignore 213/fd
+						conn:destroy();
+					end
+				end
+			end);
+		end
 	else
 		quitting = nil;
 	end
