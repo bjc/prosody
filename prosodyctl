@@ -230,7 +230,7 @@ local function service_command_warning(service_command)
 	if prosody.installed and configmanager.get("*", "prosodyctl_service_warnings") ~= false then
 		show_warning("WARNING: Use of prosodyctl start/stop/restart/reload is not recommended");
 		show_warning("         if Prosody is managed by an init system - use that directly instead.");
-		lfs = lfs or require
+		lfs = lfs or require"lfs";
 		if lfs.attributes("/etc/systemd") then
 			show_warning("         e.g. systemctl %s prosody", service_command);
 		elseif lfs.attributes("/etc/init.d/prosody") then
