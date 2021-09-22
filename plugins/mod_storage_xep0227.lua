@@ -139,7 +139,7 @@ handlers.accounts = {
 				:text_tag("stored-key", hex_to_base64(data.stored_key))
 				:text_tag("iter-count", ("%d"):format(data.iteration_count))
 				:text_tag("salt", base64.encode(data.salt));
-			xml:add_child(scram_el);
+			usere:add_child(scram_el);
 			account_properties:exclude(scram_properties);
 		end
 
