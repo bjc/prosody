@@ -456,14 +456,14 @@ function interface:onreadable()
 			self:onconnect();
 			self:onincoming(partial, err);
 		end
-		if err ~= "timeout" then
-			if err == "closed" then
-				self:debug("Connection closed by remote");
-			else
-				self:debug("Read error, closing (%s)", err);
-			end
+		if err == "closed" and self._connected then
+			self:debug("Connection closed by remote");
+			self:close(err);
+			return;
+		elseif err ~= "timeout" then
+			self:debug("Read error, closing (%s)", err);
 			self:on("disconnect", err);
-			self:close();
+			self:destroy();
 			return;
 		end
 	end
