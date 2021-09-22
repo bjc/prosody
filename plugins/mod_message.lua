@@ -22,6 +22,15 @@ local function process_to_bare(bare, origin, stanza)
 	if t == "error" then
 		return true; -- discard
 	elseif t == "groupchat" then
+		local node, host = jid_split(bare);
+		if user_exists(node, host) then
+			if module:fire_event("message/bare/groupchat", {
+				origin = origin, stanza = stanza;
+			}) then
+				return true;
+			end
+		end
+
 		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 	elseif t == "headline" then
 		if user and stanza.attr.to == bare then
