@@ -403,7 +403,7 @@ local function save_to_history(self, stanza)
 			end
 		end
 		if not id and (archive.caps and archive.caps.truncate) then
-			module:log("debug", "User '%s' over quota, truncating archive", room_node);
+			module:log("debug", "Room '%s' over quota, truncating archive", room_node);
 			local truncated = archive:delete(room_node, {
 				truncate = archive_truncate;
 			});
