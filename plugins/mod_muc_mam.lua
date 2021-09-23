@@ -176,7 +176,7 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 	end
 
 	module:log("debug", "Archive query by %s id=%s when=%s...%s",
-		origin.username,
+		from,
 		qid or stanza.attr.id,
 		qstart and timestamp(qstart) or "",
 		qend and timestamp(qend) or "");
