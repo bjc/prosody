@@ -143,22 +143,22 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 		qstart, qend = vstart, vend;
 	end
 
-	module:log("debug", "Archive query by %s id=%s with=%s when=%s...%s",
-		origin.username,
-		qid or stanza.attr.id,
-		qwith or "*",
-		qstart and timestamp(qstart) or "",
-		qend and timestamp(qend) or "");
-
 	-- RSM stuff
 	local qset = rsm.get(query);
 	local qmax = m_min(qset and qset.max or default_max_items, max_max_items);
 	local reverse = qset and qset.before or false;
 	local before, after = qset and qset.before or qbefore, qset and qset.after or qafter;
 	if type(before) ~= "string" then before = nil; end
-	if qset then
-		module:log("debug", "Archive query id=%s rsm=%q", qid or stanza.attr.id, qset);
-	end
+
+
+	module:log("debug", "Archive query by %s id=%s with=%s when=%s...%s rsm=%q",
+		origin.username,
+		qid or stanza.attr.id,
+		qwith or "*",
+		qstart and timestamp(qstart) or "",
+		qend and timestamp(qend) or "",
+		qset);
+
 	-- A reverse query needs to be flipped
 	local flip = reverse;
 	-- A flip-page query needs to be the opposite of that.
