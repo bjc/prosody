@@ -175,12 +175,6 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 		qstart, qend = vstart, vend;
 	end
 
-	module:log("debug", "Archive query by %s id=%s when=%s...%s",
-		from,
-		qid or stanza.attr.id,
-		qstart and timestamp(qstart) or "",
-		qend and timestamp(qend) or "");
-
 	-- RSM stuff
 	local qset = rsm.get(query);
 	local qmax = m_min(qset and qset.max or default_max_items, max_max_items);
@@ -188,13 +182,17 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 
 	local before, after = qset and qset.before or qbefore, qset and qset.after or qafter;
 	if type(before) ~= "string" then before = nil; end
-	if qset then
-		module:log("debug", "Archive query id=%s rsm=%q", qid or stanza.attr.id, qset);
-	end
 	-- A reverse query needs to be flipped
 	local flip = reverse;
 	-- A flip-page query needs to be the opposite of that.
 	if query:get_child("flip-page") then flip = not flip end
+
+	module:log("debug", "Archive query by %s id=%s when=%s...%s rsm=%q",
+		from,
+		qid or stanza.attr.id,
+		qstart and timestamp(qstart) or "",
+		qend and timestamp(qend) or "",
+		qset);
 
 	-- Load all the data!
 	local data, err = archive:find(room_node, {
