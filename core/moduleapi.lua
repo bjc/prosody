@@ -421,8 +421,8 @@ function api:send_iq(stanza, origin, timeout)
 			return;
 		end
 
-		self:hook(result_event, result_handler);
-		self:hook(error_event, error_handler);
+		self:hook(result_event, result_handler, 1);
+		self:hook(error_event, error_handler, 1);
 
 		local timeout_handle = self:add_timer(timeout or 120, function ()
 			reject(errors.new({
