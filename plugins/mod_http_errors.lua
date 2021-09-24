@@ -83,7 +83,7 @@ module:hook("http-message", function (event)
 		event.response.headers.content_type = "text/html; charset=utf-8";
 	end
 	return render(html, event);
-end);
+end, -1);
 
 local icon = [[
 <svg xmlns="http://www.w3.org/2000/svg" height="0.7em" viewBox="0 0 480 480" width="0.7em">
