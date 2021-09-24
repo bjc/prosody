@@ -20,6 +20,7 @@ local promise = require "util.promise";
 local time_now = require "util.time".now;
 local format = require "util.format".format;
 local jid_node = require "util.jid".node;
+local jid_resource = require "util.jid".resource;
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local error, setmetatable, type = error, setmetatable, type;
@@ -382,23 +383,31 @@ function api:send_iq(stanza, origin, timeout)
 	local event_type;
 	if not jid_node(stanza.attr.from) then
 		event_type = "host";
+	elseif jid_resource(stanza.attr.from) then
+		event_type = "full";
 	else -- assume bare since we can't hook full jids
 		event_type = "bare";
 	end
 	local result_event = "iq-result/"..event_type.."/"..stanza.attr.id;
 	local error_event = "iq-error/"..event_type.."/"..stanza.attr.id;
 	local cache_key = event_type.."/"..stanza.attr.id;
+	if event_type == "full" then
+		result_event = "iq/" .. event_type;
+		error_event = "iq/" .. event_type;
+	end
 
 	local p = promise.new(function (resolve, reject)
 		local function result_handler(event)
-			if event.stanza.attr.from == stanza.attr.to then
+			local response = event.stanza;
+			if response.attr.type == "result" and response.attr.from == stanza.attr.to and response.attr.id == stanza.attr.id then
 				resolve(event);
 				return true;
 			end
 		end
 
 		local function error_handler(event)
-			if event.stanza.attr.from == stanza.attr.to then
+			local response = event.stanza;
+			if response.attr.type == "error" and response.attr.from == stanza.attr.to and response.attr.id == stanza.attr.id then
 				reject(errors.from_stanza(event.stanza, event));
 				return true;
 			end
