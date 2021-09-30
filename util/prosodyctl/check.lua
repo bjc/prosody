@@ -7,42 +7,30 @@ local socket = require "socket";
 local jid_split = require "util.jid".prepped_split;
 local modulemanager = require "core.modulemanager";
 
-local function check_api(check_type, target_host)
-	local async = require "util.async";
-	local wait, done = async.waiter();
+local function check_ojn(check_type, target_host)
 	local http = require "net.http"; -- .new({});
 	local urlencode = require "util.http".urlencode;
 	local json = require "util.json";
 
-	local ok = false;
-	local err = nil;
-	local decoded_body = nil;
-
-	http.request(
+	local response, err = async.wait_for(http.request(
 		("https://observe.jabber.network/api/v1/check/%s"):format(urlencode(check_type)),
 		{
 			method="POST",
 			headers={["Accept"] = "application/json"; ["Content-Type"] = "application/json"},
 			body=json.encode({target=target_host}),
-		},
-		function (body, code)
-			if code ~= 200 then
-				err = ("API replied with non-200 code: %d"):format(code)
-			else
-				decoded_body, err = json.decode(body);
-				if decoded_body == nil then
-					err = ("Failed to parse API JSON: %s"):format(err)
-				else
-					ok = true
-				end
-			end
-			done();
-		end
-	);
-	wait();
+		}));
 
-	if not ok then
-		return false, err
+	if not response then
+		return false, err;
+	end
+
+	if response.code ~= 200 then
+		return false, ("API replied with non-200 code: %d"):format(response.code);
+	end
+
+	local decoded_body, err = json.decode(response.body);
+	if decoded_body == nil then
+		return false, ("Failed to parse API JSON: %s"):format(err)
 	end
 
 	local success = decoded_body["success"];
