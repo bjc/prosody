@@ -4,16 +4,18 @@ local show_warning = require "util.prosodyctl".show_warning;
 local is_prosody_running = require "util.prosodyctl".isrunning;
 local dependencies = require "util.dependencies";
 local socket = require "socket";
+local socket_url = require "socket.url";
 local jid_split = require "util.jid".prepped_split;
 local modulemanager = require "core.modulemanager";
+local async = require "util.async";
+local httputil = require "util.http";
 
 local function check_ojn(check_type, target_host)
 	local http = require "net.http"; -- .new({});
-	local urlencode = require "util.http".urlencode;
 	local json = require "util.json";
 
 	local response, err = async.wait_for(http.request(
-		("https://observe.jabber.network/api/v1/check/%s"):format(urlencode(check_type)),
+		("https://observe.jabber.network/api/v1/check/%s"):format(httputil.urlencode(check_type)),
 		{
 			method="POST",
 			headers={["Accept"] = "application/json"; ["Content-Type"] = "application/json"},
@@ -35,6 +37,27 @@ local function check_ojn(check_type, target_host)
 
 	local success = decoded_body["success"];
 	return success == true, nil;
+end
+
+local function check_probe(base_url, probe_module, target)
+	local http = require "net.http"; -- .new({});
+	local params = httputil.formencode({ module = probe_module; target = target })
+	local response, err = async.wait_for(http.request(base_url .. "?" .. params));
+
+	if not response then return false, err; end
+
+	if response.code ~= 200 then return false, ("API replied with non-200 code: %d"):format(response.code); end
+
+	for line in response.body:gmatch("[^\r\n]+") do
+		local probe_success = line:match("^probe_success%s+(%d+)");
+
+		if probe_success == "1" then
+			return true;
+		elseif probe_success == "0" then
+			return false;
+		end
+	end
+	return false, "Probe endpoint did not return a success status";
 end
 
 local function skip_bare_jid_hosts(host)
@@ -741,13 +764,58 @@ local function check(arg)
 			return 1;
 		end
 
+		local checker = "observe.jabber.network";
+		local probe_instance;
+		local probe_modules = {
+			["xmpp-client"] = "c2s_normal_auth";
+			["xmpp-server"] = "s2s_normal";
+			["xmpps-client"] = nil; -- TODO
+			["xmpps-server"] = nil; -- TODO
+		};
+		local probe_settings = configmanager.get("*", "connectivity_probe");
+		if type(probe_settings) == "string" then
+			probe_instance = probe_settings;
+		elseif type(probe_settings) == "table" and type(probe_settings.url) == "string" then
+			probe_instance = probe_settings.url;
+			if type(probe_settings.modules) == "table" then
+				probe_modules = probe_settings.modules;
+			end
+		elseif probe_settings ~= nil then
+			print("The 'connectivity_probe' setting not understood.");
+			print("Expected an URL or a table with 'url' and 'modules' fields");
+			print("See https://prosody.im/doc/prosodyctl#check for more information."); -- FIXME
+			return 1;
+		end
+
+		local check_api;
+		if probe_instance then
+			local parsed_url = socket_url.parse(probe_instance);
+			if not parsed_url then
+				print(("'connectivity_probe' is not a valid URL: %q"):format(probe_instance));
+				print("Set it to the URL of an XMPP Blackbox Exporter instance and try again");
+				return 1;
+			end
+			checker = parsed_url.host;
+
+			function check_api(protocol, host)
+				local target = socket_url.build({scheme="xmpp",path=host});
+				local probe_module = probe_modules[protocol];
+				if not probe_module then
+					return nil, "Checking protocol '"..protocol.."' is currently unsupported";
+				end
+				return check_probe(probe_instance, probe_module, target);
+			end
+		else
+			check_api = check_ojn;
+		end
+
 		for host in it.filter(skip_bare_jid_hosts, enabled_hosts()) do
 			local modules, component_module = modulemanager.get_modules_for_host(host);
 			if component_module then
 				modules:add(component_module)
 			end
 
-			print("Checking external connectivity for "..host.." via observe.jabber.network")
+			print("Checking external connectivity for "..host.." via "..checker)
 			local function check_connectivity(protocol)
 				local success, err = check_api(protocol, host);
 				if not success and err ~= nil then
