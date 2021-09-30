@@ -22,7 +22,7 @@ local default_gc_params = {
 	minor_threshold = 20, major_threshold = 50;
 };
 
-local short_params = { D = "daemonize", F = "no-daemonize" };
+local short_params = { D = "daemonize", F = "no-daemonize", v = "verbose" };
 local value_params = { config = true };
 
 function startup.parse_args()
@@ -440,7 +440,9 @@ end
 -- Override logging config (used by prosodyctl)
 function startup.force_console_logging()
 	original_logging_config = config.get("*", "log");
-	config.set("*", "log", { { levels = { min = os.getenv("PROSODYCTL_LOG_LEVEL") or "info" }, to = "console" } });
+	local log_level = os.getenv("PROSODYCTL_LOG_LEVEL");
+	if not log_level and prosody.opts.verbose then log_level = "debug"; end
+	config.set("*", "log", { { levels = { min = log_level or "info" }, to = "console" } });
 end
 
 function startup.switch_user()
