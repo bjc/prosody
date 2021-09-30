@@ -330,8 +330,8 @@ function def_env.server:uptime()
 		minutes, (minutes ~= 1 and "s") or "", os.date("%c", prosody.start_time));
 end
 
-function def_env.server:shutdown(reason)
-	prosody.shutdown(reason);
+function def_env.server:shutdown(reason, code)
+	prosody.shutdown(reason, code);
 	return true, "Shutdown initiated";
 end
 
