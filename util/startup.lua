@@ -22,14 +22,19 @@ local default_gc_params = {
 	minor_threshold = 20, major_threshold = 50;
 };
 
-local short_params = { D = "daemonize", F = "no-daemonize", v = "verbose" };
-local value_params = { config = true };
+local arg_settigs = {
+	prosody = {
+		short_params = { D = "daemonize"; F = "no-daemonize" };
+		value_params = { config = true };
+	};
+	prosodyctl = {
+		short_params = { v = "verbose" };
+		value_params = { config = true };
+	};
+}
 
 function startup.parse_args()
-	local opts, err, where = parse_args(arg, {
-			short_params = short_params,
-			value_params = value_params,
-		});
+	local opts, err, where = parse_args(arg, arg_settigs[prosody.process_type]);
 	if not opts then
 		if err == "param-not-found" then
 			print("Unknown command-line option: "..tostring(where));
