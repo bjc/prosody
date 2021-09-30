@@ -35,7 +35,7 @@ if not prosody.start_time then -- server-starting
 	if pposix.getuid() == 0 and not module:get_option_boolean("run_as_root") then
 		module:log("error", "Danger, Will Robinson! Prosody doesn't need to be run as root, so don't do it!");
 		module:log("error", "For more information on running Prosody as root, see https://prosody.im/doc/root");
-		prosody.shutdown("Refusing to run as root");
+		prosody.shutdown("Refusing to run as root", 1);
 	end
 end
 
@@ -61,19 +61,19 @@ local function write_pidfile()
 		pidfile_handle, err = io.open(pidfile, mode);
 		if not pidfile_handle then
 			module:log("error", "Couldn't write pidfile at %s; %s", pidfile, err);
-			prosody.shutdown("Couldn't write pidfile");
+			prosody.shutdown("Couldn't write pidfile", 1);
 		else
 			if not lfs.lock(pidfile_handle, "w") then -- Exclusive lock
 				local other_pid = pidfile_handle:read("*a");
 				module:log("error", "Another Prosody instance seems to be running with PID %s, quitting", other_pid);
 				pidfile_handle = nil;
-				prosody.shutdown("Prosody already running");
+				prosody.shutdown("Prosody already running", 1);
 			else
 				pidfile_handle:close();
 				pidfile_handle, err = io.open(pidfile, "w+");
 				if not pidfile_handle then
 					module:log("error", "Couldn't write pidfile at %s; %s", pidfile, err);
-					prosody.shutdown("Couldn't write pidfile");
+					prosody.shutdown("Couldn't write pidfile", 1);
 				else
 					if lfs.lock(pidfile_handle, "w") then
 						pidfile_handle:write(tostring(pposix.getpid()));
