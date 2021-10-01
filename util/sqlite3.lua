@@ -14,39 +14,44 @@ local log = require "util.logger".init("sql");
 local lsqlite3 = require "lsqlite3";
 local build_url = require "socket.url".build;
 local ROW, DONE = lsqlite3.ROW, lsqlite3.DONE;
-local err2str = {
-	[0] = "OK";
-	"ERROR";
-	"INTERNAL";
-	"PERM";
-	"ABORT";
-	"BUSY";
-	"LOCKED";
-	"NOMEM";
-	"READONLY";
-	"INTERRUPT";
-	"IOERR";
-	"CORRUPT";
-	"NOTFOUND";
-	"FULL";
-	"CANTOPEN";
-	"PROTOCOL";
-	"EMPTY";
-	"SCHEMA";
-	"TOOBIG";
-	"CONSTRAINT";
-	"MISMATCH";
-	"MISUSE";
-	"NOLFS";
-	[24] = "FORMAT";
-	[25] = "RANGE";
-	[26] = "NOTADB";
-	[100] = "ROW";
-	[101] = "DONE";
-};
+
+-- from sqlite3.h, no copyright claimed
+local sqlite_errors = require"util.error".init("util.sqlite3", {
+	-- FIXME xmpp error conditions?
+	[1] = { code = 1;     type = "modify";   condition = "ERROR";      text = "Generic error" };
+	[2] = { code = 2;     type = "cancel";   condition = "INTERNAL";   text = "Internal logic error in SQLite" };
+	[3] = { code = 3;     type = "auth";     condition = "PERM";       text = "Access permission denied" };
+	[4] = { code = 4;     type = "cancel";   condition = "ABORT";      text = "Callback routine requested an abort" };
+	[5] = { code = 5;     type = "wait";     condition = "BUSY";       text = "The database file is locked" };
+	[6] = { code = 6;     type = "wait";     condition = "LOCKED";     text = "A table in the database is locked" };
+	[7] = { code = 7;     type = "wait";     condition = "NOMEM";      text = "A malloc() failed" };
+	[8] = { code = 8;     type = "cancel";   condition = "READONLY";   text = "Attempt to write a readonly database" };
+	[9] = { code = 9;     type = "cancel";   condition = "INTERRUPT";  text = "Operation terminated by sqlite3_interrupt()" };
+	[10] = { code = 10;   type = "wait";     condition = "IOERR";      text = "Some kind of disk I/O error occurred" };
+	[11] = { code = 11;   type = "cancel";   condition = "CORRUPT";    text = "The database disk image is malformed" };
+	[12] = { code = 12;   type = "modify";   condition = "NOTFOUND";   text = "Unknown opcode in sqlite3_file_control()" };
+	[13] = { code = 13;   type = "wait";     condition = "FULL";       text = "Insertion failed because database is full" };
+	[14] = { code = 14;   type = "auth";     condition = "CANTOPEN";   text = "Unable to open the database file" };
+	[15] = { code = 15;   type = "cancel";   condition = "PROTOCOL";   text = "Database lock protocol error" };
+	[16] = { code = 16;   type = "continue"; condition = "EMPTY";      text = "Internal use only" };
+	[17] = { code = 17;   type = "modify";   condition = "SCHEMA";     text = "The database schema changed" };
+	[18] = { code = 18;   type = "modify";   condition = "TOOBIG";     text = "String or BLOB exceeds size limit" };
+	[19] = { code = 19;   type = "modify";   condition = "CONSTRAINT"; text = "Abort due to constraint violation" };
+	[20] = { code = 20;   type = "modify";   condition = "MISMATCH";   text = "Data type mismatch" };
+	[21] = { code = 21;   type = "modify";   condition = "MISUSE";     text = "Library used incorrectly" };
+	[22] = { code = 22;   type = "cancel";   condition = "NOLFS";      text = "Uses OS features not supported on host" };
+	[23] = { code = 23;   type = "auth";     condition = "AUTH";       text = "Authorization denied" };
+	[24] = { code = 24;   type = "modify";   condition = "FORMAT";     text = "Not used" };
+	[25] = { code = 25;   type = "modify";   condition = "RANGE";      text = "2nd parameter to sqlite3_bind out of range" };
+	[26] = { code = 26;   type = "cancel";   condition = "NOTADB";     text = "File opened that is not a database file" };
+	[27] = { code = 27;   type = "continue"; condition = "NOTICE";     text = "Notifications from sqlite3_log()" };
+	[28] = { code = 28;   type = "continue"; condition = "WARNING";    text = "Warnings from sqlite3_log()" };
+	[100] = { code = 100; type = "continue"; condition = "ROW";        text = "sqlite3_step() has another row ready" };
+	[101] = { code = 101; type = "continue"; condition = "DONE";       text = "sqlite3_step() has finished executing" };
+});
 
 local assert = function(cond, errno, err)
-	return assert(cond, err or err2str[errno]);
+	return assert(sqlite_errors.coerce(cond, err or errno));
 end
 local _ENV = nil;
 -- luacheck: std none
@@ -137,8 +142,8 @@ function engine:connect()
 
 	local params = self.params;
 	assert(params.driver == "SQLite3", "Only sqlite3 is supported");
-	local dbh, err = lsqlite3.open(params.database);
-	if not dbh then return nil, err2str[err]; end
+	local dbh, err = sqlite_errors.coerce(lsqlite3.open(params.database));
+	if not dbh then return nil, err; end
 	self.conn = dbh;
 	self.prepared = {};
 	local ok, err = self:set_encoding();
@@ -163,12 +168,16 @@ function engine:execute(sql, ...)
 	if not stmt then
 		local err;
 		stmt, err = self.conn:prepare(sql);
-		if not stmt then return stmt, err; end
+		if not stmt then
+			err = sqlite_errors.new(err);
+			err.text = self.conn:errmsg();
+			return stmt, err;
+		end
 		prepared[sql] = stmt;
 	end
 
 	local ret = stmt:bind_values(...);
-	if ret ~= lsqlite3.OK then return nil, self.conn:errmsg(); end
+	if ret ~= lsqlite3.OK then return nil, sqlite_errors.new(ret, { message = self.conn:errmsg() }); end
 	return stmt;
 end
 
