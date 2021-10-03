@@ -159,6 +159,8 @@ local function check(arg)
 			"http_errors_default_message",
 			"http_errors_detailed",
 			"http_errors_messages",
+			"http_max_buffer_size",
+			"http_max_content_size",
 			"installer_plugin_path",
 			"limits",
 			"limits_resolution",
