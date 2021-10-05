@@ -22,7 +22,7 @@ local jid_resource = require "util.jid".resource;
 local resourceprep = require "util.encodings".stringprep.resourceprep;
 local st = require "util.stanza";
 local base64 = require "util.encodings".base64;
-local md5 = require "util.hashes".md5;
+local hmac_sha256 = require "util.hashes".hmac_sha256;
 local new_id = require "util.id".medium;
 
 local log = module._log;
@@ -838,8 +838,9 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 			local from_occupant_jid = self:get_occupant_jid(from_jid);
 			if from_occupant_jid == nil then return nil; end
 			local session_jid
+			local salt = self:get_salt();
 			for to_jid in occupant:each_session() do
-				if md5(to_jid) == to_jid_hash then
+				if hmac_sha256(salt, to_jid):sub(1,8) == to_jid_hash then
 					session_jid = to_jid;
 					break;
 				end
@@ -867,7 +868,8 @@ function room_mt:handle_iq_to_occupant(origin, stanza)
 			return true;
 		end
 		do -- construct_stanza_id
-			stanza.attr.id = base64.encode(occupant.jid.."\0"..stanza.attr.id.."\0"..md5(from));
+			local salt = self:get_salt();
+			stanza.attr.id = base64.encode(occupant.jid.."\0"..stanza.attr.id.."\0"..hmac_sha256(salt, from):sub(1,8));
 		end
 		stanza.attr.from, stanza.attr.to = current_nick, occupant.jid;
 		log("debug", "%s sent private iq stanza to %s (%s)", from, to, occupant.jid);
