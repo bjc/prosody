@@ -10,6 +10,8 @@ local xmlns_carbons = "urn:xmpp:carbons:2";
 local xmlns_forward = "urn:xmpp:forward:0";
 local full_sessions, bare_sessions = prosody.full_sessions, prosody.bare_sessions;
 
+module:add_feature("urn:xmpp:carbons:rules:0");
+
 local function is_bare(jid)
 	return not jid_resource(jid);
 end
