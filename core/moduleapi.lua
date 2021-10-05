@@ -232,11 +232,23 @@ function api:get_option_string(name, default_value)
 	return tostring(value);
 end
 
-function api:get_option_number(name, ...)
-	local value = self:get_option_scalar(name, ...);
+function api:get_option_number(name, default_value, min, max)
+	local value = self:get_option_scalar(name, default_value);
 	local ret = tonumber(value);
 	if value ~= nil and ret == nil then
 		self:log("error", "Config option '%s' not understood, expecting a number", name);
+	end
+	if ret == default_value then
+		-- skip interval checks for default or nil
+		return ret;
+	end
+	if min and ret < min then
+		self:log("warn", "Config option '%s' out of bounds %g < %g", name, ret, min);
+		return min;
+	end
+	if max and ret > max then
+		self:log("warn", "Config option '%s' out of bounds %g > %g", name, ret, max);
+		return max;
 	end
 	return ret;
 end

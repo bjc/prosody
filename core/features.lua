@@ -18,5 +18,6 @@ return {
 
 		-- new moduleapi methods
 		"getopt-enum";
+		"getopt-interval";
 	};
 };

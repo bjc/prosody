@@ -41,6 +41,7 @@ TRUNK
 ### Module API
 
 - Config interface API can require that string values be picked from a provided set
+- Acceptable interval can be specified for number options
 
 ## Changes
 
