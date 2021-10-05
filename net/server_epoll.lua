@@ -634,6 +634,7 @@ function interface:inittls(tls_ctx, now)
 	if self._tls then return end
 	if tls_ctx then self.tls_ctx = tls_ctx; end
 	self._tls = true;
+	self.starttls = false;
 	self:debug("Starting TLS now");
 	self:updatenames(); -- Can't getpeer/sockname after wrap()
 	local ok, conn, err = pcall(luasec.wrap, self.conn, self.tls_ctx);
