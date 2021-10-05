@@ -4,6 +4,9 @@ local cert_verify_identity = require "util.x509".verify_identity;
 local NULL = {};
 local log = module._log;
 
+local measure_cert_statuses = module:metric("counter", "checked", "", "Certificate validation results",
+	{ "chain"; "identity" })
+
 module:hook("s2s-check-certificate", function(event)
 	local session, host, cert = event.session, event.host, event.cert;
 	local conn = session.conn:socket();
@@ -43,5 +46,6 @@ module:hook("s2s-check-certificate", function(event)
 			log("debug", "certificate identity validation result: %s", session.cert_identity_status);
 		end
 	end
+	measure_cert_statuses:with_labels(session.cert_chain_status or "unknown", session.cert_identity_status or "unknown"):add(1);
 end, 509);
 
