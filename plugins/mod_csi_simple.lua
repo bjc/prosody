@@ -105,7 +105,8 @@ local function with_timestamp(stanza, from)
 	return stanza;
 end
 
-local measure_buffer_hold = module:measure("buffer_hold", "times");
+local measure_buffer_hold = module:measure("buffer_hold", "times",
+	{ buckets = { 0.1; 1; 5; 10; 15; 30; 60; 120; 180; 300; 600; 900 } });
 
 local flush_reasons = module:metric(
 	"counter", "flushes", "",
