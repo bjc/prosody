@@ -10,16 +10,21 @@ local b64encode = require "util.encodings".base64.encode;
 
 local xmlns_occupant_id = "urn:xmpp:occupant-id:0";
 
-local function get_occupant_id(room, occupant)
-	if occupant.stable_id then
-		return occupant.stable_id;
-	end
-
+local function get_room_salt(room)
 	local salt = room._data.occupant_id_salt;
 	if not salt then
 		salt = uuid.generate();
 		room._data.occupant_id_salt = salt;
 	end
+	return salt;
+end
+
+local function get_occupant_id(room, occupant)
+	if occupant.stable_id then
+		return occupant.stable_id;
+	end
+
+	local salt = get_room_salt(room)
 
 	occupant.stable_id = b64encode(hmac_sha256(occupant.bare_jid, salt));
 
@@ -66,5 +71,6 @@ if module:get_option_boolean("muc_occupant_id", true) then
 end
 
 return {
+	get_room_salt = get_room_salt;
 	get_occupant_id = get_occupant_id;
 };
