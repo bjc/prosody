@@ -30,6 +30,7 @@ TRUNK
 -   Offline messages aren't sent to MAM clients
 -   Network backend server_select deprecated
 -   Check connectivity via observe.jabber.network
+-   LDAP authentication (mod_auth_ldap)
 
 0.11.0
 ======
