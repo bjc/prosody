@@ -12,6 +12,9 @@ read_globals = {
 files["prosody"] = {
 	allow_defined_top = true;
 	module = true;
+	globals = {
+		"prosody";
+	}
 }
 files["prosodyctl"] = {
 	allow_defined_top = true;

@@ -54,6 +54,8 @@ local thread = async.runner();
 
 thread:run(startup.prosody);
 
+prosody.main_thread = thread;
+
 local function loop()
 	-- Error handler for errors that make it this far
 	local function catch_uncaught_error(err)
