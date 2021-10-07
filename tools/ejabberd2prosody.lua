@@ -85,7 +85,13 @@ function password(node, host, password)
 		data.stored_key = hex(unb64(password[2]));
 		data.server_key = hex(unb64(password[3]));
 		data.salt = unb64(password[4]);
-		data.iteration_count = tonumber(password[5]);
+		if type(password[6]) == "number" then
+			assert(password[5] == "sha", "unexpected passwd entry hash: "..tostring(password[5]));
+			data.iteration_count = password[6];
+		else
+			assert(type(password[5]) == "number", "unexpected passwd entry in source data");
+			data.iteration_count = password[5];
+		end
 	end
 	local ret, err = dm.store(node, host, "accounts", data);
 	print("["..(err or "success").."] accounts: "..node.."@"..host);
