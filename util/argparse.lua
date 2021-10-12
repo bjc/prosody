@@ -26,7 +26,7 @@ local function parse(arg, config)
 		end
 
 		if not param then
-			return nil, "param-not-found", param;
+			return nil, "param-not-found", raw_param;
 		end
 
 		local param_k, param_v;
