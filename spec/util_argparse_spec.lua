@@ -43,4 +43,11 @@ describe("parse", function()
 		assert.equal("--foo", where);
 	end);
 
+	it("reports where the problem is", function()
+		local opts, err, where = parse({ "-h" });
+		assert.falsy(opts);
+		assert.equal("param-not-found", err);
+		assert.equal("-h", where, "returned where");
+	end);
+
 end);
