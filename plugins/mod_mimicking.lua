@@ -29,7 +29,8 @@ module:hook("user-registered", function(user)
 	end
 end);
 
-module:hook("user-deleted", function(user)
+module:hook_global("user-deleted", function(user)
+	if user.host ~= module.host then return end
 	local skel = skeleton(user.username);
 	local ok, err = skeletons:set(skel, nil);
 	if not ok and err then
