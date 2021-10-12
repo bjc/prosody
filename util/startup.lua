@@ -38,7 +38,9 @@ function startup.parse_args()
 	if not opts then
 		if err == "param-not-found" then
 			print("Unknown command-line option: "..tostring(where));
-			print("Perhaps you meant to use prosodyctl instead?");
+			if prosody.process_type == "prosody" then
+				print("Perhaps you meant to use prosodyctl instead?");
+			end
 		elseif err == "missing-value" then
 			print("Expected a value to follow command-line option: "..where);
 		end
