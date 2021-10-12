@@ -49,7 +49,7 @@ function startup.parse_args()
 		end
 
 		if not param then
-			print("Unknown command-line option: "..tostring(param));
+			print("Unknown command-line option: "..tostring(raw_param));
 			print("Perhaps you meant to use prosodyctl instead?");
 			os.exit(1);
 		end
