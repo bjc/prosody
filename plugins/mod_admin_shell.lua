@@ -420,6 +420,7 @@ function def_env.module:info(name, hosts)
 		["adhoc-provider"] = function(item) return item.name; end,
 		["auth-provider"] = function(item) return item.name; end,
 		["storage-provider"] = function(item) return item.name; end,
+		["http-provider"] = function(item, mod) return mod:http_url(item.name); end,
 	};
 
 	for host in hosts do
@@ -441,7 +442,7 @@ function def_env.module:info(name, hosts)
 				local formatter = item_formatters[kind];
 				if formatter then
 					for _, item in ipairs(items) do
-						print("    - " .. formatter(item));
+						print("    - " .. formatter(item, mod.module));
 					end
 				end
 			end
