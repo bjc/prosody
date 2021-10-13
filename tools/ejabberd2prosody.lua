@@ -193,7 +193,9 @@ function muc_room(node, host, properties)
 	end
 	store._data.name = properties.title;
 	store._data.description = properties.description;
-	store._data.password = properties.password;
+	if properties.password_protected ~= false and properties.password ~= "" then
+		store._data.password = properties.password;
+	end
 	store._data.moderated = (properties.moderated == "true") or nil;
 	store._data.members_only = (properties.members_only == "true") or nil;
 	store._data.persistent = (properties.persistent == "true") or nil;
