@@ -136,6 +136,7 @@ local default_node_config = {
 	["max_items"] = 20;
 	["access_model"] = "open";
 	["publish_model"] = "publishers";
+	["send_last_published_item"] = "never";
 };
 local default_node_config_mt = { __index = default_node_config };
 

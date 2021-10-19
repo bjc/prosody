@@ -120,6 +120,12 @@ local node_config_form = dataform {
 		};
 	};
 	{
+		type = "list-single";
+		var = "pubsub#send_last_published_item";
+		name = "send_last_published_item";
+		options = { "never"; "on_sub"; "on_sub_and_presence" };
+	};
+	{
 		type = "boolean";
 		value = true;
 		label = "Whether to deliver event notifications";
@@ -251,6 +257,10 @@ function _M.get_feature_set(service)
 
 	if service.node_defaults.access_model then
 		supported_features:add("access-"..service.node_defaults.access_model);
+	end
+
+	if service.node_defaults.send_last_published_item ~= "never" then
+		supported_features:add("last-published");
 	end
 
 	if rawget(service.config, "itemstore") and rawget(service.config, "nodestore") then
@@ -530,6 +540,12 @@ function handlers.set_subscribe(origin, stanza, subscribe, service)
 		reply = pubsub_error_reply(stanza, ret);
 	end
 	origin.send(reply);
+	local ok, config = service:get_node_config(node, true);
+	if ok and config.send_last_published_item ~= "never" then
+		local ok, id, item = service:get_last_item(node, jid);
+		if not (ok and id) then return; end
+		service.config.broadcaster("items", node, { [jid] = true }, item);
+	end
 end
 
 function handlers.set_unsubscribe(origin, stanza, unsubscribe, service)

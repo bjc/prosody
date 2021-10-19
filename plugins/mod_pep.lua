@@ -187,6 +187,7 @@ function get_pep_service(username)
 			["max_items"] = 1;
 			["persist_items"] = true;
 			["access_model"] = "presence";
+			["send_last_published_item"] = "on_sub_and_presence";
 		};
 
 		autocreate_on_publish = true;
@@ -260,6 +261,8 @@ local function get_caps_hash_from_presence(stanza, current)
 end
 
 local function resend_last_item(jid, node, service)
+	local ok, config = service:get_node_config(node, true);
+	if ok and config.send_last_published_item ~= "on_sub_and_presence" then return end
 	local ok, id, item = service:get_last_item(node, jid);
 	if not (ok and id) then return; end
 	service.config.broadcaster("items", node, { [jid] = true }, item);

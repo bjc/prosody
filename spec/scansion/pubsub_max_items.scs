@@ -79,6 +79,18 @@ Alice receives:
 		  </option>
 		  <value>publishers</value>
 		</field>
+		<field type='list-single' var='pubsub#send_last_published_item'>
+			<option label='never'>
+				<value>never</value>
+			</option>
+			<option label='on_sub'>
+				<value>on_sub</value>
+			</option>
+			<option label='on_sub_and_presence'>
+				<value>on_sub_and_presence</value>
+			</option>
+			<value>never</value>
+		</field>
 		<field var="pubsub#deliver_notifications" label="Whether to deliver event notifications" type="boolean">
 		  <value>1</value>
 		</field>
