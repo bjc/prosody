@@ -584,6 +584,9 @@ module:provides("http", {
 		streaming_uploads = true;
 		cors = {
 			credentials = true;
+			headers = {
+				Authorization = true;
+			};
 		};
 		route = {
 			["PUT /*"] = handle_upload;
