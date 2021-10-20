@@ -44,7 +44,7 @@ Alice receives:
 		<field var="pubsub#type" label="The type of node data, usually specified by the namespace of the payload (if any)" type="text-single"/>
 		<field var="pubsub#max_items" label="Max # of items to persist" type="text-single">
 			<validate xmlns="http://jabber.org/protocol/xdata-validate" datatype="pubsub:integer-or-max">
-				<range min="1"/>
+				<range min="1" max="256"/>
 			</validate>
 		  <value>20</value>
 		</field>

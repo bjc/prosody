@@ -49,7 +49,7 @@ Romeo receives:
 					<field var="pubsub#type" label="The type of node data, usually specified by the namespace of the payload (if any)" type="text-single"/>
 					<field var="pubsub#max_items" label="Max # of items to persist" type="text-single">
 						<validate xmlns="http://jabber.org/protocol/xdata-validate" datatype="pubsub:integer-or-max">
-							<range min="1"/>
+							<range min="1" max="256"/>
 						</validate>
 						<value>1</value>
 					</field>
@@ -139,7 +139,7 @@ Romeo sends:
 					<field var="pubsub#type" type="text-single" label="The type of node data, usually specified by the namespace of the payload (if any)"/>
 					<field var="pubsub#max_items" type="text-single" label="Max # of items to persist">
 						<validate xmlns="http://jabber.org/protocol/xdata-validate" datatype="pubsub:integer-or-max">
-							<range min="1"/>
+							<range min="1" max="256"/>
 						</validate>
 						<value>1</value>
 					</field>

@@ -48,6 +48,13 @@ local function tonumber_max_items(n)
 	return tonumber(n);
 end
 
+for _, field in ipairs(lib_pubsub.node_config_form) do
+	if field.var == "pubsub#max_items" then
+		field.range_max = max_max_items;
+		break;
+	end
+end
+
 local node_store = module:open_store(module.name.."_nodes");
 
 local function create_simple_itemstore(node_config, node_name) --> util.cache like object
