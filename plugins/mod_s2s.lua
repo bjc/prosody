@@ -623,6 +623,7 @@ local function session_close(session, reason, remote_reason, bounce_reason)
 	end
 
 	local this_host = session.direction == "outgoing" and session.from_host or session.to_host
+	if not hosts[this_host] then this_host = ":unknown"; end
 
 	if reason then -- nil == no err, initiated by us, false == initiated by remote
 		local stream_error;
