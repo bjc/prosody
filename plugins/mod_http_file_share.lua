@@ -289,6 +289,13 @@ function handle_upload(event, path) -- PUT /upload/:slot
 			module:log("error", "Could not open file for writing: %s", err);
 			return 500;
 		end
+		function event.response:on_destroy()
+			-- Clean up incomplete upload
+			if io.type(fh) == "file" then -- still open
+				fh:close();
+				os.remove(filename.."~");
+			end
+		end
 		request.body_sink = fh;
 		if request.body == false then
 			if request.headers.expect == "100-continue" then
