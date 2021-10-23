@@ -289,7 +289,7 @@ function handle_upload(event, path) -- PUT /upload/:slot
 			module:log("error", "Could not open file for writing: %s", err);
 			return 500;
 		end
-		function event.response:on_destroy()
+		function event.response:on_destroy() -- luacheck: ignore 212/self
 			-- Clean up incomplete upload
 			if io.type(fh) == "file" then -- still open
 				fh:close();
