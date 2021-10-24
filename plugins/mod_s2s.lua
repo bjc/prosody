@@ -650,7 +650,7 @@ local function session_close(session, reason, remote_reason, bounce_reason)
 		if st.is_stanza(stream_error) then
 			-- to and from are never unknown on outgoing connections
 			log("debug", "Disconnecting %s->%s[%s], <stream:error> is: %s",
-				session.from_host or "(unknown host)" or session.ip, session.to_host or "(unknown host)", session.type, reason);
+				session.from_host or "(unknown host)" or session.ip, session.to_host or "(unknown host)", session.type, stream_error);
 			session.sends2s(stream_error);
 		end
 	else
