@@ -194,6 +194,8 @@ local function session_close(session, reason)
 			local stream_error = st.stanza("stream:error");
 			if type(reason) == "string" then -- assume stream error
 				stream_error:tag(reason, {xmlns = 'urn:ietf:params:xml:ns:xmpp-streams' });
+			elseif st.is_stanza(reason) then
+				stream_error = reason;
 			elseif type(reason) == "table" then
 				if reason.condition then
 					stream_error:tag(reason.condition, stream_xmlns_attr):up();
@@ -203,8 +205,6 @@ local function session_close(session, reason)
 					if reason.extra then
 						stream_error:add_child(reason.extra);
 					end
-				elseif reason.name then -- a stanza
-					stream_error = reason;
 				end
 			end
 			stream_error = tostring(stream_error);

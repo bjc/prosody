@@ -265,6 +265,9 @@ local function session_close(session, reason)
 			if type(reason) == "string" then -- assume stream error
 				module:log("info", "Disconnecting component, <stream:error> is: %s", reason);
 				session.send(st.stanza("stream:error"):tag(reason, {xmlns = 'urn:ietf:params:xml:ns:xmpp-streams' }));
+			elseif st.is_stanza(reason) then
+				module:log("info", "Disconnecting component, <stream:error> is: %s", reason);
+				session.send(reason);
 			elseif type(reason) == "table" then
 				if reason.condition then
 					local stanza = st.stanza("stream:error"):tag(reason.condition, stream_xmlns_attr):up();
@@ -276,9 +279,6 @@ local function session_close(session, reason)
 					end
 					module:log("info", "Disconnecting component, <stream:error> is: %s", stanza);
 					session.send(stanza);
-				elseif reason.name then -- a stanza
-					module:log("info", "Disconnecting component, <stream:error> is: %s", reason);
-					session.send(reason);
 				end
 			end
 		end

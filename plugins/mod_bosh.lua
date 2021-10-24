@@ -236,6 +236,8 @@ local function bosh_close_stream(session, reason)
 		if type(reason) == "string" then -- assume stream error
 			close_reply:tag("stream:error")
 				:tag(reason, {xmlns = xmlns_xmpp_streams});
+		elseif st.is_stanza(reason) then
+			close_reply = reason;
 		elseif type(reason) == "table" then
 			if reason.condition then
 				close_reply:tag("stream:error")
@@ -246,8 +248,6 @@ local function bosh_close_stream(session, reason)
 				if reason.extra then
 					close_reply:add_child(reason.extra);
 				end
-			elseif reason.name then -- a stanza
-				close_reply = reason;
 			end
 		end
 		log("info", "Disconnecting client, <stream:error> is: %s", close_reply);
