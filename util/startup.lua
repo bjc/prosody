@@ -24,7 +24,7 @@ local default_gc_params = {
 
 local arg_settigs = {
 	prosody = {
-		short_params = { D = "daemonize"; F = "no-daemonize" };
+		short_params = { D = "daemonize"; F = "no-daemonize", h = "help", ["?"] = "help" };
 		value_params = { config = true };
 	};
 	prosodyctl = {
@@ -45,6 +45,13 @@ function startup.parse_args()
 			print("Expected a value to follow command-line option: "..where);
 		end
 		os.exit(1);
+	end
+	if opts.help and prosody.process_type == "prosody" then
+		print("prosody [ -D | -F ] [ --config /path/to/prosody.cfg.lua ]");
+		print("  -D, --daemonize       Run in the background")
+		print("  -F, --no-daemonize    Run in the foreground")
+		print("  --config FILE         Specify config file")
+		os.exit(0);
 	end
 	prosody.opts = opts;
 end
