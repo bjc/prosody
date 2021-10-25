@@ -47,8 +47,8 @@ end
 
 module:add_extension(dataform {
 	{ name = "FORM_TYPE", type = "hidden", value = namespace },
-	{ name = "max-file-size", type = "text-single" },
-}:form({ ["max-file-size"] = tostring(file_size_limit) }, "result"));
+	{ name = "max-file-size", type = "text-single", datatype = "xs:integer" },
+}:form({ ["max-file-size"] = file_size_limit }, "result"));
 
 local upload_errors = errors.init(module.name, namespace, {
 	access = { type = "auth"; condition = "forbidden" };
