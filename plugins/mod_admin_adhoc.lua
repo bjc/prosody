@@ -254,7 +254,7 @@ local get_user_stats_layout = dataforms_new{
 local get_user_stats_result_layout = dataforms_new{
 	{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/admin" };
 	{ name = "ipaddresses", type = "text-multi", label = "IP Addresses" };
-	{ name = "rostersize", type = "text-single", label = "Roster size" };
+	{ name = "rostersize", type = "text-single", label = "Roster size", datatype = "xs:integer" };
 	{ name = "onlineresources", type = "text-multi", label = "Online Resources" };
 };
 
@@ -282,7 +282,7 @@ local get_user_stats_handler = adhoc_simple(get_user_stats_layout, function(fiel
 		resources = resources .. "\n" .. resource;
 		IPs = IPs .. "\n" .. session.ip;
 	end
-	return { status = "completed", result = {layout = get_user_stats_result_layout, values = {ipaddresses = IPs, rostersize = tostring(rostersize),
+	return { status = "completed", result = {layout = get_user_stats_result_layout, values = {ipaddresses = IPs, rostersize = rostersize,
 		onlineresources = resources}} };
 end);
 
@@ -341,10 +341,10 @@ end);
 local list_s2s_this_result = dataforms_new {
 	title = "List of S2S connections on this host";
 
-	{ name = "FORM_TYPE", type = "hidden", value = "http://prosody.im/protocol/s2s#list" };
-	{ name = "sessions", type = "text-multi", label = "Connections:" };
-	{ name = "num_in", type = "text-single", label = "#incoming connections:" };
-	{ name = "num_out", type = "text-single", label = "#outgoing connections:" };
+	{ name = "FORM_TYPE"; type = "hidden"; value = "http://prosody.im/protocol/s2s#list" };
+	{ name = "sessions"; type = "text-multi"; label = "Connections:" };
+	{ name = "num_in"; type = "text-single"; label = "#incoming connections:"; datatype = "xs:integer" };
+	{ name = "num_out"; type = "text-single"; label = "#outgoing connections:"; datatype = "xs:integer" };
 };
 
 local function session_flags(session, line)
@@ -423,8 +423,8 @@ local function list_s2s_this_handler(self, data, state)
 
 	return { status = "completed", result = { layout = list_s2s_this_result; values = {
 		sessions = t_concat(s2s_list, "\n"),
-		num_in = tostring(count_in),
-		num_out = tostring(count_out)
+		num_in = count_in,
+		num_out = count_out
 	} } };
 end
 
