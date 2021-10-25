@@ -28,7 +28,7 @@ local arg_settigs = {
 		value_params = { config = true };
 	};
 	prosodyctl = {
-		short_params = { v = "verbose" };
+		short_params = { v = "verbose", h = "help", ["?"] = "help" };
 		value_params = { config = true };
 	};
 }
