@@ -446,6 +446,20 @@ describe("util.dataforms", function ()
 			assert.table(e);
 			assert.string(e.number);
 		end);
+
+		describe("datetime", function ()
+			local f = dataforms.new { { name = "when"; type = "text-single"; datatype = "xs:dateTime" } } -- luacheck: ignore 431
+
+			it("works", function ()
+				local x = f:form({ when = "2008-08-22T21:09:00Z" });
+				assert.equal("2008-08-22T21:09:00Z", x:find("field/value#"))
+				local d, e = f:data(x);
+				assert.is_nil(e);
+				assert.same({ when = 1219439340 }, d);
+			end);
+
+		end)
+
 	end);
 	describe("media element", function ()
 		it("produced media element correctly", function ()

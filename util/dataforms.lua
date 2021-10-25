@@ -14,6 +14,7 @@ local tostring = tostring;
 local t_concat = table.concat;
 local st = require "util.stanza";
 local jid_prep = require "util.jid".prep;
+local datetime = require "util.datetime";
 
 local _ENV = nil;
 -- luacheck: std none
@@ -319,6 +320,13 @@ data_validators["pubsub:integer-or-max"] =
 		else
 			return data_validators["xs:integer"](data, field);
 		end
+	end
+
+data_validators["xs:dateTime"] =
+	function(data, field) -- luacheck: ignore 212/field
+		local n = datetime.parse(data);
+		if not n then return false, "invalid timestamp"; end
+		return true, n;
 	end
 
 
