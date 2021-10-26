@@ -103,8 +103,11 @@ function form_t.form(layout, data, formtype)
 
 		if value ~= nil then
 			if type(value) == "number" then
-				-- TODO validate that this is ok somehow, eg check field.datatype
-				value = ("%g"):format(value);
+				if field_type == "boolean" then
+					value = value ~= 0;
+				else
+					value = ("%g"):format(value);
+				end
 			end
 			-- Add value, depending on type
 			if field_type == "hidden" then

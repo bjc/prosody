@@ -417,6 +417,16 @@ describe("util.dataforms", function ()
 		end);
 	end);
 
+	describe("number handling", function()
+		it("handles numbers as booleans", function()
+			local f = dataforms.new { { name = "boolean"; type = "boolean" } };
+			local x = f:form({ boolean = 0 });
+			assert.equal("0", x:find "field/value#");
+			x = f:form({ boolean = 1 });
+			assert.equal("1", x:find "field/value#");
+		end);
+	end)
+
 	describe("datatype validation", function ()
 		local f = dataforms.new {
 			{
