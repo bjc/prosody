@@ -187,7 +187,8 @@ function muc_room(node, host, properties)
 	for _,aff in ipairs(properties.affiliations) do
 		store._affiliations[build_jid(aff[1])] = aff[2][1] or aff[2];
 	end
-	store._data.subject = properties.subject;
+	-- destructre ejabberd's subject datum (e.g. [{text,<<>>,<<"my room subject">>}] ) 
+	store._data.subject = properties.subject[1][3];
 	if properties.subject_author then
 		store._data.subject_from = store.jid .. "/" .. properties.subject_author;
 	end
