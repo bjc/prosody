@@ -31,7 +31,7 @@ local is_stanza = st.is_stanza;
 local tostring = tostring;
 local time_now = os.time;
 local m_min = math.min;
-local timestamp, timestamp_parse, datestamp = import( "util.datetime", "datetime", "parse", "date");
+local timestamp, datestamp = import("util.datetime", "datetime", "date");
 local default_max_items, max_max_items = 20, module:get_option_number("max_archive_query_results", 50);
 
 local cleanup_after = module:get_option_string("muc_log_expires_after", "1w");
@@ -104,10 +104,10 @@ end
 
 -- Note: We ignore the 'with' field as this is internally used for stanza types
 local query_form = dataform {
-	{ name = "FORM_TYPE"; type = "hidden"; value = xmlns_mam; };
-	{ name = "with"; type = "jid-single"; };
-	{ name = "start"; type = "text-single" };
-	{ name = "end"; type = "text-single"; };
+	{ name = "FORM_TYPE"; type = "hidden"; value = xmlns_mam };
+	{ name = "with"; type = "jid-single" };
+	{ name = "start"; type = "text-single"; datatype = "xs:dateTime" };
+	{ name = "end"; type = "text-single"; datatype = "xs:dateTime" };
 };
 
 -- Serve form
@@ -164,15 +164,6 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 		qstart, qend = form["start"], form["end"];
 		qbefore, qafter = form["before-id"], form["after-id"];
 		qids = form["ids"];
-	end
-
-	if qstart or qend then -- Validate timestamps
-		local vstart, vend = (qstart and timestamp_parse(qstart)), (qend and timestamp_parse(qend))
-		if (qstart and not vstart) or (qend and not vend) then
-			origin.send(st.error_reply(stanza, "modify", "bad-request", "Invalid timestamp"))
-			return true;
-		end
-		qstart, qend = vstart, vend;
 	end
 
 	-- RSM stuff
