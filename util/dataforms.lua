@@ -103,7 +103,9 @@ function form_t.form(layout, data, formtype)
 
 		if value ~= nil then
 			if type(value) == "number" then
-				if field_type == "boolean" then
+				if field.datatype == "xs:dateTime" then
+					value = datetime.datetime(value);
+				elseif field_type == "boolean" then
 					value = value ~= 0;
 				else
 					value = ("%g"):format(value);

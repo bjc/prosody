@@ -461,7 +461,7 @@ describe("util.dataforms", function ()
 			local f = dataforms.new { { name = "when"; type = "text-single"; datatype = "xs:dateTime" } } -- luacheck: ignore 431
 
 			it("works", function ()
-				local x = f:form({ when = "2008-08-22T21:09:00Z" });
+				local x = f:form({ when = 1219439340 });
 				assert.equal("2008-08-22T21:09:00Z", x:find("field/value#"))
 				local d, e = f:data(x);
 				assert.is_nil(e);
