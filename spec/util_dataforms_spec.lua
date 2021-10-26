@@ -428,37 +428,40 @@ describe("util.dataforms", function ()
 	end)
 
 	describe("datatype validation", function ()
-		local f = dataforms.new {
-			{
-				name = "number",
-				type = "text-single",
-				datatype = "xs:integer",
-				range_min = -10,
-				range_max = 10,
-			},
-		};
+		describe("integer", function ()
 
-		it("integer roundtrip works", function ()
-			local d = f:data(f:form({number = 1}));
-			assert.equal(1, d.number);
-		end);
+			local f = dataforms.new {
+				{
+					name = "number",
+					type = "text-single",
+					datatype = "xs:integer",
+					range_min = -10,
+					range_max = 10,
+				},
+			};
 
-		it("integer error handling works", function ()
-			local d,e = f:data(f:form({number = "nan"}));
-			assert.not_equal(1, d.number);
-			assert.table(e);
-			assert.string(e.number);
-		end);
+			it("roundtrip works", function ()
+				local d = f:data(f:form({number = 1}));
+				assert.equal(1, d.number);
+			end);
 
-		it("works", function ()
-			local d,e = f:data(f:form({number = 100}));
-			assert.not_equal(100, d.number);
-			assert.table(e);
-			assert.string(e.number);
-		end);
+			it("error handling works", function ()
+				local d,e = f:data(f:form({number = "nan"}));
+				assert.not_equal(1, d.number);
+				assert.table(e);
+				assert.string(e.number);
+			end);
+
+			it("bounds-cheking work works", function ()
+				local d,e = f:data(f:form({number = 100}));
+				assert.not_equal(100, d.number);
+				assert.table(e);
+				assert.string(e.number);
+			end);
+		end)
 
 		describe("datetime", function ()
-			local f = dataforms.new { { name = "when"; type = "text-single"; datatype = "xs:dateTime" } } -- luacheck: ignore 431
+			local f = dataforms.new { { name = "when"; type = "text-single"; datatype = "xs:dateTime" } }
 
 			it("works", function ()
 				local x = f:form({ when = 1219439340 });
