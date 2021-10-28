@@ -107,8 +107,10 @@ function form_t.form(layout, data, formtype)
 					value = datetime.datetime(value);
 				elseif field_type == "boolean" then
 					value = value ~= 0;
+				elseif field.datatype == "xs:double" or field.datatype == "xs:decimal" then
+					value = ("%f"):format(value);
 				else
-					value = ("%g"):format(value);
+					value = ("%d"):format(value);
 				end
 			end
 			-- Add value, depending on type

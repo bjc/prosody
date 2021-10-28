@@ -458,6 +458,12 @@ describe("util.dataforms", function ()
 				assert.table(e);
 				assert.string(e.number);
 			end);
+
+			it("serializes largeer ints okay", function ()
+				local x = f:form{number=1125899906842624}
+				assert.equal("1125899906842624", x:find("field/value#"))
+			end);
+
 		end)
 
 		describe("datetime", function ()
