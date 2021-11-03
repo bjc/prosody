@@ -9,6 +9,7 @@ local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed
 local cache = require "util.cache";
 local set = require "util.set";
 local storagemanager = require "core.storagemanager";
+local usermanager = require "core.usermanager";
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_event = "http://jabber.org/protocol/pubsub#event";
@@ -174,12 +175,26 @@ local function get_subscriber_filter(username)
 	end
 end
 
+local nobody_service = pubsub.new({
+	service = pubsub.new({
+		node_defaults = {
+			["max_items"] = 1;
+			["persist_items"] = false;
+			["access_model"] = "presence";
+			["send_last_published_item"] = "on_sub_and_presence";
+		};
+	});
+});
+
 function get_pep_service(username)
 	module:log("debug", "get_pep_service(%q)", username);
 	local user_bare = jid_join(username, host);
 	local service = services[username];
 	if service then
 		return service;
+	end
+	if not usermanager.user_exists(username, host) then
+		return nobody_service;
 	end
 	service = pubsub.new({
 		pep_username = username;
