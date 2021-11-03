@@ -33,11 +33,14 @@ local services = cache.new(service_cache_size, function (username, _)
 	end
 end):table();
 
+-- size of caches with smaller objects
+local info_cache_size = module:get_option_number("pep_info_cache_size", 10000);
+
 -- username -> recipient -> set of nodes
-local recipients = {};
+local recipients = cache.new(info_cache_size):table();
 
 -- caps hash -> set of nodes
-local hash_map = {};
+local hash_map = cache.new(info_cache_size):table();
 
 local host = module.host;
 
