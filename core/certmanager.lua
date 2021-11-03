@@ -248,11 +248,14 @@ local core_defaults = {
 }
 
 local mozilla_ssl_configs = {
-	-- As of 2019-12-22
+	-- https://wiki.mozilla.org/Security/Server_Side_TLS
+	-- As of 2021-11-03
 	modern = {
 		protocol = "tlsv1_3";
 		options = { cipher_server_preference = false };
 		ciphers = "DEFAULT"; -- TLS 1.3 uses 'ciphersuites' rather than these
+		curveslist = { "X25519"; "prime256v1"; "secp384r1" };
+		ciphersuites = { "TLS_AES_128_GCM_SHA256"; "TLS_AES_256_GCM_SHA384"; "TLS_CHACHA20_POLY1305_SHA256" };
 	};
 	intermediate = {
 		protocol = "tlsv1_2+";
@@ -268,6 +271,8 @@ local mozilla_ssl_configs = {
 			"DHE-RSA-AES128-GCM-SHA256";
 			"DHE-RSA-AES256-GCM-SHA384";
 		};
+		curveslist = { "X25519"; "prime256v1"; "secp384r1" };
+		ciphersuites = { "TLS_AES_128_GCM_SHA256"; "TLS_AES_256_GCM_SHA384"; "TLS_CHACHA20_POLY1305_SHA256" };
 	};
 	old = {
 		protocol = "tlsv1+";
@@ -301,6 +306,7 @@ local mozilla_ssl_configs = {
 			"AES256-SHA";
 			"DES-CBC3-SHA";
 		};
+		ciphersuites = { "TLS_AES_128_GCM_SHA256"; "TLS_AES_256_GCM_SHA384"; "TLS_CHACHA20_POLY1305_SHA256" };
 	};
 };
 
