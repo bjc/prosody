@@ -18,8 +18,20 @@ local lib_pubsub = module:require "pubsub";
 
 local empty_set = set_new();
 
+-- username -> object passed to module:add_items()
+local pep_service_items = {};
+
+-- size of caches with full pubsub service objects
+local service_cache_size = module:get_option_number("pep_service_cache_size", 1000);
+
 -- username -> util.pubsub service object
-local services = {};
+local services = cache.new(service_cache_size, function (username, _)
+	local item = pep_service_items[username];
+	pep_service_items[username] = nil;
+	if item then
+		module:remove_item("pep-service", item);
+	end
+end):table();
 
 -- username -> recipient -> set of nodes
 local recipients = {};
@@ -202,7 +214,9 @@ function get_pep_service(username)
 		check_node_config = check_node_config;
 	});
 	services[username] = service;
-	module:add_item("pep-service", { service = service, jid = user_bare });
+	local item = { service = service, jid = user_bare }
+	pep_service_items[username] = item;
+	module:add_item("pep-service", item);
 	return service;
 end
 
