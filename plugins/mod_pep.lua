@@ -467,3 +467,18 @@ module:hook("account-disco-items", function(event)
 		reply:tag("item", { jid = user_bare, node = node, name = node_obj.config.title }):up();
 	end
 end);
+
+module:hook_global("user-deleted", function(event)
+	if event.host ~= host then return end
+	local username = event.username;
+	local service = services[username];
+	if not service then return end
+	for node in pairs(service.nodes) do service:delete(node, true); end
+
+	local item = pep_service_items[username];
+	pep_service_items[username] = nil;
+	if item then module:remove_item("pep-service", item); end
+
+	recipients[username] = nil;
+end);
+
