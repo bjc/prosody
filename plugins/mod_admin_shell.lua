@@ -726,6 +726,7 @@ local available_columns = {
 	cert = {
 		title = "Certificate";
 		key = "cert_identity_status";
+		width = 13;
 		mapper = function(cert_status, session)
 			if cert_status ~= "" then return capitalize(cert_status); end
 			if session.cert_chain_status == "Invalid" then
