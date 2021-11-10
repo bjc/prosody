@@ -833,9 +833,24 @@ function def_env.c2s:show(match_jid, colspec)
 		return (not match_jid) or jid:match(match_jid)
 	end
 
-	print(row());
+	local group_by_host = true;
+	for _, col in ipairs(columns) do
+		if col.key == "full_jid" or col.key == "host" then
+			group_by_host = false;
+			break
+		end
+	end
+
+	if not group_by_host then print(row()); end
+	local currenthost = nil;
 
 	for _, session in ipairs(get_c2s():filter(match):sort(_sort_by_jid)) do
+		if group_by_host and session.host ~= currenthost then
+			currenthost = session.host;
+			print("#",prosody.hosts[currenthost] or "Unknown host");
+			print(row());
+		end
+
 		print(row(session));
 	end
 	return true;
@@ -894,11 +909,26 @@ function def_env.s2s:show(match_jid, colspec)
 		return not match_jid or (host or ""):match(match_jid) or (remote or ""):match(match_jid);
 	end
 
+	local group_by_host = true;
+	local currenthost = nil;
+	for _, col in ipairs(columns) do
+		if col.key == "host" then
+			group_by_host = false;
+			break
+		end
+	end
+
+	if not group_by_host then print(row()); end
+
 	local s2s_sessions = array(iterators.values(module:shared"/*/s2s/sessions")):filter(match):sort(_sort_s2s);
 
-	print(row());
-
 	for _, session in ipairs(s2s_sessions) do
+		if group_by_host and currenthost ~= get_s2s_hosts(session) then
+			currenthost = get_s2s_hosts(session);
+			print("#",prosody.hosts[currenthost] or "Unknown host");
+			print(row());
+		end
+
 		print(row(session));
 	end
 	return true; -- TODO counts
