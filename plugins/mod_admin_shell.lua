@@ -809,6 +809,7 @@ local available_columns = {
 };
 
 local function get_colspec(colspec, default)
+	if type(colspec) == "string" then colspec = array(colspec:gmatch("%S+")); end
 	local columns = {};
 	for i, col in pairs(colspec or default) do
 		if type(col) == "string" then
