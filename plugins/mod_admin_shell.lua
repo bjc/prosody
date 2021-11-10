@@ -661,7 +661,8 @@ local available_columns = {
 		title = "Dir";
 		width = 3;
 		key = "direction";
-		mapper = function (dir)
+		mapper = function(dir, session)
+			if session.incoming and session.outgoing then return "<->"; end
 			if dir == "outgoing" then return "-->"; end
 			if dir == "incoming" then return "<--"; end
 			return ""
