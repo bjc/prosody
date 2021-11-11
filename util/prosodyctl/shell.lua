@@ -17,11 +17,11 @@ if have_readline then
 		});
 end
 
-local function read_line()
+local function read_line(prompt_string)
 	if have_readline then
-		return readline.readline("prosody> ");
+		return readline.readline(prompt_string);
 	else
-		io.write("prosody> ");
+		io.write(prompt_string);
 		return io.read("*line");
 	end
 end
@@ -31,7 +31,7 @@ local function send_line(client, line)
 end
 
 local function repl(client)
-	local line = read_line();
+	local line = read_line(client.prompt_string or "prosody> ");
 	if not line or line == "quit" or line == "exit" or line == "bye" then
 		if not line then
 			print("");
@@ -122,6 +122,8 @@ local function start(arg) --luacheck: ignore 212/arg
 			repl(client);
 		end
 	end);
+
+	client.prompt_string = config.get("*", "admin_shell_prompt");
 
 	local socket_path = path.resolve_relative_path(prosody.paths.data, opts.socket or config.get("*", "admin_socket") or "prosody.sock");
 	local conn = adminstream.connection(socket_path, client.listeners);
