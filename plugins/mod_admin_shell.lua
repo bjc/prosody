@@ -286,7 +286,8 @@ end
 -- Anything in def_env will be accessible within the session as a global variable
 
 --luacheck: ignore 212/self
-local serialize_defaults = module:get_option("console_prettyprint_settings", { fatal = false, unquoted = true, maxdepth = 2})
+local serialize_defaults = module:get_option("console_prettyprint_settings",
+	{ fatal = false; unquoted = true; maxdepth = 2; table_iterator = "pairs" })
 
 def_env.output = {};
 function def_env.output:configure(opts)
@@ -301,6 +302,11 @@ function def_env.output:configure(opts)
 		if opts[k] == nil then
 			opts[k] = v;
 		end
+	end
+	if opts.table_iterator == "pairs" then
+		opts.table_iterator = pairs;
+	elseif type(opts.table_iterator) ~= "function" then
+		opts.table_iterator = nil; -- rawpairs is the default
 	end
 	self.session.serialize = serialization.new(opts);
 end
