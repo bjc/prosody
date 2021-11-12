@@ -174,7 +174,13 @@ local function set_roles(jid, host, roles)
 
 	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
 	if actor_user and actor_host == host then -- Local user
-		return authz_provider.set_user_roles(actor_user, roles)
+		local ok, err = authz_provider.set_user_roles(actor_user, roles);
+		if ok then
+			prosody.events.fire_event("user-roles-changed", {
+				username = actor_user, host = actor_host
+			});
+		end
+		return ok, err;
 	else -- Remote entity
 		return authz_provider.set_jid_roles(jid, roles)
 	end
