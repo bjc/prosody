@@ -136,7 +136,7 @@ local function new_table(col_specs, max_width)
 				v = column.mapper(v, row);
 			end
 			if v == nil then
-				v = "";
+				v = column.default or "";
 			else
 				v = tostring(v);
 			end
