@@ -93,11 +93,11 @@ local function printf(fmt, ...)
 end
 
 local function padright(s, width)
-	return s..string.rep(" ", width-#s);
+	return s..string.rep(" ", width-len(s));
 end
 
 local function padleft(s, width)
-	return string.rep(" ", width-#s)..s;
+	return string.rep(" ", width-len(s))..s;
 end
 
 local pat = "[%z\001-\127\194-\253][\128-\191]*";
