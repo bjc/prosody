@@ -52,12 +52,17 @@ function methods:next(cb)
 	local dns_resolver = adns.resolver();
 
 	if not self.extra or self.extra.use_ipv4 ~= false then
-		dns_resolver:lookup(function (answer)
+		dns_resolver:lookup(function (answer, err)
 			if answer then
 				secure = secure and answer.secure;
 				for _, record in ipairs(answer) do
 					table.insert(targets, { self.conn_type.."4", record.a, self.port, self.extra });
 				end
+				if answer.status then
+					self.last_error = answer.status .. " in A lookup";
+				end
+			else
+				self.last_error = err;
 			end
 			ready();
 		end, self.hostname, "A", "IN");
@@ -66,12 +71,17 @@ function methods:next(cb)
 	end
 
 	if not self.extra or self.extra.use_ipv6 ~= false then
-		dns_resolver:lookup(function (answer)
+		dns_resolver:lookup(function (answer, err)
 			if answer then
 				secure = secure and answer.secure;
 				for _, record in ipairs(answer) do
 					table.insert(targets, { self.conn_type.."6", record.aaaa, self.port, self.extra });
 				end
+				if answer.status then
+					self.last_error = answer.status .. " in AAAA lookup";
+				end
+			else
+				self.last_error = err;
 			end
 			ready();
 		end, self.hostname, "AAAA", "IN");
@@ -80,12 +90,17 @@ function methods:next(cb)
 	end
 
 	if self.extra and self.extra.use_dane == true then
-		dns_resolver:lookup(function (answer)
+		dns_resolver:lookup(function (answer, err)
 			if answer then
 				secure = secure and answer.secure;
 				for _, record in ipairs(answer) do
 					table.insert(tlsa, record.tlsa);
 				end
+				if answer.status then
+					self.last_error = answer.status .. " in TLSA lookup";
+				end
+			else
+				self.last_error = err;
 			end
 			ready();
 		end, ("_%d._tcp.%s"):format(self.port, self.hostname), "TLSA", "IN");

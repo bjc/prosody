@@ -20,6 +20,9 @@ function methods:next(cb)
 			self.resolver = basic.new(unpack(next_target, 1, 4));
 		end
 		self.resolver:next(function (...)
+			if self.resolver then
+				self.last_error = self.resolver.last_error;
+			end
 			if ... == nil then
 				self.resolver = nil;
 				self:next(cb);
@@ -57,12 +60,15 @@ function methods:next(cb)
 			if #answer == 0 then
 				if self.extra and self.extra.default_port then
 					table.insert(targets, { self.hostname, self.extra.default_port, self.conn_type, self.extra });
+				else
+					self.last_error = "zero SRV records found";
 				end
 				ready();
 				return;
 			end
 
 			if #answer == 1 and answer[1].srv.target == "." then -- No service here
+				self.last_error = "service explicitly unavailable";
 				ready();
 				return;
 			end
@@ -71,6 +77,8 @@ function methods:next(cb)
 			for _, record in ipairs(answer) do
 				table.insert(targets, { record.srv.target, record.srv.port, self.conn_type, self.extra });
 			end
+		else
+			self.last_error = err;
 		end
 		ready();
 	end, "_" .. self.service .. "._" .. self.conn_type .. "." .. self.hostname, "SRV", "IN");

@@ -35,9 +35,9 @@ local function attempt_connection(p)
 	p.target_resolver:next(function (conn_type, ip, port, extra)
 		if not conn_type then
 			-- No more targets to try
-			p:log("debug", "No more connection targets to try");
+			p:log("debug", "No more connection targets to try", p.target_resolver.last_error);
 			if p.listeners.onfail then
-				p.listeners.onfail(p.data, p.last_error or "unable to resolve service");
+				p.listeners.onfail(p.data, p.target_resolver.last_error or p.last_error or "unable to resolve service");
 			end
 			return;
 		end
