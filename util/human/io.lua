@@ -1,4 +1,5 @@
 local array = require "util.array";
+local utf8 = rawget(_G,"utf8") or require"util.encodings".utf8;
 
 local function getchar(n)
 	local stty_ret = os.execute("stty raw -echo 2>/dev/null");
@@ -96,7 +97,10 @@ local function padleft(s, width)
 end
 
 local function ellipsis(s, width)
-	return s:sub(1, width-1) .. "…";
+	if #s <= width then return s; end
+	s = s:sub(1, width - 1)
+	while not utf8.len(s) do s = s:sub(1, -2); end
+	return s .. "…";
 end
 
 local function new_table(col_specs, max_width)
