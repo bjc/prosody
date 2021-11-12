@@ -45,6 +45,8 @@ local function repl(client)
 end
 
 local function printbanner()
+	local banner = config.get("*", "console_banner");
+	if banner then return print(banner); end
 	print([[
                      ____                \   /     _
                     |  _ \ _ __ ___  ___  _-_   __| |_   _
