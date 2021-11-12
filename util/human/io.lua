@@ -95,6 +95,10 @@ local function padleft(s, width)
 	return string.rep(" ", width-#s)..s;
 end
 
+local function ellipsis(s, width)
+	return s:sub(1, width-1) .. "…";
+end
+
 local function new_table(col_specs, max_width)
 	max_width = max_width or tonumber(os.getenv("COLUMNS")) or 80;
 	local separator = " | ";
@@ -147,7 +151,7 @@ local function new_table(col_specs, max_width)
 					v = padright(v, width);
 				end
 			elseif #v > width then
-				v = v:sub(1, width-1) .. "…";
+				v = ellipsis(v, width);
 			end
 			table.insert(output, v);
 		end
@@ -165,5 +169,6 @@ return {
 	printf = printf;
 	padleft = padleft;
 	padright = padright;
+	ellipsis = ellipsis;
 	table = new_table;
 };
