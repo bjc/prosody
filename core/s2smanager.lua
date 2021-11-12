@@ -101,6 +101,7 @@ local function destroy_session(session, reason, bounce_reason)
 	end
 
 	local event_data = { session = session, reason = reason };
+	fire_event("s2s-destroyed", event_data);
 	if session.type == "s2sout" then
 		fire_event("s2sout-destroyed", event_data);
 		if hosts[session.from_host] then
