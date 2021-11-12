@@ -43,6 +43,7 @@ local format_number = require "util.human.units".format;
 local format_table = require "util.human.io".table;
 
 local function capitalize(s)
+	if not s then return end
 	return (s:gsub("^%a", string.upper):gsub("_", " "));
 end
 
@@ -652,8 +653,7 @@ local available_columns = {
 		key = "host";
 		width = 22;
 		mapper = function(host, session)
-			if host ~= "" then return host; end
-			return get_s2s_hosts(session) or "?";
+			return host or get_s2s_hosts(session) or "?";
 		end;
 	};
 	remote = {
@@ -671,7 +671,6 @@ local available_columns = {
 			if session.incoming and session.outgoing then return "<->"; end
 			if dir == "outgoing" then return "-->"; end
 			if dir == "incoming" then return "<--"; end
-			return ""
 		end;
 	};
 	id = { title = "Session ID"; width = 20; key = "id" };
@@ -693,7 +692,7 @@ local available_columns = {
 		title = "IPv";
 		width = 4;
 		key = "ip";
-		mapper = function(ip) return ip:find(":") and "IPv6" or "IPv4"; end;
+		mapper = function(ip) if ip then return ip:find(":") and "IPv6" or "IPv4"; end end;
 	};
 	ip = { title = "IP address"; width = 40; key = "ip" };
 	status = {
@@ -701,7 +700,7 @@ local available_columns = {
 		width = 11;
 		key = "presence";
 		mapper = function(p)
-			if not p or p == "" then return "unavailable"; end
+			if not p then return "unavailable"; end
 			return p:get_child_text("show") or "available";
 		end;
 	};
@@ -711,8 +710,8 @@ local available_columns = {
 		width = 11;
 		mapper = function(conn, session)
 			if not session.secure then return "insecure"; end
-			if conn == "" or not conn:ssl() then return "secure" end
-			local sock = conn ~= "" and conn:socket();
+			if not conn:ssl() then return "secure" end
+			local sock = conn and conn:socket();
 			if not sock then return "unknown TLS"; end
 			local tls_info = sock.info and sock:info();
 			return tls_info and tls_info.protocol or "unknown TLS";
@@ -723,10 +722,9 @@ local available_columns = {
 		width = 30;
 		key = "conn";
 		mapper = function(conn)
-			local sock = conn ~= "" and conn:socket();
+			local sock = conn:socket();
 			local info = sock and sock.info and sock:info();
 			if info then return info.cipher end
-			return ""
 		end;
 	};
 	cert = {
@@ -734,7 +732,7 @@ local available_columns = {
 		key = "cert_identity_status";
 		width = 13;
 		mapper = function(cert_status, session)
-			if cert_status ~= "" then return capitalize(cert_status); end
+			if cert_status then return capitalize(cert_status); end
 			if session.cert_chain_status == "Invalid" then
 				local cert_errors = set.new(session.cert_chain_errors[1]);
 				if cert_errors:contains("certificate has expired") then
@@ -753,7 +751,7 @@ local available_columns = {
 		title = "SNI";
 		width = 22;
 		mapper = function(_, session)
-			if not session.conn then return "" end
+			if not session.conn then return end
 			local sock = session.conn:socket();
 			return sock and sock.getsniname and sock:getsniname() or "";
 		end;
@@ -762,7 +760,7 @@ local available_columns = {
 		title = "ALPN";
 		width = 11;
 		mapper = function(_, session)
-			if not session.conn then return "" end
+			if not session.conn then return end
 			local sock = session.conn:socket();
 			return sock and sock.getalpn and sock:getalpn() or "";
 		end;
@@ -772,7 +770,7 @@ local available_columns = {
 		key = "smacks";
 		width = 11;
 		mapper = function(smacks_xmlns, session)
-			if smacks_xmlns == "" then return "no"; end
+			if not smacks_xmlns then return "no"; end
 			if session.hibernating then return "hibernating"; end
 			return "yes";
 		end;
@@ -783,7 +781,7 @@ local available_columns = {
 		width = 8;
 		align = "right";
 		mapper = function (queue)
-			return tostring(#queue);
+			return queue and tostring(#queue);
 		end
 	};
 	csi = {
@@ -802,7 +800,7 @@ local available_columns = {
 		key = "dialback_key";
 		width = 13;
 		mapper = function (dialback_key, session)
-			if dialback_key == "" then
+			if not dialback_key then
 				if session.type == "s2sin" or session.type == "s2sout" then
 					return "Not used";
 				end
