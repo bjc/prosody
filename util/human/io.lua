@@ -1,5 +1,9 @@
 local array = require "util.array";
-local utf8 = rawget(_G,"utf8") or require"util.encodings".utf8;
+local utf8 = rawget(_G, "utf8") or require"util.encodings".utf8;
+local len = utf8.len or function(s)
+	local _, count = s:gsub("[%z\001-\127\194-\253][\128-\191]*", "");
+	return count;
+end;
 
 local function getchar(n)
 	local stty_ret = os.execute("stty raw -echo 2>/dev/null");
@@ -96,11 +100,21 @@ local function padleft(s, width)
 	return string.rep(" ", width-#s)..s;
 end
 
+local pat = "[%z\001-\127\194-\253][\128-\191]*";
+local function utf8_cut(s, pos)
+	return s:match("^"..pat:rep(pos)) or s;
+end
+
+if utf8.len and utf8.offset then
+	function utf8_cut(s, pos)
+		return s:sub(1, utf8.offset(s, pos+1)-1);
+	end
+end
+
 local function ellipsis(s, width)
-	if #s <= width then return s; end
-	s = s:sub(1, width - 1)
-	while not utf8.len(s) do s = s:sub(1, -2); end
-	return s .. "…";
+	if len(s) <= width then return s; end
+	if width == 1 then return "…"; end
+	return utf8_cut(s, width - 1) .. "…";
 end
 
 local function new_table(col_specs, max_width)
@@ -148,13 +162,13 @@ local function new_table(col_specs, max_width)
 			else
 				v = tostring(v);
 			end
-			if #v < width then
+			if len(v) < width then
 				if column.align == "right" then
 					v = padleft(v, width);
 				else
 					v = padright(v, width);
 				end
-			elseif #v > width then
+			elseif len(v) > width then
 				v = ellipsis(v, width);
 			end
 			table.insert(output, v);
