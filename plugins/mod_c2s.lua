@@ -239,27 +239,25 @@ local function session_close(session, reason)
 	end
 end
 
-module:hook_global("user-deleted", function(event)
-	local username, host = event.username, event.host;
-	local user = hosts[host].sessions[username];
-	if user and user.sessions then
-		for _, session in pairs(user.sessions) do
-			session:close{ condition = "not-authorized", text = "Account deleted" };
-		end
-	end
-end, 200);
-
-module:hook_global("user-password-changed", function(event)
-	local username, host, resource = event.username, event.host, event.resource;
-	local user = hosts[host].sessions[username];
-	if user and user.sessions then
-		for r, session in pairs(user.sessions) do
-			if r ~= resource then
-				session:close{ condition = "reset", text = "Password changed" };
+-- Close all user sessions with the specified reason. If leave_resource is
+-- true, the resource named by event.resource will not be closed.
+local function disconnect_user_sessions(reason, leave_resource)
+	return function (event)
+		local username, host, resource = event.username, event.host, event.resource;
+		local user = hosts[host].sessions[username];
+		if user and user.sessions then
+			for r, session in pairs(user.sessions) do
+				if not leave_resource or r ~= resource then
+					session:close(reason);
+				end
 			end
 		end
 	end
-end, 200);
+end
+
+module:hook_global("user-password-changed", disconnect_user_sessions({ condition = "reset", text = "Password changed" }, true), 200);
+module:hook_global("user-roles-changed", disconnect_user_sessions({ condition = "reset", text = "Roles changed" }), 200);
+module:hook_global("user-deleted", disconnect_user_sessions({ condition = "not-authorized", text = "Account deleted" }), 200);
 
 function runner_callbacks:ready()
 	if self.data.conn then
