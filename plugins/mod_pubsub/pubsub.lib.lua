@@ -278,9 +278,13 @@ end
 function _M.handle_disco_info_node(event, service)
 	local stanza, reply, node = event.stanza, event.reply, event.node;
 	local ok, ret = service:get_nodes(stanza.attr.from);
+	if not ok then
+		event.origin.send(pubsub_error_reply(stanza, ret));
+		return true;
+	end
 	local node_obj = ret[node];
-	if not ok or not node_obj then
-		event.origin.send(pubsub_error_reply(stanza, ret or "item-not-found"));
+	if not node_obj then
+		event.origin.send(pubsub_error_reply(stanza, "item-not-found"));
 		return true;
 	end
 	event.exists = true;
