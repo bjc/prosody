@@ -8,6 +8,10 @@ local allow_unaffiliated = module:get_option_boolean("allow_unaffiliated_registe
 
 local enforce_nick = module:get_option_boolean("enforce_registered_nickname", false);
 
+-- Whether to include the current registration data as a dataform. Disabled
+-- by default currently as it hasn't been widely tested with clients.
+local include_reg_form = module:get_option_boolean("muc_registration_include_form", false);
+
 -- reserved_nicks[nick] = jid
 local function get_reserved_nicks(room)
 	if room._reserved_nicks then
@@ -128,10 +132,14 @@ local function handle_register_iq(room, origin, stanza)
 	if stanza.attr.type == "get" then
 		reply:query("jabber:iq:register");
 		if registered_nick then
-			-- I find it strange, but XEP-0045 says not to include
-			-- the current registration data (only the registered name)
 			reply:tag("registered"):up();
-			reply:tag("username"):text(registered_nick);
+			reply:tag("username"):text(registered_nick):up();
+			if include_reg_form then
+				local aff_data = room:get_affiliation_data(user_jid);
+				if aff_data then
+					reply:add_child(registration_form:form(aff_data, "result"));
+				end
+			end
 			origin.send(reply);
 			return true;
 		end
