@@ -45,6 +45,7 @@ local record lib
 		end
 
 		form : function ( dataform, { string : any }, form_type ) : stanza_t
+		data : function ( dataform, stanza_t ) : { string : any }
 	end
 
 	new : function ( dataform ) : dataform
