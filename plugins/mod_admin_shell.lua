@@ -710,7 +710,7 @@ local available_columns = {
 		width = 11;
 		mapper = function(conn, session)
 			if not session.secure then return "insecure"; end
-			if not conn:ssl() then return "secure" end
+			if not conn or not conn:ssl() then return "secure" end
 			local sock = conn and conn:socket();
 			if not sock then return "unknown TLS"; end
 			local tls_info = sock.info and sock:info();
