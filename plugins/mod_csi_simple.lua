@@ -214,7 +214,7 @@ end
 function module.unload()
 	for _, user_session in pairs(prosody.hosts[module.host].sessions) do
 		for _, session in pairs(user_session.sessions) do
-			if session.state == "inactive" then
+			if session.state and session.state ~= "active" then
 				disable_optimizations(session);
 			end
 		end
