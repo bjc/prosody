@@ -1432,7 +1432,9 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
 		previous_affiliation = target_affiliation;
 		data = data and data or nil; -- coerce false to nil
 	};
-	if not module:fire_event("muc-pre-set-affiliation", event_data) then
+
+	module:fire_event("muc-pre-set-affiliation", event_data);
+	if event.allowed == false then
 		local err = event_data.error or { type = "cancel", condition = "not-allowed" };
 		return nil, err.type, err.condition;
 	end
