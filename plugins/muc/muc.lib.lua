@@ -1431,6 +1431,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
 		reason = reason;
 		previous_affiliation = target_affiliation or "none";
 		data = data and data or nil; -- coerce false to nil
+		previous_data = self._affiliation_data[jid] or nil;
 	};
 
 	module:fire_event("muc-pre-set-affiliation", event_data);
