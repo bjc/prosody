@@ -1429,7 +1429,7 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
 		jid = jid;
 		affiliation = affiliation or "none";
 		reason = reason;
-		previous_affiliation = target_affiliation;
+		previous_affiliation = target_affiliation or "none";
 		data = data and data or nil; -- coerce false to nil
 	};
 
