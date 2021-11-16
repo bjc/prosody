@@ -1539,6 +1539,7 @@ function room_mt:set_affiliation_data(jid, key, value)
 	if not data then
 		if value == nil then return true; end
 		data = {};
+		self._affiliation_data[jid] = data;
 	end
 	local old_value = data[key];
 	data[key] = value;
