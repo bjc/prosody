@@ -1532,6 +1532,28 @@ function room_mt:get_affiliation_data(jid, key)
 	return data;
 end
 
+function room_mt:set_affiliation_data(jid, key, value)
+	if key == nil then return nil, "invalid key"; end
+	local data = self._affiliation_data[jid];
+	if not data then
+		if value == nil then return true; end
+		data = {};
+	end
+	local old_value = data[key];
+	data[key] = value;
+	if old_value ~= value then
+		module:fire_event("muc-set-affiliation-data/"..key, {
+			room = self;
+			jid = jid;
+			key = key;
+			value = value;
+			old_value = old_value;
+		});
+	end
+	self:save(true);
+	return true;
+end
+
 function room_mt:get_role(nick)
 	local occupant = self:get_occupant_by_nick(nick);
 	return occupant and occupant.role or nil;
