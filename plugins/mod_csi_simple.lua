@@ -116,6 +116,10 @@ local flush_reasons = module:metric(
 
 local function manage_buffer(stanza, session)
 	local ctr = session.csi_counter or 0;
+	if session.state ~= "inactive" then
+		session.csi_counter = ctr + 1;
+		return stanza;
+	end
 	local flush, why = should_flush(stanza, session, ctr);
 	if flush then
 		if session.csi_measure_buffer_hold then
