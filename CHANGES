@@ -32,6 +32,7 @@ TRUNK
 -   Check connectivity via observe.jabber.network
 -   LDAP authentication (mod_auth_ldap)
 -   mod_auth_cyrus removed
+-   mod_smacks: Stream management and resumption (XEP-0198)
 
 0.11.0
 ======
