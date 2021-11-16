@@ -851,7 +851,11 @@ function def_env.c2s:show(match_jid, colspec)
 	if not group_by_host then print(row()); end
 	local currenthost = nil;
 
-	for _, session in ipairs(get_c2s():filter(match):sort(_sort_by_jid)) do
+	local c2s_sessions = get_c2s();
+	local total_count = #c2s_sessions;
+	c2s_sessions:filter(match):sort(_sort_by_jid);
+	local shown_count = #c2s_sessions;
+	for _, session in ipairs(c2s_sessions) do
 		if group_by_host and session.host ~= currenthost then
 			currenthost = session.host;
 			print("#",prosody.hosts[currenthost] or "Unknown host");
@@ -860,7 +864,10 @@ function def_env.c2s:show(match_jid, colspec)
 
 		print(row(session));
 	end
-	return true;
+	if total_count ~= shown_count then
+		return true, ("%d out of %d c2s sessions shown"):format(shown_count, total_count);
+	end
+	return true, ("%d c2s sessions shown"):format(total_count);
 end
 
 function def_env.c2s:show_tls(match_jid)
@@ -927,7 +934,10 @@ function def_env.s2s:show(match_jid, colspec)
 
 	if not group_by_host then print(row()); end
 
-	local s2s_sessions = array(iterators.values(module:shared"/*/s2s/sessions")):filter(match):sort(_sort_s2s);
+	local s2s_sessions = array(iterators.values(module:shared"/*/s2s/sessions"));
+	local total_count = #s2s_sessions;
+	s2s_sessions:filter(match):sort(_sort_s2s);
+	local shown_count = #s2s_sessions;
 
 	for _, session in ipairs(s2s_sessions) do
 		if group_by_host and currenthost ~= get_s2s_hosts(session) then
@@ -938,7 +948,10 @@ function def_env.s2s:show(match_jid, colspec)
 
 		print(row(session));
 	end
-	return true; -- TODO counts
+	if total_count ~= shown_count then
+		return true, ("%d out of %d s2s connections shown"):format(shown_count, total_count);
+	end
+	return true, ("%d s2s connections shown"):format(total_count);
 end
 
 function def_env.s2s:show_tls(match_jid)
