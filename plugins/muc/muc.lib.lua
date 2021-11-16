@@ -1423,6 +1423,24 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
 		end
 	end
 
+	local event_data = {
+		room = self;
+		actor = actor;
+		jid = jid;
+		affiliation = affiliation or "none";
+		reason = reason;
+		previous_affiliation = target_affiliation;
+		data = data and data or nil; -- coerce false to nil
+	};
+	if not module:fire_event("muc-pre-set-affiliation", event_data) then
+		local err = event_data.error or { type = "cancel", condition = "not-allowed" };
+		return nil, err.type, err.condition;
+	end
+	if affiliation and not data and event_data.data then
+		-- Allow handlers to add data when none was going to be set
+		data = event_data.data;
+	end
+
 	-- Set in 'database'
 	self._affiliations[jid] = affiliation;
 	if not affiliation or data == false or (data ~= nil and next(data) == nil) then
@@ -1497,16 +1515,8 @@ function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
 
 	self:save(true);
 
-	module:fire_event("muc-set-affiliation", {
-		room = self;
-		actor = actor;
-		jid = jid;
-		affiliation = affiliation or "none";
-		reason = reason;
-		previous_affiliation = target_affiliation;
-		data = data and data or nil; -- coerce false to nil
-		in_room = next(occupants_updated) ~= nil;
-	});
+	event_data.in_room = next(occupants_updated) ~= nil;
+	module:fire_event("muc-set-affiliation", event_data);
 
 	return true;
 end
