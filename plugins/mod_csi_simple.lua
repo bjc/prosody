@@ -141,6 +141,8 @@ end
 
 local function flush_buffer(data, session)
 	session.log("debug", "Flushing buffer (%s; queue size is %d)", "client activity", session.csi_counter);
+	session.state = "flushing";
+	module:fire_event("csi-flushing", { session = session });
 	flush_reasons:with_labels("client activity"):add(1);
 	if session.csi_measure_buffer_hold then
 		session.csi_measure_buffer_hold();
