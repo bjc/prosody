@@ -140,6 +140,8 @@ local function manage_buffer(stanza, session)
 end
 
 local function flush_buffer(data, session)
+	local ctr = session.csi_counter or 0;
+	if ctr == 0 then return data end
 	session.log("debug", "Flushing buffer (%s; queue size is %d)", "client activity", session.csi_counter);
 	session.state = "flushing";
 	module:fire_event("csi-flushing", { session = session });
