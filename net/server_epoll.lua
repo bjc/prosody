@@ -487,6 +487,7 @@ end
 
 -- Called when socket is writable
 function interface:onwritable()
+	self._writing = true; -- prevent reentrant writes etc
 	self:onconnect();
 	if not self.conn then return; end -- could have been closed in onconnect
 	self:on("predrain");
@@ -514,6 +515,7 @@ function interface:onwritable()
 		end
 		self:setwritetimeout(false);
 		self:ondrain(); -- Be aware of writes in ondrain
+		self._writing = nil;
 		return ok;
 	elseif partial then
 		self:debug("Sent %d out of %d buffered bytes", partial, #data);
@@ -528,6 +530,7 @@ function interface:onwritable()
 		self:set(nil, true);
 		self:setwritetimeout();
 	end
+	self._writing = nil;
 	if err == "wantwrite" or err == "timeout" then
 		self:set(nil, true);
 		self:setwritetimeout();
@@ -557,7 +560,7 @@ function interface:write(data)
 	elseif buffer == nil then
 		self.writebuffer = data;
 	end
-	if not self._write_lock then
+	if not self._write_lock and not self._writing then
 		if self._writable and cfg.opportunistic_writes and not self._opportunistic_write then
 			self._opportunistic_write = true;
 			local ret, err = self:onwritable();
