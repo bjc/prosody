@@ -104,7 +104,7 @@ function api:hook_tag(xmlns, name, handler, priority)
 		-- If only 2 options then they specified no xmlns
 		xmlns, name, handler, priority = nil, xmlns, name, handler;
 	elseif not (handler and name) then
-		self:log("warn", "Error: Insufficient parameters to module:hook_stanza()");
+		self:log("warn", "Error: Insufficient parameters to module:hook_tag()");
 		return;
 	end
 	return self:hook("stanza/"..(xmlns and (xmlns..":") or "")..name,
