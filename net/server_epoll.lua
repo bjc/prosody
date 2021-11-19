@@ -513,9 +513,9 @@ function interface:onwritable()
 		else
 			self.writebuffer = nil;
 		end
+		self._writing = nil;
 		self:setwritetimeout(false);
 		self:ondrain(); -- Be aware of writes in ondrain
-		self._writing = nil;
 		return ok;
 	elseif partial then
 		self:debug("Sent %d out of %d buffered bytes", partial, #data);
