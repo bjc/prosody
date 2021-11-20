@@ -590,7 +590,7 @@ local function check(arg)
 			end
 
 			local use_ipv4 = configmanager.get("*", "use_ipv4") ~= false;
-			local use_ipv6 = configmanager.get("*", "use_ipv6") ~= false;
+			local use_ipv6 = v6_supported and configmanager.get("*", "use_ipv6") ~= false;
 			if not use_ipv4 and not use_ipv6 then
 				print("    Both IPv6 and IPv4 are disabled, Prosody will not listen on any ports");
 				print("    nor be able to connect to any remote servers.");
