@@ -10,8 +10,10 @@ local jid = require "util.jid";
 local st = require "util.stanza";
 local dt = require "util.datetime";
 local filters = require "util.filters";
+local timer = require "util.timer";
 
 local queue_size = module:get_option_number("csi_queue_size", 256);
+local resume_delay = module:get_option_number("csi_resume_inactive_delay", 5);
 
 local important_payloads = module:get_option_set("csi_important_payloads", { });
 
@@ -194,14 +196,29 @@ module:hook("pre-resource-unbind", function (event)
 	disable_optimizations(session);
 end, 1);
 
-module:hook("c2s-ondrain", function (event)
-	local session = event.session;
-	if (session.state == "flushing" or session.state == "inactive") and session.conn and session.conn.pause_writes then
+local function resume_optimizations(_, _, session)
+	if (session.state == "flushing" or session.state == "inactive")  and session.conn and session.conn.pause_writes then
 		session.state = "inactive";
 		session.conn:pause_writes();
 		session.csi_measure_buffer_hold = measure_buffer_hold();
 		session.log("debug", "Buffer flushed, resuming inactive mode (queue size was %d)", session.csi_counter);
 		session.csi_counter = 0;
+	end
+	session.csi_resume = nil;
+end
+
+module:hook("c2s-ondrain", function (event)
+	local session = event.session;
+	if (session.state == "flushing" or session.state == "inactive")  and session.conn and session.conn.pause_writes then
+		-- After flushing, remain in pseudo-flushing state for a moment to allow
+		-- some followup traffic, iq replies, smacks acks to be sent without having
+		-- to go back and forth between inactive and flush mode.
+		if not session.csi_resume then
+			session.csi_resume = timer.add_task(resume_delay, resume_optimizations, session);
+		end
+		-- Should further noise in this short grace period push back the delay?
+		-- Probably not great if the session can be kept in pseudo-active mode
+		-- indefinitely.
 	end
 end);
 
