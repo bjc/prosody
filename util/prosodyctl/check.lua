@@ -659,6 +659,10 @@ local function check(arg)
 				if host_ok_v6 and not v6_supported then
 					print("    Host "..target_host.." has AAAA records, but your version of LuaSocket does not support IPv6.");
 					print("      Please see https://prosody.im/doc/ipv6 for more information.");
+				elseif host_ok_v6 and not use_ipv6 then
+					print("    Host "..target_host.." has AAAA records, but IPv6 is disabled.");
+					-- TODO Tell them to drop the AAAA records or enable IPv6?
+					print("      Please see https://prosody.im/doc/ipv6 for more information.");
 				end
 			end
 			if not all_targets_ok then
