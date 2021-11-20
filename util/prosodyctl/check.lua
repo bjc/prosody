@@ -456,6 +456,8 @@ local function check(arg)
 		end
 
 		local v6_supported = not not socket.tcp6;
+		local use_ipv4 = configmanager.get("*", "use_ipv4") ~= false;
+		local use_ipv6 = v6_supported and configmanager.get("*", "use_ipv6") ~= false;
 
 		local function trim_dns_name(n)
 			return (n:gsub("%.$", ""));
@@ -574,10 +576,10 @@ local function check(arg)
 				if type(proxy65_target) == "string" then
 					local A, AAAA = dns.lookup(idna.to_ascii(proxy65_target), "A"), dns.lookup(idna.to_ascii(proxy65_target), "AAAA");
 					local prob = {};
-					if not A then
+					if use_ipv4 and not A then
 						table.insert(prob, "A");
 					end
-					if v6_supported and not AAAA then
+					if use_ipv6 and not AAAA then
 						table.insert(prob, "AAAA");
 					end
 					if #prob > 0 then
@@ -589,8 +591,6 @@ local function check(arg)
 				end
 			end
 
-			local use_ipv4 = configmanager.get("*", "use_ipv4") ~= false;
-			local use_ipv6 = v6_supported and configmanager.get("*", "use_ipv6") ~= false;
 			if not use_ipv4 and not use_ipv6 then
 				print("    Both IPv6 and IPv4 are disabled, Prosody will not listen on any ports");
 				print("    nor be able to connect to any remote servers.");
