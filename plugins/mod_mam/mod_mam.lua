@@ -43,7 +43,6 @@ local archive_store = module:get_option_string("archive_store", "archive");
 local archive = module:open_store(archive_store, "archive");
 
 local cleanup_after = module:get_option_string("archive_expires_after", "1w");
-local cleanup_interval = module:get_option_number("archive_cleanup_interval", 4 * 60 * 60);
 local archive_item_limit = module:get_option_number("storage_archive_item_limit", archive.caps and archive.caps.quota or 1000);
 local archive_truncate = math.floor(archive_item_limit * 0.99);
 
@@ -524,7 +523,7 @@ if cleanup_after ~= "never" then
 	local cleanup_time = module:measure("cleanup", "times");
 
 	local async = require "util.async";
-	cleanup_runner = async.runner(function ()
+	module:daily("Remove expired messages", function ()
 		local cleanup_done = cleanup_time();
 
 		if archive.caps and archive.caps.wildcard_delete then
@@ -580,10 +579,6 @@ if cleanup_after ~= "never" then
 		cleanup_done();
 	end);
 
-	cleanup_task = module:add_timer(1, function ()
-		cleanup_runner:run(true);
-		return cleanup_interval;
-	end);
 else
 	module:log("debug", "Archive expiry disabled");
 	-- Don't ask the backend to count the potentially unbounded number of items,
