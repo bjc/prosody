@@ -506,6 +506,21 @@ function api:add_timer(delay, callback, ...)
 	return setmetatable(t, timer_mt);
 end
 
+function api:cron(task_spec)
+	self:depends("cron");
+	self:add_item("task", task_spec);
+end
+
+function api:hourly(name, fun)
+	if type(name) == "function" then fun, name = name, nil; end
+	self:cron({ name = name; when = "hourly"; run = fun });
+end
+
+function api:daily(name, fun)
+	if type(name) == "function" then fun, name = name, nil; end
+	self:cron({ name = name; when = "daily"; run = fun });
+end
+
 local path_sep = package.config:sub(1,1);
 function api:get_directory()
 	return self.resource_path or self.path and (self.path:gsub("%"..path_sep.."[^"..path_sep.."]*$", "")) or nil;
