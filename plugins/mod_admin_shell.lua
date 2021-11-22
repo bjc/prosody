@@ -441,6 +441,7 @@ function def_env.module:info(name, hosts)
 		["storage-provider"] = "Storage driver",
 		["measure"] = "Legacy metrics",
 		["metric"] = "Metrics",
+		["task"] = "Periodic task",
 	};
 	local item_formatters = {
 		["feature"] = tostring,
@@ -454,6 +455,7 @@ function def_env.module:info(name, hosts)
 		["metric"] = function(item)
 			return ("%s (%s%s)%s"):format(item.name, suf(item.mf.unit, " "), item.mf.type_, pre(": ", item.mf.description));
 		end,
+		["task"] = function (item) return string.format("%s (%s)", item.name or item.id, item.when); end
 	};
 
 	for host in hosts do
