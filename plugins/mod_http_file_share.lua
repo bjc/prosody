@@ -457,7 +457,7 @@ if expiry >= 0 and not external_base_url then
 
 	local prune_start = module:measure("prune", "times");
 
-	local reaper_task = async.runner(function(boundary_time)
+	module:daily("Remove expired files", function(_, boundary_time)
 		local prune_done = prune_start();
 		local iter, total = assert(uploads:find(nil, {["end"] = boundary_time; total = true}));
 
@@ -468,8 +468,10 @@ if expiry >= 0 and not external_base_url then
 		end
 
 		module:log("info", "Pruning expired files uploaded earlier than %s", dt.datetime(boundary_time));
-		if total_storage_limit then
+		if total_storage_usage then
 			module:log("debug", "Global quota %s / %s", B(total_storage_usage), B(total_storage_limit));
+		elseif total_storage_limit then
+			module:log("debug", "Global quota %s / %s", "not yet calculated", B(total_storage_limit));
 		end
 
 		local obsolete_uploads = array();
@@ -533,19 +535,12 @@ if expiry >= 0 and not external_base_url then
 
 		prune_done();
 	end);
-
-	module:add_timer(5, function ()
-		reaper_task:run(os.time()-expiry);
-		return 60*60;
-	end);
 end
 
 if total_storage_limit then
-	local async = require "util.async";
-
 	local summary_start = module:measure("summary", "times");
 
-	local summarizer_task = async.runner(function()
+	module:daily("Global quota check", function()
 		local summary_done = summary_start();
 		local iter = assert(uploads:find(nil));
 
@@ -561,10 +556,6 @@ if total_storage_limit then
 		summary_done();
 	end);
 
-	module:add_timer(1, function()
-		summarizer_task:run(true);
-		return 11 * 60 * 60;
-	end);
 end
 
 -- Reachable from the console
