@@ -35,7 +35,6 @@ local timestamp, datestamp = import("util.datetime", "datetime", "date");
 local default_max_items, max_max_items = 20, module:get_option_number("max_archive_query_results", 50);
 
 local cleanup_after = module:get_option_string("muc_log_expires_after", "1w");
-local cleanup_interval = module:get_option_number("muc_log_cleanup_interval", 4 * 60 * 60);
 
 local default_history_length = 20;
 local max_history_length = module:get_option_number("max_history_messages", math.huge);
@@ -494,7 +493,7 @@ if cleanup_after ~= "never" then
 	local cleanup_time = module:measure("cleanup", "times");
 
 	local async = require "util.async";
-	cleanup_runner = async.runner(function ()
+	module:daily("Remove expired messages", function ()
 		local cleanup_done = cleanup_time();
 
 		if archive.caps and archive.caps.wildcard_delete then
@@ -550,10 +549,6 @@ if cleanup_after ~= "never" then
 		cleanup_done();
 	end);
 
-	cleanup_task = module:add_timer(1, function ()
-		cleanup_runner:run(true);
-		return cleanup_interval;
-	end);
 else
 	module:log("debug", "Archive expiry disabled");
 end
