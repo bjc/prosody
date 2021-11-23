@@ -430,6 +430,7 @@ function def_env.module:info(name, hosts)
 		["auth-provider"] = function(item) return item.name; end,
 		["storage-provider"] = function(item) return item.name; end,
 		["http-provider"] = function(item, mod) return mod:http_url(item.name); end,
+		["net-provider"] = function(item) return item.name; end,
 	};
 
 	for host in hosts do
