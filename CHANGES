@@ -26,6 +26,7 @@ TRUNK
 -   statistics scheduling can be done by plugin
 -   mod_server_contact_info now loaded on components if enabled
 -   Statistics now based on OpenMetrics
+-   mod_http_openmetrics for exposing metrics to stats collectors
 -   Direct TLS support (c2s and incoming s2s)
 -   Offline messages aren't sent to MAM clients
 -   Network backend server_select deprecated
