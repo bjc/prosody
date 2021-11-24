@@ -426,6 +426,8 @@ function def_env.module:info(name, hosts)
 		return false, "mod_" .. name .. " does not appear to be loaded on the specified hosts";
 	end
 
+	local function item_name(item) return item.name; end
+
 	local friendly_descriptions = {
 		["adhoc-provider"] = "Ad-hoc commands",
 		["auth-provider"] = "Authentication provider",
@@ -438,11 +440,11 @@ function def_env.module:info(name, hosts)
 	local item_formatters = {
 		["feature"] = tostring,
 		["identity"] = function(ident) return ident.type .. "/" .. ident.category; end,
-		["adhoc-provider"] = function(item) return item.name; end,
-		["auth-provider"] = function(item) return item.name; end,
-		["storage-provider"] = function(item) return item.name; end,
+		["adhoc-provider"] = item_name,
+		["auth-provider"] = item_name,
+		["storage-provider"] = item_name,
 		["http-provider"] = function(item, mod) return mod:http_url(item.name); end,
-		["net-provider"] = function(item) return item.name; end,
+		["net-provider"] = item_name,
 		["measure"] = function(item) return item.name .. " (" .. suf(item.conf and item.conf.unit, " ") .. item.type .. ")"; end,
 		["metric"] = function(item)
 			return ("%s (%s%s)%s"):format(item.name, suf(item.mf.unit, " "), item.mf.type_, pre(": ", item.mf.description));
