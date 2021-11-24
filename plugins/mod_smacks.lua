@@ -159,7 +159,7 @@ local function request_ack_if_needed(session, force, reason, stanza)
 		if (#queue > max_unacked and expected_h ~= session.last_requested_h) or force then
 			session.log("debug", "Queuing <r> (in a moment) from %s - #queue=%d", reason, #queue);
 			session.awaiting_ack = false;
-			session.awaiting_ack_timer = module:add_timer(1e-06, function ()
+			session.awaiting_ack_timer = timer.add_task(1e-06, function ()
 				-- session.log("debug", "*** SMACKS(3) ***: awaiting_ack=%s, hibernating=%s", tostring(session.awaiting_ack), tostring(session.hibernating));
 				-- only request ack if needed and our session is not already hibernated or destroyed
 				if not session.awaiting_ack and not session.hibernating and not session.destroyed then
@@ -171,7 +171,7 @@ local function request_ack_if_needed(session, force, reason, stanza)
 					session.last_requested_h = session.last_acknowledged_stanza + #queue;
 					session.log("debug", "Sending <r> (inside timer, after send) from %s - #queue=%d", reason, #queue);
 					if not session.delayed_ack_timer then
-						session.delayed_ack_timer = module:add_timer(delayed_ack_timeout, function()
+						session.delayed_ack_timer = timer.add_task(delayed_ack_timeout, function()
 							ack_delayed(session, nil); -- we don't know if this is the only new stanza in the queue
 						end);
 					end
@@ -298,7 +298,9 @@ module:hook_tag(xmlns_sm3, "enable", function (session, stanza) return handle_en
 
 module:hook_tag("http://etherx.jabber.org/streams", "features",
 		function (session, stanza)
-			module:add_timer(1e-6, function ()
+			-- Needs to be done after flushing sendq since those aren't stored as
+			-- stanzas and counting them is weird.
+			timer.add_task(1e-6, function ()
 				if can_do_smacks(session) then
 					if stanza:get_child("sm", xmlns_sm3) then
 						session.sends2s(st.stanza("enable", sm3_attr));
@@ -349,10 +351,11 @@ function handle_a(origin, stanza)
 	if not origin.smacks then return; end
 	origin.awaiting_ack = nil;
 	if origin.awaiting_ack_timer then
-		origin.awaiting_ack_timer:stop();
+		timer.stop(origin.awaiting_ack_timer);
+		origin.awaiting_ack_timer = nil;
 	end
 	if origin.delayed_ack_timer then
-		origin.delayed_ack_timer:stop();
+		timer.stop(origin.delayed_ack_timer)
 		origin.delayed_ack_timer = nil;
 	end
 	-- Remove handled stanzas from outgoing_stanza_queue
@@ -651,10 +654,11 @@ local function handle_read_timeout(event)
 	if session.smacks then
 		if session.awaiting_ack then
 			if session.awaiting_ack_timer then
-				session.awaiting_ack_timer:stop();
+				timer.stop(session.awaiting_ack_timer);
+				session.awaiting_ack_timer = nil;
 			end
 			if session.delayed_ack_timer then
-				session.delayed_ack_timer:stop();
+				timer.stop(session.delayed_ack_timer);
 				session.delayed_ack_timer = nil;
 			end
 			return false; -- Kick the session
@@ -663,7 +667,7 @@ local function handle_read_timeout(event)
 		(session.sends2s or session.send)(st.stanza("r", { xmlns = session.smacks }));
 		session.awaiting_ack = true;
 		if not session.delayed_ack_timer then
-			session.delayed_ack_timer = module:add_timer(delayed_ack_timeout, function()
+			session.delayed_ack_timer = timer.add_task(delayed_ack_timeout, function()
 				ack_delayed(session, nil);
 			end);
 		end
