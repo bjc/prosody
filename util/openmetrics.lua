@@ -25,6 +25,7 @@ local array = require "util.array";
 local log = require "util.logger".init("util.openmetrics");
 local new_multitable = require "util.multitable".new;
 local iter_multitable = require "util.multitable".iter;
+local t_concat, t_insert = table.concat, table.insert;
 local t_pack, t_unpack = require "util.table".pack, table.unpack or unpack; --luacheck: ignore 113/unpack
 
 -- BEGIN of Utility: "metric proxy"
@@ -51,6 +52,68 @@ local function new_metric_proxy(metric_family, with_labels_proxy_fun)
 end
 
 -- END of Utility: "metric proxy"
+
+-- BEGIN Rendering helper functions (internal)
+
+local function escape(text)
+	return text:gsub("\\", "\\\\"):gsub("\"", "\\\""):gsub("\n", "\\n");
+end
+
+local function escape_name(name)
+	return name:gsub("/", "__"):gsub("[^A-Za-z0-9_]", "_"):gsub("^[^A-Za-z_]", "_%1");
+end
+
+local function repr_help(metric, docstring)
+	docstring = docstring:gsub("\\", "\\\\"):gsub("\n", "\\n");
+	return "# HELP "..escape_name(metric).." "..docstring.."\n";
+end
+
+local function repr_unit(metric, unit)
+	if not unit then
+		unit = ""
+	else
+		unit = unit:gsub("\\", "\\\\"):gsub("\n", "\\n");
+	end
+	return "# UNIT "..escape_name(metric).." "..unit.."\n";
+end
+
+-- local allowed_types = { counter = true, gauge = true, histogram = true, summary = true, untyped = true };
+-- local allowed_types = { "counter", "gauge", "histogram", "summary", "untyped" };
+local function repr_type(metric, type_)
+	-- if not allowed_types:contains(type_) then
+	-- 	return;
+	-- end
+	return "# TYPE "..escape_name(metric).." "..type_.."\n";
+end
+
+local function repr_label(key, value)
+	return key.."=\""..escape(value).."\"";
+end
+
+local function repr_labels(labelkeys, labelvalues, extra_labels)
+	local values = {}
+	if labelkeys then
+		for i, key in ipairs(labelkeys) do
+			local value = labelvalues[i]
+			t_insert(values, repr_label(escape_name(key), escape(value)));
+		end
+	end
+	if extra_labels then
+		for key, value in pairs(extra_labels) do
+			t_insert(values, repr_label(escape_name(key), escape(value)));
+		end
+	end
+	if #values == 0 then
+		return "";
+	end
+	return "{"..t_concat(values, ",").."}";
+end
+
+local function repr_sample(metric, labelkeys, labelvalues, extra_labels, value)
+	return escape_name(metric)..repr_labels(labelkeys, labelvalues, extra_labels).." "..string.format("%.17g", value).."\n";
+end
+
+-- END Rendering helper functions (internal)
 
 local function render_histogram_le(v)
 	if v == 1/0 then
@@ -284,6 +347,22 @@ end
 
 function metric_registry_mt:get_metric_families()
 	return self.families
+end
+
+function metric_registry_mt:render()
+	local answer = {};
+	for metric_family_name, metric_family in pairs(self:get_metric_families()) do
+		t_insert(answer, repr_help(metric_family_name, metric_family.description))
+		t_insert(answer, repr_unit(metric_family_name, metric_family.unit))
+		t_insert(answer, repr_type(metric_family_name, metric_family.type_))
+		for labelset, metric in metric_family:iter_metrics() do
+			for suffix, extra_labels, value in metric:iter_samples() do
+				t_insert(answer, repr_sample(metric_family_name..suffix, metric_family.label_keys, labelset, extra_labels, value))
+			end
+		end
+	end
+	t_insert(answer, "# EOF\n")
+	return t_concat(answer, "");
 end
 
 -- END of MetricRegistry implementation
