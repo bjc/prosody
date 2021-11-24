@@ -531,6 +531,7 @@ function api:measure(name, stat_type, conf)
 	-- an array of labels
 	-- the prosody_ prefix is automatically added by statsmanager for legacy
 	-- metrics.
+	self:add_item("measure", { name = name, type = stat_type, conf = conf });
 	return measure(stat_type, "mod_"..self.name.."/"..name, conf, fixed_label_key, fixed_label_value)
 end
 
@@ -544,6 +545,7 @@ function api:metric(type_, name, unit, description, label_keys, conf)
 		label_keys:append(orig_labels)
 	end
 	local mf = metric(type_, "prosody_mod_"..self.name.."/"..name, unit, description, label_keys, conf)
+	self:add_item("metric", { name = name, mf = mf });
 	if is_scoped then
 		-- make sure to scope the returned metric family to the current host
 		return mf:with_partial_label(self.host)

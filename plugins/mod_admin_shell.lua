@@ -47,6 +47,16 @@ local function capitalize(s)
 	return (s:gsub("^%a", string.upper):gsub("_", " "));
 end
 
+local function pre(prefix, str, alt)
+	if (str or "") == "" then return alt or ""; end
+	return prefix .. str;
+end
+
+local function suf(str, suffix, alt)
+	if (str or "") == "" then return alt or ""; end
+	return str .. suffix;
+end
+
 local commands = module:shared("commands")
 local def_env = module:shared("env");
 local default_env_mt = { __index = def_env };
@@ -422,6 +432,8 @@ function def_env.module:info(name, hosts)
 		["http-provider"] = "HTTP services",
 		["net-provider"] = "Network service",
 		["storage-provider"] = "Storage driver",
+		["measure"] = "Legacy metrics",
+		["metric"] = "Metrics",
 	};
 	local item_formatters = {
 		["feature"] = tostring,
@@ -431,6 +443,10 @@ function def_env.module:info(name, hosts)
 		["storage-provider"] = function(item) return item.name; end,
 		["http-provider"] = function(item, mod) return mod:http_url(item.name); end,
 		["net-provider"] = function(item) return item.name; end,
+		["measure"] = function(item) return item.name .. " (" .. suf(item.conf and item.conf.unit, " ") .. item.type .. ")"; end,
+		["metric"] = function(item)
+			return ("%s (%s%s)%s"):format(item.name, suf(item.mf.unit, " "), item.mf.type_, pre(": ", item.mf.description));
+		end,
 	};
 
 	for host in hosts do
