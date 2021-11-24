@@ -63,12 +63,16 @@ local function prepare(item)
 	end
 	if type(item.transport) == "string" then
 		srv.transport = item.transport;
+	else
+		module:log("warn", "Service missing recommended 'transport' field: %q", item);
 	end
 	if type(item.host) == "string" then
 		srv.host = item.host;
 	end
 	if type(item.port) == "number" then
 		srv.port = item.port;
+	elseif not srv.port then
+		module:log("warn", "Service missing recommended 'port' field: %q", item);
 	end
 	if type(item.username) == "string" then
 		srv.username = item.username;
