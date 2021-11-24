@@ -236,7 +236,6 @@ local function outgoing_stanza_filter(stanza, session)
 			module:fire_event("smacks-hibernation-stanza-queued", {origin = session, queue = queue, stanza = cached_stanza});
 			return nil;
 		end
-		request_ack_if_needed(session, false, "outgoing_stanza_filter", stanza);
 	end
 	return stanza;
 end
@@ -652,6 +651,8 @@ module:hook_tag(xmlns_sm3, "resume", function (session, stanza) return handle_re
 local request_ack_events = {
 	["csi-client-active"] = true;
 	["csi-flushing"] = false;
+	["c2s-pre-ondrain"] = false;
+	["s2s-pre-ondrain"] = false;
 };
 
 for event_name, force in pairs(request_ack_events) do
