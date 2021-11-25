@@ -169,6 +169,8 @@ local function check(arg)
 			"network_backend",
 			"network_default_read_size",
 			"network_settings",
+			"openmetrics_allow_cidr",
+			"openmetrics_allow_ips",
 			"pidfile",
 			"plugin_paths",
 			"plugin_server",
