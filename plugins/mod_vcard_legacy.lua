@@ -126,7 +126,7 @@ module:hook("iq-get/bare/vcard-temp:vCard", function (event)
 		end
 	end
 
-	local ok, avatar_hash, meta = pep_service:get_last_item("urn:xmpp:avatar:metadata", true);
+	local ok, avatar_hash, meta = pep_service:get_last_item("urn:xmpp:avatar:metadata", stanza.attr.from);
 	if ok and avatar_hash then
 
 		local info = meta.tags[1]:get_child("info");
