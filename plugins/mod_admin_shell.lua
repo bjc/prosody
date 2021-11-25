@@ -443,7 +443,7 @@ function def_env.module:info(name, hosts)
 		["adhoc-provider"] = item_name,
 		["auth-provider"] = item_name,
 		["storage-provider"] = item_name,
-		["http-provider"] = function(item, mod) return mod:http_url(item.name); end,
+		["http-provider"] = function(item, mod) return mod:http_url(item.name, item.default_path); end,
 		["net-provider"] = item_name,
 		["measure"] = function(item) return item.name .. " (" .. suf(item.conf and item.conf.unit, " ") .. item.type .. ")"; end,
 		["metric"] = function(item)
