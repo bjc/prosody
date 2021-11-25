@@ -51,12 +51,10 @@ function get_metrics(event)
 	return registry:render();
 end
 
-function module.add_host(module)
-	module:depends "http";
-	module:provides("http", {
-		default_path = "metrics";
-		route = {
-			GET = get_metrics;
-		};
-	});
-end
+module:depends "http";
+module:provides("http", {
+	default_path = "metrics";
+	route = {
+		GET = get_metrics;
+	};
+});
