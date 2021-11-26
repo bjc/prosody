@@ -35,6 +35,7 @@ local async = require "util.async";
 local serialization = require "util.serialization";
 local serialize_config = serialization.new ({ fatal = false, unquoted = true});
 local time = require "util.time";
+local promise = require "util.promise";
 
 local t_insert = table.insert;
 local t_concat = table.concat;
@@ -172,6 +173,10 @@ local function handle_line(event)
 	end
 
 	local taskok, message = chunk();
+
+	if promise.is_promise(taskok) then
+		taskok, message = async.wait_for(taskok);
+	end
 
 	if not message then
 		if type(taskok) ~= "string" and useglobalenv then
