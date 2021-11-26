@@ -89,19 +89,19 @@ end
 
 function console:new_session(admin_session)
 	local session = {
-			send = function (t)
-				return send_repl_output(admin_session, t);
-			end;
-			print = function (...)
-				local t = {};
-				for i=1,select("#", ...) do
-					t[i] = tostring(select(i, ...));
-				end
-				return send_repl_output(admin_session, table.concat(t, "\t"));
-			end;
-			serialize = tostring;
-			disconnect = function () admin_session:close(); end;
-			};
+		send = function (t)
+			return send_repl_output(admin_session, t);
+		end;
+		print = function (...)
+			local t = {};
+			for i=1,select("#", ...) do
+				t[i] = tostring(select(i, ...));
+			end
+			return send_repl_output(admin_session, table.concat(t, "\t"));
+		end;
+		serialize = tostring;
+		disconnect = function () admin_session:close(); end;
+	};
 	session.env = setmetatable({}, default_env_mt);
 
 	session.thread = async.runner(function (line)
