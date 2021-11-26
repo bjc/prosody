@@ -673,7 +673,7 @@ describe("util.promise", function ()
 			local next_tick = spy.new(function (f)
 				f();
 			end)
-			local cb = spy.new();
+			local cb = spy.new(function () end);
 			promise.set_nexttick(next_tick);
 			promise.new(function (y, _)
 				y("okay");
