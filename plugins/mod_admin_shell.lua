@@ -716,11 +716,11 @@ local available_columns = {
 	ip = { title = "IP address"; width = 40; key = "ip" };
 	status = {
 		title = "Status";
-		width = 11;
+		width = 6;
 		key = "presence";
 		mapper = function(p)
-			if not p then return "unavailable"; end
-			return p:get_child_text("show") or "available";
+			if not p then return ""; end
+			return p:get_child_text("show") or "online";
 		end;
 	};
 	secure = {
