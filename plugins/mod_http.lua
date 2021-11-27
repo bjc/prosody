@@ -74,20 +74,29 @@ local ports_by_scheme = { http = 80, https = 443, };
 -- Helper to deduce a module's external URL
 function moduleapi.http_url(module, app_name, default_path)
 	app_name = app_name or (module.name:gsub("^http_", ""));
-	local external_url = url_parse(module:get_option_string("http_external_url")) or {};
-	if external_url.scheme and external_url.port == nil then
-		external_url.port = ports_by_scheme[external_url.scheme];
+
+	local external_url = url_parse(module:get_option_string("http_external_url"));
+	if external_url then
+		local url = {
+			scheme = external_url.scheme;
+			host = external_url.host;
+			port = tonumber(external_url.port) or ports_by_scheme[external_url.scheme];
+			path = normalize_path(external_url.path or "/", true)
+				.. (get_base_path(module, app_name, default_path or "/" .. app_name):sub(2));
+		}
+		if ports_by_scheme[url.scheme] == url.port then url.port = nil end
+		return url_build(url);
 	end
+
 	local services = portmanager.get_active_services();
 	local http_services = services:get("https") or services:get("http") or {};
 	for interface, ports in pairs(http_services) do -- luacheck: ignore 213/interface
 		for port, service in pairs(ports) do -- luacheck: ignore 512
 			local url = {
-				scheme = (external_url.scheme or service[1].service.name);
-				host = (external_url.host or module:get_option_string("http_host", module.host));
-				port = tonumber(external_url.port) or port or 80;
-				path = normalize_path(external_url.path or "/", true)..
-					(get_base_path(module, app_name, default_path or "/"..app_name):sub(2));
+				scheme = service[1].service.name;
+				host = module:get_option_string("http_host", module.host);
+				port = port;
+				path = get_base_path(module, app_name, default_path or "/" .. app_name);
 			}
 			if ports_by_scheme[url.scheme] == url.port then url.port = nil end
 			return url_build(url);
