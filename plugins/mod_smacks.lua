@@ -656,7 +656,6 @@ local request_ack_events = {
 };
 
 for event_name, force in pairs(request_ack_events) do
-	module:log("info", "module:hook(%q, function)");
 	module:hook(event_name, function(event)
 		local session = event.session or event.origin;
 		request_ack_now_if_needed(session, force, event_name);
