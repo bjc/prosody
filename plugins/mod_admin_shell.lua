@@ -1369,12 +1369,7 @@ end
 
 function def_env.dns:lookup(name, typ, class)
 	local resolver = get_resolver(self.session);
-	local ret, err = async.wait_for(resolver:lookup_promise(name, typ, class));
-	if ret then
-		return true, ret;
-	elseif err then
-		return false, err;
-	end
+	return resolver:lookup_promise(name, typ, class)
 end
 
 function def_env.dns:addnameserver(...)
