@@ -1350,12 +1350,9 @@ function def_env.xmpp:ping(localhost, remotehost, timeout)
 	local iq = st.iq{ from=localhost, to=remotehost, type="get", id=new_id()}
 			:tag("ping", {xmlns="urn:xmpp:ping"});
 	local time_start = time.now();
-	local ret, err = async.wait_for(module:context(localhost):send_iq(iq, nil, timeout));
-	if ret then
-		return true, ("pong from %s in %gs"):format(ret.stanza.attr.from, time.now() - time_start);
-	else
-		return false, tostring(err);
-	end
+	return module:context(localhost):send_iq(iq, nil, timeout):next(function (pong)
+		return ("pong from %s in %gs"):format(pong.stanza.attr.from, time.now() - time_start);
+	end);
 end
 
 def_env.dns = {};
