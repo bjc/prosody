@@ -475,6 +475,9 @@ function startup.force_console_logging()
 			log_level = "debug";
 		elseif prosody.opts.quiet then
 			log_level = "error";
+		elseif prosody.opts.silent then
+			config.set("*", "log", {}); -- ssssshush!
+			return
 		end
 	end
 	config.set("*", "log", { { levels = { min = log_level or "info" }, to = "console" } });

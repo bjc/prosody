@@ -143,6 +143,9 @@ details of how these commands work you should see ejabberdctl(8).
 `--quiet`
 :   Reduce log level to only show errors.
 
+`--silent`
+:   Disable logging completely, leaving only command output.
+
 # FILES
 
 `/etc/prosody/prosody.cfg.lua`

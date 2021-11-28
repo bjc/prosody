@@ -141,6 +141,9 @@ Increase log level to show debug messages.
 .TP
 \f[B]\f[CB]--quiet\f[B]\f[R]
 Reduce log level to only show errors.
+.TP
+\f[B]\f[CB]--silent\f[B]\f[R]
+Disable logging completely, leaving only command output.
 .SH FILES
 .TP
 \f[B]\f[CB]/etc/prosody/prosody.cfg.lua\f[B]\f[R]
