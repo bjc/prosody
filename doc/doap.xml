@@ -727,7 +727,7 @@
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0363.html"/>
         <xmpp:version>1.0.0</xmpp:version>
-        <xmpp:status>complete	</xmpp:status>
+        <xmpp:status>complete</xmpp:status>
         <xmpp:since>0.12.0</xmpp:since>
         <xmpp:note>mod_http_file_share</xmpp:note>
       </xmpp:SupportedXep>
