@@ -2,7 +2,7 @@
 author:
 - Dwayne Bent <dbb.1@liqd.org>
 - Kim Alvefur
-date: 2017-09-02
+date: 2022-02-02
 section: 1
 title: PROSODYCTL
 ---
@@ -136,6 +136,12 @@ details of how these commands work you should see ejabberdctl(8).
 
 `--help`
 :   Display help text for the specified command.
+
+`--verbose`
+:   Increase log level to show debug messages.
+
+`--quiet`
+:   Reduce log level to only show errors.
 
 # FILES
 

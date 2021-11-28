@@ -470,7 +470,13 @@ end
 function startup.force_console_logging()
 	original_logging_config = config.get("*", "log");
 	local log_level = os.getenv("PROSODYCTL_LOG_LEVEL");
-	if not log_level and prosody.opts.verbose then log_level = "debug"; end
+	if not log_level then
+		if prosody.opts.verbose then
+			log_level = "debug";
+		elseif prosody.opts.quiet then
+			log_level = "error";
+		end
+	end
 	config.set("*", "log", { { levels = { min = log_level or "info" }, to = "console" } });
 end
 
