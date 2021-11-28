@@ -838,10 +838,16 @@ local function check(arg)
 
 			if modules:contains("c2s") then
 				check_connectivity("xmpp-client")
+				if configmanager.get("*", "c2s_direct_tls_ports") then
+					check_connectivity("xmpps-client");
+				end
 			end
 
 			if modules:contains("s2s") then
 				check_connectivity("xmpp-server")
+				if configmanager.get("*", "s2s_direct_tls_ports") then
+					check_connectivity("xmpps-server");
+				end
 			end
 
 			print()
