@@ -1,4 +1,5 @@
 local async = require "util.async";
+local match = require "luassert.match";
 
 describe("util.async", function()
 	local debug = false;
