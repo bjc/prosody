@@ -500,10 +500,6 @@ if expiry >= 0 and not external_base_url then
 		local deletion_query = {["end"] = boundary_time};
 		if not problem_deleting then
 			module:log("info", "All (%d, %s) expired files successfully deleted", n, B(size_sum));
-			if total_storage_usage then
-				total_storage_usage = total_storage_usage - size_sum;
-				module:log("debug", "Global quota %s / %s", B(total_storage_usage), B(total_storage_limit));
-			end
 			-- we can delete based on time
 		else
 			module:log("warn", "%d out of %d expired files could not be deleted", n-#obsolete_uploads, n);
@@ -511,8 +507,12 @@ if expiry >= 0 and not external_base_url then
 			-- successfully deleted, and then try again with the failed ones.
 			-- eventually the admin ought to notice and fix the permissions or
 			-- whatever the problem is.
-			-- total_storage_limit will be inaccurate until this has been resolved
 			deletion_query = {ids = obsolete_uploads};
+		end
+
+		if total_storage_usage then
+			total_storage_usage = total_storage_usage - size_sum;
+			module:log("debug", "Global quota %s / %s", B(total_storage_usage), B(total_storage_limit));
 		end
 
 		if #obsolete_uploads == 0 then
