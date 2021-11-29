@@ -477,29 +477,23 @@ if expiry >= 0 and not external_base_url then
 		local obsolete_uploads = array();
 		local i = 0;
 		local size_sum = 0;
-		for slot_id, slot_info in iter do
-			i = i + 1;
-			obsolete_uploads:push(slot_id);
-			upload_cache:set(slot_id, nil);
-			size_sum = size_sum + tonumber(slot_info.attr.size);
-		end
-
-		sleep(0.1);
 		local n = 0;
 		local problem_deleting = false;
-		obsolete_uploads:filter(function(slot_id)
-			n = n + 1;
-			if i % 100 == 0 then sleep(0.1); end
+		for slot_id, slot_info in iter do
+			i = i + 1;
+			upload_cache:set(slot_id, nil);
 			local filename = get_filename(slot_id);
 			local deleted, err, errno = os.remove(filename);
 			if deleted or errno == ENOENT then
-				return true;
+				size_sum = size_sum + tonumber(slot_info.attr.size);
+				obsolete_uploads:push(slot_id);
 			else
 				module:log("error", "Could not delete file %q: %s", filename, err);
 				problem_deleting = true;
-				return false;
 			end
-		end);
+			if i % 100 == 0 then sleep(0.1); end
+		end
+
 		-- obsolete_uploads now contains slot ids for which the files have been
 		-- deleted and that needs to be cleared from the database
 
