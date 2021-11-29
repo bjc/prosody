@@ -402,6 +402,14 @@ function startup.init_promise()
 	promise.set_nexttick(function(f) return timer.add_task(0, f); end);
 end
 
+function startup.init_async()
+	local async = require "util.async";
+
+	local timer = require "util.timer";
+	async.set_nexttick(function(f) return timer.add_task(0, f); end);
+	async.set_schedule_function(timer.add_task);
+end
+
 function startup.init_data_store()
 	require "core.storagemanager";
 end
@@ -655,6 +663,7 @@ function startup.prosody()
 	startup.log_startup_warnings();
 	startup.load_secondary_libraries();
 	startup.init_promise();
+	startup.init_async();
 	startup.init_http_client();
 	startup.init_data_store();
 	startup.init_global_protection();
