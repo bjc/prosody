@@ -309,7 +309,6 @@ if [ "$OSPRESET_SET" = "yes" ]; then
          LUA_INCDIR="$LUA_CF"
          LUA_INCDIR_SET=yes
       fi
-      CFLAGS="$CFLAGS"
    fi
 fi
 
