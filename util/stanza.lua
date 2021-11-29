@@ -526,7 +526,7 @@ if do_pretty_printing then
 		-- Outer gsub call takes each <tag>, applies colour to the brackets, the
 		-- tag name, then applies one inner gsub call to colour the attributes and
 		-- another for any text content.
-		return (s:gsub("(</?)([^ >]*)(.-)([?/]?>)([^<]*)", function(opening_bracket, tag_name, attrs, closing_bracket, content)
+		return (s:gsub("(<[?/]?)([^ >/?]*)(.-)([?/]?>)([^<]*)", function(opening_bracket, tag_name, attrs, closing_bracket, content)
 			return getstring(blue1, opening_bracket)..getstring(blue2, tag_name)..
 				attrs:gsub("([^=]+)(=)([\"'])(.-)([\"'])", attr_replace) ..
 			getstring(blue1, closing_bracket) ..
