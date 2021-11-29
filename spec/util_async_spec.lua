@@ -669,4 +669,50 @@ describe("util.async", function()
 			assert.spy(r.watchers.ready).was.called();
 		end);
 	end);
+
+	describe("#set_nexttick()", function ()
+		after_each(function ()
+			-- Restore to default
+			async.set_nexttick(nil);
+		end);
+		it("should work", function ()
+			local queue = {};
+			local nexttick = spy.new(function (f)
+				assert.is_function(f);
+				table.insert(queue, f);
+			end);
+			async.set_nexttick(nexttick);
+
+			local processed_item;
+			local wait, done;
+			local r = new(function (item)
+				wait, done = async.waiter();
+				wait();
+				processed_item = item;
+			end);
+			r:run("test");
+
+			-- Nothing happened, because the runner is waiting
+			assert.is_nil(processed_item);
+			assert.equal(r.state, "waiting");
+			assert.spy(nexttick).was_called(0);
+			assert.spy(r.watchers.waiting).was.called();
+			assert.spy(r.watchers.ready).was_not.called();
+
+			-- Mark the runner as ready, it should be scheduled for
+			-- the next tick
+			done();
+
+			assert.spy(nexttick).was_called(1);
+			assert.spy(nexttick).was_called_with(match.is_function());
+			assert.equal(1, #queue);
+
+			-- Pretend it's the next tick - call the pending function
+			queue[1]();
+
+			assert.equal(processed_item, "test");
+			assert.equal(r.state, "ready");
+			assert.spy(r.watchers.ready).was.called();
+		end);
+	end);
 end);

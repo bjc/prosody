@@ -13,6 +13,9 @@ end
 
 -- Configurable functions
 local schedule_task = nil; -- schedule_task(seconds, callback)
+local next_tick = function (f)
+	f();
+end
 
 local function runner_from_thread(thread)
 	local level = 0;
@@ -62,8 +65,10 @@ local function runner_continue(thread)
 		-- If state is 'ready', it is our responsibility to update runner.state from 'waiting'.
 		-- We also have to :run(), because the queue might have further items that will not be
 		-- processed otherwise. FIXME: It's probably best to do this in a nexttick (0 timer).
-		runner.state = "ready";
-		runner:run();
+		next_tick(function ()
+			runner.state = "ready";
+			runner:run();
+		end);
 	end
 	return true;
 end
@@ -286,5 +291,6 @@ return {
 	wait_for = wait_for;
 	sleep = sleep;
 
+	set_nexttick = function(new_next_tick) next_tick = new_next_tick; end;
 	set_schedule_function = function (new_schedule_function) schedule_task = new_schedule_function; end;
 };
