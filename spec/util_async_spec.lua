@@ -615,4 +615,58 @@ describe("util.async", function()
 			assert.spy(r.watchers.error).was_not.called();
 		end);
 	end);
+
+	describe("#sleep()", function ()
+		after_each(function ()
+			-- Restore to default
+			async.set_schedule_function(nil);
+		end);
+
+		it("should fail if no scheduler configured", function ()
+			local r = new(function ()
+				async.sleep(5);
+			end);
+			r:run(true);
+			assert.spy(r.watchers.error).was.called();
+
+			-- Set dummy scheduler
+			async.set_schedule_function(function () end);
+
+			local r2 = new(function ()
+				async.sleep(5);
+			end);
+			r2:run(true);
+			assert.spy(r2.watchers.error).was_not.called();
+		end);
+		it("should work", function ()
+			local queue = {};
+			local add_task = spy.new(function (t, f)
+				table.insert(queue, { t, f });
+			end);
+			async.set_schedule_function(add_task);
+
+			local processed_item;
+			local r = new(function (item)
+				async.sleep(5);
+				processed_item = item;
+			end);
+			r:run("test");
+
+			-- Nothing happened, because the runner is sleeping
+			assert.is_nil(processed_item);
+			assert.equal(r.state, "waiting");
+			assert.spy(add_task).was_called(1);
+			assert.spy(add_task).was_called_with(match.is_number(), match.is_function());
+			assert.spy(r.watchers.waiting).was.called();
+			assert.spy(r.watchers.ready).was_not.called();
+
+			-- Pretend the timer has triggered, call the handler
+			queue[1][2]();
+
+			assert.equal(processed_item, "test");
+			assert.equal(r.state, "ready");
+
+			assert.spy(r.watchers.ready).was.called();
+		end);
+	end);
 end);

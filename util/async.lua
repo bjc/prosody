@@ -11,6 +11,9 @@ local function checkthread()
 	return thread;
 end
 
+-- Configurable functions
+local schedule_task = nil; -- schedule_task(seconds, callback)
+
 local function runner_from_thread(thread)
 	local level = 0;
 	-- Find the 'level' of the top-most function (0 == current level, 1 == caller, ...)
@@ -116,6 +119,15 @@ local function guarder()
 		end
 		return exit;
 	end;
+end
+
+local function sleep(seconds)
+	if not schedule_task then
+		error("async.sleep() is not available - configure schedule function");
+	end
+	local wait, done = waiter();
+	schedule_task(seconds, done);
+	wait();
 end
 
 local runner_mt = {};
@@ -272,4 +284,7 @@ return {
 	runner = runner;
 	wait = wait_for; -- COMPAT w/trunk pre-0.12
 	wait_for = wait_for;
+	sleep = sleep;
+
+	set_schedule_function = function (new_schedule_function) schedule_task = new_schedule_function; end;
 };
