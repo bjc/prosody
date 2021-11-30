@@ -624,8 +624,12 @@ function archive_store:delete(username, query)
 		end
 		return engine:delete(sql_query, unpack(args));
 	end);
-	local cache_key = jid_join(username, host, self.store);
-	archive_item_count_cache:set(cache_key, nil);
+	if username == true then
+		archive_item_count_cache:clear();
+	else
+		local cache_key = jid_join(username, host, self.store);
+		archive_item_count_cache:set(cache_key, nil);
+	end
 	return ok and stmt:affected(), stmt;
 end
 
