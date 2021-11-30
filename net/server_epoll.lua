@@ -577,6 +577,7 @@ interface.send = interface.write;
 -- Close, possibly after writing is done
 function interface:close()
 	if self._connected and self.writebuffer and (self.writebuffer[1] or type(self.writebuffer) == "string") then
+		self._connected = false;
 		self:set(false, true); -- Flush final buffer contents
 		self:setreadtimeout(false);
 		self:setwritetimeout();
