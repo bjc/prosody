@@ -284,6 +284,7 @@ archive_store.caps = {
 	truncate = true;
 	full_id_range = true;
 	ids = true;
+	wildcard_delete = true;
 };
 archive_store.__index = archive_store
 function archive_store:append(username, key, value, when, with)
