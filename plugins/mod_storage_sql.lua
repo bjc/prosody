@@ -428,9 +428,13 @@ function archive_store:find(username, query)
 	local cache_key = jid_join(username, host, self.store);
 	local total = archive_item_count_cache:get(cache_key);
 	(total and item_count_cache_hit or item_count_cache_miss)();
-	if total ~= nil and query.limit == 0 and query.start == nil and query.with == nil and query["end"] == nil
-		and query.key == nil and query.ids == nil then
-		return noop, total;
+	if query.start == nil and query.with == nil and query["end"] == nil and query.key == nil and query.ids == nil then
+		-- the query is for the whole archive, so a cached 'total' should be a
+		-- relatively accurate response if that's all that is requested
+		if total ~= nil and query.limit == 0 then return noop, total; end
+	else
+		-- not usable, so refresh it later if needed
+		total = nil;
 	end
 	local ok, result, err = engine:transaction(function()
 		local sql_query = [[
@@ -445,7 +449,8 @@ function archive_store:find(username, query)
 		archive_where(query, args, where);
 
 		-- Total matching
-		if query.total then
+		if query.total and not total then
+
 			local stats = engine:select("SELECT COUNT(*) FROM \"prosodyarchive\" WHERE "
 				.. t_concat(where, " AND "), unpack(args));
 			if stats then
