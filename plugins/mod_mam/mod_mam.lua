@@ -509,20 +509,41 @@ if cleanup_after ~= "never" then
 	-- messages, we collect the union of sets of users from dates that fall
 	-- outside the cleanup range.
 
-	local last_date = require "util.cache".new(module:get_option_number("archive_cleanup_date_cache_size", 1000));
-	function schedule_cleanup(username, date)
-		date = date or datestamp();
-		if last_date:get(username) == date then return end
-		local ok = cleanup_map:set(date, username, true);
-		if ok then
-			last_date:set(username, date);
+	if not (archive.caps and archive.caps.wildcard_delete) then
+		local last_date = require "util.cache".new(module:get_option_number("archive_cleanup_date_cache_size", 1000));
+		function schedule_cleanup(username, date)
+			date = date or datestamp();
+			if last_date:get(username) == date then return end
+			local ok = cleanup_map:set(date, username, true);
+			if ok then
+				last_date:set(username, date);
+			end
 		end
 	end
+
 	local cleanup_time = module:measure("cleanup", "times");
 
 	local async = require "util.async";
 	cleanup_runner = async.runner(function ()
 		local cleanup_done = cleanup_time();
+
+		if archive.caps and archive.caps.wildcard_delete then
+			local ok, err = archive:delete(true, { ["end"] = os.time() - cleanup_after })
+			if ok then
+				local sum = tonumber(ok);
+				if sum then
+					module:log("info", "Deleted %d expired messages", sum);
+				else
+					-- driver did not tell
+					module:log("info", "Deleted all expired messages");
+				end
+			else
+				module:log("error", "Could not delete messages: %s", err);
+			end
+			cleanup_done();
+			return;
+		end
+
 		local users = {};
 		local cut_off = datestamp(os.time() - cleanup_after);
 		for date in cleanup_storage:users() do

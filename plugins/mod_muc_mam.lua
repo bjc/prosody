@@ -480,12 +480,14 @@ if cleanup_after ~= "never" then
 	-- outside the cleanup range.
 
 	local last_date = require "util.cache".new(module:get_option_number("muc_log_cleanup_date_cache_size", 1000));
-	function schedule_cleanup(roomname, date)
-		date = date or datestamp();
-		if last_date:get(roomname) == date then return end
-		local ok = cleanup_map:set(date, roomname, true);
-		if ok then
-			last_date:set(roomname, date);
+	if not ( archive.caps and archive.caps.wildcard_delete ) then
+		function schedule_cleanup(roomname, date)
+			date = date or datestamp();
+			if last_date:get(roomname) == date then return end
+			local ok = cleanup_map:set(date, roomname, true);
+			if ok then
+				last_date:set(roomname, date);
+			end
 		end
 	end
 
@@ -494,6 +496,24 @@ if cleanup_after ~= "never" then
 	local async = require "util.async";
 	cleanup_runner = async.runner(function ()
 		local cleanup_done = cleanup_time();
+
+		if archive.caps and archive.caps.wildcard_delete then
+			local ok, err = archive:delete(true, { ["end"] = os.time() - cleanup_after })
+			if ok then
+				local sum = tonumber(ok);
+				if sum then
+					module:log("info", "Deleted %d expired messages", sum);
+				else
+					-- driver did not tell
+					module:log("info", "Deleted all expired messages");
+				end
+			else
+				module:log("error", "Could not delete messages: %s", err);
+			end
+			cleanup_done();
+			return;
+		end
+
 		local rooms = {};
 		local cut_off = datestamp(os.time() - cleanup_after);
 		for date in cleanup_storage:users() do
