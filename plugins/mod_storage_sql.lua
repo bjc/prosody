@@ -428,7 +428,8 @@ function archive_store:find(username, query)
 	local cache_key = jid_join(username, host, self.store);
 	local total = archive_item_count_cache:get(cache_key);
 	(total and item_count_cache_hit or item_count_cache_miss)();
-	if total ~= nil and query.limit == 0 and query.start == nil and query.with == nil and query["end"] == nil and query.key == nil then
+	if total ~= nil and query.limit == 0 and query.start == nil and query.with == nil and query["end"] == nil
+		and query.key == nil and query.ids == nil then
 		return noop, total;
 	end
 	local ok, result, err = engine:transaction(function()
@@ -452,7 +453,7 @@ function archive_store:find(username, query)
 					total = row[1];
 				end
 			end
-			if query.start == nil and query.with == nil and query["end"] == nil and query.key == nil then
+			if query.start == nil and query.with == nil and query["end"] == nil and query.key == nil and query.ids == nil then
 				archive_item_count_cache:set(cache_key, total);
 			end
 			if query.limit == 0 then -- Skip the real query
