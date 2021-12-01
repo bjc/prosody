@@ -256,21 +256,24 @@ local function wrap_session_out(session, resume)
 
 	add_filter(session, "stanzas/out", outgoing_stanza_filter, -999);
 
-	local session_close = session.close;
-	function session.close(...)
-		if session.resumption_token then
-			session_registry.set(session.username, session.resumption_token, nil);
-			old_session_registry.set(session.username, session.resumption_token, nil);
-			session.resumption_token = nil;
-		end
-		-- send out last ack as per revision 1.5.2 of XEP-0198
-		if session.smacks and session.conn and session.handled_stanza_count then
-			(session.sends2s or session.send)(st.stanza("a", { xmlns = session.smacks, h = string.format("%d", session.handled_stanza_count) }));
-		end
-		return session_close(...);
-	end
 	return session;
 end
+
+module:hook("pre-session-close", function(event)
+	local session = event.session;
+	if session.resumption_token then
+		session_registry.set(session.username, session.resumption_token, nil);
+		old_session_registry.set(session.username, session.resumption_token, nil);
+		session.resumption_token = nil;
+	end
+	-- send out last ack as per revision 1.5.2 of XEP-0198
+	if session.smacks and session.conn and session.handled_stanza_count then
+		(session.sends2s or session.send)(st.stanza("a", {
+			xmlns = session.smacks;
+			h = string.format("%d", session.handled_stanza_count);
+		}));
+	end
+end);
 
 local function wrap_session_in(session, resume)
 	if not resume then
