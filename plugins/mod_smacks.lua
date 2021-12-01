@@ -50,6 +50,8 @@ assert(max_old_sessions > 0, "smacks_max_old_sessions must be greater than 0");
 
 local c2s_sessions = module:shared("/*/c2s/sessions");
 
+local function format_h(h) if h then return string.format("%d", h) end end
+
 local function init_session_cache(max_entries, evict_callback)
 	-- use per user limited cache for prosody >= 0.10
 	local stores = {};
@@ -253,7 +255,7 @@ module:hook("pre-session-close", function(event)
 	if session.smacks and session.conn and session.handled_stanza_count then
 		(session.sends2s or session.send)(st.stanza("a", {
 			xmlns = session.smacks;
-			h = string.format("%d", session.handled_stanza_count);
+			h = format_h(session.handled_stanza_count);
 		}));
 	end
 end);
@@ -339,7 +341,7 @@ function handle_r(origin, stanza, xmlns_sm) -- luacheck: ignore 212/stanza
 	end
 	module:log("debug", "Received ack request, acking for %d", origin.handled_stanza_count);
 	-- Reply with <a>
-	(origin.sends2s or origin.send)(st.stanza("a", { xmlns = xmlns_sm, h = string.format("%d", origin.handled_stanza_count) }));
+	(origin.sends2s or origin.send)(st.stanza("a", { xmlns = xmlns_sm, h = format_h(origin.handled_stanza_count) }));
 	-- piggyback our own ack request if needed (see request_ack_if_needed() for explanation of last_requested_h)
 	request_ack_now_if_needed(origin, false, "piggybacked by handle_r", nil);
 	return true;
@@ -559,7 +561,7 @@ function handle_resume(session, stanza, xmlns_sm)
 		if old_session and session.username == old_session.username
 		and session.host == old_session.host
 		and old_session.h then
-			session.send(st.stanza("failed", { xmlns = xmlns_sm, h = string.format("%d", old_session.h) })
+			session.send(st.stanza("failed", { xmlns = xmlns_sm, h = format_h(old_session.h) })
 				:tag("item-not-found", { xmlns = xmlns_errors })
 			);
 		else
@@ -598,7 +600,7 @@ function handle_resume(session, stanza, xmlns_sm)
 		c2s_sessions[session.conn] = original_session;
 
 		original_session.send(st.stanza("resumed", { xmlns = xmlns_sm,
-			h = string.format("%d", original_session.handled_stanza_count), previd = id }));
+			h = format_h(original_session.handled_stanza_count), previd = id }));
 
 		-- Fake an <a> with the h of the <resume/> from the client
 		original_session:dispatch_stanza(st.stanza("a", { xmlns = xmlns_sm,
