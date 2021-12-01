@@ -51,23 +51,6 @@ assert(max_old_sessions > 0, "smacks_max_old_sessions must be greater than 0");
 local c2s_sessions = module:shared("/*/c2s/sessions");
 
 local function init_session_cache(max_entries, evict_callback)
-	-- old prosody version < 0.10 (no limiting at all!)
-	if not cache then
-		local store = {};
-		return {
-			get = function(user, key)
-				if not user then return nil; end
-				if not key then return nil; end
-				return store[key];
-			end;
-			set = function(user, key, value)
-				if not user then return nil; end
-				if not key then return nil; end
-				store[key] = value;
-			end;
-		};
-	end
-
 	-- use per user limited cache for prosody >= 0.10
 	local stores = {};
 	return {
