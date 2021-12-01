@@ -45,10 +45,8 @@ local max_unacked_stanzas = module:get_option_number("smacks_max_unacked_stanzas
 local max_inactive_unacked_stanzas = module:get_option_number("smacks_max_inactive_unacked_stanzas", 256);
 local delayed_ack_timeout = module:get_option_number("smacks_max_ack_delay", 30);
 local max_hibernated_sessions = module:get_option_number("smacks_max_hibernated_sessions", 10);
-local max_old_sessions = module:get_option_number("smacks_max_old_sessions", 10);
 
 assert(max_hibernated_sessions > 0, "smacks_max_hibernated_sessions must be greater than 0");
-assert(max_old_sessions > 0, "smacks_max_old_sessions must be greater than 0");
 
 local c2s_sessions = module:shared("/*/c2s/sessions");
 
@@ -76,13 +74,13 @@ local function init_session_cache(max_entries, evict_callback)
 			end;
 		};
 end
-local old_session_registry = init_session_cache(max_old_sessions, nil);
+local old_session_registry = module:open_store("smacks_h", "map");
 local session_registry = init_session_cache(max_hibernated_sessions, function(resumption_token, session)
 	if session.destroyed then return true; end -- destroyed session can always be removed from cache
 	session.log("warn", "User has too much hibernated sessions, removing oldest session (token: %s)", resumption_token);
 	-- store old session's h values on force delete
 	-- save only actual h value and username/host (for security)
-	old_session_registry.set(session.username, resumption_token, {
+	old_session_registry:set(session.username, resumption_token, {
 		h = session.handled_stanza_count,
 	});
 	return true; -- allow session to be removed from full cache to make room for new one
@@ -248,7 +246,7 @@ module:hook("pre-session-close", function(event)
 	local session = event.session;
 	if session.resumption_token then
 		session_registry.set(session.username, session.resumption_token, nil);
-		old_session_registry.set(session.username, session.resumption_token, nil);
+		old_session_registry:set(session.username, session.resumption_token, nil);
 		session.resumption_token = nil;
 	end
 	-- send out last ack as per revision 1.5.2 of XEP-0198
@@ -493,7 +491,7 @@ module:hook("pre-resource-unbind", function (event)
 					session.log("debug", "Destroying session for hibernating too long");
 					session_registry.set(session.username, session.resumption_token, nil);
 					-- save only actual h value and username/host (for security)
-					old_session_registry.set(session.username, session.resumption_token, {
+					old_session_registry:set(session.username, session.resumption_token, {
 						h = session.handled_stanza_count,
 					});
 					session.resumption_token = nil;
@@ -546,7 +544,7 @@ function handle_resume(session, stanza, xmlns_sm)
 	local original_session = session_registry.get(session.username, id);
 	if not original_session then
 		session.log("debug", "Tried to resume non-existent session with id %s", id);
-		local old_session = old_session_registry.get(session.username, id);
+		local old_session = old_session_registry:get(session.username, id);
 		if old_session then
 			session.send(st.stanza("failed", { xmlns = xmlns_sm, h = format_h(old_session.h) })
 				:tag("item-not-found", { xmlns = xmlns_errors })
