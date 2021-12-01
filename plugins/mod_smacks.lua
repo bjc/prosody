@@ -70,7 +70,7 @@ local function init_session_cache(max_entries, evict_callback)
 				if not stores[user] then stores[user] = cache.new(max_entries, evict_callback); end
 				stores[user]:set(key, value);
 				-- remove empty caches completely
-				if not stores[user]:count() then stores[user] = nil; end
+				if stores[user]:count() == 0 then stores[user] = nil; end
 			end;
 		};
 end
