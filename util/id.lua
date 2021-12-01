@@ -19,6 +19,9 @@ end
 return {
 	-- sizes divisible by 3 fit nicely into base64 without padding==
 
+	-- for short lived things with low risk of collisions
+	tiny = function() return b64url_random(3); end;
+
 	-- close to 8 bytes, should be good enough for relatively short lived or uses
 	-- scoped by host or users, half the size of an uuid
 	short = function() return b64url_random(9); end;
