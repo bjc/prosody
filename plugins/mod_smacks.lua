@@ -11,25 +11,29 @@
 -- COPYING file in the source package for more information.
 --
 
-local st = require "util.stanza";
-local cache = require "util.cache";
-local uuid_generate = require "util.uuid".generate;
-local jid = require "util.jid";
-
-local t_remove = table.remove;
-local math_min = math.min;
+local tonumber = tonumber;
+local tostring = tostring;
 local math_max = math.max;
+local math_min = math.min;
 local os_time = os.time;
-local tonumber, tostring = tonumber, tostring;
-local add_filter = require "util.filters".add_filter;
-local timer = require "util.timer";
-local datetime = require "util.datetime";
+local t_remove = table.remove;
 
+local cache = require "util.cache";
+local datetime = require "util.datetime";
+local add_filter = require "util.filters".add_filter;
+local jid = require "util.jid";
+local st = require "util.stanza";
+local timer = require "util.timer";
+local uuid_generate = require "util.uuid".generate;
+
+local sessionmanager = require "core.sessionmanager";
+local core_process_stanza = prosody.core_process_stanza;
+
+local xmlns_errors = "urn:ietf:params:xml:ns:xmpp-stanzas";
+local xmlns_delay = "urn:xmpp:delay";
 local xmlns_mam2 = "urn:xmpp:mam:2";
 local xmlns_sm2 = "urn:xmpp:sm:2";
 local xmlns_sm3 = "urn:xmpp:sm:3";
-local xmlns_errors = "urn:ietf:params:xml:ns:xmpp-stanzas";
-local xmlns_delay = "urn:xmpp:delay";
 
 local sm2_attr = { xmlns = xmlns_sm2 };
 local sm3_attr = { xmlns = xmlns_sm3 };
@@ -42,8 +46,6 @@ local max_inactive_unacked_stanzas = module:get_option_number("smacks_max_inacti
 local delayed_ack_timeout = module:get_option_number("smacks_max_ack_delay", 30);
 local max_hibernated_sessions = module:get_option_number("smacks_max_hibernated_sessions", 10);
 local max_old_sessions = module:get_option_number("smacks_max_old_sessions", 10);
-local core_process_stanza = prosody.core_process_stanza;
-local sessionmanager = require "core.sessionmanager";
 
 assert(max_hibernated_sessions > 0, "smacks_max_hibernated_sessions must be greater than 0");
 assert(max_old_sessions > 0, "smacks_max_old_sessions must be greater than 0");
