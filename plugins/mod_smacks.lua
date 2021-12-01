@@ -82,8 +82,6 @@ local session_registry = init_session_cache(max_hibernated_sessions, function(re
 	-- save only actual h value and username/host (for security)
 	old_session_registry.set(session.username, resumption_token, {
 		h = session.handled_stanza_count,
-		username = session.username,
-		host = session.host
 	});
 	return true; -- allow session to be removed from full cache to make room for new one
 end);
@@ -507,8 +505,6 @@ module:hook("pre-resource-unbind", function (event)
 					-- save only actual h value and username/host (for security)
 					old_session_registry.set(session.username, session.resumption_token, {
 						h = session.handled_stanza_count,
-						username = session.username,
-						host = session.host
 					});
 					session.resumption_token = nil;
 					sessionmanager.destroy_session(session);
@@ -558,9 +554,7 @@ function handle_resume(session, stanza, xmlns_sm)
 	if not original_session then
 		session.log("debug", "Tried to resume non-existent session with id %s", id);
 		local old_session = old_session_registry.get(session.username, id);
-		if old_session and session.username == old_session.username
-		and session.host == old_session.host
-		and old_session.h then
+		if old_session then
 			session.send(st.stanza("failed", { xmlns = xmlns_sm, h = format_h(old_session.h) })
 				:tag("item-not-found", { xmlns = xmlns_errors })
 			);
