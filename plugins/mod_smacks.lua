@@ -549,6 +549,7 @@ function handle_resume(session, stanza, xmlns_sm)
 			session.send(st.stanza("failed", { xmlns = xmlns_sm, h = format_h(old_session.h) })
 				:tag("item-not-found", { xmlns = xmlns_errors })
 			);
+			old_session_registry:set(session.username, id, nil);
 		else
 			session.send(st.stanza("failed", { xmlns = xmlns_sm })
 				:tag("item-not-found", { xmlns = xmlns_errors })
