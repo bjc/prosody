@@ -18,7 +18,6 @@ local math_min = math.min;
 local os_time = os.time;
 local t_remove = table.remove;
 
-local cache = require "util.cache";
 local datetime = require "util.datetime";
 local add_filter = require "util.filters".add_filter;
 local jid = require "util.jid";
@@ -44,47 +43,13 @@ local s2s_resend = module:get_option_boolean("smacks_s2s_resend", false);
 local max_unacked_stanzas = module:get_option_number("smacks_max_unacked_stanzas", 0);
 local max_inactive_unacked_stanzas = module:get_option_number("smacks_max_inactive_unacked_stanzas", 256);
 local delayed_ack_timeout = module:get_option_number("smacks_max_ack_delay", 30);
-local max_hibernated_sessions = module:get_option_number("smacks_max_hibernated_sessions", 10);
-
-assert(max_hibernated_sessions > 0, "smacks_max_hibernated_sessions must be greater than 0");
 
 local c2s_sessions = module:shared("/*/c2s/sessions");
 
 local function format_h(h) if h then return string.format("%d", h) end end
 
-local function init_session_cache(max_entries, evict_callback)
-	-- use per user limited cache for prosody >= 0.10
-	local stores = {};
-	return {
-			get = function(user, key)
-				if not user then return nil; end
-				if not key then return nil; end
-				if not stores[user] then
-					stores[user] = cache.new(max_entries, evict_callback);
-				end
-				return stores[user]:get(key);
-			end;
-			set = function(user, key, value)
-				if not user then return nil; end
-				if not key then return nil; end
-				if not stores[user] then stores[user] = cache.new(max_entries, evict_callback); end
-				stores[user]:set(key, value);
-				-- remove empty caches completely
-				if stores[user]:count() == 0 then stores[user] = nil; end
-			end;
-		};
-end
 local old_session_registry = module:open_store("smacks_h", "map");
-local session_registry = init_session_cache(max_hibernated_sessions, function(resumption_token, session)
-	if session.destroyed then return true; end -- destroyed session can always be removed from cache
-	session.log("warn", "User has too much hibernated sessions, removing oldest session (token: %s)", resumption_token);
-	-- store old session's h values on force delete
-	-- save only actual h value and username/host (for security)
-	old_session_registry:set(session.username, resumption_token, {
-		h = session.handled_stanza_count,
-	});
-	return true; -- allow session to be removed from full cache to make room for new one
-end);
+local session_registry = module:shared "/*/smacks/resumption-tokens"; -- > user@host/resumption-token --> resource
 
 local function ack_delayed(session, stanza)
 	-- fire event only if configured to do so and our session is not already hibernated or destroyed
@@ -245,7 +210,7 @@ end
 module:hook("pre-session-close", function(event)
 	local session = event.session;
 	if session.resumption_token then
-		session_registry.set(session.username, session.resumption_token, nil);
+		session_registry[jid.join(session.username, session.host, session.resumption_token)] = nil;
 		old_session_registry:set(session.username, session.resumption_token, nil);
 		session.resumption_token = nil;
 	end
@@ -290,7 +255,7 @@ function handle_enable(session, stanza, xmlns_sm)
 	local resume = stanza.attr.resume;
 	if resume == "true" or resume == "1" then
 		resume_token = uuid_generate();
-		session_registry.set(session.username, resume_token, session);
+		session_registry[jid.join(session.username, session.host, resume_token)] = session;
 		session.resumption_token = resume_token;
 	end
 	(session.sends2s or session.send)(st.stanza("enabled", { xmlns = xmlns_sm, id = resume_token, resume = resume, max = tostring(resume_timeout) }));
@@ -489,7 +454,7 @@ module:hook("pre-resource-unbind", function (event)
 						return resume_timeout-(current_time-timeout_start); -- time left to wait
 					end
 					session.log("debug", "Destroying session for hibernating too long");
-					session_registry.set(session.username, session.resumption_token, nil);
+					session_registry[jid.join(session.username, session.host, session.resumption_token)] = nil;
 					-- save only actual h value and username/host (for security)
 					old_session_registry:set(session.username, session.resumption_token, {
 						h = session.handled_stanza_count,
@@ -541,7 +506,7 @@ function handle_resume(session, stanza, xmlns_sm)
 	end
 
 	local id = stanza.attr.previd;
-	local original_session = session_registry.get(session.username, id);
+	local original_session = session_registry[jid.join(session.username, session.host, id)];
 	if not original_session then
 		session.log("debug", "Tried to resume non-existent session with id %s", id);
 		local old_session = old_session_registry:get(session.username, id);
