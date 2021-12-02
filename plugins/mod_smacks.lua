@@ -395,17 +395,13 @@ module:hook_tag(xmlns_sm3, "a", handle_a);
 
 local function handle_unacked_stanzas(session)
 	local queue = session.outgoing_stanza_queue;
-	local error_attr = { type = "cancel" };
 	if #queue > 0 then
 		session.outgoing_stanza_queue = {};
 		for i=1,#queue do
 			if not module:fire_event("delivery/failure", { session = session, stanza = queue[i] }) then
 				if queue[i].attr.type ~= "error" then
-					local reply = st.reply(queue[i]);
+					local reply = st.error_reply(queue[i], "cancel", "recipient-unavailable");
 					if reply.attr.to ~= session.full_jid then
-						reply.attr.type = "error";
-						reply:tag("error", error_attr)
-							:tag("recipient-unavailable", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"});
 						core_process_stanza(session, reply);
 					end
 				end
