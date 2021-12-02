@@ -18,7 +18,7 @@ local log = logger.init("unbound");
 local net_server = require "net.server";
 local libunbound = require"lunbound";
 local promise = require"util.promise";
-local new_id = require "util.id".medium;
+local new_id = require "util.id".short;
 
 local gettime = require"socket".gettime;
 local dns_utils = require"util.dns";

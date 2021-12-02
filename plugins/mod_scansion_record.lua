@@ -8,7 +8,7 @@ local dt = require "util.datetime";
 local dm = require "util.datamanager";
 local st = require "util.stanza";
 
-local record_id = id.medium():lower();
+local record_id = id.short():lower();
 local record_date = os.date("%Y%b%d"):lower();
 local header_file = dm.getpath(record_id, "scansion", record_date, "scs", true);
 local record_file = dm.getpath(record_id, "scansion", record_date, "log", true);

@@ -26,7 +26,7 @@ local createtable = require "util.table".create;
 local inet = require "util.net";
 local inet_pton = inet.pton;
 local _SOCKETINVALID = socket._SOCKETINVALID or -1;
-local new_id = require "util.id".medium;
+local new_id = require "util.id".short;
 local xpcall = require "util.xpcall".xpcall;
 
 local poller = require "util.poll"

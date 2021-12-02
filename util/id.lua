@@ -17,9 +17,20 @@ local function b64url_random(len)
 end
 
 return {
-	short =  function () return b64url_random(6); end;
-	medium = function () return b64url_random(12); end;
-	long =   function () return b64url_random(24); end;
+	-- sizes divisible by 3 fit nicely into base64 without padding==
+
+	-- close to 8 bytes, should be good enough for relatively short lived or uses
+	-- scoped by host or users, half the size of an uuid
+	short = function() return b64url_random(9); end;
+
+	-- more entropy than uuid at 2/3 the size
+	-- should be okay for globally scoped ids or security token
+	medium = function() return b64url_random(18); end;
+
+	-- as long as an uuid but MOAR entropy
+	long = function() return b64url_random(27); end;
+
+	-- pick your own adventure
 	custom = function (size)
 		return function () return b64url_random(size); end;
 	end;
