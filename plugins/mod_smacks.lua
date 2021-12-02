@@ -207,7 +207,7 @@ local function outgoing_stanza_filter(stanza, session)
 		local cached_stanza = st.clone(stanza);
 		cached_stanza._cached = true;
 
-		if cached_stanza and cached_stanza.name ~= "iq" and cached_stanza:get_child("delay", xmlns_delay) == nil then
+		if cached_stanza.name ~= "iq" and cached_stanza:get_child("delay", xmlns_delay) == nil then
 			cached_stanza = cached_stanza:tag("delay", {
 				xmlns = xmlns_delay,
 				from = jid.bare(session.full_jid or session.host),
