@@ -393,11 +393,6 @@ end
 module:hook_tag(xmlns_sm2, "a", handle_a);
 module:hook_tag(xmlns_sm3, "a", handle_a);
 
---TODO: Optimise... incoming stanzas should be handled by a per-session
--- function that has a counter as an upvalue (no table indexing for increments,
--- and won't slow non-198 sessions). We can also then remove the .handled flag
--- on stanzas
-
 local function handle_unacked_stanzas(session)
 	local queue = session.outgoing_stanza_queue;
 	local error_attr = { type = "cancel" };
