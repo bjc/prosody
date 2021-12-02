@@ -514,6 +514,9 @@ module:hook("pre-resource-unbind", function (event)
 					session.log("debug", "Session resumed before hibernation timeout, all is well")
 				end
 			end);
+			if session.conn then
+				session.conn:close();
+			end
 			return true; -- Postpone destruction for now
 		end
 	end
