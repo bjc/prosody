@@ -399,11 +399,9 @@ local function handle_unacked_stanzas(session)
 		session.outgoing_stanza_queue = {};
 		for i=1,#queue do
 			if not module:fire_event("delivery/failure", { session = session, stanza = queue[i] }) then
-				if queue[i].attr.type ~= "error" then
+				if queue[i].attr.type ~= "error" and queue[i].attr.from ~= session.full_jid then
 					local reply = st.error_reply(queue[i], "cancel", "recipient-unavailable");
-					if reply.attr.to ~= session.full_jid then
-						core_process_stanza(session, reply);
-					end
+					core_process_stanza(session, reply);
 				end
 			end
 		end
