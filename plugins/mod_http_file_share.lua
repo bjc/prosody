@@ -78,7 +78,7 @@ end
 module:hook_global("stats-update", function ()
 	measure_upload_cache_size(upload_cache:count());
 	measure_quota_cache_size(quota_cache:count());
-	if total_storage_limit then
+	if total_storage_limit and total_storage_usage then
 		measure_total_storage_usage(total_storage_usage);
 	end
 end);
