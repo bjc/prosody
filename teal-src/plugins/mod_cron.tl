@@ -1,6 +1,7 @@
 module:set_global();
 
 local async = require "util.async";
+local datetime = require "util.datetime";
 
 local record map_store<K,V>
 	-- TODO move to somewhere sensible
@@ -53,7 +54,7 @@ function module.add_host(host_module : moduleapi)
 		end
 		task.save = save_task;
 		module:log("debug", "%s task %s added, last run %s", task.when, task.id,
-			task.last and require"util.datetime".datetime(task.last) or "never");
+			task.last and datetime.datetime(task.last) or "never");
 		if task.last == nil and task.when == "daily" then
 			-- initialize daily tasks to run at ~midnight UTC for now
 			local now = os.time();

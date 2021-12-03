@@ -1,6 +1,7 @@
 module:set_global();
 
 local async = require("util.async");
+local datetime = require("util.datetime");
 
 local periods = { hourly = 3600; daily = 86400 }
 
@@ -20,7 +21,7 @@ function module.add_host(host_module)
 		if task.last == nil then task.last = last_run_times:get(nil, task.id); end
 		task.save = save_task;
 		module:log("debug", "%s task %s added, last run %s", task.when, task.id,
-			task.last and require("util.datetime").datetime(task.last) or "never");
+			task.last and datetime.datetime(task.last) or "never");
 		if task.last == nil and task.when == "daily" then
 			local now = os.time();
 			task.last = now - now % 86400;
