@@ -521,6 +521,11 @@ function api:daily(name, fun)
 	self:cron({ name = name; when = "daily"; run = fun });
 end
 
+function api:weekly(name, fun)
+	if type(name) == "function" then fun, name = name, nil; end
+	self:cron({ name = name; when = "weekly"; run = fun });
+end
+
 local path_sep = package.config:sub(1,1);
 function api:get_directory()
 	return self.resource_path or self.path and (self.path:gsub("%"..path_sep.."[^"..path_sep.."]*$", "")) or nil;

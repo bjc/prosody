@@ -12,6 +12,7 @@ end
 local enum frequency
 	"hourly"
 	"daily"
+	"weekly"
 end
 
 local record task_spec
@@ -28,7 +29,7 @@ local record task_event
 	item : task_spec
 end
 
-local periods : { frequency : integer } = { hourly = 3600, daily = 86400 }
+local periods : { frequency : integer } = { hourly = 3600, daily = 86400, weekly = 7*86400 }
 
 local active_hosts : { string : boolean } = {  }
 

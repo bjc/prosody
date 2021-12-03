@@ -52,6 +52,7 @@ files["plugins/"] = {
 		"module.add_identity",
 		"module.add_item",
 		"module.add_timer",
+		"module.weekly",
 		"module.daily",
 		"module.hourly",
 		"module.broadcast",
