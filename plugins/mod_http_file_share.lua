@@ -28,6 +28,7 @@ module:add_identity("store", "file", module:get_option_string("name", "HTTP File
 module:add_feature(namespace);
 
 local uploads = module:open_store("uploads", "archive");
+local persist_stats = module:open_store("upload_stats", "map");
 -- id, <request>, time, owner
 
 local secret = module:get_option_string(module.name.."_secret", require"util.id".long());
@@ -72,6 +73,8 @@ local measure_upload_cache_size = module:measure("upload_cache", "amount");
 local measure_quota_cache_size = module:measure("quota_cache", "amount");
 local measure_total_storage_usage = nil;
 if total_storage_limit then
+	local total, err = persist_stats:get(nil, "total");
+	if not err then total_storage_usage = tonumber(total) or 0; end
 	measure_total_storage_usage = module:measure("total_storage", "amount", { unit = "bytes" });
 end
 
@@ -513,6 +516,7 @@ if expiry >= 0 and not external_base_url then
 		if total_storage_usage then
 			total_storage_usage = total_storage_usage - size_sum;
 			module:log("debug", "Global quota %s / %s", B(total_storage_usage), B(total_storage_limit));
+			persist_stats:set(nil, "total", total_storage_usage);
 		end
 
 		if #obsolete_uploads == 0 then
@@ -547,6 +551,7 @@ if total_storage_limit then
 		module:log("info", "Uploaded files total: %s in %d files", B(sum), count);
 		total_storage_usage = sum;
 		module:log("debug", "Global quota %s / %s", B(total_storage_usage), B(total_storage_limit));
+		persist_stats:set(nil, "total", sum);
 		summary_done();
 	end);
 
