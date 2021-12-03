@@ -538,7 +538,7 @@ end
 if total_storage_limit then
 	local summary_start = module:measure("summary", "times");
 
-	module:daily("Global quota check", function()
+	module:weekly("Global quota check", function()
 		local summary_done = summary_start();
 		local iter = assert(uploads:find(nil));
 
