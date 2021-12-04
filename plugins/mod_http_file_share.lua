@@ -478,11 +478,11 @@ if expiry >= 0 and not external_base_url then
 		end
 
 		local obsolete_uploads = array();
-		local n = 0;
+		local num_expired = 0;
 		local size_sum = 0;
 		local problem_deleting = false;
 		for slot_id, slot_info in iter do
-			n = n + 1;
+			num_expired = num_expired + 1;
 			upload_cache:set(slot_id, nil);
 			local filename = get_filename(slot_id);
 			local deleted, err, errno = os.remove(filename);
@@ -493,7 +493,7 @@ if expiry >= 0 and not external_base_url then
 				module:log("error", "Could not delete file %q: %s", filename, err);
 				problem_deleting = true;
 			end
-			if n % 100 == 0 then sleep(0.1); end
+			if num_expired % 100 == 0 then sleep(0.1); end
 		end
 
 		-- obsolete_uploads now contains slot ids for which the files have been
@@ -501,10 +501,10 @@ if expiry >= 0 and not external_base_url then
 
 		local deletion_query = {["end"] = boundary_time};
 		if not problem_deleting then
-			module:log("info", "All (%d, %s) expired files successfully deleted", n, B(size_sum));
+			module:log("info", "All (%d, %s) expired files successfully deleted", num_expired, B(size_sum));
 			-- we can delete based on time
 		else
-			module:log("warn", "%d out of %d expired files could not be deleted", n-#obsolete_uploads, n);
+			module:log("warn", "%d out of %d expired files could not be deleted", num_expired-#obsolete_uploads, num_expired);
 			-- we'll need to delete only those entries where the files were
 			-- successfully deleted, and then try again with the failed ones.
 			-- eventually the admin ought to notice and fix the permissions or
@@ -523,7 +523,7 @@ if expiry >= 0 and not external_base_url then
 		else
 			local removed, err = uploads:delete(nil, deletion_query);
 
-			if removed == true or removed == n or removed == #obsolete_uploads then
+			if removed == true or removed == num_expired or removed == #obsolete_uploads then
 				module:log("debug", "Removed all metadata for expired uploaded files");
 			else
 				module:log("error", "Problem removing metadata for deleted files: %s", err);
