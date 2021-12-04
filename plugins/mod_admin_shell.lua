@@ -248,7 +248,7 @@ function commands.help(session, data)
 		print [[host:deactivate(hostname) - Disconnects all clients on this host and deactivates]]
 		print [[host:list() - List the currently-activated hosts]]
 	elseif section == "user" then
-		print [[user:create(jid, password) - Create the specified user account]]
+		print [[user:create(jid, password, roles) - Create the specified user account]]
 		print [[user:password(jid, password) - Set the password for the specified user account]]
 		print [[user:delete(jid) - Permanently remove the specified user account]]
 		print [[user:list(hostname, pattern) - List users on the specified host, optionally filtering with a pattern]]
@@ -1270,7 +1270,7 @@ end
 local um = require"core.usermanager";
 
 def_env.user = {};
-function def_env.user:create(jid, password)
+function def_env.user:create(jid, password, roles)
 	local username, host = jid_split(jid);
 	if not prosody.hosts[host] then
 		return nil, "No such host: "..host;
@@ -1279,6 +1279,13 @@ function def_env.user:create(jid, password)
 	end
 	local ok, err = um.create_user(username, password, host);
 	if ok then
+		if ok and roles then
+			if roles == "admin" then roles = "prosody:admin"; end
+			if type(roles) == "string" then roles = { [roles] = true }; end
+			if roles[1] then for i, role in ipairs(roles) do roles[role], roles[i] = true, nil; end end
+			local roles_ok, rerr = um.set_roles(jid, host, roles);
+			if not roles_ok then return nil, "User created, but could not set roles: " .. tostring(rerr); end
+		end
 		return true, "User created";
 	else
 		return nil, "Could not create user: "..err;
@@ -1315,6 +1322,9 @@ function def_env.user:password(jid, password)
 	end
 end
 
+-- TODO user:roles(jid, new_roles)
+
+-- TODO switch to table view, include roles
 function def_env.user:list(host, pat)
 	if not host then
 		return nil, "No host given";
