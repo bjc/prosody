@@ -49,7 +49,7 @@ local function run_task(task)
 end
 
 local task_runner = async.runner(run_task);
-module:add_timer(1, function()
+scheduled = module:add_timer(1, function()
 	module:log("info", "Running periodic tasks");
 	local delay = 3600;
 	for host in pairs(active_hosts) do
