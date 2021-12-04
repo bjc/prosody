@@ -460,8 +460,9 @@ if expiry >= 0 and not external_base_url then
 
 	local prune_start = module:measure("prune", "times");
 
-	module:daily("Remove expired files", function(_, boundary_time)
+	module:daily("Remove expired files", function(_, current_time)
 		local prune_done = prune_start();
+		local boundary_time = (current_time or os.time()) - expiry;
 		local iter, total = assert(uploads:find(nil, {["end"] = boundary_time; total = true}));
 
 		if total == 0 then
