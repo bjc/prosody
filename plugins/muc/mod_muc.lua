@@ -538,10 +538,14 @@ do -- Ad-hoc commands
 			end
 			return { status = "completed", error = { message = t_concat(errmsg, "\n") } };
 		end
-		for _, room in ipairs(fields.rooms) do
-			get_room_from_jid(room):destroy();
+		local destroyed = array();
+		for _, room_jid in ipairs(fields.rooms) do
+			local room = get_room_from_jid(room_jid);
+			if room and room:destroy() then
+				destroyed:push(room.jid);
+			end
 		end
-		return { status = "completed", info = "The following rooms were destroyed:\n"..t_concat(fields.rooms, "\n") };
+		return { status = "completed", info = "The following rooms were destroyed:\n"..t_concat(destroyed, "\n") };
 	end);
 	local destroy_rooms_desc = adhoc_new("Destroy Rooms",
 		"http://prosody.im/protocol/muc#destroy", destroy_rooms_handler, "admin");

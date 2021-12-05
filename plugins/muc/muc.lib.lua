@@ -1018,8 +1018,12 @@ function room_mt:clear(x)
 end
 
 function room_mt:destroy(newjid, reason, password)
-	local x = st.stanza("x", {xmlns = "http://jabber.org/protocol/muc#user"})
-		:tag("destroy", {jid=newjid});
+	local x = st.stanza("x", { xmlns = "http://jabber.org/protocol/muc#user" });
+	local event = { room = self; newjid = newjid; reason = reason; password = password; x = x, allowed = true };
+	module:fire_event("muc-pre-room-destroy", event);
+	if not event.allowed then return false, event.error; end
+	newjid, reason, password = event.newjid, event.reason, event.password;
+	x:tag("destroy", { jid = newjid });
 	if reason then x:tag("reason"):text(reason):up(); end
 	if password then x:tag("password"):text(password):up(); end
 	x:up();
@@ -1172,8 +1176,12 @@ function room_mt:handle_owner_query_set_to_room(origin, stanza)
 		local newjid = child.attr.jid;
 		local reason = child:get_child_text("reason");
 		local password = child:get_child_text("password");
-		self:destroy(newjid, reason, password);
-		origin.send(st.reply(stanza));
+		local destroyed, err = self:destroy(newjid, reason, password);
+		if destroyed then
+			origin.send(st.reply(stanza));
+		else
+			origin.send(st.error_reply(stanza, err or "cancel", "not-allowed"));
+		end
 		return true;
 	elseif child.name == "x" and child.attr.xmlns == "jabber:x:data" then
 		return self:process_form(origin, stanza);
