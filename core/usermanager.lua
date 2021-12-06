@@ -54,6 +54,8 @@ local global_authz_provider = {
 		if role ~= "prosody:admin" then return {}; end
 		return it.to_array(global_admins);
 	end;
+	set_user_roles = function (user, roles) end; -- luacheck: ignore 212
+	set_jid_roles = function (jid, roles) end; -- luacheck: ignore 212
 };
 
 local provider_mt = { __index = new_null_provider() };
