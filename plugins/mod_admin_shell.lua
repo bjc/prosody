@@ -1335,9 +1335,7 @@ function def_env.user:roles(jid, host, new_roles)
 	if new_roles == nil then host, new_roles = userhost, host; end
 	if not prosody.hosts[host] then
 		return nil, "No such host: "..host;
-	elseif not prosody.hosts[userhost] then
-		return nil, "No such host: "..userhost;
-	elseif not um.user_exists(username, userhost) then
+	elseif prosody.hosts[userhost] and not um.user_exists(username, userhost) then
 		return nil, "No such user";
 	end
 	return um.set_roles(jid, host, coerce_roles(new_roles));
