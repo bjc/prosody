@@ -250,7 +250,7 @@ function commands.help(session, data)
 	elseif section == "user" then
 		print [[user:create(jid, password, roles) - Create the specified user account]]
 		print [[user:password(jid, password) - Set the password for the specified user account]]
-		print [[user:roles(jid, roles) - Set roles for an user]]
+		print [[user:roles(jid, host, roles) - Set roles for an user (see 'help roles')]]
 		print [[user:delete(jid) - Permanently remove the specified user account]]
 		print [[user:list(hostname, pattern) - List users on the specified host, optionally filtering with a pattern]]
 	elseif section == "muc" then
@@ -1328,12 +1328,16 @@ function def_env.user:password(jid, password)
 	end
 end
 
+-- user:roles("someone@example.com", "example.com", {"prosody:admin"})
 -- user:roles("someone@example.com", {"prosody:admin"})
-function def_env.user:roles(jid, new_roles)
-	local username, host = jid_split(jid);
+function def_env.user:roles(jid, host, new_roles)
+	local username, userhost = jid_split(jid);
+	if new_roles == nil then host, new_roles = userhost, host; end
 	if not prosody.hosts[host] then
 		return nil, "No such host: "..host;
-	elseif not um.user_exists(username, host) then
+	elseif not prosody.hosts[userhost] then
+		return nil, "No such host: "..userhost;
+	elseif not um.user_exists(username, userhost) then
 		return nil, "No such user";
 	end
 	return um.set_roles(jid, host, coerce_roles(new_roles));
