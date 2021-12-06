@@ -489,7 +489,7 @@ end
 function interface:onwritable()
 	self._writing = true; -- prevent reentrant writes etc
 	self:onconnect();
-	if not self.conn then return; end -- could have been closed in onconnect
+	if not self.conn then return nil, "no-conn"; end -- could have been closed in onconnect
 	self:on("predrain");
 	local buffer = self.writebuffer;
 	local data = buffer or "";
@@ -542,6 +542,7 @@ function interface:onwritable()
 		self:destroy();
 		return ok, err;
 	end
+	return true, err;
 end
 
 -- The write buffer has been successfully emptied
