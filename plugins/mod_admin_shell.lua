@@ -1333,11 +1333,12 @@ end
 function def_env.user:roles(jid, host, new_roles)
 	local username, userhost = jid_split(jid);
 	if new_roles == nil then host, new_roles = userhost, host; end
-	if not prosody.hosts[host] then
+	if host ~= "*" and not prosody.hosts[host] then
 		return nil, "No such host: "..host;
 	elseif prosody.hosts[userhost] and not um.user_exists(username, userhost) then
 		return nil, "No such user";
 	end
+	if host == "*" then host = nil; end
 	return um.set_roles(jid, host, coerce_roles(new_roles));
 end
 
