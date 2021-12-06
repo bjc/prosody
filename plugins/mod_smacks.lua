@@ -584,6 +584,7 @@ function handle_resume(session, stanza, xmlns_sm)
 		original_session.stream = session.stream;
 		original_session.secure = session.secure;
 		original_session.hibernating = nil;
+		original_session.resumption_counter = (original_session.resumption_counter or 0) + 1;
 		session.log = original_session.log;
 		session.type = original_session.type;
 		wrap_session(original_session, true);
