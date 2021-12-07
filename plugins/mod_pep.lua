@@ -220,6 +220,7 @@ function get_pep_service(username)
 			end;
 		};
 
+		jid = user_bare;
 		normalize_jid = jid_bare;
 
 		check_node_config = check_node_config;
