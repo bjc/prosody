@@ -23,7 +23,7 @@ function methods:next(cb)
 	end
 
 	if not self.hostname then
-		-- FIXME report IDNA error
+		self.last_error = "hostname failed IDNA";
 		cb(nil);
 		return;
 	end
