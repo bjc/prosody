@@ -175,7 +175,7 @@ local function scram_gen(hash_name, H_f, HMAC_f, get_auth_db, expect_cb)
 			self.state = {
 				gs2_header = gs2_header;
 				gs2_cbind_name = gs2_cbind_name;
-				username = username;
+				username = self.username; -- Reference property instead of local, in case it was modified by the profile
 				nonce = nonce;
 
 				server_key = server_key;
