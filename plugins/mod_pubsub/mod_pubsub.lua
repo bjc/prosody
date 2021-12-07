@@ -231,6 +231,7 @@ function module.load()
 		check_node_config = check_node_config;
 		get_affiliation = get_affiliation;
 
+		jid = module.host;
 		normalize_jid = jid_bare;
 	}));
 end
