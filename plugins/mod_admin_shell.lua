@@ -690,6 +690,13 @@ local available_columns = {
 			return select(2, get_s2s_hosts(session));
 		end;
 	};
+	port = {
+		title = "Port";
+		width = 5;
+		align = "right";
+		key = "conn";
+		mapper = function(conn) return conn:serverport(); end;
+	};
 	dir = {
 		title = "Dir";
 		width = 3;
