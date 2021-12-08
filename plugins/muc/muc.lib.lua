@@ -1218,7 +1218,8 @@ module:hook("muc-occupant-groupchat", function(event)
 		event.origin.send(st.error_reply(event.stanza, "cancel", "not-acceptable", "You are not currently connected to this chat"));
 		return true;
 	elseif role_rank <= valid_roles.visitor then
-		event.origin.send(st.error_reply(event.stanza, "auth", "forbidden"));
+		event.origin.send(st.error_reply(event.stanza, "auth", "forbidden",
+			"You do not currently have permission to speak in this chat"));
 		return true;
 	end
 end, 50);
