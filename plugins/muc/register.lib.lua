@@ -121,7 +121,7 @@ local function handle_register_iq(room, origin, stanza)
 	local user_jid = jid_bare(stanza.attr.from)
 	local affiliation = room:get_affiliation(user_jid);
 	if affiliation == "outcast" then
-		origin.send(st.error_reply(stanza, "auth", "forbidden", room.jid));
+		origin.send(st.error_reply(stanza, "auth", "forbidden"));
 		return true;
 	elseif not (affiliation or allow_unaffiliated) then
 		origin.send(st.error_reply(stanza, "auth", "registration-required"));
