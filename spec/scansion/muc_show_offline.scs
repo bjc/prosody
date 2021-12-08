@@ -185,7 +185,6 @@ Rosaline receives:
 		<error type='cancel' by='room@conference.localhost'>
 			<conflict xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
 		</error>
-		<x xmlns='http://jabber.org/protocol/muc'/>
 	</presence>
 
 # In a heated moment, Juliet unregisters from the room
@@ -296,7 +295,6 @@ Rosaline receives:
 		<error type='cancel' by='room@conference.localhost'>
 			<conflict xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
 		</error>
-		<x xmlns='http://jabber.org/protocol/muc'/>
 	</presence>
 
 # Juliet, however, quietly joins the room with success

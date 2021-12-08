@@ -85,7 +85,7 @@ local function enforce_nick_policy(event)
 	if reserved_by and reserved_by ~= jid_bare(stanza.attr.from) then
 		module:log("debug", "%s attempted to use nick %s reserved by %s", stanza.attr.from, requested_nick, reserved_by);
 		local reply = st.error_reply(stanza, "cancel", "conflict", nil, room.jid):up();
-		origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+		origin.send(reply);
 		return true;
 	end
 
@@ -98,7 +98,7 @@ local function enforce_nick_policy(event)
 			elseif event.dest_occupant.nick ~= jid_bare(event.dest_occupant.nick) .. "/" .. nick then
 				module:log("debug", "Attempt by %s to join as %s, but their reserved nick is %s", stanza.attr.from, requested_nick, nick);
 				local reply = st.error_reply(stanza, "cancel", "not-acceptable", nil, room.jid):up();
-				origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
+				origin.send(reply);
 				return true;
 			end
 		end
