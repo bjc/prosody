@@ -449,7 +449,6 @@ module:hook("muc-occupant-pre-join", function(event)
 	local affiliation = room:get_affiliation(stanza.attr.from);
 	if affiliation == "outcast" then
 		local reply = st.error_reply(stanza, "auth", "forbidden", nil, room.jid):up();
-		reply.tags[1].attr.code = "403";
 		event.origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 		return true;
 	end
@@ -692,7 +691,6 @@ function room_mt:handle_normal_presence(origin, stanza)
 		-- new nick or has different bare real jid
 		log("debug", "%s couldn't join due to nick conflict: %s", real_jid, dest_occupant.nick);
 		local reply = st.error_reply(stanza, "cancel", "conflict", nil, self.jid):up();
-		reply.tags[1].attr.code = "409";
 		origin.send(reply:tag("x", {xmlns = "http://jabber.org/protocol/muc"}));
 		return true;
 	end
