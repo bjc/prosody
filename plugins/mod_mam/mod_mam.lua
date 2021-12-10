@@ -24,6 +24,7 @@ local prefs_to_stanza = module:require"mamprefsxml".tostanza;
 local prefs_from_stanza = module:require"mamprefsxml".fromstanza;
 local jid_bare = require "util.jid".bare;
 local jid_split = require "util.jid".split;
+local jid_resource = require "util.jid".resource;
 local jid_prepped_split = require "util.jid".prepped_split;
 local dataform = require "util.dataforms".new;
 local get_form_type = require "util.dataforms".get_type;
@@ -320,8 +321,17 @@ local function should_store(stanza, c2s) --> boolean, reason: string
 		return false, "headline";
 	end
 	if st_type == "error" and not c2s then
-		-- Store delivery failure notifications so you know if your own messages were not delivered
-		return true, "bounce";
+		-- Errors not sent sent from a local client
+		-- Why would a client send an error anyway?
+		if jid_resource(stanza.attr.to) then
+			-- Store delivery failure notifications so you know if your own messages
+			-- were not delivered.
+			return true, "bounce";
+		else
+			-- Skip errors for messages that come from your account, such as PEP
+			-- notifications.
+			return false, "bounce";
+		end
 	end
 	if st_type == "groupchat" then
 		-- MUC messages always go to the full JID, usually archived by the MUC
