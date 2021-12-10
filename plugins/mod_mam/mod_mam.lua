@@ -311,7 +311,7 @@ local function strip_stanza_id(stanza, user)
 	return stanza;
 end
 
-local function should_store(stanza, c2s) --> boolean, reason: string
+local function should_store(stanza) --> boolean, reason: string
 	local st_type = stanza.attr.type or "normal";
 	-- FIXME pass direction of stanza and use that along with bare/full JID addressing
 	-- for more accurate MUC / type=groupchat check
@@ -320,7 +320,7 @@ local function should_store(stanza, c2s) --> boolean, reason: string
 		-- Headline messages are ephemeral by definition
 		return false, "headline";
 	end
-	if st_type == "error" and not c2s then
+	if st_type == "error" then
 		-- Errors not sent sent from a local client
 		-- Why would a client send an error anyway?
 		if jid_resource(stanza.attr.to) then
@@ -380,6 +380,12 @@ local function should_store(stanza, c2s) --> boolean, reason: string
 	return false, "default";
 end
 
+module:hook("archive-should-store", function (event)
+	local should, why = should_store(event.stanza);
+	event.reason = why;
+	return should;
+end, -1)
+
 -- Handle messages
 local function message_handler(event, c2s)
 	local origin, stanza = event.origin, event.stanza;
@@ -396,9 +402,12 @@ local function message_handler(event, c2s)
 	-- Filter out <stanza-id> that claim to be from us
 	event.stanza = strip_stanza_id(stanza, store_user);
 
-	local should, why = should_store(stanza, c2s);
+	local event_payload = { stanza = stanza; session = origin };
+	local should = module:fire_event("archive-should-store", event_payload);
+	local why = event_payload.reason;
+
 	if not should then
-		log("debug", "Not archiving stanza: %s (%s)", stanza:top_tag(), why);
+		log("debug", "Not archiving stanza: %s (%s)", stanza:top_tag(), event_payload.reason);
 		return;
 	end
 
