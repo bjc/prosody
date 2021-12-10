@@ -20,5 +20,9 @@ describe("util.format", function()
 			assert.equal("␁", format("%s", "\1"));
 		end);
 
+		it("escapes invalid UTF-8", function ()
+			assert.equal("\"Hello w\\195rld\"", format("%s", "Hello w\195rld"));
+		end);
+
 	end);
 end);

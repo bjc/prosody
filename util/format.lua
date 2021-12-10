@@ -5,6 +5,7 @@
 local tostring = tostring;
 local unpack = table.unpack or unpack; -- luacheck: ignore 113/unpack
 local pack = require "util.table".pack; -- TODO table.pack in 5.2+
+local valid_utf8 = require "util.encodings".utf8.valid;
 local type = type;
 local dump = require "util.serialization".new("debug");
 local num_type = math.type or function (n)
@@ -60,10 +61,18 @@ local function format(formatstring, ...)
 				args[i] = dump(arg);
 				spec = "%s";
 			elseif option == "s" then
-				args[i] = tostring(arg):gsub("[%z\1-\8\11-\31\127]", control_symbols):gsub("\n\t?", "\n\t");
+				arg = tostring(arg);
+				if arg:find("[\128-\255]") and not valid_utf8(arg) then
+					args[i] = dump(arg);
+				else
+					args[i] = arg:gsub("[%z\1-\8\11-\31\127]", control_symbols):gsub("\n\t?", "\n\t");
+				end
 			elseif type(arg) ~= "number" then -- arg isn't number as expected?
 				args[i] = tostring(arg);
 				spec = "[%s]";
+				option = "s";
+				spec = "[%s]";
+				t = "string";
 			elseif expects_integer[option] and num_type(arg) ~= "integer" then
 				args[i] = tostring(arg);
 				spec = "[%s]";
