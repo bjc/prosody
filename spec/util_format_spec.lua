@@ -18,6 +18,7 @@ describe("util.format", function()
 
 		it("escapes ascii control stuff", function ()
 			assert.equal("␁", format("%s", "\1"));
+			assert.equal("[␁]", format("%d", "\1"));
 		end);
 
 		it("escapes invalid UTF-8", function ()

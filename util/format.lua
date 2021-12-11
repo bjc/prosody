@@ -49,36 +49,52 @@ local function format(formatstring, ...)
 	-- process each format specifier
 	local i = 0;
 	formatstring = formatstring:gsub("%%[^cdiouxXaAeEfgGqs%%]*[cdiouxXaAeEfgGqs%%]", function(spec)
-		if spec ~= "%%" then
-			i = i + 1;
-			local arg = args[i];
+		if spec == "%%" then return end
+		i = i + 1;
+		local arg = args[i];
 
-			local option = spec:sub(-1);
-			if arg == nil then
-				args[i] = "nil";
-				spec = "(%s)";
-			elseif option == "q" then
-				args[i] = dump(arg);
-				spec = "%s";
-			elseif option == "s" then
+		if arg == nil then
+			args[i] = "nil";
+			return "(%s)";
+		end
+
+		local option = spec:sub(-1);
+		local t = type(arg);
+
+		if option == "s" and t == "string" and not arg:find("[%z\1-\31\128-\255]") then
+			-- No UTF-8 or control characters, assumed to be the common case.
+			return
+		end
+
+		if option ~= "s" and option ~= "q" then
+			-- all other options expect numbers
+			if t ~= "number" then
+				-- arg isn't number as expected?
 				arg = tostring(arg);
-				if arg:find("[\128-\255]") and not valid_utf8(arg) then
-					args[i] = dump(arg);
-				else
-					args[i] = arg:gsub("[%z\1-\8\11-\31\127]", control_symbols):gsub("\n\t?", "\n\t");
-				end
-			elseif type(arg) ~= "number" then -- arg isn't number as expected?
-				args[i] = tostring(arg);
-				spec = "[%s]";
 				option = "s";
 				spec = "[%s]";
 				t = "string";
 			elseif expects_integer[option] and num_type(arg) ~= "integer" then
 				args[i] = tostring(arg);
-				spec = "[%s]";
+				return "[%s]";
+			else
+				return -- acceptable number
 			end
 		end
-		return spec;
+
+		if t == "string" then
+			if not valid_utf8(arg) then
+				option = "q";
+			else
+				args[i] = arg:gsub("[%z\1-\8\11-\31\127]", control_symbols):gsub("\n\t?", "\n\t");
+				return spec;
+			end
+		end
+
+		if option == "q" then
+			args[i] = dump(arg);
+			return "%s";
+		end
 	end);
 
 	-- process extra args
