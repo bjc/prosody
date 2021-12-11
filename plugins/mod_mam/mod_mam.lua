@@ -54,7 +54,7 @@ end
 local use_total = module:get_option_boolean("mam_include_total", true);
 
 function schedule_cleanup()
-	-- replaced by non-noop later if cleanup is enabled
+	-- replaced later if cleanup is enabled
 end
 
 -- Handle prefs.
