@@ -29,6 +29,7 @@ local control_symbols = {
 	["\027"] = "\226\144\155", ["\028"] = "\226\144\156", ["\029"] = "\226\144\157",
 	["\030"] = "\226\144\158", ["\031"] = "\226\144\159", ["\127"] = "\226\144\161",
 };
+local supports_p = pcall(string.format, "%p", "");
 
 local function format(formatstring, ...)
 	local args = pack(...);
@@ -44,11 +45,12 @@ local function format(formatstring, ...)
 	-- The options c, d, E, e, f, g, G, i, o, u, X, and x all expect a number as argument, whereas q and s expect a string.
 	-- This function does not accept string values containing embedded zeros, except as arguments to the q option.
 	-- a and A are only in Lua 5.2+
+	-- Lua 5.4 adds a p format that produces a pointer
 
 
 	-- process each format specifier
 	local i = 0;
-	formatstring = formatstring:gsub("%%[^cdiouxXaAeEfgGqs%%]*[cdiouxXaAeEfgGqs%%]", function(spec)
+	formatstring = formatstring:gsub("%%[^cdiouxXaAeEfgGpqs%%]*[cdiouxXaAeEfgGpqs%%]", function(spec)
 		if spec == "%%" then return end
 		i = i + 1;
 		local arg = args[i];
@@ -66,7 +68,7 @@ local function format(formatstring, ...)
 			return
 		end
 
-		if option ~= "s" and option ~= "q" then
+		if option ~= "s" and option ~= "q" and option ~= "p" then
 			-- all other options expect numbers
 			if t ~= "number" then
 				-- arg isn't number as expected?
@@ -82,7 +84,15 @@ local function format(formatstring, ...)
 			end
 		end
 
-		if t == "string" then
+
+		if option == "p" and not supports_p then
+			arg = tostring(arg);
+			option = "s";
+			spec = "[%s]";
+			t = "string";
+		end
+
+		if t == "string" and option ~= "p" then
 			if not valid_utf8(arg) then
 				option = "q";
 			else
@@ -94,6 +104,11 @@ local function format(formatstring, ...)
 		if option == "q" then
 			args[i] = dump(arg);
 			return "%s";
+		end
+
+		if option == "p" and (t == "boolean" or t == "number") then
+			args[i] = tostring(arg);
+			return "[%s]";
 		end
 	end);
 

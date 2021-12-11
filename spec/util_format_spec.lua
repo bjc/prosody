@@ -25,5 +25,14 @@ describe("util.format", function()
 			assert.equal("\"Hello w\\195rld\"", format("%s", "Hello w\195rld"));
 		end);
 
+		if _VERSION >= "Lua 5.4" then
+			it("handles %p formats", function ()
+				assert.matches("a 0x%x+ b", format("%s %p %s", "a", {}, "b"));
+			end)
+		else
+			it("does something with %p formats", function ()
+				assert.string(format("%p", {}));
+			end)
+		end
 	end);
 end);
