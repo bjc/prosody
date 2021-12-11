@@ -14,6 +14,8 @@ end
 
 -- In Lua 5.3+ these formats throw an error if given a float
 local expects_integer = { c = true, d = true, i = true, o = true, u = true, X = true, x = true, };
+-- In Lua 5.2 these throw an error given a negative number
+local expects_positive = { o = true; u = true; x = true; X = true };
 -- Printable Unicode replacements for control characters
 local control_symbols = {
 	-- 0x00 .. 0x1F --> U+2400 .. U+241F, 0x7F --> U+2421
@@ -80,6 +82,9 @@ local function format(formatstring, ...)
 				spec = "[%s]";
 				t = "string";
 			elseif expects_integer[option] and num_type(arg) ~= "integer" then
+				args[i] = tostring(arg);
+				return "[%s]";
+			elseif expects_positive[option] and arg < 0 then
 				args[i] = tostring(arg);
 				return "[%s]";
 			elseif (option == "a" or option == "A") and not supports_a then
