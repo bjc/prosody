@@ -29,7 +29,8 @@ local control_symbols = {
 	["\027"] = "\226\144\155", ["\028"] = "\226\144\156", ["\029"] = "\226\144\157",
 	["\030"] = "\226\144\158", ["\031"] = "\226\144\159", ["\127"] = "\226\144\161",
 };
-local supports_p = pcall(string.format, "%p", "");
+local supports_p = pcall(string.format, "%p", ""); -- >= Lua 5.4
+local supports_a = pcall(string.format, "%a", 0.0); -- > Lua 5.1
 
 local function format(formatstring, ...)
 	local args = pack(...);
@@ -66,6 +67,8 @@ local function format(formatstring, ...)
 		if option == "s" and t == "string" and not arg:find("[%z\1-\31\128-\255]") then
 			-- No UTF-8 or control characters, assumed to be the common case.
 			return
+		elseif option == "s" and t ~= "string" then
+			args[i] = tostring(arg);
 		end
 
 		if option ~= "s" and option ~= "q" and option ~= "p" then
@@ -79,6 +82,8 @@ local function format(formatstring, ...)
 			elseif expects_integer[option] and num_type(arg) ~= "integer" then
 				args[i] = tostring(arg);
 				return "[%s]";
+			elseif (option == "a" or option == "A") and not supports_a then
+				return "%x";
 			else
 				return -- acceptable number
 			end
