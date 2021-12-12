@@ -498,7 +498,7 @@ module:hook("pre-resource-unbind", function (event)
 						h = session.handled_stanza_count,
 					});
 					session.resumption_token = nil;
-					sessionmanager.destroy_session(session);
+					sessionmanager.destroy_session(session, "Hibernating too long");
 				else
 					session.log("debug", "Session resumed before hibernation timeout, all is well")
 				end
