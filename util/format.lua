@@ -69,6 +69,8 @@ local function format(formatstring, ...)
 		if option == "s" and t == "string" and not arg:find("[%z\1-\31\128-\255]") then
 			-- No UTF-8 or control characters, assumed to be the common case.
 			return
+		elseif t == "number" then
+			if option == "g" or (option == "d" and num_type(arg) == "integer") then return end
 		elseif option == "s" and t ~= "string" then
 			arg = tostring(arg);
 			t = "string";
