@@ -572,6 +572,7 @@ function handle_resume(session, stanza, xmlns_sm)
 		original_session.ip = session.ip;
 		original_session.conn = session.conn;
 		original_session.send = session.send;
+		original_session.send.session = original_session;
 		original_session.close = session.close;
 		original_session.filter = session.filter;
 		original_session.filter.session = original_session;
