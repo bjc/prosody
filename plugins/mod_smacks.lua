@@ -198,14 +198,14 @@ local function outgoing_stanza_filter(stanza, session)
 	-- supposed to be nil.
 	-- However, when using mod_smacks with mod_websocket, then mod_websocket's
 	-- stanzas/out filter can get called before this one and adds the xmlns.
+	if session.resending_unacked then return stanza end
 	local is_stanza = st.is_stanza(stanza) and
 		(not stanza.attr.xmlns or stanza.attr.xmlns == 'jabber:client')
 		and not stanza.name:find":";
 
-	if is_stanza and not stanza._cached then
+	if is_stanza then
 		local queue = session.outgoing_stanza_queue;
 		local cached_stanza = st.clone(stanza);
-		cached_stanza._cached = true;
 
 		if cached_stanza.name ~= "iq" and cached_stanza:get_child("delay", xmlns_delay) == nil then
 			cached_stanza = cached_stanza:tag("delay", {
@@ -605,9 +605,11 @@ function handle_resume(session, stanza, xmlns_sm)
 		-- to the outgoing queue again
 		local queue = original_session.outgoing_stanza_queue;
 		session.log("debug", "resending all unacked stanzas that are still queued after resume, #queue = %d", #queue);
+		session.resending_unacked = true;
 		for i=1,#queue do
 			session.send(queue[i]);
 		end
+		session.resending_unacked = nil;
 		session.log("debug", "all stanzas resent, now disabling send() in this migrated session, #queue = %d", #queue);
 		function session.send(stanza) -- luacheck: ignore 432
 			migrated_session_log("error", "Tried to send stanza on old session migrated by smacks resume (maybe there is a bug?): %s", tostring(stanza));
