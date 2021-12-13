@@ -70,7 +70,8 @@ local function format(formatstring, ...)
 			-- No UTF-8 or control characters, assumed to be the common case.
 			return
 		elseif option == "s" and t ~= "string" then
-			args[i] = tostring(arg);
+			arg = tostring(arg);
+			t = "string";
 		end
 
 		if option ~= "s" and option ~= "q" and option ~= "p" then

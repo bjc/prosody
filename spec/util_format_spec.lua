@@ -780,96 +780,112 @@ describe("util.format", function()
 			describe("to %c", function ()
 				it("works", function ()
 					assert.matches("[table: 0[xX]%x+]", format("%c", { }))
+					assert.equal("[foo \226\144\129\226\144\130\226\144\131 bar]", format("%c", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
 				end);
 			end);
 
 			describe("to %d", function ()
 				it("works", function ()
 					assert.matches("[table: 0[xX]%x+]", format("%d", { }))
+					assert.equal("[foo \226\144\129\226\144\130\226\144\131 bar]", format("%d", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
 				end);
 			end);
 
 			describe("to %i", function ()
 				it("works", function ()
 					assert.matches("[table: 0[xX]%x+]", format("%i", { }))
+					assert.equal("[foo \226\144\129\226\144\130\226\144\131 bar]", format("%i", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
 				end);
 			end);
 
 			describe("to %o", function ()
 				it("works", function ()
 					assert.matches("[table: 0[xX]%x+]", format("%o", { }))
+					assert.equal("[foo \226\144\129\226\144\130\226\144\131 bar]", format("%o", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
 				end);
 			end);
 
 			describe("to %u", function ()
 				it("works", function ()
 					assert.matches("[table: 0[xX]%x+]", format("%u", { }))
+					assert.equal("[foo \226\144\129\226\144\130\226\144\131 bar]", format("%u", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
 				end);
 			end);
 
 			describe("to %x", function ()
 				it("works", function ()
 					assert.matches("[table: 0[xX]%x+]", format("%x", { }))
+					assert.equal("[foo \226\144\129\226\144\130\226\144\131 bar]", format("%x", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
 				end);
 			end);
 
 			describe("to %X", function ()
 				it("works", function ()
 					assert.matches("[table: 0[xX]%x+]", format("%X", { }))
+					assert.equal("[foo \226\144\129\226\144\130\226\144\131 bar]", format("%X", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
 				end);
 			end);
 
 			describe("to %a", function ()
 				it("works", function ()
 					assert.matches("[table: 0[xX]%x+]", format("%a", { }))
+					assert.equal("[foo \226\144\129\226\144\130\226\144\131 bar]", format("%a", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
 				end);
 			end);
 
 			describe("to %A", function ()
 				it("works", function ()
 					assert.matches("[table: 0[xX]%x+]", format("%A", { }))
+					assert.equal("[foo \226\144\129\226\144\130\226\144\131 bar]", format("%A", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
 				end);
 			end);
 
 			describe("to %e", function ()
 				it("works", function ()
 					assert.matches("[table: 0[xX]%x+]", format("%e", { }))
+					assert.equal("[foo \226\144\129\226\144\130\226\144\131 bar]", format("%e", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
 				end);
 			end);
 
 			describe("to %E", function ()
 				it("works", function ()
 					assert.matches("[table: 0[xX]%x+]", format("%E", { }))
+					assert.equal("[foo \226\144\129\226\144\130\226\144\131 bar]", format("%E", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
 				end);
 			end);
 
 			describe("to %f", function ()
 				it("works", function ()
 					assert.matches("[table: 0[xX]%x+]", format("%f", { }))
+					assert.equal("[foo \226\144\129\226\144\130\226\144\131 bar]", format("%f", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
 				end);
 			end);
 
 			describe("to %g", function ()
 				it("works", function ()
 					assert.matches("[table: 0[xX]%x+]", format("%g", { }))
+					assert.equal("[foo \226\144\129\226\144\130\226\144\131 bar]", format("%g", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
 				end);
 			end);
 
 			describe("to %G", function ()
 				it("works", function ()
 					assert.matches("[table: 0[xX]%x+]", format("%G", { }))
+					assert.equal("[foo \226\144\129\226\144\130\226\144\131 bar]", format("%G", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
 				end);
 			end);
 
 			describe("to %q", function ()
 				it("works", function ()
 					assert.matches("{ }", format("%q", { }))
+					assert.equal("{ }", format("%q", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
 				end);
 			end);
 
 			describe("to %s", function ()
 				it("works", function ()
 					assert.matches("table: 0[xX]%x+", format("%s", { }))
+					assert.equal("foo \226\144\129\226\144\130\226\144\131 bar", format("%s", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
 				end);
 			end);
 

@@ -18,13 +18,14 @@ local example_values = {
 	["function"] = { function() end };
 	-- ["userdata"] = {};
 	["thread"] = { coroutine.create(function() end) };
-	["table"] = { {} };
+	["table"] = { {}, setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end}) };
 };
 local example_strings = setmetatable({
 	["nil"] = { "nil" };
 	["function"] = { "function() end" };
 	["number"] = { "97"; "-12345"; "1.5"; "73786976294838206464"; "math.huge"; "2147483647" };
 	["thread"] = { "coroutine.create(function() end)" };
+	["table"] = { "{ }", "setmetatable({},{__tostring=function ()return \"foo \\1\\2\\3 bar\"end})" }
 }, { __index = function() return {} end });
 for _, lua_type in ipairs(types) do
 	print(string.format("\t\tdescribe(\"%s\", function ()", lua_type));
