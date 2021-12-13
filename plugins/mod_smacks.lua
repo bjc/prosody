@@ -571,11 +571,16 @@ function handle_resume(session, stanza, xmlns_sm)
 		local migrated_session_log = session.log;
 		original_session.ip = session.ip;
 		original_session.conn = session.conn;
+		original_session.rawsend = session.rawsend;
+		original_session.rawsend.session = original_session;
+		original_session.rawsend.conn = original_session.conn;
 		original_session.send = session.send;
+		original_session.send.session = original_session;
 		original_session.close = session.close;
 		original_session.filter = session.filter;
 		original_session.filter.session = original_session;
 		original_session.filters = session.filters;
+		original_session.send.filter = original_session.filter;
 		original_session.stream = session.stream;
 		original_session.secure = session.secure;
 		original_session.hibernating = nil;
