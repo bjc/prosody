@@ -606,11 +606,14 @@ function handle_resume(session, stanza, xmlns_sm)
 		-- to the outgoing queue again
 		local queue = original_session.outgoing_stanza_queue;
 		session.log("debug", "resending all unacked stanzas that are still queued after resume, #queue = %d", #queue);
+		-- FIXME Which session is it that the queue filter sees?
 		session.resending_unacked = true;
+		original_session.resending_unacked = true;
 		for i=1,#queue do
 			session.send(queue[i]);
 		end
 		session.resending_unacked = nil;
+		original_session.resending_unacked = nil;
 		session.log("debug", "all stanzas resent, now disabling send() in this migrated session, #queue = %d", #queue);
 		function session.send(stanza) -- luacheck: ignore 432
 			migrated_session_log("error", "Tried to send stanza on old session migrated by smacks resume (maybe there is a bug?): %s", tostring(stanza));
