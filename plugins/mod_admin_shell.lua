@@ -815,7 +815,7 @@ local available_columns = {
 		width = 8;
 		align = "right";
 		mapper = function (queue)
-			return queue and tostring(#queue);
+			return queue and tostring(queue:count_unacked());
 		end
 	};
 	csi = {
