@@ -442,7 +442,7 @@ module:hook("delivery/failure", function(event)
 					prosody.hosts[module.host].sessions[session.username].sessions or nil;
 			if sessions and next(sessions) == session.resource and next(sessions, session.resource) == nil then
 				local ok = module:fire_event("message/offline/handle", { origin = session, username = session.username, stanza = stanza });
-				session.log("debug", "mod_smacks delivery/failuere returning %s for offline-handled stanza", tostring(ok));
+				session.log("debug", "mod_smacks delivery/failure returning %s for offline-handled stanza", tostring(ok));
 				return ok; -- if stanza was handled, don't send an error
 			end
 		end
