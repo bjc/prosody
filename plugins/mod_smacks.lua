@@ -381,7 +381,7 @@ function handle_a(origin, stanza)
 	end
 
 	for _=1,math_min(handled_stanza_count,#queue) do
-		local handled_stanza = t_remove(origin.outgoing_stanza_queue, 1);
+		t_remove(origin.outgoing_stanza_queue, 1);
 	end
 
 	origin.log("debug", "#queue = %d", #queue);
