@@ -382,7 +382,6 @@ function handle_a(origin, stanza)
 
 	for _=1,math_min(handled_stanza_count,#queue) do
 		local handled_stanza = t_remove(origin.outgoing_stanza_queue, 1);
-		module:fire_event("delivery/success", { session = origin, stanza = handled_stanza });
 	end
 
 	origin.log("debug", "#queue = %d", #queue);
