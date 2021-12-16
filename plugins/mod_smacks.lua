@@ -421,12 +421,12 @@ end);
 module:hook("pre-resource-unbind", function (event)
 	local session = event.session;
 	if not session.smacks then return end
-		if not session.resumption_token then
-			local queue = session.outgoing_stanza_queue;
+	if not session.resumption_token then
+		local queue = session.outgoing_stanza_queue;
 		if queue:count_unacked() > 0 then
 			session.log("debug", "Destroying session with %d unacked stanzas", queue:count_unacked());
-				handle_unacked_stanzas(session);
-			end
+			handle_unacked_stanzas(session);
+		end
 		return
 	end
 
