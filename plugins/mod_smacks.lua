@@ -225,6 +225,12 @@ module:hook("pre-session-close", function(event)
 		old_session_registry:set(session.username, session.resumption_token, nil);
 		session.resumption_token = nil;
 	end
+	if session.hibernating_watchdog then
+		-- If the session is being replaced instead of resume, we don't want the
+		-- old session around to time out and cause trouble for the new session
+		session.hibernating_watchdog:cancel();
+		session.hibernating_watchdog = nil;
+	end
 	-- send out last ack as per revision 1.5.2 of XEP-0198
 	if session.smacks and session.conn and session.handled_stanza_count then
 		(session.sends2s or session.send)(st.stanza("a", {
