@@ -52,4 +52,30 @@ describe("util.smqueue", function()
 			assert.same({ [7] = true; [8] = true; [9] = true; [10] = true; [11] = true; [12] = true }, resume);
 		end)
 	end)
+
+	describe("#table", function ()
+		it("produces a compat layer", function ()
+			local q = smqueue.new(10);
+			for i = 1,10 do q:push(i); end
+			do
+				local t = q:table();
+				assert.same({ 1; 2; 3; 4; 5; 6; 7; 8; 9; 10 }, t);
+			end
+			do
+				for i = 11,20 do q:push(i); end
+				local t = q:table();
+				assert.same({ 11; 12; 13; 14; 15; 16; 17; 18; 19; 20 }, t);
+			end
+			do
+				q:ack(15);
+				local t = q:table();
+				assert.same({ 16; 17; 18; 19; 20 }, t);
+			end
+			do
+				q:ack(20);
+				local t = q:table();
+				assert.same({}, t);
+			end
+		end)
+	end)
 end);

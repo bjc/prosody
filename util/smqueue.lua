@@ -38,16 +38,11 @@ function smqueue:resume() return self._queue:items() end
 
 function smqueue:consume() return self._queue:consume() end
 
-local compat_mt = {}
-
-function compat_mt:__index(i)
-	if i < self._queue._tail then return nil end
-	return self._queue._queue._items[(i + self._queue._tail) % self._queue._queue.size]
+function smqueue:table()
+	local t = {};
+	for i, v in self:resume() do t[i] = v; end
+	return t
 end
-
-function compat_mt:__len() return self._queue:count_unacked() end
-
-function smqueue:table() return setmetatable({ _queue = self }, compat_mt) end
 
 local function freeze(q) return { head = q._head; tail = q._tail } end
 

@@ -70,22 +70,13 @@ function smqueue:consume() : queue.queue.consume_iter
 	return self._queue:consume()
 end
 
--- Compatibility wrapper, meant to look like a plain ol' array
-local record compat_mt
-	_queue : smqueue<any>
-end
-
-function compat_mt:__index(i : integer) : any
-	if i < self._queue._tail then return nil end
-	return self._queue._queue._items[(i + self._queue._tail) % self._queue._queue.size];
-end
-
-function compat_mt:__len() : integer
-	return self._queue:count_unacked()
-end
-
+-- Compatibility layer, plain ol' table
 function smqueue:table() : { any }
-	return setmetatable({ _queue = self }, compat_mt);
+	local t : { any } = {};
+	for i, v in self:resume() do
+		t[i] = v;
+	end
+	return t;
 end
 
 local function freeze(q : smqueue<any>) : { string:integer }
