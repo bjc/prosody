@@ -436,6 +436,10 @@ module:hook("pre-resource-unbind", function (event)
 		if session.destroyed then
 			session.log("debug", "The session has already been destroyed");
 			return
+		elseif not session.resumption_token then
+			-- This should normally not happen, the watchdog should be canceled from session:close()
+			session.log("debug", "The session has already been resumed or replaced");
+			return
 		end
 
 		session.log("debug", "Destroying session for hibernating too long");
