@@ -442,6 +442,7 @@ module:hook("pre-resource-unbind", function (event)
 		session_registry[jid.join(session.username, session.host, session.resumption_token)] = nil;
 		old_session_registry:set(session.username, session.resumption_token, { h = session.handled_stanza_count });
 		session.resumption_token = nil;
+		session.resending_unacked = true; -- stop outgoing_stanza_filter from re-queueing anything anymore
 		sessionmanager.destroy_session(session, "Hibernating too long");
 	end);
 	if session.conn then
