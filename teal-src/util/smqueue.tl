@@ -14,7 +14,8 @@ local record lib
 		end
 		push : function (smqueue, T)
 		ack : function (smqueue, integer) : { T }, ack_errors
-		resumable : function (smqueue) : boolean
+		resumable : function (smqueue<T>) : boolean
+		resume : function (smqueue<T>)  : queue.queue.iterator, any, integer
 		type consume_iter = function (smqueue<T>) : T
 		consume : function (smqueue<T>) : consume_iter
 
