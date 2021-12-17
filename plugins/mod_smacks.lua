@@ -634,7 +634,8 @@ end
 module:hook("s2s-read-timeout", handle_read_timeout);
 module:hook("c2s-read-timeout", handle_read_timeout);
 
-module:hook_global("server-stopping", function()
+module:hook_global("server-stopping", function(event)
+	local reason = event.reason;
 	-- Close smacks-enaled sessions ourselves instead of letting mod_c2s close
 	-- it, which invalidates the smacks session. This allows preserving the
 	-- counter value, so it can be communicated to the client when it tries to
@@ -644,12 +645,21 @@ module:hook_global("server-stopping", function()
 			if session.resumption_token then
 				if old_session_registry:set(session.username, session.resumption_token, { h = session.handled_stanza_count }) then
 					session.resumption_token = nil;
+
+					-- Deal with unacked stanzas
+					if session.outgoing_stanza_queue then
+						handle_unacked_stanzas(session);
+					end
+
 					if session.conn then
 						session.conn:close()
 						session.conn = nil;
 						-- Now when mod_c2s gets here, it will immediately destroy the
 						-- session since it is unconnected.
 					end
+
+					-- And make sure nobody tries to send anything
+					session:close{ condition = "system-shutdown", text = reason };
 				end
 			end
 		end
