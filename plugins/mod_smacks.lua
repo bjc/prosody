@@ -633,3 +633,25 @@ end
 
 module:hook("s2s-read-timeout", handle_read_timeout);
 module:hook("c2s-read-timeout", handle_read_timeout);
+
+module:hook_global("server-stopping", function()
+	-- Close smacks-enaled sessions ourselves instead of letting mod_c2s close
+	-- it, which invalidates the smacks session. This allows preserving the
+	-- counter value, so it can be communicated to the client when it tries to
+	-- resume the lost session after a restart.
+	for _, user in pairs(local_sessions) do
+		for _, session in pairs(user.sessions) do
+			if session.resumption_token then
+				if old_session_registry:set(session.username, session.resumption_token, { h = session.handled_stanza_count }) then
+					session.resumption_token = nil;
+					if session.conn then
+						session.conn:close()
+						session.conn = nil;
+						-- Now when mod_c2s gets here, it will immediately destroy the
+						-- session since it is unconnected.
+					end
+				end
+			end
+		end
+	end
+end, -90);
