@@ -45,6 +45,7 @@ local max_inactive_unacked_stanzas = module:get_option_number("smacks_max_inacti
 local delayed_ack_timeout = module:get_option_number("smacks_max_ack_delay", 30);
 
 local c2s_sessions = module:shared("/*/c2s/sessions");
+local local_sessions = prosody.hosts[module.host].sessions;
 
 local function format_h(h) if h then return string.format("%d", h) end end
 
@@ -413,8 +414,7 @@ module:hook("delivery/failure", function(event)
 				return true; -- stanza handled, don't send an error
 			end
 			-- store message in offline store, if this client does not use mam *and* was the last client online
-			local sessions = prosody.hosts[module.host].sessions[session.username] and
-					prosody.hosts[module.host].sessions[session.username].sessions or nil;
+			local sessions = local_sessions[session.username] and local_sessions[session.username].sessions or nil;
 			if sessions and next(sessions) == session.resource and next(sessions, session.resource) == nil then
 				local ok = module:fire_event("message/offline/handle", { origin = session, username = session.username, stanza = stanza });
 				session.log("debug", "mod_smacks delivery/failure returning %s for offline-handled stanza", tostring(ok));
