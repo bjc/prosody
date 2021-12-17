@@ -497,14 +497,15 @@ function handle_resume(session, stanza, xmlns_sm)
 	local id = stanza.attr.previd;
 	local original_session = session_registry[jid.join(session.username, session.host, id)];
 	if not original_session then
-		session.log("debug", "Tried to resume non-existent session with id %s", id);
 		local old_session = old_session_registry:get(session.username, id);
 		if old_session then
+			session.log("debug", "Tried to resume old expired session with id %s", id);
 			session.send(st.stanza("failed", { xmlns = xmlns_sm, h = format_h(old_session.h) })
 				:tag("item-not-found", { xmlns = xmlns_errors })
 			);
 			old_session_registry:set(session.username, id, nil);
 		else
+			session.log("debug", "Tried to resume non-existent session with id %s", id);
 			session.send(st.stanza("failed", { xmlns = xmlns_sm })
 				:tag("item-not-found", { xmlns = xmlns_errors })
 			);
