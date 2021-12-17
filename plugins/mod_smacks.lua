@@ -590,6 +590,7 @@ function handle_resume(session, stanza, xmlns_sm)
 			return false;
 		end
 		module:fire_event("smacks-hibernation-end", {origin = session, resumed = original_session, queue = queue:table()});
+		original_session.awaiting_ack = nil; -- Don't wait for acks from before the resumption
 		request_ack_if_needed(original_session, true, "handle_resume", nil);
 	end
 	return true;
