@@ -144,28 +144,6 @@ local function request_ack_now_if_needed(session, force, reason)
 	end
 end
 
-local function request_ack_if_needed(session, force, reason, stanza)
-	if should_ack(session, force) then
-		timer.add_task(0, function ()
-			request_ack_now_if_needed(session, force, reason, stanza);
-		end);
-	end
-
-	-- Trigger "smacks-ack-delayed"-event if we added new (ackable) stanzas to the outgoing queue
-	-- and there isn't already a timer for this event running.
-	-- If we wouldn't do this, stanzas added to the queue after the first "smacks-ack-delayed"-event
-	-- would not trigger this event (again).
-	local queue = session.outgoing_stanza_queue;
-	local max_unacked = max_unacked_stanzas;
-	if session.state == "inactive" then
-		max_unacked = max_inactive_unacked_stanzas;
-	end
-	if queue:count_unacked() > max_unacked and session.awaiting_ack and session.delayed_ack_timer == nil then
-		session.log("debug", "Calling ack_delayed directly (still waiting for ack)");
-		ack_delayed(session, stanza); -- this is the only new stanza in the queue --> provide it to other modules
-	end
-end
-
 local function outgoing_stanza_filter(stanza, session)
 	-- XXX: Normally you wouldn't have to check the xmlns for a stanza as it's
 	-- supposed to be nil.
@@ -591,7 +569,7 @@ function handle_resume(session, stanza, xmlns_sm)
 		end
 		module:fire_event("smacks-hibernation-end", {origin = session, resumed = original_session, queue = queue:table()});
 		original_session.awaiting_ack = nil; -- Don't wait for acks from before the resumption
-		request_ack_if_needed(original_session, true, "handle_resume", nil);
+		request_ack_now_if_needed(original_session, true, "handle_resume", nil);
 	end
 	return true;
 end
