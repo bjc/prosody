@@ -440,7 +440,10 @@ module:hook("pre-resource-unbind", function (event)
 		sessionmanager.destroy_session(session, "Hibernating too long");
 	end);
 	if session.conn then
-		session.conn:close();
+		local conn = session.conn;
+		c2s_sessions[conn] = nil;
+		session.conn = nil;
+		conn:close();
 	end
 	module:fire_event("smacks-hibernation-start", { origin = session; queue = session.outgoing_stanza_queue:table() });
 	return true; -- Postpone destruction for now
