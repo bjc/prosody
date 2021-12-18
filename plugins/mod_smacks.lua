@@ -504,7 +504,7 @@ function handle_resume(session, stanza, xmlns_sm)
 			original_session.log("debug", "Letting the watchdog go");
 			original_session.hibernating_watchdog:cancel();
 			original_session.hibernating_watchdog = nil;
-		else
+		elseif session.hibernating then
 			original_session.log("error", "Hibernating session has no watchdog!")
 		end
 		session.log("debug", "mod_smacks resuming existing session %s...", get_session_id(original_session));
