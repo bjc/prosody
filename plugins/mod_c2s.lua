@@ -186,13 +186,13 @@ end
 --- Session methods
 local function session_close(session, reason)
 	local log = session.log or log;
+	local close_event_payload = { session = session, reason = reason };
+	module:context(session.host):fire_event("pre-session-close", close_event_payload);
+	reason = close_event_payload.reason;
 	if session.conn then
 		if session.notopen then
 			session:open_stream();
 		end
-		local close_event_payload = { session = session, reason = reason };
-		module:context(session.host):fire_event("pre-session-close", close_event_payload);
-		reason = close_event_payload.reason;
 		if reason then -- nil == no err, initiated by us, false == initiated by client
 			local stream_error = st.stanza("stream:error");
 			if type(reason) == "string" then -- assume stream error
