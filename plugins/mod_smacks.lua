@@ -200,15 +200,21 @@ end
 module:hook("pre-session-close", function(event)
 	local session = event.session;
 	if session.resumption_token then
+		session.log("debug", "Revoking resumption token");
 		session_registry[jid.join(session.username, session.host, session.resumption_token)] = nil;
 		old_session_registry:set(session.username, session.resumption_token, nil);
 		session.resumption_token = nil;
+	else
+		session.log("debug", "Session not resumable");
 	end
 	if session.hibernating_watchdog then
+		session.log("debug", "Removing sleeping watchdog");
 		-- If the session is being replaced instead of resume, we don't want the
 		-- old session around to time out and cause trouble for the new session
 		session.hibernating_watchdog:cancel();
 		session.hibernating_watchdog = nil;
+	else
+		session.log("debug", "No watchdog set");
 	end
 	-- send out last ack as per revision 1.5.2 of XEP-0198
 	if session.smacks and session.conn and session.handled_stanza_count then
@@ -490,8 +496,11 @@ function handle_resume(session, stanza, xmlns_sm)
 		end;
 	else
 		if original_session.hibernating_watchdog then
+			original_session.log("debug", "Letting the watchdog go");
 			original_session.hibernating_watchdog:cancel();
 			original_session.hibernating_watchdog = nil;
+		else
+			original_session.log("error", "Hibernating session has no watchdog!")
 		end
 		session.log("debug", "mod_smacks resuming existing session %s...", get_session_id(original_session));
 		original_session.log("debug", "mod_smacks session resumed from %s...", get_session_id(session));
