@@ -150,6 +150,7 @@ local function outgoing_stanza_filter(stanza, session)
 	-- However, when using mod_smacks with mod_websocket, then mod_websocket's
 	-- stanzas/out filter can get called before this one and adds the xmlns.
 	if session.resending_unacked then return stanza end
+	if not session.smacks then return stanza end
 	local is_stanza = st.is_stanza(stanza) and
 		(not stanza.attr.xmlns or stanza.attr.xmlns == 'jabber:client')
 		and not stanza.name:find":";
