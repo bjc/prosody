@@ -419,6 +419,7 @@ module:hook("pre-resource-unbind", function (event)
 		end
 		return
 	end
+	if session.hibernating then return end
 
 	session.hibernating = os_time();
 	session.hibernating_watchdog = watchdog.new(resume_timeout, function()
