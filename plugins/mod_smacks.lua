@@ -59,7 +59,7 @@ local ack_errors = require"util.error".init("mod_smacks", xmlns_sm3, {
 	overflow = { condition = "resource-constraint", text = "Too many unacked stanzas remaining, session can't be resumed" }
 });
 
--- COMPAT note the use of compatibilty wrapper in events (queue:table())
+-- COMPAT note the use of compatibility wrapper in events (queue:table())
 
 local function ack_delayed(session, stanza)
 	-- fire event only if configured to do so and our session is not already hibernated or destroyed
