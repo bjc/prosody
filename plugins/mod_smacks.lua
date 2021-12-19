@@ -630,6 +630,10 @@ module:hook("s2s-read-timeout", handle_read_timeout);
 module:hook("c2s-read-timeout", handle_read_timeout);
 
 module:hook_global("server-stopping", function(event)
+	if not local_sessions then
+		-- not a VirtualHost, no user sessions
+		return
+	end
 	local reason = event.reason;
 	-- Close smacks-enaled sessions ourselves instead of letting mod_c2s close
 	-- it, which invalidates the smacks session. This allows preserving the
