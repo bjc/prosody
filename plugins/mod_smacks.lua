@@ -274,6 +274,7 @@ module:hook_tag("http://etherx.jabber.org/streams", "features",
 		function (session, stanza)
 			-- Needs to be done after flushing sendq since those aren't stored as
 			-- stanzas and counting them is weird.
+			-- TODO unify sendq and smqueue
 			timer.add_task(1e-6, function ()
 				if can_do_smacks(session) then
 					if stanza:get_child("sm", xmlns_sm3) then
