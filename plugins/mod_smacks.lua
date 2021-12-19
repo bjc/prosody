@@ -255,14 +255,16 @@ function handle_enable(session, stanza, xmlns_sm)
 
 	wrap_session(session, false);
 
+	local resume_max;
 	local resume_token;
 	local resume = stanza.attr.resume;
 	if resume == "true" or resume == "1" then
 		resume_token = uuid_generate();
 		session_registry[jid.join(session.username, session.host, resume_token)] = session;
 		session.resumption_token = resume_token;
+		resume_max = tostring(resume_timeout);
 	end
-	(session.sends2s or session.send)(st.stanza("enabled", { xmlns = xmlns_sm, id = resume_token, resume = resume, max = tostring(resume_timeout) }));
+	(session.sends2s or session.send)(st.stanza("enabled", { xmlns = xmlns_sm, id = resume_token, resume = resume, max = resume_max }));
 	return true;
 end
 module:hook_tag(xmlns_sm2, "enable", function (session, stanza) return handle_enable(session, stanza, xmlns_sm2); end, 100);
