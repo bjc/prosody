@@ -200,6 +200,7 @@ end
 
 module:hook("pre-session-close", function(event)
 	local session = event.session;
+	if session.smacks == nil then return end
 	if session.resumption_token then
 		session.log("debug", "Revoking resumption token");
 		session_registry[jid.join(session.username, session.host, session.resumption_token)] = nil;
