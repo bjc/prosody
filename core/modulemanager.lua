@@ -42,6 +42,7 @@ local component_inheritable_modules = {
 	"iq",
 	"s2s",
 	"s2s_bidi",
+	"smacks",
 	"server_contact_info",
 };
 
