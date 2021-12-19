@@ -116,7 +116,7 @@ local function should_ack(session, force)
 	if session.state == "inactive" then
 		max_unacked = max_inactive_unacked_stanzas;
 	end
-	-- this check of last_requested_h prevents ack-loops if missbehaving clients report wrong
+	-- this check of last_requested_h prevents ack-loops if misbehaving clients report wrong
 	-- stanza counts. it is set when an <r> is really sent (e.g. inside timer), preventing any
 	-- further requests until a higher h-value would be expected.
 	return queue:count_unacked() > max_unacked and expected_h ~= session.last_requested_h;
@@ -635,7 +635,7 @@ module:hook_global("server-stopping", function(event)
 		return
 	end
 	local reason = event.reason;
-	-- Close smacks-enaled sessions ourselves instead of letting mod_c2s close
+	-- Close smacks-enabled sessions ourselves instead of letting mod_c2s close
 	-- it, which invalidates the smacks session. This allows preserving the
 	-- counter value, so it can be communicated to the client when it tries to
 	-- resume the lost session after a restart.
