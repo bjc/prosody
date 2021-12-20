@@ -3,7 +3,6 @@ local ipairs, pairs = ipairs, pairs;
 local setmetatable = setmetatable;
 local tostring = tostring;
 local next, unpack = next, table.unpack or unpack; --luacheck: ignore 113/unpack
-local t_remove = table.remove;
 local os_remove = os.remove;
 local io_open = io.open;
 local jid_bare = require "util.jid".bare;
@@ -65,18 +64,6 @@ local function createOuterXml(user, host)
 	return st.stanza("server-data", {xmlns='urn:xmpp:pie:0'})
 		:tag("host", {jid=host})
 			:tag("user", {name = user});
-end
-local function removeFromArray(arr, value)
-	for i,item in ipairs(arr) do
-		if item == value then
-			t_remove(arr, i);
-			return;
-		end
-	end
-end
-local function removeStanzaChild(s, child)
-	removeFromArray(s.tags, child);
-	removeFromArray(s, child);
 end
 
 local function hex_to_base64(s)
@@ -171,16 +158,13 @@ handlers.vcard = {
 		local xml = getXml(user, self.host);
 		local usere = xml and getUserElement(xml);
 		if usere then
-			local vcard = usere:get_child("vCard", 'vcard-temp');
-			if vcard then
-				removeStanzaChild(usere, vcard);
-			elseif not data then
+			usere:remove_children("vCard", "vcard-temp");
+			if not data then
+				-- No data to set, old one deleted, success
 				return true;
 			end
-			if data then
-				vcard = st.deserialize(data);
-				usere:add_child(vcard);
-			end
+			local vcard = st.deserialize(data);
+			usere:add_child(vcard);
 			return setXml(user, self.host, xml);
 		end
 		return true;
@@ -204,10 +188,9 @@ handlers.private = {
 		local xml = getXml(user, self.host);
 		local usere = xml and getUserElement(xml);
 		if usere then
-			local private = usere:get_child("query", 'jabber:iq:private');
-			if private then removeStanzaChild(usere, private); end
+			usere:remove_children("query", "jabber:iq:private");
 			if data and next(data) ~= nil then
-				private = st.stanza("query", {xmlns='jabber:iq:private'});
+				local private = st.stanza("query", {xmlns='jabber:iq:private'});
 				for _,tag in pairs(data) do
 					private:add_child(st.deserialize(tag));
 				end
@@ -254,8 +237,7 @@ handlers.roster = {
 		local xml = getXml(user, self.host);
 		local usere = xml and getUserElement(xml);
 		if usere then
-			local roster = usere:get_child("query", 'jabber:iq:roster');
-			if roster then removeStanzaChild(usere, roster); end
+			usere:remove_children("query", "jabber:iq:roster");
 			usere:maptags(function (tag)
 				if tag.attr.xmlns == "jabber:client" and tag.name == "presence" and tag.attr.type == "subscribe" then
 					return nil;
@@ -263,7 +245,7 @@ handlers.roster = {
 				return tag;
 			end);
 			if data and next(data) ~= nil then
-				roster = st.stanza("query", {xmlns='jabber:iq:roster'});
+				local roster = st.stanza("query", {xmlns='jabber:iq:roster'});
 				usere:add_child(roster);
 				for jid, item in pairs(data) do
 					if jid then
