@@ -6,9 +6,11 @@ local set_new = require "util.set".new;
 local st = require "util.stanza";
 local calculate_hash = require "util.caps".calculate_hash;
 local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed;
+local cache = require "util.cache";
 local set = require "util.set";
 local new_id = require "util.id".medium;
 local storagemanager = require "core.storagemanager";
+local usermanager = require "core.usermanager";
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_event = "http://jabber.org/protocol/pubsub#event";
@@ -18,14 +20,29 @@ local lib_pubsub = module:require "pubsub";
 
 local empty_set = set_new();
 
+-- username -> object passed to module:add_items()
+local pep_service_items = {};
+
+-- size of caches with full pubsub service objects
+local service_cache_size = module:get_option_number("pep_service_cache_size", 1000);
+
 -- username -> util.pubsub service object
-local services = {};
+local services = cache.new(service_cache_size, function (username, _)
+	local item = pep_service_items[username];
+	pep_service_items[username] = nil;
+	if item then
+		module:remove_item("pep-service", item);
+	end
+end):table();
+
+-- size of caches with smaller objects
+local info_cache_size = module:get_option_number("pep_info_cache_size", 10000);
 
 -- username -> recipient -> set of nodes
-local recipients = {};
+local recipients = cache.new(info_cache_size):table();
 
 -- caps hash -> set of nodes
-local hash_map = {};
+local hash_map = cache.new(info_cache_size):table();
 
 local host = module.host;
 
@@ -50,18 +67,12 @@ end
 
 function module.save()
 	return {
-		services = services;
 		recipients = recipients;
 	};
 end
 
 function module.restore(data)
-	services = data.services;
 	recipients = data.recipients;
-	for username, service in pairs(services) do
-		local user_bare = jid_join(username, host);
-		module:add_item("pep-service", { service = service, jid = user_bare });
-	end
 end
 
 function is_item_stanza(item)
@@ -181,11 +192,25 @@ local function get_subscriber_filter(username)
 	end
 end
 
+local nobody_service = pubsub.new({
+	service = pubsub.new({
+		node_defaults = {
+			["max_items"] = 1;
+			["persist_items"] = false;
+			["access_model"] = "presence";
+			["send_last_published_item"] = "on_sub_and_presence";
+		};
+	});
+});
+
 function get_pep_service(username)
 	local user_bare = jid_join(username, host);
 	local service = services[username];
 	if service then
 		return service;
+	end
+	if not usermanager.user_exists(username, host) then
+		return nobody_service;
 	end
 	module:log("debug", "Creating pubsub service for user %q", username);
 	service = pubsub.new({
@@ -226,7 +251,9 @@ function get_pep_service(username)
 		check_node_config = check_node_config;
 	});
 	services[username] = service;
-	module:add_item("pep-service", { service = service, jid = user_bare });
+	local item = { service = service, jid = user_bare }
+	pep_service_items[username] = item;
+	module:add_item("pep-service", item);
 	return service;
 end
 
@@ -459,3 +486,18 @@ module:hook("account-disco-items", function(event)
 		reply:tag("item", { jid = user_bare, node = node, name = node_obj.config.title }):up();
 	end
 end);
+
+module:hook_global("user-deleted", function(event)
+	if event.host ~= host then return end
+	local username = event.username;
+	local service = services[username];
+	if not service then return end
+	for node in pairs(service.nodes) do service:delete(node, true); end
+
+	local item = pep_service_items[username];
+	pep_service_items[username] = nil;
+	if item then module:remove_item("pep-service", item); end
+
+	recipients[username] = nil;
+end);
+
