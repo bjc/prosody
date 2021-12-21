@@ -318,6 +318,7 @@ local function new_client()
 	function listeners.ondisconnect(conn, err) --luacheck: ignore 212/conn
 		client.log("info", "Admin client disconnected: %s", err or "connection closed");
 		client.conn = nil;
+		client.events.fire_event("disconnected");
 	end
 
 	function listeners.onreadtimeout(conn)
