@@ -13,14 +13,19 @@ TRUNK
 -   mod_http_openmetrics for exposing metrics to stats collectors
 -   mod_smacks: Stream management and resumption (XEP-0198)
 -   mod_auth_ldap: LDAP authentication
+-   mod_cron: One module to rule all the periodic tasks
+-   mod_admin_shell: New home of the Console admin interface
+-   mod_admin_socket: Enable secure connections to the Console
 
 ### Security and authentication
 
--   SNI support
+-   SNI support (including automatic certificate selection)
 -   ALPN support in mod_net_multiplex
 -   DANE support in low-level network layer
 -   Direct TLS support (c2s and incoming s2s)
 -   SCRAM-SHA-256
+-   Direct TLS (including https) certificates updated on reload
+-   Pluggable authorization providers (mod_authz_)
 
 ### HTTP
 
@@ -32,9 +37,13 @@ TRUNK
 
 -   Module statuses (API change)
 -   util.error for encapsulating errors
+-   Promise based API for sending queries
+-   API for adding periodic tasks
+-   More APIs supporting ES6 Promises
 
 ### Other
 
+-   Plugin installer
 -   MUC presence broadcast controls
 -   MUC: support for XEP-0421 occupant identifiers
 -   `prosodyctl check connectivity` via observe.jabber.network
@@ -42,7 +51,8 @@ TRUNK
 
 ## Changes
 
--   CSI improvements (what?)
+-   Improved rules for mobile optimizations
+-   Improved rules for what messages should be archived
 -   mod_limits: Exempted JIDs
 -   mod_server_contact_info now loaded on components if enabled
 -   Statistics now based on OpenMetrics
@@ -50,6 +60,8 @@ TRUNK
 -   Offline messages aren't sent to MAM clients
 -   Archive quotas (means?)
 -   Rewritten migrator with archive support
+-   Improved automatic certificate locating and selecting
+-   Logging to syslog no longer missing startup messages
 
 ## Removed
 
