@@ -216,22 +216,24 @@ function cert_commands.import(arg)
 		group = configmanager.get("*", "prosody_group") or owner;
 	end
 	local cm = require "core.certmanager";
+	local files_by_name = {}
+	for _, dir in ipairs(arg) do
+		cm.index_certs(dir, files_by_name);
+	end
 	local imported = {};
 	for _, host in ipairs(hostnames) do
-		for _, dir in ipairs(arg) do
-			local paths = cm.find_cert(dir, host);
-			if paths then
-				copy(paths.certificate, cert_basedir .. "/" .. host .. ".crt", nil, owner, group);
-				copy(paths.key, cert_basedir .. "/" .. host .. ".key", "0377", owner, group);
-				table.insert(imported, host);
-			else
-				-- TODO Say where we looked
-				pctl.show_warning("No certificate for host "..host.." found :(");
-			end
-			-- TODO Additional checks
-			-- Certificate names matches the hostname
-			-- Private key matches public key in certificate
+		local paths = cm.find_cert_in_index(files_by_name, host);
+		if paths then
+			copy(paths.certificate, cert_basedir .. "/" .. host .. ".crt", nil, owner, group);
+			copy(paths.key, cert_basedir .. "/" .. host .. ".key", "0377", owner, group);
+			table.insert(imported, host);
+		else
+			-- TODO Say where we looked
+			pctl.show_warning("No certificate for host "..host.." found :(");
 		end
+		-- TODO Additional checks
+		-- Certificate names matches the hostname
+		-- Private key matches public key in certificate
 	end
 	if imported[1] then
 		pctl.show_message("Imported certificate and key for hosts %s", table.concat(imported, ", "));

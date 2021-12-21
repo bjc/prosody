@@ -167,12 +167,10 @@ end
 
 local cert_index;
 
-local function find_host_cert(host)
+local function find_cert_in_index(index, host)
 	if not host then return nil; end
-	if not cert_index then
-		cert_index = index_certs(resolve_path(config_path, global_certificates));
-	end
-	local certs = cert_index[host];
+	if not index then return nil; end
+	local certs = index[host];
 	if certs then
 		local cert_filename, services = next(certs);
 		if services["*"] then
@@ -183,8 +181,16 @@ local function find_host_cert(host)
 			}
 		end
 	end
+	return nil
+end
 
-	return find_cert(configmanager.get(host, "certificate"), host) or find_host_cert(host:match("%.(.+)$"));
+local function find_host_cert(host)
+	if not host then return nil; end
+	if not cert_index then
+		cert_index = index_certs(resolve_path(config_path, global_certificates));
+	end
+
+	return find_cert_in_index(cert_index, host) or find_cert(configmanager.get(host, "certificate"), host) or find_host_cert(host:match("%.(.+)$"));
 end
 
 local function find_service_cert(service, port)
@@ -439,5 +445,7 @@ return {
 	create_context = create_context;
 	reload_ssl_config = reload_ssl_config;
 	find_cert = find_cert;
+	index_certs = index_certs;
 	find_host_cert = find_host_cert;
+	find_cert_in_index = find_cert_in_index;
 };
