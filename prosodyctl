@@ -653,14 +653,14 @@ local command_runner = async.runner(function ()
 		print("Where COMMAND may be one of:");
 
 		local hidden_commands = require "util.set".new{ "register", "unregister" };
-		local commands_order = { -- FIXME Double check order before 0.12
-			"Plugin management:",
-				"install"; "remove"; "list";
-			"User management:",
-				"adduser"; "passwd"; "deluser";
+		local commands_order = {
 			"Process management:",
 				"start"; "stop"; "restart"; "reload"; "status";
 				"shell",
+			"User management:",
+				"adduser"; "passwd"; "deluser";
+			"Plugin management:",
+				"install"; "remove"; "list";
 			"Informative:",
 				"about",
 				"check",
