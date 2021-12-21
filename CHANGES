@@ -1,39 +1,62 @@
 TRUNK
 =====
 
--   Module statuses
--   SNI support (not completely finished)
--   CORS handling now provided by mod\_http
--   CSI improvements
--   mod\_limits: Exempted JIDs
--   Archive quotas
+## New
+
+### Modules
+
 -   mod_mimicking: Prevent address spoofing
--   Rewritten migrator
--   SCRAM-SHA-256
--   Bi-directional server-to-server (XEP-0288)
--   Built-in HTTP server now handles HEAD requests
--   MUC presence broadcast controls
--   ALPN support in mod\_net\_multiplex
--   `daemonize` option deprecated
--   SASL DIGEST-MD5 removed
--   Switch to libunbound for DNS queries
--   DANE Support (low-level network layer)
--   mod_external_services (generic XEP-0215)
--   mod_turn_external for easy STUN+TURN XEP-0215 setup
--   util.error for encapsulating errors
--   MUC: support for XEP-0421 occupant identifiers
+-   mod_s2s_bidi: Bi-directional server-to-server (XEP-0288)
+-   mod_external_services: generic XEP-0215 support
+-   mod_turn_external: easy setup XEP-0215 for STUN+TURN
 -   mod_http_file_share: File sharing via HTTP (XEP-0363)
--   statistics scheduling can be done by plugin
+-   mod_http_openmetrics for exposing metrics to stats collectors
+-   mod_smacks: Stream management and resumption (XEP-0198)
+-   mod_auth_ldap: LDAP authentication
+
+### Security and authentication
+
+-   SNI support
+-   ALPN support in mod_net_multiplex
+-   DANE support in low-level network layer
+-   Direct TLS support (c2s and incoming s2s)
+-   SCRAM-SHA-256
+
+### HTTP
+
+-   CORS handling now provided by mod_http
+-   Built-in HTTP server now handles HEAD requests
+-   Uploads can be handled incrementally
+
+### API
+
+-   Module statuses (API change)
+-   util.error for encapsulating errors
+
+### Other
+
+-   MUC presence broadcast controls
+-   MUC: support for XEP-0421 occupant identifiers
+-   `prosodyctl check connectivity` via observe.jabber.network
+-   libunbound for DNS queries
+
+## Changes
+
+-   CSI improvements (what?)
+-   mod_limits: Exempted JIDs
 -   mod_server_contact_info now loaded on components if enabled
 -   Statistics now based on OpenMetrics
--   mod_http_openmetrics for exposing metrics to stats collectors
--   Direct TLS support (c2s and incoming s2s)
+-   Statistics scheduling can be done by plugin
 -   Offline messages aren't sent to MAM clients
--   Network backend server_select deprecated
--   Check connectivity via observe.jabber.network
--   LDAP authentication (mod_auth_ldap)
--   mod_auth_cyrus removed
--   mod_smacks: Stream management and resumption (XEP-0198)
+-   Archive quotas (means?)
+-   Rewritten migrator with archive support
+
+## Removed
+
+-   `daemonize` option deprecated
+-   SASL DIGEST-MD5 removed
+-   mod_auth_cyrus (older LDAP support)
+-   Network backend server_select deprecated (not actually removed yet)
 
 0.11.0
 ======
