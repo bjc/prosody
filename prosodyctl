@@ -226,14 +226,23 @@ function commands.deluser(arg)
 	return 1;
 end
 
+local function has_init_system() --> which
+	lfs = lfs or require"lfs";
+	if lfs.attributes("/etc/systemd") then
+		return "systemd";
+	elseif lfs.attributes("/etc/init.d/prosody") then
+		return "rc.d";
+	end
+end
+
 local function service_command_warning(service_command)
 	if prosody.installed and configmanager.get("*", "prosodyctl_service_warnings") ~= false then
 		show_warning("WARNING: Use of prosodyctl start/stop/restart/reload is not recommended");
 		show_warning("         if Prosody is managed by an init system - use that directly instead.");
-		lfs = lfs or require"lfs";
-		if lfs.attributes("/etc/systemd") then
+		local init = has_init_system()
+		if init == "systemd" then
 			show_warning("         e.g. systemctl %s prosody", service_command);
-		elseif lfs.attributes("/etc/init.d/prosody") then
+		elseif init == "rc.d" then
 			show_warning("         e.g. /etc/init.d/prosody %s", service_command);
 		end
 		show_warning("");
@@ -675,6 +684,13 @@ local command_runner = async.runner(function ()
 		}
 
 		local done = {};
+
+		if prosody.installed and has_init_system() then
+			-- Hide start, stop, restart
+			done[table.remove(commands_order, 2)] = true;
+			done[table.remove(commands_order, 2)] = true;
+			done[table.remove(commands_order, 2)] = true;
+		end
 
 		for _, command_name in ipairs(commands_order) do
 			local command_func = commands[command_name];
