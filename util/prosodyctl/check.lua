@@ -190,6 +190,7 @@ local function check(arg)
 			"statistics_config",
 			"statistics_interval",
 			"tcp_keepalives",
+			"tls_profile",
 			"trusted_proxies",
 			"umask",
 			"use_dane",

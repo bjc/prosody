@@ -343,7 +343,7 @@ local function create_context(host, mode, ...)
 		password = function() log("error", "Encrypted certificate for %s requires 'ssl' 'password' to be set in config", host); end;
 	});
 	cfg:apply(global_ssl_config);
-	local preset = configmanager.get("*", "ssl_preset") or "intermediate";
+	local preset = configmanager.get("*", "tls_preset") or "intermediate";
 	if preset ~= "legacy" then
 		cfg:apply(mozilla_ssl_configs[preset]);
 	end
