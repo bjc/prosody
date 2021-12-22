@@ -376,14 +376,6 @@ end
 -- don't send delivery errors for messages which will be delivered by mam later on
 -- check if stanza was archived --> this will allow us to send back errors for stanzas not archived
 -- because the user configured the server to do so ("no-archive"-setting for one special contact for example)
-local function get_stanza_id(stanza, by_jid)
-	for tag in stanza:childtags("stanza-id", "urn:xmpp:sid:0") do
-		if tag.attr.by == by_jid then
-			return tag.attr.id;
-		end
-	end
-	return nil;
-end
 module:hook("delivery/failure", function(event)
 	local session, stanza = event.session, event.stanza;
 	-- Only deal with authenticated (c2s) sessions
@@ -397,7 +389,8 @@ module:hook("delivery/failure", function(event)
 			end
 			-- do nothing here for normal messages and don't send out "message delivery errors",
 			-- because messages are already in MAM at this point (no need to frighten users)
-			local stanza_id = get_stanza_id(stanza, jid.bare(session.full_jid));
+			local stanza_id = stanza:get_child_with_attr("stanza-id", "urn:xmpp:sid:0", "by", jid.bare(session.full_jid));
+			stanza_id = stanza_id and stanza_id.attr.id;
 			if session.mam_requested and stanza_id ~= nil then
 				session.log("debug", "mod_smacks delivery/failure returning true for mam-handled stanza: mam-archive-id=%s", tostring(stanza_id));
 				return true; -- stanza handled, don't send an error
