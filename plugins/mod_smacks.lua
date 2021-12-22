@@ -21,7 +21,7 @@ local jid = require "util.jid";
 local smqueue = require "util.smqueue";
 local st = require "util.stanza";
 local timer = require "util.timer";
-local uuid_generate = require "util.uuid".generate;
+local new_id = require "util.id".short;
 local watchdog = require "util.watchdog";
 
 local sessionmanager = require "core.sessionmanager";
@@ -259,7 +259,7 @@ function handle_enable(session, stanza, xmlns_sm)
 	local resume_token;
 	local resume = stanza.attr.resume;
 	if resume == "true" or resume == "1" then
-		resume_token = uuid_generate();
+		resume_token = new_id();
 		session_registry[jid.join(session.username, session.host, resume_token)] = session;
 		session.resumption_token = resume_token;
 		resume_max = tostring(resume_timeout);
