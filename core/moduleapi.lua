@@ -355,7 +355,7 @@ function api:provides(name, item)
 		local item_name = self.name;
 		-- Strip a provider prefix to find the item name
 		-- (e.g. "auth_foo" -> "foo" for an auth provider)
-		if item_name:find(name.."_", 1, true) == 1 then
+		if item_name:find((name:gsub("%-", "_")).."_", 1, true) == 1 then
 			item_name = item_name:sub(#name+2);
 		end
 		item.name = item_name;
