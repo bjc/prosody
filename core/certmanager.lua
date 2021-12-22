@@ -344,7 +344,9 @@ local function create_context(host, mode, ...)
 	});
 	cfg:apply(global_ssl_config);
 	local preset = configmanager.get("*", "ssl_preset") or "intermediate";
-	cfg:apply(mozilla_ssl_configs[preset]);
+	if preset ~= "legacy" then
+		cfg:apply(mozilla_ssl_configs[preset]);
+	end
 
 	for i = select('#', ...), 1, -1 do
 		cfg:apply(select(i, ...));
