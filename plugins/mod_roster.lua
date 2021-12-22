@@ -10,6 +10,7 @@
 local st = require "util.stanza"
 
 local jid_split = require "util.jid".split;
+local jid_resource = require "util.jid".resource;
 local jid_prep = require "util.jid".prep;
 local tonumber = tonumber;
 local pairs = pairs;
@@ -66,8 +67,7 @@ module:hook("iq/self/jabber:iq:roster:query", function(event)
 			local item = query.tags[1];
 			local from_node, from_host = jid_split(stanza.attr.from);
 			local jid = jid_prep(item.attr.jid);
-			local node, host, resource = jid_split(jid);
-			if not resource and host then
+			if jid and not jid_resource(jid) then
 				if jid ~= from_node.."@"..from_host then
 					if item.attr.subscription == "remove" then
 						local roster = session.roster;
