@@ -232,8 +232,11 @@ local function get_identities(cert) --> map of names to sets of services
 	if sans then
 		if sans["dNSName"] then -- Valid for any service
 			for _, name in ipairs(sans["dNSName"]) do
+				local is_wildcard = name:sub(1, 2) == "*.";
+				if is_wildcard then name = name:sub(3); end
 				name = idna_to_unicode(nameprep(name));
 				if name then
+					if is_wildcard then name = "*." .. name; end
 					names:set(name, "*", true);
 				end
 			end
