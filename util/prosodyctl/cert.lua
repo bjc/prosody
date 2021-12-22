@@ -223,10 +223,14 @@ function cert_commands.import(arg)
 	local imported = {};
 	for _, host in ipairs(hostnames) do
 		local paths = cm.find_cert_in_index(files_by_name, host);
-		if paths then
+		if paths and not imported[paths.certificate] then
+			-- One certificate, many mames!
+			table.insert(imported, host);
+		elseif paths then
 			copy(paths.certificate, cert_basedir .. "/" .. host .. ".crt", nil, owner, group);
 			copy(paths.key, cert_basedir .. "/" .. host .. ".key", "0377", owner, group);
 			table.insert(imported, host);
+			imported[paths.certificate] = true;
 		else
 			-- TODO Say where we looked
 			pctl.show_warning("No certificate for host "..host.." found :(");
