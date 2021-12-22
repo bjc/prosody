@@ -227,6 +227,13 @@ function module.add_host(module)
 		for event_name, handlers in pairs(app_handlers) do
 			module:unhook_object_event(server, event_name, handlers.main);
 			module:unhook_object_event(server, event_name, handlers.cors);
+
+			if event_name:sub(-2, -1) == "/*" then
+				module:unhook_object_event(server, event_name:sub(1, -3), redir_handler, -1);
+			elseif event_name:sub(-1, -1) == "/" then
+				module:unhook_object_event(server, event_name:sub(1, -2), redir_handler, -1);
+			end
+
 			local options_event_name = event_name:gsub("^%S+", "OPTIONS");
 			module:unhook_object_event(server, options_event_name, handlers.options);
 		end
