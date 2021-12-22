@@ -170,7 +170,8 @@ local cert_index;
 local function find_cert_in_index(index, host)
 	if not host then return nil; end
 	if not index then return nil; end
-	local certs = index[host];
+	local wildcard_host = host:gsub("^[^.]+%.", "*.");
+	local certs = index[host] or index[wildcard_host];
 	if certs then
 		local cert_filename, services = next(certs);
 		if services["*"] then
