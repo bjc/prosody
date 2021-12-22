@@ -1,0 +1,75 @@
+# When removing roster contact, Prosody should send directed "unavailable" presence but sends global unavailable presence
+
+[Client] Romeo
+	jid: romeo@localhost
+	password: password
+
+[Client] Juliet
+	jid: juliet@localhost
+	password: password
+
+-----
+
+Romeo connects
+
+Romeo sends
+	<presence/>
+
+Romeo receives
+	<presence from="${Romeo's full JID}"/>
+
+Juliet connects
+
+Juliet sends
+	<presence/>
+
+Juliet receives
+	<presence from="${Juliet's full JID}"/>
+
+Romeo sends
+	<presence to="juliet@localhost" type="subscribe"/>
+
+Romeo receives
+	<presence from="juliet@localhost" to="romeo@localhost"/>
+
+Juliet receives
+	<presence from="romeo@localhost" to="juliet@localhost" type="subscribe"/>
+
+Juliet sends
+	<presence to="romeo@localhost" type="subscribed"/>
+
+Romeo receives
+	<presence from="${Juliet's full JID}" to="romeo@localhost"/>
+
+Juliet sends
+	<presence to="romeo@localhost" type="subscribe"/>
+
+Juliet receives
+	<presence from="romeo@localhost" to="juliet@localhost"/>
+
+Romeo receives
+	<presence from="juliet@localhost" to="romeo@localhost" type="subscribe"/>
+
+Romeo sends
+	<presence to="juliet@localhost" type="subscribed"/>
+
+Juliet receives
+	<presence from="${Romeo's full JID}" to="juliet@localhost"/>
+
+Romeo receives
+	<presence from="${Juliet's full JID}" to="romeo@localhost"/>
+
+Juliet sends
+	<iq type="set" id="iq1">
+		<query xmlns="jabber:iq:roster">
+			<item jid="romeo@localhost" subscription="remove"/>
+		</query>
+	</iq>
+
+Juliet receives
+	<iq type="result" id="iq1"/>
+
+Romeo receives
+	<presence from="${Juliet's full JID}" to="romeo@localhost" type="unavailable"/>
+
+Romeo disconnects

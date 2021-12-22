@@ -74,7 +74,7 @@ module:hook("iq/self/jabber:iq:roster:query", function(event)
 						local r_item = roster[jid];
 						if r_item then
 							module:fire_event("roster-item-removed", {
-								username = node, jid = jid, item = r_item, origin = session, roster = roster,
+								username = from_node, jid = jid, item = r_item, origin = session, roster = roster,
 							});
 							local success, err_type, err_cond, err_msg = rm_remove_from_roster(session, jid);
 							if success then
