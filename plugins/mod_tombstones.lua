@@ -16,6 +16,10 @@ local ttl = module:get_option_number("user_tombstone_expiry", nil);
 -- There is no way to be completely sure when remote services have
 -- forgotten and revoked all memberships.
 
+-- TODO If the user left a JID they moved to, return a gone+redirect error
+-- TODO Attempt to deregister from MUCs based on bookmarks
+-- TODO Unsubscribe from pubsub services if a notification is received
+
 module:hook_global("user-deleted", function(event)
 	if event.host == module.host then
 		local ok, err = graveyard:set(nil, event.username, os.time());
