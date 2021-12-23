@@ -63,6 +63,9 @@ modules_enabled = {
 		"lastactivity";
 		"external_services";
 
+		"tombstones";
+		"user_account_management";
+
 	-- Useful for testing
 		--"scansion_record"; -- Records things that happen in scansion test case format
 }

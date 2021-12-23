@@ -1,0 +1,38 @@
+# Tombstones
+
+[Client] Romeo
+	jid: romeo@localhost
+	password: password
+
+[Client] Juliet
+	jid: juliet-tombstones@localhost
+	password: password
+
+---------
+
+Romeo connects
+
+Juliet connects
+
+Juliet sends:
+	<iq type="set" id="bye">
+		<query xmlns="jabber:iq:register">
+			<remove/>
+		</query>
+	</iq>
+
+# Scansion gets disconnected right after this with a stream error makes
+# scansion itself abort, so we preemptively disconnect to avoid that
+# Juliet receives:
+#	<iq type="result" id="bye"/>
+
+Juliet disconnects
+
+Romeo sends:
+	<presence type="probe" to="${Juliet's JID}"/>
+
+Romeo receives:
+	<presence type="error" from="${Juliet's JID}"/>
+
+Romeo receives:
+	<presence type="unsubscribed" from="${Juliet's JID}"/>
