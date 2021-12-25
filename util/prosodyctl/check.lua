@@ -156,8 +156,6 @@ local function check(arg)
 			"consider_websocket_secure",
 			"console_banner",
 			"console_prettyprint_settings",
-			"cross_domain_bosh",
-			"cross_domain_websocket",
 			"daemonize",
 			"gc",
 			"http_default_host",
