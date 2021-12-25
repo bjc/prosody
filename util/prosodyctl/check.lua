@@ -103,8 +103,14 @@ local function check(arg)
 	if not what or what == "config" then
 		print("Checking config...");
 		local obsolete = set.new({ --> remove
+			"archive_cleanup_interval",
 			"cross_domain_bosh",
 			"cross_domain_websocket",
+			"dns_timeout",
+			"muc_log_cleanup_interval",
+			"s2s_dns_resolvers",
+			"setgid",
+			"setuid",
 		});
 		local deprecated_replacements = {
 			anonymous_login = "use 'authentication = \"anonymous\"'",
