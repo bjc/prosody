@@ -10,7 +10,7 @@ local st = require "util.stanza";
 local xmlns_bidi_feature = "urn:xmpp:features:bidi"
 local xmlns_bidi = "urn:xmpp:bidi";
 
-local require_encryption = module:get_option_boolean("s2s_require_encryption", false);
+local require_encryption = module:get_option_boolean("s2s_require_encryption", true);
 
 module:hook("s2s-stream-features", function(event)
 	local origin, features = event.origin, event.features;

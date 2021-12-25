@@ -40,7 +40,7 @@ local opt_keepalives = module:get_option_boolean("s2s_tcp_keepalives", module:ge
 local secure_auth = module:get_option_boolean("s2s_secure_auth", false); -- One day...
 local secure_domains, insecure_domains =
 	module:get_option_set("s2s_secure_domains", {})._items, module:get_option_set("s2s_insecure_domains", {})._items;
-local require_encryption = module:get_option_boolean("s2s_require_encryption", false);
+local require_encryption = module:get_option_boolean("s2s_require_encryption", true);
 local stanza_size_limit = module:get_option_number("s2s_stanza_size_limit", 1024*512);
 
 local measure_connections_inbound = module:metric(

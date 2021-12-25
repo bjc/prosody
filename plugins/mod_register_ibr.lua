@@ -18,7 +18,7 @@ local util_error = require "util.error";
 
 local additional_fields = module:get_option("additional_registration_fields", {});
 local require_encryption = module:get_option_boolean("c2s_require_encryption",
-	module:get_option_boolean("require_encryption", false));
+	module:get_option_boolean("require_encryption", true));
 
 pcall(function ()
 	module:depends("register_limits");

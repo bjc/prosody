@@ -33,6 +33,7 @@ TRUNK
 -   Pluggable authorization providers (mod_authz_)
 -   Easy use of Mozilla TLS recommendations presets
 -   Unencrypted HTTP port (5280) restricted to loopback by default
+-   require_encryption options default to 'true' if unspecified
 
 ### HTTP
 
