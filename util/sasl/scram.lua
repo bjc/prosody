@@ -41,7 +41,7 @@ Supported Channel Binding Backends
 'tls-unique' according to RFC 5929
 ]]
 
-local default_i = 4096
+local default_i = 10000
 
 local function validate_username(username, _nodeprep)
 	-- check for forbidden char sequences

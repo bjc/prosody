@@ -787,6 +787,13 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0438.html"/>
+        <xmpp:version>0.2.0</xmpp:version>
+        <xmpp:status>partial</xmpp:status>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0441.html"/>
         <xmpp:version>0.2.0</xmpp:version>
         <xmpp:status>complete</xmpp:status>
