@@ -64,7 +64,7 @@ local parse_xml = (function()
 		function handler:EndElement()
 			stanza:up();
 		end
-		local parser = lxp.new(handler, "\1");
+		local parser = lxp.new(handler, ns_separator);
 		local ok, err, line, col = parser:parse(xml);
 		if ok then ok, err, line, col = parser:parse(); end
 		--parser:close();
