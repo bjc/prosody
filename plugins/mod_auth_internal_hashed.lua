@@ -28,7 +28,7 @@ local get_auth_db = assert(scram_hashers[hash_name], "SCRAM-"..hash_name.." not 
 local scram_name = "scram_"..hash_name:gsub("%-","_"):lower();
 
 -- Default; can be set per-user
-local default_iteration_count = 4096;
+local default_iteration_count = module:get_option_number("default_iteration_count", 4096);
 
 -- define auth provider
 local provider = {};
