@@ -1387,7 +1387,34 @@ function def_env.xmpp:ping(localhost, remotehost, timeout)
 	local iq = st.iq{ from=localhost, to=remotehost, type="get", id=new_id()}
 			:tag("ping", {xmlns="urn:xmpp:ping"});
 	local time_start = time.now();
-	return module:context(localhost):send_iq(iq, nil, timeout):next(function (pong)
+	local print = self.session.print;
+	local function onchange(what)
+		return function(event)
+			local s2s_session = event.session;
+			if (s2s_session.from_host == localhost and s2s_session.to_host == remotehost)
+				or (s2s_session.to_host == localhost and s2s_session.from_host == remotehost) then
+				local dir = available_columns.dir.mapper(s2s_session.direction, s2s_session);
+				print(("Session %s (%s%s%s) %s (%gs)"):format(s2s_session.id, localhost, dir, remotehost, what,
+					time.now() - time_start));
+			end
+		end
+	end
+	local oncreated = onchange("created");
+	local onauthenticated = onchange("authenticated");
+	local onestablished = onchange("established");
+	local ondestroyed = onchange("destroyed");
+	module:hook("s2s-created", oncreated, 1);
+	module:context(localhost):hook("s2s-authenticated", onauthenticated, 1);
+	module:hook("s2sout-established", onestablished, 1);
+	module:hook("s2sin-established", onestablished, 1);
+	module:hook("s2s-destroyed", ondestroyed, 1);
+	return module:context(localhost):send_iq(iq, nil, timeout):finally(function()
+		module:unhook("s2s-created", oncreated);
+		module:context(localhost):unhook("s2s-authenticated", onauthenticated);
+		module:unhook("s2sout-established", onestablished);
+		module:unhook("s2sin-established", onestablished);
+		module:unhook("s2s-destroyed", ondestroyed);
+	end):next(function(pong)
 		return ("pong from %s in %gs"):format(pong.stanza.attr.from, time.now() - time_start);
 	end);
 end
