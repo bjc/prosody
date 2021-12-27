@@ -1396,6 +1396,8 @@ function def_env.xmpp:ping(localhost, remotehost, timeout)
 				local dir = available_columns.dir.mapper(s2s_session.direction, s2s_session);
 				print(("Session %s (%s%s%s) %s (%gs)"):format(s2s_session.id, localhost, dir, remotehost, what,
 					time.now() - time_start));
+			elseif s2s_session.type == "s2sin_unauthed" and s2s_session.to_host == nil and s2s_session.from_host == nil then
+				print(("Session %s %s (%gs)"):format(s2s_session.id, what, time.now() - time_start));
 			end
 		end
 	end
