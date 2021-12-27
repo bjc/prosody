@@ -17,6 +17,7 @@ TRUNK
 -   mod_admin_shell: New home of the Console admin interface
 -   mod_admin_socket: Enable secure connections to the Console
 -   mod_tombstones: Prevent registration of deleted accounts
+-   mod_invites: Create and manage invites
 
 ### Security and authentication
 
