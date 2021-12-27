@@ -102,7 +102,7 @@ end
 function histogram_metric_mt:sample(value)
 	-- According to the I-D, values must be part of all buckets
 	for i, bucket in pairs(self) do
-		if "number" == type(i) and bucket.threshold >= value then
+		if "number" == type(i) and value <= bucket.threshold then
 			bucket.count = bucket.count + 1
 		end
 	end
