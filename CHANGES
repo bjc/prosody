@@ -18,6 +18,7 @@ TRUNK
 -   mod_admin_socket: Enable secure connections to the Console
 -   mod_tombstones: Prevent registration of deleted accounts
 -   mod_invites: Create and manage invites
+-   mod_invites_register: Create accounts using invites
 
 ### Security and authentication
 

@@ -743,6 +743,14 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0379.html"/>
+        <xmpp:version>0.3.3</xmpp:version>
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:since>0.12.0</xmpp:since>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0380.html"/>
         <xmpp:version>0.3.0</xmpp:version>
         <xmpp:since>0.11.0</xmpp:since>
@@ -765,6 +773,14 @@
         <xmpp:since>0.11.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_vcard_legacy</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0401.html"/>
+        <xmpp:version>0.3.0</xmpp:version>
+        <xmpp:since>0.12.0</xmpp:since>
+        <xmpp:status>partial</xmpp:status>
       </xmpp:SupportedXep>
     </implements>
     <implements>
