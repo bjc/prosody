@@ -55,6 +55,10 @@ function methods:next(cb)
 		if answer then
 			if self.extra and not answer.secure then
 				self.extra.use_dane = false;
+			elseif answer.bogus then
+				self.last_error = "Validation error in SRV lookup";
+				ready();
+				return;
 			end
 
 			if #answer == 0 then

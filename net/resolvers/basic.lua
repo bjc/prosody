@@ -58,7 +58,9 @@ function methods:next(cb)
 				for _, record in ipairs(answer) do
 					table.insert(targets, { self.conn_type.."4", record.a, self.port, self.extra });
 				end
-				if answer.status then
+				if answer.bogus then
+					self.last_error = "Validation error in A lookup";
+				elseif answer.status then
 					self.last_error = answer.status .. " in A lookup";
 				end
 			else
@@ -77,7 +79,9 @@ function methods:next(cb)
 				for _, record in ipairs(answer) do
 					table.insert(targets, { self.conn_type.."6", record.aaaa, self.port, self.extra });
 				end
-				if answer.status then
+				if answer.bogus then
+					self.last_error = "Validation error in AAAA lookup";
+				elseif answer.status then
 					self.last_error = answer.status .. " in AAAA lookup";
 				end
 			else
@@ -96,7 +100,9 @@ function methods:next(cb)
 				for _, record in ipairs(answer) do
 					table.insert(tlsa, record.tlsa);
 				end
-				if answer.status then
+				if answer.bogus then
+					self.last_error = "Validation error in TLSA lookup";
+				elseif answer.status then
 					self.last_error = answer.status .. " in TLSA lookup";
 				end
 			else
