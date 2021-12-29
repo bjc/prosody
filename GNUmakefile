@@ -110,7 +110,7 @@ vpath %.tl teal-src/
 	tl -I teal-src/ --gen-compat off --gen-target 5.1 gen $^ -o $@
 	-lua-format -i $@
 
-teal: util/jsonschema.lua util/datamapper.lua
+teal: util/jsonschema.lua util/datamapper.lua util/jsonpointer.lua
 
 util/%.so:
 	$(MAKE) install -C util-src
