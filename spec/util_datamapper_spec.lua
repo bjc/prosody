@@ -8,7 +8,7 @@ setup(function()
 	map = require "util.datamapper";
 end);
 
-describe("util.datampper", function()
+describe("util.datamapper", function()
 
 	local s, x, d
 	local disco, disco_info, disco_schema
