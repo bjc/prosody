@@ -15,8 +15,9 @@ describe("util.datampper", function()
 	setup(function()
 
 		-- a convenience function for simple attributes, there's a few of them
-		local function attr() return {type = "string"; xml = {attribute = true}} end
+		local function attr() return {["$ref"]="#/$defs/attr"} end
 		s = {
+			["$defs"] = { attr = { type = "string"; xml = { attribute = true } } };
 			type = "object";
 			xml = {name = "message"; namespace = "jabber:client"};
 			properties = {
@@ -111,6 +112,7 @@ describe("util.datampper", function()
 		};
 
 		disco_schema = {
+			["$defs"] = { attr = { type = "string"; xml = { attribute = true } } };
 			type = "object";
 			xml = {
 				name = "iq";

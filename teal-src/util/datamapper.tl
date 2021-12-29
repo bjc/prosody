@@ -21,6 +21,7 @@
 
 local st = require "util.stanza";
 local json = require"util.json"
+local pointer = require"util.jsonpointer";
 
 local json_type_name = json.json_type_name;
 local json_schema_object = require "util.jsonschema"
@@ -55,6 +56,16 @@ local enum value_goes
 	"in_single_attribute"
 	"in_children"
 	"in_wrapper"
+end
+
+local function resolve_schema(schema  : schema_t, root : json_schema_object) : schema_t
+	if schema is json_schema_object and schema["$ref"] and schema["$ref"]:sub(1, 1) == "#" then
+		local referenced = pointer.resolve(root as table, schema["$ref"]:sub(2)) as schema_t;
+		if referenced ~= nil then
+			return referenced
+		end
+	end
+	return schema;
 end
 
 local function unpack_propschema( propschema : schema_t, propname : string, current_ns : string )
@@ -112,8 +123,8 @@ local function unpack_propschema( propschema : schema_t, propname : string, curr
 	return proptype, value_where, name, namespace, prefix, single_attribute, enums
 end
 
-local parse_object : function (schema : schema_t, s : st.stanza_t) : { string : any }
-local parse_array : function (schema : schema_t, s : st.stanza_t) : { any }
+local parse_object : function (schema : schema_t, s : st.stanza_t, root : json_schema_object) : { string : any }
+local parse_array : function (schema : schema_t, s : st.stanza_t, root : json_schema_object) : { any }
 
 local function extract_value (s : st.stanza_t, value_where : value_goes, proptype : json.json_type_name, name : string, namespace : string, prefix : string, single_attribute : string, enums : { any }) : string
 	if value_where == "in_tag_name" then
@@ -154,10 +165,12 @@ local function extract_value (s : st.stanza_t, value_where : value_goes, proptyp
 	end
 end
 
-function parse_object (schema : schema_t, s : st.stanza_t) : { string : any }
+function parse_object (schema : schema_t, s : st.stanza_t, root : json_schema_object) : { string : any }
 	local out : { string : any } = {}
+	schema = resolve_schema(schema, root)
 	if schema is json_schema_object and schema.properties then
 		for prop, propschema in pairs(schema.properties) do
+			propschema = resolve_schema(propschema, root)
 
 			local proptype, value_where, name, namespace, prefix, single_attribute, enums = unpack_propschema(propschema, prop, s.attr.xmlns)
 
@@ -165,10 +178,10 @@ function parse_object (schema : schema_t, s : st.stanza_t) : { string : any }
 				if proptype == "object" then
 					local c = s:get_child(name, namespace)
 					if c then
-						out[prop] = parse_object(propschema, c);
+						out[prop] = parse_object(propschema, c, root);
 					end
 				elseif proptype == "array" then
-					local a = parse_array(propschema, s);
+					local a = parse_array(propschema, s, root);
 					if a and a[1] ~= nil then
 						out[prop] = a;
 					end
@@ -178,7 +191,7 @@ function parse_object (schema : schema_t, s : st.stanza_t) : { string : any }
 			elseif value_where == "in_wrapper" and propschema is json_schema_object and proptype == "array" then
 				local wrapper = s:get_child(name, namespace);
 				if wrapper then
-					out[prop] = parse_array(propschema, wrapper);
+					out[prop] = parse_array(propschema, wrapper, root);
 				end
 			else
 				local value : string = extract_value (s, value_where, proptype, name, namespace, prefix, single_attribute, enums)
@@ -191,8 +204,8 @@ function parse_object (schema : schema_t, s : st.stanza_t) : { string : any }
 	return out
 end
 
-function parse_array (schema : json_schema_object, s : st.stanza_t) : { any }
-	local itemschema : schema_t = schema.items;
+function parse_array (schema : json_schema_object, s : st.stanza_t, root : json_schema_object) : { any }
+	local itemschema : schema_t = resolve_schema(schema.items, root);
 	local proptype, value_where, child_name, namespace, prefix, single_attribute, enums = unpack_propschema(itemschema, nil, s.attr.xmlns)
 	local attr_name : string
 	if value_where == "in_single_attribute" then -- FIXME this shouldn't be needed
@@ -204,7 +217,7 @@ function parse_array (schema : json_schema_object, s : st.stanza_t) : { any }
 	if proptype == "object" then
 		if itemschema is json_schema_object then
 			for c in s:childtags(child_name, namespace) do
-				table.insert(out, parse_object(itemschema, c));
+				table.insert(out, parse_object(itemschema, c, root));
 			end
 		else
 			error "array items must be schema object"
@@ -212,7 +225,7 @@ function parse_array (schema : json_schema_object, s : st.stanza_t) : { any }
 	elseif proptype == "array" then
 		if itemschema is json_schema_object then
 			for c in s:childtags(child_name, namespace) do
-				table.insert(out, parse_array(itemschema, c));
+				table.insert(out, parse_array(itemschema, c, root));
 			end
 		end
 	else
@@ -227,9 +240,9 @@ end
 
 local function parse (schema : json_schema_object, s : st.stanza_t) : table
 	if schema.type == "object" then
-		return parse_object(schema, s)
+		return parse_object(schema, s, schema)
 	elseif schema.type == "array" then
-		return parse_array(schema, s)
+		return parse_array(schema, s, schema)
 	else
 		error "top-level scalars unsupported"
 	end
@@ -247,9 +260,10 @@ local function toxmlstring(proptype : json_type_name, v : any) : string
 	end
 end
 
-local unparse : function (json_schema_object, table, string, string, st.stanza_t) : st.stanza_t
+local unparse : function (json_schema_object, table, string, string, st.stanza_t, json_schema_object) : st.stanza_t
 
-local function unparse_property(out : st.stanza_t, v : any, proptype : json_type_name, propschema : schema_t, value_where : value_goes, name : string, namespace : string, current_ns : string, prefix : string, single_attribute : string)
+local function unparse_property(out : st.stanza_t, v : any, proptype : json_type_name, propschema : schema_t, value_where : value_goes, name : string, namespace : string, current_ns : string, prefix : string, single_attribute : string, root : json_schema_object)
+
 	if value_where == "in_attribute" then
 		local attr = name
 		if prefix then
@@ -284,18 +298,18 @@ local function unparse_property(out : st.stanza_t, v : any, proptype : json_type
 				out:tag(name, propattr):up();
 			end
 		elseif proptype == "object" and propschema is json_schema_object and v is table then
-			local c = unparse(propschema, v, name, namespace);
+			local c = unparse(propschema, v, name, namespace, nil, root);
 			if c then
 				out:add_direct_child(c);
 			end
 		elseif proptype == "array" and propschema is json_schema_object and v is table then
 			if value_where == "in_wrapper" then
-				local c = unparse(propschema, v, name, namespace);
+				local c = unparse(propschema, v, name, namespace, nil, root);
 				if c then
 					out:add_direct_child(c);
 				end
 			else
-				unparse(propschema, v, name, namespace, out);
+				unparse(propschema, v, name, namespace, out, root);
 			end
 		else
 			out:text_tag(name, toxmlstring(proptype, v), propattr)
@@ -303,7 +317,9 @@ local function unparse_property(out : st.stanza_t, v : any, proptype : json_type
 	end
 end
 
-function unparse ( schema : json_schema_object, t : table, current_name : string, current_ns : string, ctx : st.stanza_t ) : st.stanza_t
+function unparse ( schema : json_schema_object, t : table, current_name : string, current_ns : string, ctx : st.stanza_t, root : json_schema_object ) : st.stanza_t
+
+	if root == nil then root = schema end
 
 	if schema.xml then
 		if schema.xml.name then
@@ -320,19 +336,21 @@ function unparse ( schema : json_schema_object, t : table, current_name : string
 	if schema.type == "object" then
 
 		for prop, propschema in pairs(schema.properties) do
+			propschema = resolve_schema(propschema, root)
 			local v = t[prop]
 
 			if v ~= nil then
 				local proptype, value_where, name, namespace, prefix, single_attribute = unpack_propschema(propschema, prop, current_ns)
-				unparse_property(out, v, proptype, propschema, value_where, name, namespace, current_ns, prefix, single_attribute)
+				unparse_property(out, v, proptype, propschema, value_where, name, namespace, current_ns, prefix, single_attribute, root)
 			end
 		end
 		return out;
 
 	elseif schema.type == "array" then
-		local proptype, value_where, name, namespace, prefix, single_attribute = unpack_propschema(schema.items, current_name, current_ns)
+		local itemschema = resolve_schema(schema.items, root)
+		local proptype, value_where, name, namespace, prefix, single_attribute = unpack_propschema(itemschema, current_name, current_ns)
 		for _, item in ipairs(t as { string }) do
-			unparse_property(out, item, proptype, schema.items, value_where, name, namespace, current_ns, prefix, single_attribute)
+			unparse_property(out, item, proptype, itemschema, value_where, name, namespace, current_ns, prefix, single_attribute, root)
 		end
 		return out;
 	end
