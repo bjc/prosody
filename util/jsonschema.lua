@@ -1,6 +1,8 @@
 local json = require("util.json")
 local null = json.null;
 
+local pointer = require("util.jsonpointer")
+
 local json_type_name = json.json_type_name
 
 local schema_t = {}
@@ -63,7 +65,7 @@ end
 
 type_validators.integer = type_validators.number
 
-local function validate(schema, data)
+local function validate(schema, data, root)
 	if type(schema) == "boolean" then
 		return schema
 	end
@@ -71,9 +73,19 @@ local function validate(schema, data)
 		return simple_validate(schema, data)
 	end
 	if type(schema) == "table" then
+		if root == nil then
+			root = schema
+		end
+		if schema["$ref"] and schema["$ref"]:sub(1, 1) == "#" then
+			local referenced = pointer.resolve(root, schema["$ref"]:sub(2))
+			if referenced ~= nil then
+				return validate(referenced, data, root)
+			end
+		end
+
 		if schema.allOf then
 			for _, sub in ipairs(schema.allOf) do
-				if not validate(sub, data) then
+				if not validate(sub, data, root) then
 					return false
 				end
 			end
@@ -83,7 +95,7 @@ local function validate(schema, data)
 		if schema.oneOf then
 			local valid = 0
 			for _, sub in ipairs(schema.oneOf) do
-				if validate(sub, data) then
+				if validate(sub, data, root) then
 					valid = valid + 1
 				end
 			end
@@ -92,7 +104,7 @@ local function validate(schema, data)
 
 		if schema.anyOf then
 			for _, sub in ipairs(schema.anyOf) do
-				if validate(sub, data) then
+				if validate(sub, data, root) then
 					return true
 				end
 			end
@@ -100,19 +112,19 @@ local function validate(schema, data)
 		end
 
 		if schema["not"] then
-			if validate(schema["not"], data) then
+			if validate(schema["not"], data, root) then
 				return false
 			end
 		end
 
 		if schema["if"] then
-			if validate(schema["if"], data) then
+			if validate(schema["if"], data, root) then
 				if schema["then"] then
-					return validate(schema["then"], data)
+					return validate(schema["then"], data, root)
 				end
 			else
 				if schema["else"] then
-					return validate(schema["else"], data)
+					return validate(schema["else"], data, root)
 				end
 			end
 		end
@@ -137,14 +149,14 @@ local function validate(schema, data)
 
 			local validator = type_validators[schema.type]
 			if validator then
-				return validator(schema, data)
+				return validator(schema, data, root)
 			end
 		end
 		return true
 	end
 end
 
-type_validators.table = function(schema, data)
+type_validators.table = function(schema, data, root)
 	if type(data) == "table" then
 
 		if schema.maxItems and #data > schema.maxItems then
@@ -166,20 +178,20 @@ type_validators.table = function(schema, data)
 		if schema.properties then
 			local additional = schema.additionalProperties or true
 			for k, v in pairs(data) do
-				if schema.propertyNames and not validate(schema.propertyNames, k) then
+				if schema.propertyNames and not validate(schema.propertyNames, k, root) then
 					return false
 				end
 				local s = schema.properties[k] or additional
-				if not validate(s, v) then
+				if not validate(s, v, root) then
 					return false
 				end
 			end
 		elseif schema.additionalProperties then
 			for k, v in pairs(data) do
-				if schema.propertyNames and not validate(schema.propertyNames, k) then
+				if schema.propertyNames and not validate(schema.propertyNames, k, root) then
 					return false
 				end
-				if not validate(schema.additionalProperties, v) then
+				if not validate(schema.additionalProperties, v, root) then
 					return false
 				end
 			end
@@ -199,7 +211,7 @@ type_validators.table = function(schema, data)
 		local p = 0
 		if schema.prefixItems then
 			for i, s in ipairs(schema.prefixItems) do
-				if validate(s, data[i]) then
+				if validate(s, data[i], root) then
 					p = i
 				else
 					return false
@@ -209,7 +221,7 @@ type_validators.table = function(schema, data)
 
 		if schema.items then
 			for i = p + 1, #data do
-				if not validate(schema.items, data[i]) then
+				if not validate(schema.items, data[i], root) then
 					return false
 				end
 			end
@@ -218,7 +230,7 @@ type_validators.table = function(schema, data)
 		if schema.contains then
 			local found = false
 			for i = 1, #data do
-				if validate(schema.contains, data[i]) then
+				if validate(schema.contains, data[i], root) then
 					found = true
 					break
 				end
@@ -233,7 +245,7 @@ type_validators.table = function(schema, data)
 	return false
 end
 
-type_validators.object = function(schema, data)
+type_validators.object = function(schema, data, root)
 	if type(data) == "table" then
 		for k in pairs(data) do
 			if not (type(k) == "string") then
@@ -241,12 +253,12 @@ type_validators.object = function(schema, data)
 			end
 		end
 
-		return type_validators.table(schema, data)
+		return type_validators.table(schema, data, root)
 	end
 	return false
 end
 
-type_validators.array = function(schema, data)
+type_validators.array = function(schema, data, root)
 	if type(data) == "table" then
 
 		for i in pairs(data) do
@@ -255,7 +267,7 @@ type_validators.array = function(schema, data)
 			end
 		end
 
-		return type_validators.table(schema, data)
+		return type_validators.table(schema, data, root)
 	end
 	return false
 end

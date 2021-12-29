@@ -11,6 +11,8 @@
 local json = require"util.json"
 local null = json.null;
 
+local pointer = require "util.jsonpointer"
+
 local type json_type_name = json.json_type_name
 
 -- json_type_name here is non-standard
@@ -32,6 +34,8 @@ local record json_schema_object
 	["if"] : schema_t
 	["then"] : schema_t
 	["else"] : schema_t
+
+	["$ref"] : string
 
 	-- numbers
 	multipleOf : number
@@ -90,12 +94,12 @@ local record json_schema_object
 	writeOnly : boolean
 
 	-- methods
-	validate : function ( schema_t, any) : boolean
+	validate : function ( schema_t, any, json_schema_object ) : boolean
 end
 
 -- TODO validator function per schema property
 
-local type_validators : { json_type_name : function (schema_t, any) : boolean } = {}
+local type_validators : { json_type_name : function (schema_t, any, json_schema_object) : boolean } = {}
 
 local function simple_validate(schema : json_type_name, data : any) : boolean
 	if schema == "object" and data is table then
@@ -152,7 +156,7 @@ end
 
 type_validators.integer = type_validators.number
 
-local function validate(schema : schema_t, data : any) : boolean
+local function validate(schema : schema_t, data : any, root : json_schema_object) : boolean
 	if schema is boolean then
 		return schema
 	end
@@ -160,9 +164,19 @@ local function validate(schema : schema_t, data : any) : boolean
 		return simple_validate(schema, data)
 	end
 	if schema is json_schema_object then
+		if root == nil then
+			root = schema
+		end
+		if schema["$ref"] and schema["$ref"]:sub(1,1) == "#" then
+			local referenced = pointer.resolve(root as table, schema["$ref"]:sub(2)) as schema_t
+			if referenced ~= nil then
+				return validate(referenced, data, root);
+			end
+		end
+
 		if schema.allOf then
 			for _, sub in ipairs(schema.allOf) do
-				if not validate(sub, data) then
+				if not validate(sub, data, root) then
 					return false
 				end
 			end
@@ -172,7 +186,7 @@ local function validate(schema : schema_t, data : any) : boolean
 		if schema.oneOf then
 			local valid = 0
 			for _, sub in ipairs(schema.oneOf) do
-				if validate(sub, data) then
+				if validate(sub, data, root) then
 					valid = valid + 1
 				end
 			end
@@ -181,7 +195,7 @@ local function validate(schema : schema_t, data : any) : boolean
 
 		if schema.anyOf then
 			for _, sub in ipairs(schema.anyOf) do
-				if validate(sub, data) then
+				if validate(sub, data, root) then
 					return true
 				end
 			end
@@ -189,19 +203,19 @@ local function validate(schema : schema_t, data : any) : boolean
 		end
 
 		if schema["not"] then
-			if validate(schema["not"], data) then
+			if validate(schema["not"], data, root) then
 				return false
 			end
 		end
 
 		if schema["if"] then
-			if validate(schema["if"], data) then
+			if validate(schema["if"], data, root) then
 				if schema["then"] then
-					return validate(schema["then"], data)
+					return validate(schema["then"], data, root)
 				end
 			else
 				if schema["else"] then
-					return validate(schema["else"], data)
+					return validate(schema["else"], data, root)
 				end
 			end
 		end
@@ -226,14 +240,14 @@ local function validate(schema : schema_t, data : any) : boolean
 
 			local validator = type_validators[schema.type]
 			if validator then
-				return validator(schema, data)
+				return validator(schema, data, root)
 			end
 		end
 		return true
 	end
 end
 
-type_validators.table = function (schema : json_schema_object, data : any) : boolean
+type_validators.table = function (schema : json_schema_object, data : any, root : json_schema_object) : boolean
 	if data is table then
 
 		if schema.maxItems and #data > schema.maxItems then
@@ -255,20 +269,20 @@ type_validators.table = function (schema : json_schema_object, data : any) : boo
 		if schema.properties then
 			local additional : schema_t = schema.additionalProperties or true
 			for k, v in pairs(data) do
-				if schema.propertyNames and not validate(schema.propertyNames, k) then
+				if schema.propertyNames and not validate(schema.propertyNames, k, root) then
 					return false
 				end
 				local s = schema.properties[k as string] or additional
-				if not validate(s, v) then
+				if not validate(s, v, root) then
 					return false
 				end
 			end
 		elseif schema.additionalProperties then
 			for k, v in pairs(data) do
-				if schema.propertyNames and not validate(schema.propertyNames, k) then
+				if schema.propertyNames and not validate(schema.propertyNames, k, root) then
 					return false
 				end
-				if not validate(schema.additionalProperties, v) then
+				if not validate(schema.additionalProperties, v, root) then
 					return false
 				end
 			end
@@ -288,7 +302,7 @@ type_validators.table = function (schema : json_schema_object, data : any) : boo
 		local p = 0
 		if schema.prefixItems then
 			for i, s in ipairs(schema.prefixItems) do
-				if validate(s, data[i]) then
+				if validate(s, data[i], root) then
 					p = i
 				else
 					return false
@@ -298,7 +312,7 @@ type_validators.table = function (schema : json_schema_object, data : any) : boo
 
 		if schema.items then
 			for i = p+1, #data do
-				if not validate(schema.items, data[i]) then
+				if not validate(schema.items, data[i], root) then
 					return false
 				end
 			end
@@ -307,7 +321,7 @@ type_validators.table = function (schema : json_schema_object, data : any) : boo
 		if schema.contains then
 			local found = false
 			for i = 1, #data do
-				if validate(schema.contains, data[i]) then
+				if validate(schema.contains, data[i], root) then
 					found = true
 					break
 				end
@@ -322,7 +336,7 @@ type_validators.table = function (schema : json_schema_object, data : any) : boo
 	return false
 end
 
-type_validators.object = function (schema : schema_t, data : any) : boolean
+type_validators.object = function (schema : schema_t, data : any, root : json_schema_object) : boolean
 	if data is table then
 		for k in pairs(data) do
 			if not k is string then
@@ -330,12 +344,12 @@ type_validators.object = function (schema : schema_t, data : any) : boolean
 			end
 		end
 
-		return type_validators.table(schema, data)
+		return type_validators.table(schema, data, root)
 	end
 	return false
 end
 
-type_validators.array = function (schema : schema_t, data : any) : boolean
+type_validators.array = function (schema : schema_t, data : any, root : json_schema_object) : boolean
 	if data is table then
 
 		-- just check that there the keys are all numbers
@@ -345,7 +359,7 @@ type_validators.array = function (schema : schema_t, data : any) : boolean
 			end
 		end
 
-		return type_validators.table(schema, data)
+		return type_validators.table(schema, data, root)
 	end
 	return false
 end
