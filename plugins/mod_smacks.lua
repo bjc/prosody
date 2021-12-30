@@ -52,6 +52,7 @@ local st = require "util.stanza";
 local timer = require "util.timer";
 local new_id = require "util.id".short;
 local watchdog = require "util.watchdog";
+local it = require"util.iterators";
 
 local sessionmanager = require "core.sessionmanager";
 local core_process_stanza = prosody.core_process_stanza;
@@ -72,12 +73,14 @@ local s2s_resend = module:get_option_boolean("smacks_s2s_resend", false);
 local max_unacked_stanzas = module:get_option_number("smacks_max_unacked_stanzas", 0);
 local max_inactive_unacked_stanzas = module:get_option_number("smacks_max_inactive_unacked_stanzas", 256);
 local delayed_ack_timeout = module:get_option_number("smacks_max_ack_delay", 30);
+local max_old_sessions = module:get_option_number("smacks_max_old_sessions", 10);
 
 local c2s_sessions = module:shared("/*/c2s/sessions");
 local local_sessions = prosody.hosts[module.host].sessions;
 
 local function format_h(h) if h then return string.format("%d", h) end end
 
+local all_old_sessions = module:open_store("smacks_h");
 local old_session_registry = module:open_store("smacks_h", "map");
 local session_registry = module:shared "/*/smacks/resumption-tokens"; -- > user@host/resumption-token --> resource
 
@@ -279,6 +282,22 @@ function handle_enable(session, stanza, xmlns_sm)
 		session.log("warn", "Failed to enable smacks: %s", err_text); -- TODO: XEP doesn't say we can send error text, should it?
 		(session.sends2s or session.send)(st.stanza("failed", { xmlns = xmlns_sm }):tag(err, { xmlns = xmlns_errors}));
 		return true;
+	end
+
+	if session.username then
+		local old_sessions, err = all_old_sessions:get(session.username);
+		module:log("debug", "Old sessions: %q", old_sessions)
+		if old_sessions then
+			local keep, count = {}, 0;
+			for token, info in it.sorted_pairs(old_sessions, function(a, b)
+				return (old_sessions[a].t or 0) > (old_sessions[b].t or 0);
+			end) do
+				count = count + 1;
+				if count > max_old_sessions then break end
+				keep[token] = info;
+			end
+			all_old_sessions:set(session.username, keep);
+		end
 	end
 
 	module:log("debug", "Enabling stream management");
