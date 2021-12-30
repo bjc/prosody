@@ -297,6 +297,8 @@ function handle_enable(session, stanza, xmlns_sm)
 				keep[token] = info;
 			end
 			all_old_sessions:set(session.username, keep);
+		elseif err then
+			module:log("error", "Unable to retrieve old resumption counters: %s", err);
 		end
 	end
 
