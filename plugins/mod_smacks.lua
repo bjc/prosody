@@ -467,7 +467,8 @@ module:hook("pre-resource-unbind", function (event)
 
 		session.log("debug", "Destroying session for hibernating too long");
 		session_registry[jid.join(session.username, session.host, session.resumption_token)] = nil;
-		old_session_registry:set(session.username, session.resumption_token, { h = session.handled_stanza_count });
+		old_session_registry:set(session.username, session.resumption_token,
+			{ h = session.handled_stanza_count; t = os.time() });
 		session.resumption_token = nil;
 		session.resending_unacked = true; -- stop outgoing_stanza_filter from re-queueing anything anymore
 		sessionmanager.destroy_session(session, "Hibernating too long");
@@ -681,7 +682,8 @@ module:hook_global("server-stopping", function(event)
 	for _, user in pairs(local_sessions) do
 		for _, session in pairs(user.sessions) do
 			if session.resumption_token then
-				if old_session_registry:set(session.username, session.resumption_token, { h = session.handled_stanza_count }) then
+				if old_session_registry:set(session.username, session.resumption_token,
+					{ h = session.handled_stanza_count; t = os.time() }) then
 					session.resumption_token = nil;
 
 					-- Deal with unacked stanzas
