@@ -70,11 +70,6 @@ local function check_attr(attr)
 		for k, v in pairs(attr) do
 			check_name(k, "attribute");
 			check_text(v, "attribute");
-			if type(v) ~= "string" then
-				error("invalid attribute value for '"..k.."': expected string, got "..type(v));
-			elseif not valid_utf8(v) then
-				error("invalid attribute value for '"..k.."': contains invalid utf8");
-			end
 		end
 	end
 end
