@@ -552,4 +552,16 @@ describe("util.stanza", function()
 		assert.equal("<foo>\n\t\t<bar>\n\t\t\t<baz/>\n\t\t\t<cow>moo</cow>\n\t\t</bar>\n\t</foo>", tostring(s:indent(2, "\t")));
 	end);
 
+	describe("find", function()
+		it("works", function()
+			local s = st.stanza("root", { attr = "value" }):tag("child",
+				{ xmlns = "urn:example:not:same"; childattr = "thisvalue" }):text_tag("nested", "text"):reset();
+			assert.equal("value", s:find("@attr"), "finds attr")
+			assert.equal(s:get_child("child", "urn:example:not:same"), s:find("{urn:example:not:same}child"),
+				"equivalent to get_child")
+			assert.equal("thisvalue", s:find("{urn:example:not:same}child@childattr"), "finds child attr")
+			assert.equal("text", s:find("{urn:example:not:same}child/nested#"), "finds nested text")
+			assert.is_nil(s:find("child"), "respects namespaces")
+		end);
+	end);
 end);
