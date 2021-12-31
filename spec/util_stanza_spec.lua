@@ -85,6 +85,31 @@ describe("util.stanza", function()
 			assert.same(st.stanza("foo"):text(nil), s_control);
 			assert.same(st.stanza("foo"):text(""), s_control);
 		end);
+		it("validates names", function ()
+			assert.has_error_match(function ()
+				st.stanza("invalid\0name");
+			end, "invalid tag name:")
+			assert.has_error_match(function ()
+				st.stanza("name", { ["foo\1\2\3bar"] = "baz" });
+			end, "invalid attribute name: contains control characters")
+			assert.has_error_match(function ()
+				st.stanza("name", { ["foo"] = "baz\1\2\3\255moo" });
+			end, "invalid attribute value: contains control characters")
+		end)
+		it("validates types", function ()
+			assert.has_error_match(function ()
+				st.stanza(1);
+			end, "invalid tag name: expected string, got number")
+			assert.has_error_match(function ()
+				st.stanza("name", "string");
+			end, "invalid attributes: expected table, got string")
+			assert.has_error_match(function ()
+				st.stanza("name",{1});
+			end, "invalid attribute name: expected string, got number")
+			assert.has_error_match(function ()
+				st.stanza("name",{foo=1});
+			end, "invalid attribute value: expected string, got number")
+		end)
 	end);
 
 	describe("#message()", function()
