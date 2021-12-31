@@ -65,7 +65,7 @@ end
 local function check_attr(attr)
 	if attr ~= nil then
 		if type(attr) ~= "table" then
-			error("invalid attributes, expected table got "..type(attr));
+			error("invalid attributes: expected table, got "..type(attr));
 		end
 		for k, v in pairs(attr) do
 			check_name(k, "attribute");
