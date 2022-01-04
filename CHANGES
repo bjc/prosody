@@ -20,6 +20,7 @@ TRUNK
 -   mod_invites: Create and manage invites
 -   mod_invites_register: Create accounts using invites
 -   mod_invites_adhoc: Create invites via AdHoc command
+-   mod_bookmarks: Synchronise open rooms between clients
 
 ### Security and authentication
 
