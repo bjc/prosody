@@ -176,6 +176,26 @@ local function publish_to_pep(jid, bookmarks, synchronise)
 	else
 		module:log("debug", "Got existing bookmarks2.");
 		bookmarks2 = ret;
+
+		local ok, err = service:get_node_config(namespace, jid);
+		if not ok then
+			module:log("error", "Retrieving bookmarks 2 node config failed: %s", err);
+			return ok, err;
+		end
+
+		local options = err;
+		for key, value in pairs(default_options) do
+			if options[key] and options[key] ~= value then
+				module:log("warn", "Overriding bookmarks 2 configuration for %s, from %s to %s", jid, options[key], value);
+				options[key] = value;
+			end
+		end
+
+		local ok, err = service:set_node_config(namespace, jid, options);
+		if not ok then
+			module:log("error", "Setting bookmarks 2 node config failed: %s", err);
+			return ok, err;
+		end
 	end
 
 	-- Get a list of all items we may want to remove.
