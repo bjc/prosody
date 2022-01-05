@@ -242,7 +242,7 @@ function module.command(arg)
 	local mm = require "core.modulemanager";
 
 	local host = arg[1];
-	assert(hosts[host], "Host "..tostring(host).." does not exist");
+	assert(prosody.hosts[host], "Host "..tostring(host).." does not exist");
 	sm.initialize_host(host);
 	table.remove(arg, 1); -- pop host
 	module.host = host; --luacheck: ignore 122/module
