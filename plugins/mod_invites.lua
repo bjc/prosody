@@ -250,6 +250,7 @@ function module.command(arg)
 
 	-- Load mod_invites
 	local invites = module:depends("invites");
+	-- Optional community module that if used, needs to be loaded here
 	local invites_page_module = module:get_option_string("invites_page_module", "invites_page");
 	if mm.get_modules_for_host(host):contains(invites_page_module) then
 		module:depends(invites_page_module);
