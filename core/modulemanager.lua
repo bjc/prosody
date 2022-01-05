@@ -76,13 +76,6 @@ local function get_modules_for_host(host)
 	end
 	local modules = (global_modules + set.new(host_modules_enabled)) - set.new(host_modules_disabled);
 
-	-- COMPAT w/ pre 0.8
-	if modules:contains("console") then
-		log("error", "The mod_console plugin has been renamed to mod_admin_telnet. Please update your config.");
-		modules:remove("console");
-		modules:add("admin_telnet");
-	end
-
 	if modules:contains("vcard") and modules:contains("vcard_legacy") then
 		log("error", "The mod_vcard_legacy plugin replaces mod_vcard but both are enabled. Please update your config.");
 		modules:remove("vcard");
