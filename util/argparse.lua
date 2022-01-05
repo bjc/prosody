@@ -1,6 +1,7 @@
 local function parse(arg, config)
 	local short_params = config and config.short_params or {};
 	local value_params = config and config.value_params or {};
+	local array_params = config and config.array_params or {};
 
 	local parsed_opts = {};
 
@@ -30,7 +31,7 @@ local function parse(arg, config)
 		end
 
 		local param_k, param_v;
-		if value_params[param] then
+		if value_params[param] or array_params[param] then
 			param_k, param_v = param, table.remove(arg, 1);
 			if not param_v then
 				return nil, "missing-value", raw_param;
@@ -46,7 +47,15 @@ local function parse(arg, config)
 			end
 			param_k = param_k:gsub("%-", "_");
 		end
-		parsed_opts[param_k] = param_v;
+		if array_params[param] then
+			if parsed_opts[param_k] then
+				table.insert(parsed_opts[param_k], param_v);
+			else
+				parsed_opts[param_k] = { param_v };
+			end
+		else
+			parsed_opts[param_k] = param_v;
+		end
 	end
 	for i = 1, #arg do
 		parsed_opts[i] = arg[i];

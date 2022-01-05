@@ -50,4 +50,9 @@ describe("parse", function()
 		assert.equal("-h", where, "returned where");
 	end);
 
+	it("supports array arguments", function ()
+		local opts, err = parse({ "--item"; "foo"; "--item"; "bar" }, { array_params = { item = true } });
+		assert.falsy(err);
+		assert.same({"foo","bar"}, opts.item);
+	end)
 end);
