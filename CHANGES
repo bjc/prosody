@@ -19,6 +19,7 @@ TRUNK
 -   mod_tombstones: Prevent registration of deleted accounts
 -   mod_invites: Create and manage invites
 -   mod_invites_register: Create accounts using invites
+-   mod_invites_adhoc: Create invites via AdHoc command
 
 ### Security and authentication
 
