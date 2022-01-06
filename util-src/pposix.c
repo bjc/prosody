@@ -728,26 +728,33 @@ static int lc_setenv(lua_State *L) {
 
 #ifdef WITH_MALLINFO
 static int lc_meminfo(lua_State *L) {
+#if __GLIBC_PREREQ(2, 33)
+	struct mallinfo2 info = mallinfo2();
+#define MALLINFO_T size_t
+#else
 	struct mallinfo info = mallinfo();
+#define MALLINFO_T unsigned
+#endif
 	lua_createtable(L, 0, 5);
 	/* This is the total size of memory allocated with sbrk by malloc, in bytes. */
-	lua_pushinteger(L, (unsigned)info.arena);
+	lua_pushinteger(L, (MALLINFO_T)info.arena);
 	lua_setfield(L, -2, "allocated");
 	/* This is the total size of memory allocated with mmap, in bytes. */
-	lua_pushinteger(L, (unsigned)info.hblkhd);
+	lua_pushinteger(L, (MALLINFO_T)info.hblkhd);
 	lua_setfield(L, -2, "allocated_mmap");
 	/* This is the total size of memory occupied by chunks handed out by malloc. */
-	lua_pushinteger(L, (unsigned)info.uordblks);
+	lua_pushinteger(L, (MALLINFO_T)info.uordblks);
 	lua_setfield(L, -2, "used");
 	/* This is the total size of memory occupied by free (not in use) chunks. */
-	lua_pushinteger(L, (unsigned)info.fordblks);
+	lua_pushinteger(L, (MALLINFO_T)info.fordblks);
 	lua_setfield(L, -2, "unused");
 	/* This is the size of the top-most releasable chunk that normally borders the
 	   end of the heap (i.e., the high end of the virtual address space's data segment). */
-	lua_pushinteger(L, (unsigned)info.keepcost);
+	lua_pushinteger(L, (MALLINFO_T)info.keepcost);
 	lua_setfield(L, -2, "returnable");
 	return 1;
 }
+#undef MALLINFO_T
 #endif
 
 /*
