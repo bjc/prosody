@@ -221,6 +221,7 @@ function get_pep_service(username)
 			["access_model"] = "presence";
 			["send_last_published_item"] = "on_sub_and_presence";
 		};
+		max_items = max_max_items;
 
 		autocreate_on_publish = true;
 		autocreate_on_subscribe = false;

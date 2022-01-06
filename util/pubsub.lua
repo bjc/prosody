@@ -5,6 +5,7 @@ local errors = require "util.error";
 local service_mt = {};
 
 local default_config = {
+	max_items = 256;
 	itemstore = function (config, _) return cache.new(config["max_items"]) end;
 	broadcaster = function () end;
 	subscriber_filter = function (subs) return subs end;
@@ -841,7 +842,11 @@ function service:set_node_config(node, actor, new_config) --> ok, err
 		end
 	elseif old_config["max_items"] ~= node_obj.config["max_items"] then
 		if self.data[node] then
-			self.data[node]:resize(self.nodes[node].config["max_items"]);
+			local max_items = self.nodes[node].config["max_items"];
+			if max_items == "max" then
+				max_items = self.config.max_items;
+			end
+			self.data[node]:resize(max_items);
 		end
 	end
 

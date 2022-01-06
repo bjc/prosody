@@ -169,6 +169,26 @@ describe("util.pubsub", function ()
 			}, ret);
 		end);
 
+		it("has a default max_items", function ()
+			assert.truthy(service.config.max_items);
+		end)
+
+		it("changes max_items to max", function ()
+			assert.truthy(service:set_node_config("node", true, { max_items = "max" }));
+		end);
+
+		it("publishes some more items", function()
+			for i = 4, service.config.max_items + 5 do
+				assert.truthy(service:publish("node", true, tostring(i), "item " .. tostring(i)));
+			end
+		end);
+
+		it("should still return only two items", function ()
+			local ok, ret = service:get_items("node", true);
+			assert.truthy(ok);
+			assert.same(service.config.max_items, #ret);
+		end);
+
 	end);
 
 	describe("the thing", function ()

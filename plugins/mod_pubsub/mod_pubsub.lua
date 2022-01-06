@@ -224,6 +224,7 @@ function module.load()
 		node_defaults = {
 			["persist_items"] = true;
 		};
+		max_items = max_max_items;
 		nodestore = node_store;
 		itemstore = create_simple_itemstore;
 		broadcaster = simple_broadcast;
