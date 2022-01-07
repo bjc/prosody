@@ -414,7 +414,9 @@ module:hook("iq/bare/http://jabber.org/protocol/pubsub:pubsub", function (event)
 		return on_publish_legacy_pep(event);
 	end
 end, 1);
-module:hook("resource-bind", migrate_legacy_bookmarks);
+if module:get_option_boolean("upgrade_legacy_bookmarks", true) then
+	module:hook("resource-bind", migrate_legacy_bookmarks);
+end
 module:handle_items("pep-service", function (event)
 	local service = event.item.service;
 	module:hook_object_event(service.events, "node-created", on_node_created);
