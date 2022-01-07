@@ -418,4 +418,7 @@ module:hook("resource-bind", migrate_legacy_bookmarks);
 module:handle_items("pep-service", function (event)
 	local service = event.item.service;
 	module:hook_object_event(service.events, "node-created", on_node_created);
-end, function () end, true);
+end, function (event)
+	local service = event.item.service;
+	module:unhook_object_event(service.events, "node-created", on_node_created);
+end, true);
