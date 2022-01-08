@@ -113,17 +113,17 @@ local function check(arg)
 			"setuid",
 		});
 		local deprecated_replacements = {
-			anonymous_login = "use 'authentication = \"anonymous\"'",
-			daemonize = "use the --daemonize/-D or --foreground/-F command line flags",
-			disallow_s2s = "add \"s2s\" to 'modules_disabled'",
-			no_daemonize = "use the --daemonize/-D or --foreground/-F command line flags",
-			require_encryption = "use 'c2s_require_encryption' and 's2s_require_encryption'",
-			vcard_compatibility = "use 'mod_compat_vcard' from prosody-modules",
-			use_libevent = "use 'network_backend = \"event\"'",
-			whitelist_registration_only = "use 'allowlist_registration_only'",
-			registration_whitelist = "use 'registration_allowlist'",
-			registration_blacklist = "use 'registration_blocklist'",
-			blacklist_on_registration_throttle_overload = "use 'blocklist_on_registration_throttle_overload'",
+			anonymous_login = "instead, use 'authentication = \"anonymous\"'",
+			daemonize = "instead, use the --daemonize/-D or --foreground/-F command line flags",
+			disallow_s2s = "instead, add \"s2s\" to 'modules_disabled'",
+			no_daemonize = "instead, use the --daemonize/-D or --foreground/-F command line flags",
+			require_encryption = "instead, use 'c2s_require_encryption' and 's2s_require_encryption'",
+			vcard_compatibility = "instead, use 'mod_compat_vcard' from prosody-modules",
+			use_libevent = "instead, use 'network_backend = \"event\"'",
+			whitelist_registration_only = "instead, use 'allowlist_registration_only'",
+			registration_whitelist = "instead, use 'registration_allowlist'",
+			registration_blacklist = "instead, use 'registration_blocklist'",
+			blacklist_on_registration_throttle_overload = "instead, use 'blocklist_on_registration_throttle_overload'",
 		};
 		-- FIXME all the singular _port and _interface options are supposed to be deprecated too
 		local deprecated_ports = { bosh = "http", legacy_ssl = "c2s_direct_tls" };
@@ -131,7 +131,7 @@ local function check(arg)
 		for port, replacement in pairs(deprecated_ports) do
 			for suffix in port_suffixes do
 				local rsuffix = (suffix == "port" or suffix == "interface") and suffix.."s" or suffix;
-				deprecated_replacements[port.."_"..suffix] = "use '"..replacement.."_"..rsuffix.."'"
+				deprecated_replacements[port.."_"..suffix] = "instead, use '"..replacement.."_"..rsuffix.."'"
 			end
 		end
 		local deprecated = set.new(array.collect(it.keys(deprecated_replacements)));
@@ -265,7 +265,7 @@ local function check(arg)
 			print("");
 			print("    You have some deprecated options in the global section:");
 			for option in deprecated_global_options do
-				print(("    '%s' -- instead, %s"):format(option, deprecated_replacements[option]));
+				print(("    '%s' -- %s"):format(option, deprecated_replacements[option]));
 			end
 			ok = false;
 		end
