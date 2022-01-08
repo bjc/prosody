@@ -116,7 +116,7 @@ local function check(arg)
 			anonymous_login = "use 'authentication = \"anonymous\"'",
 			daemonize = "use the --daemonize/-D or --foreground/-F command line flags",
 			disallow_s2s = "add \"s2s\" to 'modules_disabled'",
-			no_daemonize = "use the --daemonize/-D or --foreground/-F flags",
+			no_daemonize = "use the --daemonize/-D or --foreground/-F command line flags",
 			require_encryption = "use 'c2s_require_encryption' and 's2s_require_encryption'",
 			vcard_compatibility = "use 'mod_compat_vcard' from prosody-modules",
 			use_libevent = "use 'network_backend = \"event\"'",
