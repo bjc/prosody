@@ -112,18 +112,32 @@ local function check(arg)
 			"setgid",
 			"setuid",
 		});
+		local function instead_use(kind, name, value)
+			if kind == "option" then
+				if value then
+					return string.format("instead, use '%s = %q'", name, value);
+				else
+					return string.format("instead, use '%s'", name);
+				end
+			elseif kind == "module" then
+				return string.format("instead, add %q to '%s'", name, value or "modules_enabled");
+			elseif kind == "community" then
+				return string.format("instead, add %q from %s", name, value or "prosody-modules");
+			end
+			return kind
+		end
 		local deprecated_replacements = {
-			anonymous_login = "instead, use 'authentication = \"anonymous\"'",
-			daemonize = "instead, use the --daemonize/-D or --foreground/-F command line flags",
-			disallow_s2s = "instead, add \"s2s\" to 'modules_disabled'",
-			no_daemonize = "instead, use the --daemonize/-D or --foreground/-F command line flags",
-			require_encryption = "instead, use 'c2s_require_encryption' and 's2s_require_encryption'",
-			vcard_compatibility = "instead, use 'mod_compat_vcard' from prosody-modules",
-			use_libevent = "instead, use 'network_backend = \"event\"'",
-			whitelist_registration_only = "instead, use 'allowlist_registration_only'",
-			registration_whitelist = "instead, use 'registration_allowlist'",
-			registration_blacklist = "instead, use 'registration_blocklist'",
-			blacklist_on_registration_throttle_overload = "instead, use 'blocklist_on_registration_throttle_overload'",
+			anonymous_login = instead_use("option", "authentication", "anonymous");
+			daemonize = "instead, use the --daemonize/-D or --foreground/-F command line flags";
+			disallow_s2s = instead_use("module", "s2s");
+			no_daemonize = "instead, use the --daemonize/-D or --foreground/-F command line flags";
+			require_encryption = "instead, use 'c2s_require_encryption' and 's2s_require_encryption'";
+			vcard_compatibility = instead_use("community", "mod_compat_vcard");
+			use_libevent = instead_use("option", "network_backend", "event");
+			whitelist_registration_only = instead_use("option", "allowlist_registration_only");
+			registration_whitelist = instead_use("option", "registration_allowlist");
+			registration_blacklist = instead_use("option", "registration_blocklist");
+			blacklist_on_registration_throttle_overload = instead_use("blocklist_on_registration_throttle_overload");
 		};
 		-- FIXME all the singular _port and _interface options are supposed to be deprecated too
 		local deprecated_ports = { bosh = "http", legacy_ssl = "c2s_direct_tls" };
