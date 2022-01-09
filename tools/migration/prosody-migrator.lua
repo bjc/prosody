@@ -35,7 +35,10 @@ end
 local default_config = (CFG_CONFIGDIR or ".").."/migrator.cfg.lua";
 
 local function usage()
-	print("Usage: " .. arg[0] .. " FROM_STORE TO_STORE");
+	print("Usage: " .. arg[0] .. " [OPTIONS] FROM_STORE TO_STORE");
+	print("  --config FILE         Specify config file")
+	print("  -v, --verbose         Incease log-level");
+	print("");
 	print("If no stores are specified, 'input' and 'output' are used.");
 end
 
