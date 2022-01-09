@@ -354,11 +354,37 @@ local function migrate_legacy_bookmarks(event)
 			end
 		end
 		if not failed then
-			module:log("debug", "Successfully migrated legacy PEP bookmarks of %s to bookmarks 2, attempting deletion of the node.", jid);
-			local ok, err = service:delete(namespace_legacy, jid);
+			module:log("debug", "Successfully migrated legacy PEP bookmarks of %s to bookmarks 2, clearing items.", jid);
+			local ok, err = service:purge(namespace_legacy, jid, false);
 			if not ok then
 				module:log("error", "Failed to delete legacy PEP bookmarks for %s: %s", jid, err);
 			end
+		end
+	end
+
+	local ok, current_legacy_config = service:get_node_config(namespace_legacy, jid);
+	if not ok or current_legacy_config["access_model"] ~= "whitelist" then
+		-- The legacy node must exist in order for the access model to apply to the
+		-- XEP-0411 COMPAT broadcasts (which bypass the pubsub service entirely),
+		-- so create or reconfigure it to be useless.
+		--
+		-- FIXME It would be handy to have a publish model that prevents the owner
+		-- from publishing, but the affiliation takes priority
+		local config = {
+			["persist_items"] = false;
+			["max_items"] = 1;
+			["send_last_published_item"] = "never";
+			["access_model"] = "whitelist";
+		};
+		local ok, err;
+		if ret == "item-not-found" then
+			ok, err = service:create(namespace_legacy, jid, config);
+		else
+			ok, err = service:set_node_config(namespace_legacy, jid, config);
+		end
+		if not ok then
+			module:log("error", "Setting legacy bookmarks node config failed: %s", err);
+			return ok, err;
 		end
 	end
 
@@ -391,20 +417,6 @@ local function migrate_legacy_bookmarks(event)
 	module:log("debug", "Removed legacy bookmarks of %s, migration done!", jid);
 end
 
-local function on_node_created(event)
-	local service, node, actor = event.service, event.node, event.actor;
-	if node ~= namespace_legacy then
-		return;
-	end
-
-	module:log("debug", "Something tried to create legacy PEP bookmarks for %s.", actor);
-	local ok, err = service:delete(namespace_legacy, actor);
-	if not ok then
-		module:log("error", "Failed to delete legacy PEP bookmarks for %s: %s", actor, err);
-	end
-	module:log("debug", "Legacy PEP bookmarks node of %s deleted.", actor);
-end
-
 module:hook("iq/bare/jabber:iq:private:query", function (event)
 	if event.stanza.attr.type == "get" then
 		return on_retrieve_private_xml(event);
@@ -430,7 +442,6 @@ local function legacy_broadcast(event)
 	if not ok then return end
 	local legacy_bookmarks_item = st.stanza("item", { xmlns = xmlns_pubsub; id = "current" })
 		:add_child(generate_legacy_storage(bookmarks));
-	-- FIXME This broadcasts to any and all contacts who sent +notify because the node does not exist, so defaults apply.
 	service:broadcast("items", namespace_legacy, { --[[ no subscribers ]] }, legacy_bookmarks_item, event.actor);
 end
 local function broadcast_legacy_removal(event)
@@ -445,14 +456,12 @@ module:hook("presence/initial", function (event)
 end);
 module:handle_items("pep-service", function (event)
 	local service = event.item.service;
-	module:hook_object_event(service.events, "node-created", on_node_created);
 	module:hook_object_event(service.events, "item-published/" .. namespace, legacy_broadcast);
 	module:hook_object_event(service.events, "item-retracted", broadcast_legacy_removal);
 	module:hook_object_event(service.events, "node-purged", broadcast_legacy_removal);
 	module:hook_object_event(service.events, "node-deleted", broadcast_legacy_removal);
 end, function (event)
 	local service = event.item.service;
-	module:unhook_object_event(service.events, "node-created", on_node_created);
 	module:unhook_object_event(service.events, "item-published/" .. namespace, legacy_broadcast);
 	module:unhook_object_event(service.events, "item-retracted", broadcast_legacy_removal);
 	module:unhook_object_event(service.events, "node-purged", broadcast_legacy_removal);
