@@ -168,6 +168,21 @@ local function get_driver(host, conf)
 	return assert(sm.load_driver(host, conf.type));
 end
 
+local migrate_once = {
+	keyval = function(origin, destination, user)
+		local data, err = origin:get(user);
+		assert(not err, err);
+		assert(destination:set(user, data));
+	end;
+	archive = function(origin, destination, user)
+		local iter, err = origin:find(user);
+		assert(iter, err);
+		for id, item, when, with in iter do
+			assert(destination:append(user, id, item, when, with));
+		end
+	end;
+}
+
 local migration_runner = async.runner(function (job)
 	for host, stores in pairs(job.input.hosts) do
 		prosody.hosts[host] = startup.make_host(host);
@@ -186,26 +201,13 @@ local migration_runner = async.runner(function (job)
 			local origin = assert(input_driver:open(store, typ));
 			local destination = assert(output_driver:open(store, typ));
 
+			local migrate = assert(migrate_once[typ], "Unknown store type: "..typ);
 			if typ == "keyval" then -- host data
-				local data, err = origin:get(nil);
-				assert(not err, err);
-				assert(destination:set(nil, data));
+				migrate(origin, destination, nil);
 			end
 
 			for user in users(origin, host) do
-				if typ == "keyval" then
-					local data, err = origin:get(user);
-					assert(not err, err);
-					assert(destination:set(user, data));
-				elseif typ == "archive" then
-					local iter, err = origin:find(user);
-					assert(iter, err);
-					for id, item, when, with in iter do
-						assert(destination:append(user, id, item, when, with));
-					end
-				else
-					error("Don't know how to migrate data of type '"..typ.."'.");
-				end
+				migrate(origin, destination, user);
 			end
 		end
 	end
