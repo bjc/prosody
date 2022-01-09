@@ -37,6 +37,7 @@ local default_config = (CFG_CONFIGDIR or ".").."/migrator.cfg.lua";
 local function usage()
 	print("Usage: " .. arg[0] .. " [OPTIONS] FROM_STORE TO_STORE");
 	print("  --config FILE         Specify config file")
+	print("  --keep-going          Keep going in case of errors");
 	print("  -v, --verbose         Incease log-level");
 	print("");
 	print("If no stores are specified, 'input' and 'output' are used.");
@@ -182,6 +183,19 @@ local migrate_once = {
 		end
 	end;
 }
+
+if options["keep-going"] then
+	local xpcall = require "util.xpcall".xpcall;
+	local function log_err(err)
+		log("error", "Error migrating data: %s", err);
+		log("debug", "%s", debug.traceback());
+	end
+	for t, f in pairs(migrate_once) do
+		migrate_once[t] = function (origin, destination, user)
+			xpcall(f, log_err, origin, destination, user);
+		end
+	end
+end
 
 local migration_runner = async.runner(function (job)
 	for host, stores in pairs(job.input.hosts) do
