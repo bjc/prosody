@@ -335,7 +335,7 @@ local function migrate_legacy_bookmarks(event)
 	local jid = username.."@"..session.host;
 
 	local ok, ret = service:get_items(namespace_legacy, session.full_jid);
-	if ok then
+	if ok and ret[1] then
 		module:log("debug", "Legacy PEP bookmarks found for %s, migrating.", jid);
 		local failed = false;
 		for _, item_id in ipairs(ret) do
