@@ -33,8 +33,8 @@ local arg_settigs = {
 	};
 }
 
-function startup.parse_args()
-	local opts, err, where = parse_args(arg, arg_settigs[prosody.process_type]);
+function startup.parse_args(profile)
+	local opts, err, where = parse_args(arg, arg_settigs[profile or prosody.process_type] or profile);
 	if not opts then
 		if err == "param-not-found" then
 			print("Unknown command-line option: "..tostring(where));
