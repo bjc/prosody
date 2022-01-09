@@ -150,8 +150,10 @@ local um = require "core.usermanager";
 
 local function users(store, host)
 	if store.users then
+		log("debug", "Using store user iterator")
 		return store:users();
 	else
+		log("debug", "Using usermanagre user iterator")
 		return um.users(host);
 	end
 end
@@ -186,12 +188,16 @@ local migrate_once = {
 
 if options["keep-going"] then
 	local xpcall = require "util.xpcall".xpcall;
-	local function log_err(err)
-		log("error", "Error migrating data: %s", err);
-		log("debug", "%s", debug.traceback());
-	end
 	for t, f in pairs(migrate_once) do
 		migrate_once[t] = function (origin, destination, user)
+			local function log_err(err)
+				if user then
+					log("error", "Error migrating data for user %q: %s", user, err);
+				else
+					log("error", "Error migrating data for host: %s", err);
+				end
+				log("debug", "%s", debug.traceback(nil, 2));
+			end
 			xpcall(f, log_err, origin, destination, user);
 		end
 	end
@@ -220,6 +226,7 @@ local migration_runner = async.runner(function (job)
 			migrate(origin, destination, nil); -- host data
 
 			for user in users(origin, host) do
+				log("info", "Migrating user %s@%s store %s (%s)", user, host, store, typ);
 				migrate(origin, destination, user);
 			end
 		end
