@@ -12,6 +12,7 @@ local private_storage = module:open_store("private", "map");
 local namespace = "urn:xmpp:bookmarks:1";
 local namespace_private = "jabber:iq:private";
 local namespace_legacy = "storage:bookmarks";
+local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 
 local default_options = {
 	["persist_items"] = true;
@@ -24,11 +25,15 @@ module:hook("account-disco-info", function (event)
 	-- This Time it’s Serious!
 	event.reply:tag("feature", { var = namespace.."#compat" }):up();
 	event.reply:tag("feature", { var = namespace.."#compat-pep" }):up();
+
+	-- COMPAT XEP-0411
+	event.reply:tag("feature", { var = "urn:xmpp:bookmarks-conversion:0" }):up();
 end);
 
 -- This must be declared on the domain JID, not the account JID.  Note that
 -- this isn’t defined in the XEP.
 module:add_feature(namespace_private);
+
 
 local function generate_legacy_storage(items)
 	local storage = st.stanza("storage", { xmlns = namespace_legacy });
@@ -417,10 +422,39 @@ end, 1);
 if module:get_option_boolean("upgrade_legacy_bookmarks", true) then
 	module:hook("resource-bind", migrate_legacy_bookmarks);
 end
+-- COMPAT XEP-0411 Broadcast as per XEP-0048 + PEP
+local function legacy_broadcast(event)
+	local service = event.service;
+	local ok, bookmarks = service:get_items(namespace, event.actor);
+	if bookmarks == "item-not-found" then ok, bookmarks = true, {} end
+	if not ok then return end
+	local legacy_bookmarks_item = st.stanza("item", { xmlns = xmlns_pubsub; id = "current" })
+		:add_child(generate_legacy_storage(bookmarks));
+	-- FIXME This broadcasts to any and all contacts who sent +notify because the node does not exist, so defaults apply.
+	service:broadcast("items", namespace_legacy, { --[[ no subscribers ]] }, legacy_bookmarks_item, event.actor);
+end
+local function broadcast_legacy_removal(event)
+	if event.node ~= namespace then return end
+	return legacy_broadcast(event);
+end
+module:hook("presence/initial", function (event)
+	-- Broadcasts to all clients with legacy+notify, not just the one coming online.
+	-- Upgrade to XEP-0402 to avoid it
+	local service = mod_pep.get_pep_service(event.origin.username);
+	legacy_broadcast({ service = service, actor = event.origin.full_jid });
+end);
 module:handle_items("pep-service", function (event)
 	local service = event.item.service;
 	module:hook_object_event(service.events, "node-created", on_node_created);
+	module:hook_object_event(service.events, "item-published/" .. namespace, legacy_broadcast);
+	module:hook_object_event(service.events, "item-retracted", broadcast_legacy_removal);
+	module:hook_object_event(service.events, "node-purged", broadcast_legacy_removal);
+	module:hook_object_event(service.events, "node-deleted", broadcast_legacy_removal);
 end, function (event)
 	local service = event.item.service;
 	module:unhook_object_event(service.events, "node-created", on_node_created);
+	module:unhook_object_event(service.events, "item-published/" .. namespace, legacy_broadcast);
+	module:unhook_object_event(service.events, "item-retracted", broadcast_legacy_removal);
+	module:unhook_object_event(service.events, "node-purged", broadcast_legacy_removal);
+	module:unhook_object_event(service.events, "node-deleted", broadcast_legacy_removal);
 end, true);
