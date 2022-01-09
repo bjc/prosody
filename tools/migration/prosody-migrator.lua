@@ -36,9 +36,16 @@ local default_config = (CFG_CONFIGDIR or ".").."/migrator.cfg.lua";
 
 local startup = require "util.startup";
 do
-	startup.parse_args();
+	startup.parse_args({
+		short_params = { v = "verbose", h = "help", ["?"] = "help" };
+		value_params = { config = true };
+	});
 	startup.init_global_state();
 	prosody.process_type = "migrator";
+	if prosody.opts.help then
+		print("prosody-migrator [input] [output]")
+		os.exit(0);
+	end
 	startup.force_console_logging();
 	startup.init_logging();
 	startup.init_gc();
