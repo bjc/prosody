@@ -185,11 +185,24 @@ local migrate_once = {
 		end
 	end;
 }
+migrate_once.pubsub = function(origin, destination, user, prefix, input_driver, output_driver)
+	if not user and prefix == "pubsub_" then return end
+	local data, err = origin:get(user);
+	assert(not err, err);
+	if not data then return end
+	assert(destination:set(user, data));
+	if prefix == "pubsub_" then user = nil end
+	for node in pairs(data) do
+		local pep_origin = assert(input_driver:open(prefix .. node, "archive"));
+		local pep_destination = assert(output_driver:open(prefix .. node, "archive"));
+		migrate_once.archive(pep_origin, pep_destination, user);
+	end
+end
 
 if options["keep-going"] then
 	local xpcall = require "util.xpcall".xpcall;
 	for t, f in pairs(migrate_once) do
-		migrate_once[t] = function (origin, destination, user)
+		migrate_once[t] = function (origin, destination, user, ...)
 			local function log_err(err)
 				if user then
 					log("error", "Error migrating data for user %q: %s", user, err);
@@ -198,7 +211,7 @@ if options["keep-going"] then
 				end
 				log("debug", "%s", debug.traceback(nil, 2));
 			end
-			xpcall(f, log_err, origin, destination, user);
+			xpcall(f, log_err, origin, destination, user, ...);
 		end
 	end
 end
@@ -218,16 +231,20 @@ local migration_runner = async.runner(function (job)
 			if typ then store = store:sub(1, p-1); else typ = "keyval"; end
 			log("info", "Migrating host %s store %s (%s)", host, store, typ);
 
+			local migrate = assert(migrate_once[typ], "Unknown store type: "..typ);
+
+			local prefix = store .. "_";
+			if typ == "pubsub" then typ = "keyval"; end
+			if store == "pubsub_nodes" then prefix = "pubsub_"; end
+
 			local origin = assert(input_driver:open(store, typ));
 			local destination = assert(output_driver:open(store, typ));
 
-			local migrate = assert(migrate_once[typ], "Unknown store type: "..typ);
-
-			migrate(origin, destination, nil); -- host data
+			migrate(origin, destination, nil, prefix, input_driver, output_driver); -- host data
 
 			for user in users(origin, host) do
 				log("info", "Migrating user %s@%s store %s (%s)", user, host, store, typ);
-				migrate(origin, destination, user);
+				migrate(origin, destination, user, prefix, input_driver, output_driver);
 			end
 		end
 	end

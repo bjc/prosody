@@ -10,10 +10,8 @@ local vhost = {
 	"privacy",
 	"archive-archive",
 	"offline-archive",
-	"pubsub_nodes",
-	-- "pubsub_*-archive",
-	"pep",
-	-- "pep_*-archive",
+	"pubsub_nodes-pubsub",
+	"pep-pubsub",
 }
 local muc = {
 	"persistent",
