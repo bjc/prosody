@@ -223,7 +223,7 @@ function cert_commands.import(arg)
 	local imported = {};
 	for _, host in ipairs(hostnames) do
 		local paths = cm.find_cert_in_index(files_by_name, host);
-		if paths and not imported[paths.certificate] then
+		if paths and imported[paths.certificate] then
 			-- One certificate, many mames!
 			table.insert(imported, host);
 		elseif paths then
