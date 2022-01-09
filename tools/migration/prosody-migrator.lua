@@ -202,9 +202,8 @@ local migration_runner = async.runner(function (job)
 			local destination = assert(output_driver:open(store, typ));
 
 			local migrate = assert(migrate_once[typ], "Unknown store type: "..typ);
-			if typ == "keyval" then -- host data
-				migrate(origin, destination, nil);
-			end
+
+			migrate(origin, destination, nil); -- host data
 
 			for user in users(origin, host) do
 				migrate(origin, destination, user);
