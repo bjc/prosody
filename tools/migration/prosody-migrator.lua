@@ -34,6 +34,11 @@ end
 
 local default_config = (CFG_CONFIGDIR or ".").."/migrator.cfg.lua";
 
+local function usage()
+	print("Usage: " .. arg[0] .. " FROM_STORE TO_STORE");
+	print("If no stores are specified, 'input' and 'output' are used.");
+end
+
 local startup = require "util.startup";
 do
 	startup.parse_args({
@@ -43,7 +48,7 @@ do
 	startup.init_global_state();
 	prosody.process_type = "migrator";
 	if prosody.opts.help then
-		print("prosody-migrator [input] [output]")
+		usage();
 		os.exit(0);
 	end
 	startup.force_console_logging();
@@ -112,8 +117,7 @@ end
 
 if have_err then
 	print("");
-	print("Usage: "..arg[0].." FROM_STORE TO_STORE");
-	print("If no stores are specified, 'input' and 'output' are used.");
+	usage();
 	print("");
 	print("The available stores in your migrator config are:");
 	print("");
