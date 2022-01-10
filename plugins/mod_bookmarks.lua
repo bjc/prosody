@@ -41,16 +41,21 @@ local function generate_legacy_storage(items)
 	for _, item_id in ipairs(items) do
 		local item = items[item_id];
 		local bookmark = item:get_child("conference", namespace);
+		if not bookmark then
+			module:log("warn", "Invalid bookmark published: expected {%s}conference, got {%s}%s", namespace,
+
+				item.tags[1] and item.tags[1].attr.xmlns, item.tags[1] and item.tags[1].name);
+		end
 		local conference = st.stanza("conference", {
 			jid = item.attr.id,
-			name = bookmark.attr.name,
-			autojoin = bookmark.attr.autojoin,
+			name = bookmark and bookmark.attr.name,
+			autojoin = bookmark and bookmark.attr.autojoin,
 		});
-		local nick = bookmark:get_child_text("nick");
+		local nick = bookmark and bookmark:get_child_text("nick");
 		if nick ~= nil then
 			conference:text_tag("nick", nick):up();
 		end
-		local password = bookmark:get_child_text("password");
+		local password = bookmark and bookmark:get_child_text("password");
 		if password ~= nil then
 			conference:text_tag("password", password):up();
 		end
