@@ -20,7 +20,7 @@ local parse_xml_real = require "util.xml".parse;
 
 local lfs = require "lfs";
 
-local function default_get_user_xml(self, user, host)
+local function default_get_user_xml(self, user, host) --luacheck: ignore 212/self
 	local jid = user.."@"..host;
 	local path = paths.join(prosody.paths.data, jid..".xml");
 	local f, err = io_open(path);
