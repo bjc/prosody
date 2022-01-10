@@ -354,6 +354,9 @@ handlers.pep = {
 		local owner_el = st.stanza("pubsub", { xmlns = xmlns_pubsub_owner });
 
 		for node_name, node_data in pairs(data) do
+			if node_data == true then
+				node_data = { config = {} };
+			end
 			local configure_el = st.stanza("configure", { node = node_name })
 				:add_child(lib_pubsub.node_config_form:form(node_data.config, "submit"));
 			owner_el:add_child(configure_el);
