@@ -20,7 +20,7 @@ local parse_xml_real = require "util.xml".parse;
 
 local lfs = require "lfs";
 
-local function getXml(user, host)
+local function default_get_user_xml(self, user, host)
 	local jid = user.."@"..host;
 	local path = paths.join(prosody.paths.data, jid..".xml");
 	local f, err = io_open(path);
@@ -33,7 +33,7 @@ local function getXml(user, host)
 	f:close();
 	return parse_xml_real(s);
 end
-local function setXml(user, host, xml)
+local function default_set_user_xml(user, host, xml)
 	local jid = user.."@"..host;
 	local path = paths.join(prosody.paths.data, jid..".xml");
 	local f, err = io_open(path, "w");
@@ -84,7 +84,7 @@ local scram_properties = set.new({ "server_key", "stored_key", "iteration_count"
 
 handlers.accounts = {
 	get = function(self, user)
-		user = getUserElement(getXml(user, self.host));
+		user = getUserElement(self:_get_user_xml(user, self.host));
 		local scram_credentials = user and user:get_child_with_attr(
 			"scram-credentials", "urn:xmpp:pie:0#scram",
 			"mechanism", "SCRAM-"..scram_hash_name
@@ -110,10 +110,10 @@ handlers.accounts = {
 	end;
 	set = function(self, user, data)
 		if not data then
-			return setXml(user, self.host, nil);
+			return self:_set_user_xml(user, self.host, nil);
 		end
 
-		local xml = getXml(user, self.host);
+		local xml = self:_get_user_xml(user, self.host);
 		if not xml then xml = createOuterXml(user, self.host); end
 		local usere = getUserElement(xml);
 
@@ -141,12 +141,12 @@ handlers.accounts = {
 			usere.attr[extended..property] = data[property];
 		end
 
-		return setXml(user, self.host, xml);
+		return self:_set_user_xml(user, self.host, xml);
 	end;
 };
 handlers.vcard = {
 	get = function(self, user)
-		user = getUserElement(getXml(user, self.host));
+		user = getUserElement(self:_get_user_xml(user, self.host));
 		if user then
 			local vcard = user:get_child("vCard", 'vcard-temp');
 			if vcard then
@@ -155,7 +155,7 @@ handlers.vcard = {
 		end
 	end;
 	set = function(self, user, data)
-		local xml = getXml(user, self.host);
+		local xml = self:_get_user_xml(user, self.host);
 		local usere = xml and getUserElement(xml);
 		if usere then
 			usere:remove_children("vCard", "vcard-temp");
@@ -165,14 +165,14 @@ handlers.vcard = {
 			end
 			local vcard = st.deserialize(data);
 			usere:add_child(vcard);
-			return setXml(user, self.host, xml);
+			return self:_set_user_xml(user, self.host, xml);
 		end
 		return true;
 	end;
 };
 handlers.private = {
 	get = function(self, user)
-		user = getUserElement(getXml(user, self.host));
+		user = getUserElement(self:_get_user_xml(user, self.host));
 		if user then
 			local private = user:get_child("query", "jabber:iq:private");
 			if private then
@@ -185,7 +185,7 @@ handlers.private = {
 		end
 	end;
 	set = function(self, user, data)
-		local xml = getXml(user, self.host);
+		local xml = self:_get_user_xml(user, self.host);
 		local usere = xml and getUserElement(xml);
 		if usere then
 			usere:remove_children("query", "jabber:iq:private");
@@ -196,7 +196,7 @@ handlers.private = {
 				end
 				usere:add_child(private);
 			end
-			return setXml(user, self.host, xml);
+			return self:_set_user_xml(user, self.host, xml);
 		end
 		return true;
 	end;
@@ -204,7 +204,7 @@ handlers.private = {
 
 handlers.roster = {
 	get = function(self, user)
-		user = getUserElement(getXml(user, self.host));
+		user = getUserElement(self:_get_user_xml(user, self.host));
 		if user then
 			local roster = user:get_child("query", "jabber:iq:roster");
 			if roster then
@@ -234,7 +234,7 @@ handlers.roster = {
 		end
 	end;
 	set = function(self, user, data)
-		local xml = getXml(user, self.host);
+		local xml = self:_get_user_xml(user, self.host);
 		local usere = xml and getUserElement(xml);
 		if usere then
 			usere:remove_children("query", "jabber:iq:roster");
@@ -267,7 +267,7 @@ handlers.roster = {
 					end
 				end
 			end
-			return setXml(user, self.host, xml);
+			return self:_set_user_xml(user, self.host, xml);
 		end
 		return true;
 	end;
@@ -278,7 +278,7 @@ local xmlns_pubsub_owner = "http://jabber.org/protocol/pubsub#owner";
 local lib_pubsub = module:require "pubsub";
 handlers.pep = {
 	get = function (self, user)
-		local xml = getXml(user, self.host);
+		local xml = self:_get_user_xml(user, self.host);
 		local user_el = xml and getUserElement(xml);
 		if not user_el then
 			return nil;
@@ -342,7 +342,7 @@ handlers.pep = {
 		return nodes;
 	end;
 	set = function(self, user, data)
-		local xml = getXml(user, self.host);
+		local xml = self:_get_user_xml(user, self.host);
 		local user_el = xml and getUserElement(xml);
 		if not user_el then
 			return true;
@@ -380,7 +380,7 @@ handlers.pep = {
 
 		user_el:add_child(owner_el);
 
-		return setXml(user, self.host, xml);
+		return self:_set_user_xml(user, self.host, xml);
 	end;
 };
 
@@ -410,7 +410,7 @@ handlers.pep_ = {
 	find = function (self, user, query)
 		-- query keys: limit, reverse, key (id)
 
-		local xml = getXml(user, self.host);
+		local xml = self:_get_user_xml(user, self.host);
 		local user_el = xml and getUserElement(xml);
 		if not user_el then
 			return nil, "no 227 user element found";
@@ -465,7 +465,7 @@ handlers.pep_ = {
 		end;
 	end;
 	append = function (self, user, key, payload, when, with) --luacheck: ignore 212/when 212/with 212/key
-		local xml = getXml(user, self.host);
+		local xml = self:_get_user_xml(user, self.host);
 		local user_el = xml and getUserElement(xml);
 		if not user_el then
 			return true;
@@ -500,12 +500,12 @@ handlers.pep_ = {
 			:add_child(payload);
 		node_items_el:add_child(item_el);
 
-		return setXml(user, self.host, xml);
+		return self:_set_user_xml(user, self.host, xml);
 	end;
 	delete = function (self, user, query)
 		-- query keys: limit, reverse, key (id)
 
-		local xml = getXml(user, self.host);
+		local xml = self:_get_user_xml(user, self.host);
 		local user_el = xml and getUserElement(xml);
 		if not user_el then
 			return nil, "no 227 user element found";
@@ -558,7 +558,7 @@ handlers.pep_ = {
 			end
 			return item_el;
 		end);
-		return setXml(user, self.host, xml);
+		return self:_set_user_xml(user, self.host, xml);
 	end;
 };
 
@@ -568,7 +568,7 @@ handlers.archive = {
 	find = function (self, user, query)
 		assert(query == nil, "XEP-0313 queries are not supported on XEP-0227 files");
 
-		local xml = getXml(user, self.host);
+		local xml = self:_get_user_xml(user, self.host);
 		local user_el = xml and getUserElement(xml);
 		if not user_el then
 			return nil, "no 227 user element found";
@@ -599,7 +599,7 @@ handlers.archive = {
 		end;
 	end;
 	append = function (self, user, key, payload, when, with) --luacheck: ignore 212/when 212/with 212/key
-		local xml = getXml(user, self.host);
+		local xml = self:_get_user_xml(user, self.host);
 		local user_el = xml and getUserElement(xml);
 		if not user_el then
 			return true;
@@ -624,7 +624,7 @@ handlers.archive = {
 		-- Append item to archive_el
 		archive_el:add_child(result_el);
 
-		return setXml(user, self.host, xml);
+		return self:_set_user_xml(user, self.host, xml);
 	end;
 };
 
@@ -653,8 +653,30 @@ function driver:open(datastore, typ) -- luacheck: ignore 212/self
 		handler = handlers.pep_;
 	end
 	if not handler then return nil, "unsupported-datastore"; end
-	local instance = setmetatable({ host = module.host; datastore = datastore; users = users; }, { __index = handler });
+	local instance = setmetatable({
+			host = module.host;
+			datastore = datastore;
+			users = users;
+			_get_user_xml = assert(default_get_user_xml);
+			_set_user_xml = default_set_user_xml;
+		}, {
+			__index = handler;
+		}
+	);
 	if instance.init then instance:init(); end
+	return instance;
+end
+
+-- Custom API that allows some configuration
+function driver:open_xep0227(datastore, typ, options)
+	local instance, err = self:open(datastore, typ);
+	if not instance then
+		return instance, err;
+	end
+	if options then
+		instance._set_user_xml = assert(options.set_user_xml);
+		instance._get_user_xml = assert(options.get_user_xml);
+	end
 	return instance;
 end
 
