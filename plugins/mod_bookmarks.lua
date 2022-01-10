@@ -10,6 +10,7 @@ local mod_pep = module:depends "pep";
 local private_storage = module:open_store("private", "map");
 
 local namespace = "urn:xmpp:bookmarks:1";
+local namespace_old = "urn:xmpp:bookmarks:0";
 local namespace_private = "jabber:iq:private";
 local namespace_legacy = "storage:bookmarks";
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
@@ -271,7 +272,13 @@ local function on_publish_legacy_pep(event)
 	end
 
 	local publish = pubsub:get_child("publish");
-	if publish == nil or publish.attr.node ~= namespace_legacy then
+	if publish == nil then return end
+	if publish.attr.node == namespace_old then
+		session.send(st.error_reply(stanza, "modify", "not-allowed",
+			"Your client does XEP-0402 version 0.3.0 but 0.4.0+ is required"));
+		return true;
+	end
+	if publish.attr.node ~= namespace_legacy then
 		return;
 	end
 
