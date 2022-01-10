@@ -7,6 +7,7 @@ local os_remove = os.remove;
 local io_open = io.open;
 local jid_bare = require "util.jid".bare;
 local jid_prep = require "util.jid".prep;
+local jid_join = require "util.jid".join;
 
 local array = require "util.array";
 local base64 = require "util.encodings".base64;
@@ -21,7 +22,7 @@ local parse_xml_real = require "util.xml".parse;
 local lfs = require "lfs";
 
 local function default_get_user_xml(self, user, host) --luacheck: ignore 212/self
-	local jid = user.."@"..host;
+	local jid = jid_join(user, host);
 	local path = paths.join(prosody.paths.data, jid..".xml");
 	local f, err = io_open(path);
 	if not f then
@@ -34,7 +35,7 @@ local function default_get_user_xml(self, user, host) --luacheck: ignore 212/sel
 	return parse_xml_real(s);
 end
 local function default_set_user_xml(user, host, xml)
-	local jid = user.."@"..host;
+	local jid = jid_join(user, host);
 	local path = paths.join(prosody.paths.data, jid..".xml");
 	local f, err = io_open(path, "w");
 	if not f then return f, err; end
