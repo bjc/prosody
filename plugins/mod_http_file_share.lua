@@ -20,6 +20,9 @@ local hi = require "util.human.units";
 local cache = require "util.cache";
 local lfs = require "lfs";
 
+local unknown = math.abs(0/0);
+local unlimited = math.huge;
+
 local namespace = "urn:xmpp:http:upload:0";
 
 module:depends("disco");
@@ -38,7 +41,7 @@ local file_types = module:get_option_set(module.name .. "_allowed_file_types", {
 local safe_types = module:get_option_set(module.name .. "_safe_file_types", {"image/*","video/*","audio/*","text/plain"});
 local expiry = module:get_option_number(module.name .. "_expires_after", 7 * 86400);
 local daily_quota = module:get_option_number(module.name .. "_daily_quota", file_size_limit*10); -- 100 MB / day
-local total_storage_limit = module:get_option_number(module.name.."_global_quota", nil);
+local total_storage_limit = module:get_option_number(module.name.."_global_quota", unlimited);
 
 local access = module:get_option_set(module.name .. "_access", {});
 
@@ -60,30 +63,29 @@ local upload_errors = errors.init(module.name, namespace, {
 	};
 	filesizefmt = { type = "modify"; condition = "bad-request"; text = "File size must be positive integer"; };
 	quota = { type = "wait"; condition = "resource-constraint"; text = "Daily quota reached"; };
-	unknowntotal = { type = "wait"; condition = "undefined-condition"; text = "Server storage usage not yet calculated" };
 	outofdisk = { type = "wait"; condition = "resource-constraint"; text = "Server global storage quota reached" };
 });
 
 local upload_cache = cache.new(1024);
 local quota_cache = cache.new(1024);
 
-local total_storage_usage = nil;
+local total_storage_usage = unknown;
 
 local measure_upload_cache_size = module:measure("upload_cache", "amount");
 local measure_quota_cache_size = module:measure("quota_cache", "amount");
-local measure_total_storage_usage = nil;
-if total_storage_limit then
+local measure_total_storage_usage = module:measure("total_storage", "amount", { unit = "bytes" });
+
+do
 	local total, err = persist_stats:get(nil, "total");
-	if not err then total_storage_usage = tonumber(total) or 0; end
-	measure_total_storage_usage = module:measure("total_storage", "amount", { unit = "bytes" });
+	if not err then
+		total_storage_usage = tonumber(total) or 0;
+	end
 end
 
 module:hook_global("stats-update", function ()
 	measure_upload_cache_size(upload_cache:count());
 	measure_quota_cache_size(quota_cache:count());
-	if total_storage_limit and total_storage_usage then
-		measure_total_storage_usage(total_storage_usage);
-	end
+	measure_total_storage_usage(total_storage_usage);
 end);
 
 local buckets = {};
@@ -95,7 +97,14 @@ end
 local measure_uploads = module:measure("upload", "sizes", {buckets = buckets});
 
 -- Convenience wrapper for logging file sizes
-local function B(bytes) return hi.format(bytes, "B", "b"); end
+local function B(bytes)
+	if bytes ~= bytes then
+		return "unknown"
+	elseif bytes == unlimited then
+		return "unlimited";
+	end
+	return hi.format(bytes, "B", "b");
+end
 
 local function get_filename(slot, create)
 	return dm.getpath(slot, module.host, module.name, "bin", create)
@@ -141,13 +150,9 @@ function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
 		return false, upload_errors.new("filesize");
 	end
 
-	if total_storage_limit then
-		if not total_storage_usage  then
-			return false, upload_errors.new("unknowntotal");
-		elseif total_storage_usage + filesize > total_storage_limit then
-			module:log("warn", "Global storage quota reached, at %s!", B(total_storage_usage));
-			return false, upload_errors.new("outofdisk");
-		end
+	if total_storage_usage + filesize > total_storage_limit then
+		module:log("warn", "Global storage quota reached, at %s / %s!", B(total_storage_usage), B(total_storage_limit));
+		return false, upload_errors.new("outofdisk");
 	end
 
 	local uploader_quota = get_daily_quota(uploader);
@@ -217,10 +222,8 @@ function handle_slot_request(event)
 		return true;
 	end
 
-	if total_storage_usage then
-		total_storage_usage = total_storage_usage + filesize;
-		module:log("debug", "Global quota %s / %s", B(total_storage_usage), B(total_storage_limit));
-	end
+	total_storage_usage = total_storage_usage + filesize;
+	module:log("debug", "Total storage usage: %s / %s", B(total_storage_usage), B(total_storage_limit));
 
 	local cached_quota = quota_cache:get(uploader);
 	if cached_quota and cached_quota.time > os.time()-86400 then
@@ -472,11 +475,7 @@ if expiry >= 0 and not external_base_url then
 		end
 
 		module:log("info", "Pruning expired files uploaded earlier than %s", dt.datetime(boundary_time));
-		if total_storage_usage then
-			module:log("debug", "Global quota %s / %s", B(total_storage_usage), B(total_storage_limit));
-		elseif total_storage_limit then
-			module:log("debug", "Global quota %s / %s", "not yet calculated", B(total_storage_limit));
-		end
+		module:log("debug", "Total storage usage: %s / %s", B(total_storage_usage), B(total_storage_limit));
 
 		local obsolete_uploads = array();
 		local num_expired = 0;
@@ -513,11 +512,9 @@ if expiry >= 0 and not external_base_url then
 			deletion_query = {ids = obsolete_uploads};
 		end
 
-		if total_storage_usage then
-			total_storage_usage = total_storage_usage - size_sum;
-			module:log("debug", "Global quota %s / %s", B(total_storage_usage), B(total_storage_limit));
-			persist_stats:set(nil, "total", total_storage_usage);
-		end
+		total_storage_usage = total_storage_usage - size_sum;
+		module:log("debug", "Total storage usage: %s / %s", B(total_storage_usage), B(total_storage_limit));
+		persist_stats:set(nil, "total", total_storage_usage);
 
 		if #obsolete_uploads == 0 then
 			module:log("debug", "No metadata to remove");
@@ -535,27 +532,27 @@ if expiry >= 0 and not external_base_url then
 	end);
 end
 
-if total_storage_limit then
-	local summary_start = module:measure("summary", "times");
+local summary_start = module:measure("summary", "times");
 
-	module:weekly("Global quota check", function()
-		local summary_done = summary_start();
-		local iter = assert(uploads:find(nil));
+module:weekly("Calculate total storage usage", function()
+	local summary_done = summary_start();
+	local iter = assert(uploads:find(nil));
 
-		local count, sum = 0, 0;
-		for _, file in iter do
-			sum = sum + tonumber(file.attr.size);
-			count = count + 1;
-		end
+	local count, sum = 0, 0;
+	for _, file in iter do
+		sum = sum + tonumber(file.attr.size);
+		count = count + 1;
+	end
 
-		module:log("info", "Uploaded files total: %s in %d files", B(sum), count);
+	module:log("info", "Uploaded files total: %s in %d files", B(sum), count);
+	if persist_stats:set(nil, "total", sum) then
 		total_storage_usage = sum;
-		module:log("debug", "Global quota %s / %s", B(total_storage_usage), B(total_storage_limit));
-		persist_stats:set(nil, "total", sum);
-		summary_done();
-	end);
-
-end
+	else
+		total_storage_usage = unknown;
+	end
+	module:log("debug", "Total storage usage: %s / %s", B(total_storage_usage), B(total_storage_limit));
+	summary_done();
+end);
 
 -- Reachable from the console
 function check_files(query)
