@@ -57,7 +57,7 @@ local function should_copy(stanza, c2s, user_bare) --> boolean, reason: string
 		return true, "bounce";
 	end
 
-	if stanza:get_child(nil, "urn:xmpp:jingle-message:0") then
+	if stanza:get_child(nil, "urn:xmpp:jingle-message:0") or stanza:get_child(nil, "urn:xmpp:jingle-message:1") then
 		-- XXX Experimental XEP
 		return true, "jingle call";
 	end

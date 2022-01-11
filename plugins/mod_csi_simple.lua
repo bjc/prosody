@@ -69,7 +69,7 @@ function is_important(stanza) --> boolean, reason: string
 		if stanza:get_child("x", "jabber:x:conference") or stanza:find("{http://jabber.org/protocol/muc#user}x/invite") then
 			return true, "invite";
 		end
-		if stanza:get_child(nil, "urn:xmpp:jingle-message:0") then
+		if stanza:get_child(nil, "urn:xmpp:jingle-message:0") or stanza:get_child(nil, "urn:xmpp:jingle-message:1") then
 			-- XXX Experimental XEP
 			return true, "jingle call";
 		end
