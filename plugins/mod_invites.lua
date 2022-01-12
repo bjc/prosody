@@ -3,6 +3,7 @@ local it = require "prosody.util.iterators";
 local url = require "socket.url";
 local jid_node = require "prosody.util.jid".node;
 local jid_split = require "prosody.util.jid".split;
+local argparse = require "prosody.util.argparse";
 
 local default_ttl = module:get_option_number("invite_expiry", 86400 * 7);
 
@@ -230,23 +231,61 @@ do
 	end
 end
 
+local subcommands = {};
+
 --- prosodyctl command
 function module.command(arg)
-	if #arg < 2 or arg[1] ~= "generate" then
+	local opts = argparse.parse(arg, { short_params = { h = "help"; ["?"] = "help" } });
+	local cmd = table.remove(arg, 1); -- pop command
+	if opts.help or not cmd or not subcommands[cmd] then
 		print("usage: prosodyctl mod_"..module.name.." generate example.com");
 		return 2;
 	end
-	table.remove(arg, 1); -- pop command
+	return subcommands[cmd](arg);
+end
+
+function subcommands.generate(arg)
 
 	local sm = require "prosody.core.storagemanager";
 	local mm = require "prosody.core.modulemanager";
 
-	local host = arg[1];
+	local host = table.remove(arg, 1); -- pop host
 	assert(prosody.hosts[host], "Host "..tostring(host).." does not exist");
 	sm.initialize_host(host);
-	table.remove(arg, 1); -- pop host
 	module.host = host; --luacheck: ignore 122/module
 	token_storage = module:open_store("invite_token", "map");
+
+	local opts = argparse.parse(arg, {
+		short_params = { h = "help"; ["?"] = "help"; g = "group" };
+		value_params = { group = true; reset = true; role = true };
+		array_params = { group = true; role = true };
+	});
+
+
+	if opts.help then
+		print("usage: prosodyctl mod_" .. module.name .. " generate DOMAIN --reset USERNAME")
+		print("usage: prosodyctl mod_" .. module.name .. " generate DOMAIN [--admin] [--role ROLE] [--group GROUPID]...")
+		print()
+		print("This command has two modes: password reset and new account.")
+		print("If --reset is given, the command operates in password reset mode and in new account mode otherwise.")
+		print()
+		print("required arguments in password reset mode:")
+		print()
+		print("    --reset USERNAME  Generate a password reset link for the given USERNAME.")
+		print()
+		print("optional arguments in new account mode:")
+		print()
+		print("    --admin           Make the new user privileged")
+		print("                      Equivalent to --role prosody:admin")
+		print("    --role ROLE       Grant the given ROLE to the new user")
+		print("    --group GROUPID   Add the user to the group with the given ID")
+		print("                      Can be specified multiple times")
+		print()
+		print("--group can be specified multiple times; the user will be added to all groups.")
+		print()
+		print("--reset and the other options cannot be mixed.")
+		return 2
+	end
 
 	-- Load mod_invites
 	local invites = module:depends("invites");
@@ -257,66 +296,23 @@ function module.command(arg)
 	end
 
 	local allow_reset;
-	local roles = {};
-	local groups = {};
 
-	while #arg > 0 do
-		local value = arg[1];
-		table.remove(arg, 1);
-		if value == "--help" then
-			print("usage: prosodyctl mod_"..module.name.." generate DOMAIN --reset USERNAME")
-			print("usage: prosodyctl mod_"..module.name.." generate DOMAIN [--admin] [--role ROLE] [--group GROUPID]...")
-			print()
-			print("This command has two modes: password reset and new account.")
-			print("If --reset is given, the command operates in password reset mode and in new account mode otherwise.")
-			print()
-			print("required arguments in password reset mode:")
-			print()
-			print("    --reset USERNAME  Generate a password reset link for the given USERNAME.")
-			print()
-			print("optional arguments in new account mode:")
-			print()
-			print("    --admin           Make the new user privileged")
-			print("                      Equivalent to --role prosody:admin")
-			print("    --role ROLE       Grant the given ROLE to the new user")
-			print("    --group GROUPID   Add the user to the group with the given ID")
-			print("                      Can be specified multiple times")
-			print()
-			print("--role and --admin can be specified multiple times; the first role becomes the primary role, the rest become secondary roles")
-			print("--group can be specified multiple times; the user will be added to all groups.")
-			print()
-			print("--reset and the other options cannot be mixed.")
-			return 2
-		elseif value == "--reset" then
-			local nodeprep = require "prosody.util.encodings".stringprep.nodeprep;
-			local username = nodeprep(arg[1])
-			table.remove(arg, 1);
-			if not username then
-				print("Please supply a valid username to generate a reset link for");
-				return 2;
-			end
-			allow_reset = username;
-		elseif value == "--admin" then
-			table.insert(roles, "prosody:admin");
-		elseif value == "--role" then
-			local rolename = arg[1];
-			if not rolename then
-				print("Please supply a role name");
-				return 2;
-			end
-			table.insert(roles, rolename);
-			table.remove(arg, 1);
-		elseif value == "--group" or value == "-g" then
-			local groupid = arg[1];
-			if not groupid then
-				print("Please supply a group ID")
-				return 2;
-			end
-			table.insert(groups, groupid);
-			table.remove(arg, 1);
-		else
-			print("unexpected argument: "..value)
+	if opts.reset then
+		local nodeprep = require "prosody.util.encodings".stringprep.nodeprep;
+		local username = nodeprep(opts.reset)
+		if not username then
+			print("Please supply a valid username to generate a reset link for");
+			return 2;
 		end
+		allow_reset = username;
+	end
+
+	local roles = opts.role or {};
+	local groups = opts.groups or {};
+
+	if opts.admin then
+		-- Insert it first since we don't get order out of argparse
+		table.insert(roles, 1, "prosody:admin");
 	end
 
 	local invite;
