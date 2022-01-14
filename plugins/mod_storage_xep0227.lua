@@ -688,6 +688,18 @@ function driver:open_xep0227(datastore, typ, options)
 	return instance;
 end
 
+local function get_store_names_from_xml(self, user_xml)
+	local stores = set.new();
+	for handler_name, handler_funcs in pairs(handlers) do
+		if handler_funcs._stores then
+			stores:include(handler_funcs._stores(self, user_xml));
+		else
+			stores:include(handler_name);
+		end
+	end
+	return stores;
+end
+
 local function get_store_names(self, path)
 	local stores = set.new();
 	local f, err = io_open(paths.join(prosody.paths.data, path));
@@ -698,13 +710,8 @@ local function get_store_names(self, path)
 	module:log("info", "Loaded %s", path);
 	local s = f:read("*a");
 	f:close();
-	local xml = parse_xml_real(s);
-	for _, handler_funcs in pairs(handlers) do
-		if handler_funcs._stores then
-			stores:include(handler_funcs._stores(self, xml));
-		end
-	end
-	return stores;
+	local user_xml = parse_xml_real(s);
+	return get_store_names_from_xml(self, user_xml);
 end
 
 function driver:stores(username)
@@ -730,6 +737,15 @@ function driver:stores(username)
 		end
 	end
 
+	return store_names:items();
+end
+
+function driver:xep0227_user_stores(username, host)
+	local user_xml = self:_get_user_xml(username, host);
+	if not user_xml then
+		return nil;
+	end
+	local store_names = get_store_names_from_xml(username, host);
 	return store_names:items();
 end
 
