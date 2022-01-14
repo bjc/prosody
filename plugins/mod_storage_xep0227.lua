@@ -238,6 +238,7 @@ handlers.roster = {
 		local xml = self:_get_user_xml(user, self.host);
 		local usere = xml and getUserElement(xml);
 		if usere then
+			local user_jid = jid.join(usere.name, self.host);
 			usere:remove_children("query", "jabber:iq:roster");
 			usere:maptags(function (tag)
 				if tag.attr.xmlns == "jabber:client" and tag.name == "presence" and tag.attr.type == "subscribe" then
@@ -248,18 +249,21 @@ handlers.roster = {
 			if data and next(data) ~= nil then
 				local roster = st.stanza("query", {xmlns='jabber:iq:roster'});
 				usere:add_child(roster);
-				for jid, item in pairs(data) do
-					if jid then
-						roster:tag("item", {
-							jid = jid,
-							subscription = item.subscription,
-							ask = item.ask,
-							name = item.name,
-						});
-						for group in pairs(item.groups) do
-							roster:tag("group"):text(group):up();
+				for contact_jid, item in pairs(data) do
+					contact_jid = jid.bare(jid.prep(contact_jid));
+					if contact_jid ~= false then
+						if contact_jid ~= user_jid then -- Skip self-contacts
+							roster:tag("item", {
+								jid = contact_jid,
+								subscription = item.subscription,
+								ask = item.ask,
+								name = item.name,
+							});
+							for group in pairs(item.groups) do
+								roster:tag("group"):text(group):up();
+							end
+							roster:up(); -- move out from item
 						end
-						roster:up(); -- move out from item
 					else
 						roster.attr.version = item.version;
 						for pending_jid in pairs(item.pending) do
