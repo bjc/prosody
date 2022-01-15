@@ -226,7 +226,7 @@ function module.add_host(module)
 		if services:get("https") or services:get("http") then
 			module:log("info", "Serving '%s' at %s", app_name, module:http_url(app_name, app_path));
 		elseif prosody.process_type == "prosody" then
-			module:log("warn", "Not listening on any ports, '%s' will be unreachable", app_name);
+			module:log("error", "Not listening on any ports, '%s' will be unreachable", app_name);
 		end
 	end
 
