@@ -32,6 +32,7 @@ TRUNK
 -   Direct TLS (including https) certificates updated on reload
 -   Pluggable authorization providers (mod_authz_)
 -   Easy use of Mozilla TLS recommendations presets
+-   Unencrypted HTTP port (5280) restricted to loopback by default
 
 ### HTTP
 

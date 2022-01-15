@@ -304,6 +304,7 @@ end);
 module:provides("net", {
 	name = "http";
 	listener = server.listener;
+	private = true;
 	default_port = 5280;
 	multiplex = {
 		pattern = "^[A-Z]";
