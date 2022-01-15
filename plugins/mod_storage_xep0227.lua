@@ -250,8 +250,8 @@ handlers.roster = {
 				local roster = st.stanza("query", {xmlns='jabber:iq:roster'});
 				usere:add_child(roster);
 				for contact_jid, item in pairs(data) do
-					contact_jid = jid_bare(jid_prep(contact_jid));
 					if contact_jid ~= false then
+						contact_jid = jid_bare(jid_prep(contact_jid));
 						if contact_jid ~= user_jid then -- Skip self-contacts
 							roster:tag("item", {
 								jid = contact_jid,
