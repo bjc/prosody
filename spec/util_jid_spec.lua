@@ -13,6 +13,11 @@ describe("util.jid", function()
 			assert.are.equal(jid.join(nil, nil, "c"), nil, "invalid JID is nil");
 			assert.are.equal(jid.join("a", nil, "c"), nil, "invalid JID is nil");
 		end);
+		it("should reject invalid arguments", function ()
+			assert.has_error(function () jid.join(false, "bork", nil) end)
+			assert.has_error(function () jid.join(nil, "bork", false) end)
+			assert.has_error(function () jid.join(false, false, false) end)
+		end)
 	end);
 	describe("#split()", function()
 		it("should work", function()
@@ -38,6 +43,9 @@ describe("util.jid", function()
 			test("@server/resource", nil, nil, nil);
 			test("@/resource", nil, nil, nil);
 		end);
+		it("should reject invalid arguments", function ()
+			assert.has_error(function () jid.split(false) end)
+		end)
 	end);
 
 
@@ -59,6 +67,9 @@ describe("util.jid", function()
 			assert.are.equal(jid.bare("user@@host/resource"), nil, "invalid JID is nil");
 			assert.are.equal(jid.bare("user@host/"), nil, "invalid JID is nil");
 		end);
+		it("should reject invalid arguments", function ()
+			assert.has_error(function () jid.bare(false) end)
+		end)
 	end);
 
 	describe("#compare()", function()

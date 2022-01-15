@@ -32,18 +32,18 @@ local _ENV = nil;
 -- luacheck: std none
 
 local function split(jid)
-	if not jid then return; end
+	if jid == nil then return; end
 	local node, nodepos = match(jid, "^([^@/]+)@()");
 	local host, hostpos = match(jid, "^([^@/]+)()", nodepos);
-	if node and not host then return nil, nil, nil; end
+	if node ~= nil and host == nil then return nil, nil, nil; end
 	local resource = match(jid, "^/(.+)$", hostpos);
-	if (not host) or ((not resource) and #jid >= hostpos) then return nil, nil, nil; end
+	if (host == nil) or ((resource == nil) and #jid >= hostpos) then return nil, nil, nil; end
 	return node, host, resource;
 end
 
 local function bare(jid)
 	local node, host = split(jid);
-	if node and host then
+	if node ~= nil and host ~= nil then
 		return node.."@"..host;
 	end
 	return host;
@@ -51,31 +51,31 @@ end
 
 local function prepped_split(jid, strict)
 	local node, host, resource = split(jid);
-	if host and host ~= "." then
+	if host ~= nil and host ~= "." then
 		if sub(host, -1, -1) == "." then -- Strip empty root label
 			host = sub(host, 1, -2);
 		end
 		host = nameprep(host, strict);
-		if not host then return; end
-		if node then
+		if host == nil then return; end
+		if node ~= nil then
 			node = nodeprep(node, strict);
-			if not node then return; end
+			if node == nil then return; end
 		end
-		if resource then
+		if resource ~= nil then
 			resource = resourceprep(resource, strict);
-			if not resource then return; end
+			if resource == nil then return; end
 		end
 		return node, host, resource;
 	end
 end
 
 local function join(node, host, resource)
-	if not host then return end
-	if node and resource then
+	if host == nil then return end
+	if node ~= nil and resource ~= nil then
 		return node.."@"..host.."/"..resource;
-	elseif node then
+	elseif node ~= nil then
 		return node.."@"..host;
-	elseif resource then
+	elseif resource ~= nil then
 		return host.."/"..resource;
 	end
 	return host;
