@@ -40,7 +40,7 @@ function module.add_host(host_module)
 	function host_module.unload() active_hosts[host_module.host] = nil; end
 end
 
-local function should_run(when, last) return not last or last + periods[when] <= os.time() end
+local function should_run(when, last) return not last or last + periods[when] * 0.995 <= os.time() end
 
 local function run_task(task)
 	local started_at = os.time();

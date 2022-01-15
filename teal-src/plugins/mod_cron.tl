@@ -78,7 +78,7 @@ function module.add_host(host_module : moduleapi)
 end
 
 local function should_run(when : frequency, last : integer) : boolean
-	return not last or last + periods[when] <= os.time();
+	return not last or last + periods[when]*0.995 <= os.time();
 end
 
 local function run_task(task : task_spec)
