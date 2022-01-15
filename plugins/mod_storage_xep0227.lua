@@ -160,7 +160,7 @@ handlers.vcard = {
 		local usere = xml and getUserElement(xml);
 		if usere then
 			usere:remove_children("vCard", "vcard-temp");
-			if not data then
+			if not data or not data.attr then
 				-- No data to set, old one deleted, success
 				return true;
 			end
