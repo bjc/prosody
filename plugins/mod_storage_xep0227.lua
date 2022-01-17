@@ -694,7 +694,7 @@ local function get_store_names_from_xml(self, user_xml)
 		if handler_funcs._stores then
 			stores:include(handler_funcs._stores(self, user_xml));
 		else
-			stores:include(handler_name);
+			stores:add(handler_name);
 		end
 	end
 	return stores;
