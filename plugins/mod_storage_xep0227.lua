@@ -34,7 +34,7 @@ local function default_get_user_xml(self, user, host) --luacheck: ignore 212/sel
 	f:close();
 	return parse_xml_real(s);
 end
-local function default_set_user_xml(user, host, xml)
+local function default_set_user_xml(self, user, host, xml)
 	local jid = jid_join(user, host);
 	local path = paths.join(prosody.paths.data, jid..".xml");
 	local f, err = io_open(path, "w");
