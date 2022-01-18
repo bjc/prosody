@@ -350,9 +350,9 @@ local function create_context(host, mode, ...)
 		-- We can't read the password interactively when daemonized
 		password = function() log("error", "Encrypted certificate for %s requires 'ssl' 'password' to be set in config", host); end;
 	});
-	local preset = configmanager.get("*", "tls_preset") or "intermediate";
-	if preset ~= "legacy" then
-		cfg:apply(mozilla_ssl_configs[preset]);
+	local profile = configmanager.get("*", "tls_profile") or "intermediate";
+	if profile ~= "legacy" then
+		cfg:apply(mozilla_ssl_configs[profile]);
 	end
 	cfg:apply(global_ssl_config);
 
