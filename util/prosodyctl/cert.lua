@@ -80,7 +80,7 @@ function cert_commands.config(arg)
 		local conf_file, err = io.open(conf_filename, "w");
 		if not conf_file then
 			pctl.show_warning("Could not open OpenSSL config file for writing");
-			pctl.show_warning(err);
+			pctl.show_warning("%s", err);
 			os.exit(1);
 		end
 		conf_file:write(conf:serialize());
@@ -233,7 +233,7 @@ function cert_commands.import(arg)
 			imported[paths.certificate] = true;
 		else
 			-- TODO Say where we looked
-			pctl.show_warning("No certificate for host "..host.." found :(");
+			pctl.show_warning("No certificate for host %s found :(", host);
 		end
 		-- TODO Additional checks
 		-- Certificate names matches the hostname
@@ -257,18 +257,18 @@ local function cert(arg)
 		lfs = require "lfs";
 		local cert_dir_attrs = lfs.attributes(cert_basedir);
 		if not cert_dir_attrs then
-			pctl.show_warning("The directory "..cert_basedir.." does not exist");
+			pctl.show_warning("The directory %s does not exist", cert_basedir);
 			return 1; -- TODO Should we create it?
 		end
 		local uid = pposix.getuid();
 		if uid ~= 0 and uid ~= cert_dir_attrs.uid then
-			pctl.show_warning("The directory "..cert_basedir.." is not owned by the current user, won't be able to write files to it");
+			pctl.show_warning("The directory %s is not owned by the current user, won't be able to write files to it", cert_basedir);
 			return 1;
 		elseif not cert_dir_attrs.permissions then -- COMPAT with LuaFilesystem < 1.6.2 (hey CentOS!)
 			pctl.show_message("Unable to check permissions on %s (LuaFilesystem 1.6.2+ required)", cert_basedir);
 			pctl.show_message("Please confirm that Prosody (and only Prosody) can write to this directory)");
 		elseif cert_dir_attrs.permissions:match("^%.w..%-..%-.$") then
-			pctl.show_warning("The directory "..cert_basedir.." not only writable by its owner");
+			pctl.show_warning("The directory %s not only writable by its owner", cert_basedir);
 			return 1;
 		end
 		local subcmd = table.remove(arg, 1);
