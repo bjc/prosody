@@ -227,10 +227,15 @@ function cert_commands.import(arg)
 			-- One certificate, many mames!
 			table.insert(imported, host);
 		elseif paths then
-			copy(paths.certificate, cert_basedir .. "/" .. host .. ".crt", nil, owner, group);
-			copy(paths.key, cert_basedir .. "/" .. host .. ".key", "0377", owner, group);
-			table.insert(imported, host);
-			imported[paths.certificate] = true;
+			local c = copy(paths.certificate, cert_basedir .. "/" .. host .. ".crt", nil, owner, group);
+			local k = copy(paths.key, cert_basedir .. "/" .. host .. ".key", "0377", owner, group);
+			if c and k then
+				table.insert(imported, host);
+				imported[paths.certificate] = true;
+			else
+				if not c then pctl.show_warning("Could not copy certificate '%s'", paths.certificate); end
+				if not k then pctl.show_warning("Could not copy key '%s'", paths.key); end
+			end
 		else
 			-- TODO Say where we looked
 			pctl.show_warning("No certificate for host %s found :(", host);
