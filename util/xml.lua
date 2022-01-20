@@ -65,27 +65,26 @@ local parse_xml = (function()
 		function handler:EndElement()
 			stanza:up();
 		end
-		local parser;
 		-- SECURITY: These two handlers, especially the Doctype one, are required to prevent exploits such as Billion Laughs.
 		function handler:StartDoctypeDecl()
-			if not parser.stop or not parser:stop() then
+			if not self.stop or not self:stop() then
 				error("Failed to abort parsing");
 			end
 		end
 		function handler:ProcessingInstruction()
-			if not parser.stop or not parser:stop() then
+			if not self.stop or not self:stop() then
 				error("Failed to abort parsing");
 			end
 		end
 		if not options or not options.allow_comments then
 			-- NOTE: comments are generally harmless and can be useful when parsing configuration files or other data, even user-provided data
 			function handler:Comment()
-				if not parser.stop or not parser:stop() then
+				if not self.stop or not self:stop() then
 					error("Failed to abort parsing");
 				end
 			end
 		end
-		parser = lxp.new(handler, ns_separator);
+		local parser = lxp.new(handler, ns_separator);
 		local ok, err, line, col = parser:parse(xml);
 		if ok then ok, err, line, col = parser:parse(); end
 		--parser:close();
