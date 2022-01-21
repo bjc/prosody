@@ -27,7 +27,7 @@ TRUNK
 -   SNI support (including automatic certificate selection)
 -   ALPN support in mod_net_multiplex
 -   DANE support in low-level network layer
--   Direct TLS support (c2s and incoming s2s)
+-   Direct TLS support (c2s and s2s)
 -   SCRAM-SHA-256
 -   Direct TLS (including https) certificates updated on reload
 -   Pluggable authorization providers (mod_authz_)
