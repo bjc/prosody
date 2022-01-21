@@ -79,7 +79,7 @@ end
 module:hook_global("config-reloaded", module.load);
 
 local function can_do_tls(session)
-	if not session.conn.starttls then
+	if session.conn and not session.conn.starttls then
 		if not session.secure then
 			session.log("debug", "Underlying connection does not support STARTTLS");
 		end
@@ -115,6 +115,11 @@ local function can_do_tls(session)
 	end
 	return session.ssl_ctx;
 end
+
+module:hook("s2sout-created", function (event)
+	-- Initialize TLS context for outgoing connections
+	can_do_tls(event.session);
+end);
 
 -- Hook <starttls/>
 module:hook("stanza/urn:ietf:params:xml:ns:xmpp-tls:starttls", function(event)

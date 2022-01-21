@@ -218,14 +218,18 @@ function route_to_new_session(event)
 	log("debug", "stanza [%s] queued until connection complete", stanza.name);
 	-- FIXME Cleaner solution to passing extra data from resolvers to net.server
 	-- This mt-clone allows resolvers to add extra data, currently used for DANE TLSA records
+	module:context(from_host):fire_event("s2sout-created", { session = host_session });
 	local xmpp_extra = setmetatable({}, s2s_service_options_mt);
-	local sslctx = require"core.certmanager".create_context(from_host, "client"); -- TODO this should live in mod_tls ?
-	local xmpps_extra = setmetatable({ default_port = false; servername = to_host; sslctx = sslctx }, s2s_service_options_mt);
-	local direct_and_normal = resolver_chain.new({
-		service.new(to_host, "xmpps-server", "tcp", xmpps_extra);
-		service.new(to_host, "xmpp-server", "tcp", xmpp_extra);
-	});
-	connect(direct_and_normal, listener, nil, { session = host_session });
+	local resolver = service.new(to_host, "xmpp-server", "tcp", xmpp_extra);
+	if host_session.ssl_ctx then
+		local sslctx = host_session.ssl_ctx;
+		local xmpps_extra = setmetatable({ default_port = false; servername = to_host; sslctx = sslctx }, s2s_service_options_mt);
+		resolver = resolver_chain.new({
+			service.new(to_host, "xmpps-server", "tcp", xmpps_extra);
+			resolver;
+		});
+	end
+	connect(resolver, listener, nil, { session = host_session });
 	m_initiated_connections:with_labels(from_host):add(1)
 	return true;
 end
