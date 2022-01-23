@@ -216,6 +216,7 @@ function commands.help(session, data)
 		print [[module - Commands to load/reload/unload modules/plugins]]
 		print [[host - Commands to activate, deactivate and list virtual hosts]]
 		print [[user - Commands to create and delete users, and change their passwords]]
+		print [[roles - Show information about user roles]]
 		print [[muc - Commands to create, list and manage chat rooms]]
 		print [[server - Uptime, version, shutting down, etc.]]
 		print [[port - Commands to manage ports the server is listening on]]
@@ -253,6 +254,17 @@ function commands.help(session, data)
 		print [[user:roles(jid, host, roles) - Set roles for an user (see 'help roles')]]
 		print [[user:delete(jid) - Permanently remove the specified user account]]
 		print [[user:list(hostname, pattern) - List users on the specified host, optionally filtering with a pattern]]
+	elseif section == "roles" then
+		print [[Roles may grant access or restrict users from certain operations]]
+		print [[Built-in roles are:]]
+		print [[  prosody:admin - Administrator]]
+		print [[  (empty set) - Normal user]]
+		print [[]]
+		print [[The canonical role format looks like: { ["example:role"] = true }]]
+		print [[For convenience, the following formats are also accepted:]]
+		print [["admin" - short for "prosody:admin", the normal admin status (like the admins config option)]]
+		print [["example:role" - short for {["example:role"]=true}]]
+		print [[{"example:role"} - short for {["example:role"]=true}]]
 	elseif section == "muc" then
 		-- TODO `muc:room():foo()` commands
 		print [[muc:create(roomjid, { config }) - Create the specified MUC room with the given config]]
