@@ -251,6 +251,7 @@ function commands.help(session, data)
 	elseif section == "user" then
 		print [[user:create(jid, password, roles) - Create the specified user account]]
 		print [[user:password(jid, password) - Set the password for the specified user account]]
+		print [[user:showroles(jid, host) - Show current roles for an user]]
 		print [[user:roles(jid, host, roles) - Set roles for an user (see 'help roles')]]
 		print [[user:delete(jid) - Permanently remove the specified user account]]
 		print [[user:list(hostname, pattern) - List users on the specified host, optionally filtering with a pattern]]
@@ -1345,6 +1346,25 @@ function def_env.user:password(jid, password)
 	else
 		return nil, "Could not change password for user: "..err;
 	end
+end
+
+function def_env.user:showroles(jid, host)
+	local username, userhost = jid_split(jid);
+	if host == nil then host = userhost; end
+	if host ~= "*" and not prosody.hosts[host] then
+		return nil, "No such host: "..host;
+	elseif prosody.hosts[userhost] and not um.user_exists(username, userhost) then
+		return nil, "No such user";
+	end
+	local roles = um.get_roles(jid, host);
+	if not roles then return true, "No roles"; end
+	local count = 0;
+	local print = self.session.print;
+	for role in pairs(roles) do
+		count = count + 1;
+		print(role);
+	end
+	return true, count == 1 and "1 role" or count.." roles";
 end
 
 -- user:roles("someone@example.com", "example.com", {"prosody:admin"})
