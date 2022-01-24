@@ -102,7 +102,8 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj, service) --lu
 	local summary;
 	if item and item.tags[1] then
 		local payload = item.tags[1];
-		summary = module:fire_event("pubsub-summary/"..payload.attr.xmlns, {
+		local payload_type = node_obj and node_obj.config.payload_type or payload.attr.xmlns;
+		summary = module:fire_event("pubsub-summary/"..payload_type, {
 			kind = kind, node = node, jids = jids, actor = actor, item = item, payload = payload,
 		});
 	end
