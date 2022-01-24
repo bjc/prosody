@@ -4,6 +4,7 @@ local jid_bare = require "util.jid".bare;
 local usermanager = require "core.usermanager";
 local new_id = require "util.id".medium;
 local storagemanager = require "core.storagemanager";
+local xtemplate = require "util.xtemplate";
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_event = "http://jabber.org/protocol/pubsub#event";
@@ -136,15 +137,8 @@ end
 -- Compose a textual representation of Atom payloads
 module:hook("pubsub-summary/http://www.w3.org/2005/Atom", function (event)
 	local payload = event.payload;
-	local title = payload:get_child_text("title");
-	local summary = payload:get_child_text("summary");
-	if not summary and title then
-		local author = payload:find("author/name#");
-		summary = title;
-		if author then
-			summary = author .. " posted " .. summary;
-		end
-	end
+	local template = "{summary|or{{author/name|and{{author/name} posted }}{title}}}";
+	local summary = xtemplate.render(template, payload, tostring);
 	return summary;
 end, -1);
 
