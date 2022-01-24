@@ -135,12 +135,17 @@ function is_item_stanza(item)
 end
 
 -- Compose a textual representation of Atom payloads
-module:hook("pubsub-summary/http://www.w3.org/2005/Atom", function (event)
-	local payload = event.payload;
-	local template = "{summary|or{{author/name|and{{author/name} posted }}{title}}}";
-	local summary = xtemplate.render(template, payload, tostring);
-	return summary;
-end, -1);
+local summary_templates = module:get_option("pubsub_summary_templates", {
+	["http://www.w3.org/2005/Atom"] = "{summary|or{{author/name|and{{author/name} posted }}{title}}}";
+})
+
+for pubsub_type, template in pairs(summary_templates) do
+	module:hook("pubsub-summary/"..pubsub_type, function (event)
+		local payload = event.payload;
+		return xtemplate.render(template, payload, tostring);
+	end, -1);
+end
+
 
 module:hook("iq/host/"..xmlns_pubsub..":pubsub", handle_pubsub_iq);
 module:hook("iq/host/"..xmlns_pubsub_owner..":pubsub", handle_pubsub_iq);
