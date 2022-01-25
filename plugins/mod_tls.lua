@@ -55,13 +55,14 @@ function module.load(reload)
 
 	module:log("debug", "Creating context for c2s");
 	local request_client_certs = { verify = { "peer", "client_once", }; };
+	local xmpp_alpn = { alpn = "xmpp-server" };
 
 	ssl_ctx_c2s, err_c2s, ssl_cfg_c2s = create_context(host.host, "server", host_c2s, host_ssl, global_c2s); -- for incoming client connections
 	if not ssl_ctx_c2s then module:log("error", "Error creating context for c2s: %s", err_c2s); end
 
 	module:log("debug", "Creating context for s2sout");
 	-- for outgoing server connections
-	ssl_ctx_s2sout, err_s2sout, ssl_cfg_s2sout = create_context(host.host, "client", host_s2s, host_ssl, global_s2s, request_client_certs);
+	ssl_ctx_s2sout, err_s2sout, ssl_cfg_s2sout = create_context(host.host, "client", host_s2s, host_ssl, global_s2s, request_client_certs, xmpp_alpn);
 	if not ssl_ctx_s2sout then module:log("error", "Error creating contexts for s2sout: %s", err_s2sout); end
 
 	module:log("debug", "Creating context for s2sin");
