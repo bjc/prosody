@@ -221,6 +221,15 @@ function cert_commands.import(arg)
 		cm.index_certs(dir, files_by_name);
 	end
 	local imported = {};
+	table.sort(hostnames, function (a, b)
+		-- Try to find base domain name before sub-domains, then alphabetically, so
+		-- that the order and choice of file name is deterministic.
+		if #a == #b then
+			return a < b;
+		else
+			return #a < #b;
+		end
+	end);
 	for _, host in ipairs(hostnames) do
 		local paths = cm.find_cert_in_index(files_by_name, host);
 		if paths and imported[paths.certificate] then
