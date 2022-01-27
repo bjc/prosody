@@ -108,7 +108,7 @@ local function format(formatstring, ...)
 		if t == "string" and option ~= "p" then
 			if not valid_utf8(arg) then
 				option = "q";
-			else
+			elseif option ~= "q" then -- gets fully escaped in the next block
 				args[i] = arg:gsub("[%z\1-\8\11-\31\127]", control_symbols):gsub("\n\t?", "\n\t");
 				return spec;
 			end

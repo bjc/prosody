@@ -37,6 +37,11 @@ describe("util.format", function()
 			end)
 		end
 
+		it("escapes multi-line strings", function ()
+			assert.equal("Hello\n\tWorld", format("%s", "Hello\nWorld"))
+			assert.equal("\"Hello\\nWorld\"", format("%q", "Hello\nWorld"))
+		end)
+
 		-- Tests generated with loops!
 		describe("nil", function ()
 			describe("to %c", function ()
@@ -561,8 +566,8 @@ describe("util.format", function()
 			describe("to %q", function ()
 				it("works", function ()
 					assert.equal("\"hello\"", format("%q", "hello"))
-					assert.equal("\"foo \226\144\129\226\144\130\226\144\131 bar\"", format("%q", "foo \001\002\003 bar"))
-					assert.equal("\"nödåtgärd\"", format("%q", "n\195\182d\195\165tg\195\164rd"))
+					assert.equal("\"foo \\001\\002\\003 bar\"", format("%q", "foo \001\002\003 bar"))
+					assert.equal("\"n\\195\\182d\\195\\165tg\\195\\164rd\"", format("%q", "n\195\182d\195\165tg\195\164rd"))
 					assert.equal("\"n\\195\\182d\\195\\165tg\\195\"", format("%q", "n\195\182d\195\165tg\195"))
 				end);
 			end);
