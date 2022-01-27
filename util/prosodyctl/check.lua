@@ -625,7 +625,7 @@ local function check(arg)
 				local http_internal_host = http_host;
 				local http_url = configmanager.get(host, "http_external_url");
 				if http_url then
-					local url_parse = require "socket.url";
+					local url_parse = require "socket.url".parse;
 					local external_url_parts = url_parse(http_url);
 					if external_url_parts then
 						http_host = external_url_parts.host;
