@@ -1,6 +1,9 @@
 --
--- A string.format wrapper that gracefully handles invalid arguments
+-- A string.format wrapper that gracefully handles invalid arguments since
+-- certain format string and argument combinations may casue errors or other
+-- issues like log spoofing
 --
+-- Provides some protection from e.g. CAPEC-135, CWE-117, CWE-134, CWE-93
 
 local tostring = tostring;
 local unpack = table.unpack or unpack; -- luacheck: ignore 113/unpack
@@ -109,6 +112,8 @@ local function format(formatstring, ...)
 			if not valid_utf8(arg) then
 				option = "q";
 			elseif option ~= "q" then -- gets fully escaped in the next block
+				-- Prevent funny things with ASCII control characters and ANSI escape codes (CWE-117)
+				-- Also ensure embedded newlines can't look like another log line (CWE-93)
 				args[i] = arg:gsub("[%z\1-\8\11-\31\127]", control_symbols):gsub("\n\t?", "\n\t");
 				return spec;
 			end
