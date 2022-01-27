@@ -592,23 +592,56 @@ local function check(arg)
 				target_hosts:remove("localhost");
 			end
 
+			local function check_address(target)
+				local A, AAAA = dns.lookup(idna.to_ascii(target), "A"), dns.lookup(idna.to_ascii(target), "AAAA");
+				local prob = {};
+				if use_ipv4 and not A then table.insert(prob, "A"); end
+				if use_ipv6 and not AAAA then table.insert(prob, "AAAA"); end
+				return prob;
+			end
+
 			if modules:contains("proxy65") then
 				local proxy65_target = configmanager.get(host, "proxy65_address") or host;
 				if type(proxy65_target) == "string" then
-					local A, AAAA = dns.lookup(idna.to_ascii(proxy65_target), "A"), dns.lookup(idna.to_ascii(proxy65_target), "AAAA");
-					local prob = {};
-					if use_ipv4 and not A then
-						table.insert(prob, "A");
-					end
-					if use_ipv6 and not AAAA then
-						table.insert(prob, "AAAA");
-					end
+					local prob = check_address(proxy65_target);
 					if #prob > 0 then
 						print("    File transfer proxy "..proxy65_target.." has no "..table.concat(prob, "/")
 						.." record. Create one or set 'proxy65_address' to the correct host/IP.");
 					end
 				else
 					print("    proxy65_address for "..host.." should be set to a string, unable to perform DNS check");
+				end
+			end
+
+			local known_http_modules = set.new { "bosh"; "http_files"; "http_file_share"; "http_openmetrics"; "websocket" };
+			local function contains_match(hayset, needle)
+				for member in hayset do if member:find(needle) then return true end end
+			end
+
+			if modules:contains("http") or not set.intersection(modules, known_http_modules):empty()
+				or contains_match(modules, "^http_") or contains_match(modules, "_web$") then
+
+				local http_host = configmanager.get(host, "http_host") or host;
+				local http_internal_host = http_host;
+				local http_url = configmanager.get(host, "http_external_url");
+				if http_url then
+					local url_parse = require "socket.url";
+					local external_url_parts = url_parse(http_url);
+					if external_url_parts then
+						http_host = external_url_parts.host;
+					else
+						print("    The 'http_external_url' setting is not a valid URL");
+					end
+				end
+
+				local prob = check_address(http_host);
+				if #prob > 1 then
+					print("    HTTP service " .. http_host .. " has no " .. table.concat(prob, "/") .. " record. Create one or change "
+									.. (http_url and "'http_external_url'" or "'http_host'").." to the correct host.");
+				end
+
+				if http_host ~= http_internal_host then
+					print("    Ensure the reverse proxy sets the HTTP Host header to '" .. http_internal_host .. "'");
 				end
 			end
 
