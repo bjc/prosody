@@ -201,6 +201,10 @@ function cert_commands.import(arg)
 			for host in pairs(prosody.hosts) do
 				if host ~= "*" and configmanager.get(host, "enabled") ~= false then
 					table.insert(hostnames, host);
+					local http_host = configmanager.get(host, "http_host") or host;
+					if http_host ~= host then
+						table.insert(hostnames, http_host);
+					end
 				end
 			end
 		end
