@@ -2,10 +2,10 @@
 
 ## Description
 
-Prosody is a server for Jabber/XMPP written in Lua. It aims to be easy 
-to use and light on resources. For developers, it aims to give a 
-flexible system on which to rapidly develop added functionality or 
-rapidly prototype new protocols.
+Prosody is a server for Jabber/XMPP written in Lua. It aims to be easy to use
+and light on resources. For developers, it aims to give a flexible system on
+which to rapidly develop added functionality or rapidly prototype new
+protocols.
 
 ## Useful links
 
@@ -19,17 +19,17 @@ Jabber/XMPP Chat:
                  prosody@conference.prosody.im
                Web interface:
                  https://chat.prosody.im/
-               
+
 Mailing lists:
                User support and discussion:
                  https://groups.google.com/group/prosody-users
-               
+
                Development discussion:
                  https://groups.google.com/group/prosody-dev
-               
+
 ## Installation
 
-See the accompanying INSTALL file for help on building Prosody from source. Alternatively 
-see our guide at https://prosody.im/doc/install
+See the accompanying INSTALL file for help on building Prosody from source.
+Alternatively see our guide at https://prosody.im/doc/install
 
 
