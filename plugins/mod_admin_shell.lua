@@ -203,6 +203,8 @@ end);
 -- Console commands --
 -- These are simple commands, not valid standalone in Lua
 
+local available_columns; --forward declaration so it is reachable from the help
+
 function commands.help(session, data)
 	local print = session.print;
 	local section = data:match("^help (%w+)");
@@ -224,6 +226,7 @@ function commands.help(session, data)
 		print [[xmpp - Commands for sending XMPP stanzas]]
 		print [[debug - Commands for debugging the server]]
 		print [[config - Reloading the configuration, etc.]]
+		print [[columns - Information about customizing session listings]]
 		print [[console - Help regarding the console itself]]
 	elseif section == "c2s" then
 		print [[c2s:show(jid, columns) - Show all client sessions with the specified JID (or all if no JID given)]]
@@ -309,6 +312,19 @@ function commands.help(session, data)
 		print [[For those well-versed in Prosody's internals, or taking instruction from those who are,]]
 		print [[you can prefix a command with > to escape the console sandbox, and access everything in]]
 		print [[the running server. Great fun, but be careful not to break anything :)]]
+	elseif section == "columns" then
+		print [[The columns shown by c2s:show() and s2s:show() can be customizied via the]]
+		print [['columns' argument as described here.]]
+		print [[]]
+		print [[Columns can be specified either as "id jid ipv" or as {"id", "jid", "ipv"}.]]
+		print [[Available columns are:]]
+		for column, spec in iterators.sorted_pairs(available_columns) do
+			print("- "..column..": "..(spec.title or capitalize(column)));
+			-- TODO descriptions
+		end
+		print [[]]
+		print [[Most fields on the internal session structures can also be used as columns]]
+		-- Also, you can pass a table column specification directly, with mapper callabck and all
 	end
 end
 
@@ -681,7 +697,7 @@ local function get_s2s_hosts(session) --> local,remote
 	end
 end
 
-local available_columns = {
+available_columns = {
 	jid = {
 		title = "JID";
 		width = 32;
