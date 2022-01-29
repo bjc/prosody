@@ -220,6 +220,7 @@ function commands.help(session, data)
 		print [[user - Commands to create and delete users, and change their passwords]]
 		print [[roles - Show information about user roles]]
 		print [[muc - Commands to create, list and manage chat rooms]]
+		print [[stats - Commands to show internal statistics]]
 		print [[server - Uptime, version, shutting down, etc.]]
 		print [[port - Commands to manage ports the server is listening on]]
 		print [[dns - Commands to manage and inspect the internal DNS resolver]]
@@ -294,7 +295,9 @@ function commands.help(session, data)
 		print [[config:reload() - Reload the server configuration. Modules may need to be reloaded for changes to take effect.]]
 		print [[config:get([host,] option) - Show the value of a config option.]]
 	elseif section == "stats" then -- luacheck: ignore 542
-		-- TODO describe how stats:show() works
+		print [[stats:show(pattern) - Show internal statistics, optionally filtering by name with a pattern]]
+		print [[stats:show():cfgraph() - Show a cumulative frequency graph]]
+		print [[stats:show():histogram() - Show a histogram of selected metric]]
 	elseif section == "debug" then
 		print [[debug:logevents(host) - Enable logging of fired events on host]]
 		print [[debug:events(host, event) - Show registered event handlers]]
