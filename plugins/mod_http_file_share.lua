@@ -15,6 +15,7 @@ local dm = require "core.storagemanager".olddm;
 local jwt = require "util.jwt";
 local errors = require "util.error";
 local dataform = require "util.dataforms".new;
+local urlencode = require "util.http".urlencode;
 local dt = require "util.datetime";
 local hi = require "util.human.units";
 local cache = require "util.cache";
@@ -431,7 +432,7 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 	response.headers.last_modified = last_modified;
 	response.headers.content_length = filesize;
 	response.headers.content_type = filetype;
-	response.headers.content_disposition = string.format("%s; filename=%q", disposition, basename);
+	response.headers.content_disposition = string.format("%s; filename*=UTF-8''%s", disposition, urlencode(basename));
 
 	if response_range then
 		response.status_code = 206;
