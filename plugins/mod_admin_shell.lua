@@ -1653,7 +1653,7 @@ function stats_methods:render_single_fancy_histogram_ex(print, prefix, metric_fa
 			sum = value
 		elseif suffix == "_count" then
 			count = value
-		else
+		elseif extra_labels then
 			local bucket_threshold = extra_labels["le"]
 			local bucket_count
 			if cumulative then
