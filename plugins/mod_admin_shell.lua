@@ -321,9 +321,21 @@ function commands.help(session, data)
 		print [[]]
 		print [[Columns can be specified either as "id jid ipv" or as {"id", "jid", "ipv"}.]]
 		print [[Available columns are:]]
+		local meta_columns = {
+			{ title = "ID"; width = 5 };
+			{ title = "Column Title"; width = 12 };
+			{ title = "Description"; width = 12 };
+		};
+		-- auto-adjust widths
+		for column, spec in pairs(available_columns) do
+			meta_columns[1].width = math.max(meta_columns[1].width or 0, #column);
+			meta_columns[2].width = math.max(meta_columns[2].width or 0, #(spec.title or ""));
+			meta_columns[3].width = math.max(meta_columns[3].width or 0, #(spec.description or ""));
+		end
+		local row = format_table(meta_columns, 120)
+		print(row());
 		for column, spec in iterators.sorted_pairs(available_columns) do
-			print("- "..column..": "..(spec.title or capitalize(column)));
-			-- TODO descriptions
+			print(row({ column, spec.title, spec.description }));
 		end
 		print [[]]
 		print [[Most fields on the internal session structures can also be used as columns]]
@@ -703,12 +715,14 @@ end
 available_columns = {
 	jid = {
 		title = "JID";
+		description = "Full JID of user session";
 		width = 32;
 		key = "full_jid";
 		mapper = function(full_jid, session) return full_jid or get_jid(session) end;
 	};
 	host = {
 		title = "Host";
+		description = "Local hostname";
 		key = "host";
 		width = 22;
 		mapper = function(host, session)
@@ -717,6 +731,7 @@ available_columns = {
 	};
 	remote = {
 		title = "Remote";
+		description = "Remote hostname";
 		width = 22;
 		mapper = function(_, session)
 			return select(2, get_s2s_hosts(session));
@@ -724,6 +739,7 @@ available_columns = {
 	};
 	port = {
 		title = "Port";
+		description = "Server port used";
 		width = 5;
 		align = "right";
 		key = "conn";
@@ -731,6 +747,7 @@ available_columns = {
 	};
 	dir = {
 		title = "Dir";
+		description = "Direction of server-to-server connection";
 		width = 3;
 		key = "direction";
 		mapper = function(dir, session)
@@ -739,10 +756,11 @@ available_columns = {
 			if dir == "incoming" then return "<--"; end
 		end;
 	};
-	id = { title = "Session ID"; width = 20; key = "id" };
-	type = { title = "Type"; width = #"c2s_unauthed"; key = "type" };
+	id = { title = "Session ID"; description = "Internal session ID used in logging"; width = 20; key = "id" };
+	type = { title = "Type"; description = "Session type"; width = #"c2s_unauthed"; key = "type" };
 	method = {
 		title = "Method";
+		description = "Connection method";
 		width = 10;
 		mapper = function(_, session)
 			if session.bosh_version then
@@ -756,13 +774,15 @@ available_columns = {
 	};
 	ipv = {
 		title = "IPv";
+		description = "Internet Protocol version (4 or 6)";
 		width = 4;
 		key = "ip";
 		mapper = function(ip) if ip then return ip:find(":") and "IPv6" or "IPv4"; end end;
 	};
-	ip = { title = "IP address"; width = 40; key = "ip" };
+	ip = { title = "IP address"; description = "IP address the session connected from"; width = 40; key = "ip" };
 	status = {
 		title = "Status";
+		description = "Presence status";
 		width = 6;
 		key = "presence";
 		mapper = function(p)
@@ -772,6 +792,7 @@ available_columns = {
 	};
 	secure = {
 		title = "Security";
+		description = "TLS version or security status";
 		key = "conn";
 		width = 8;
 		mapper = function(conn, session)
@@ -785,6 +806,7 @@ available_columns = {
 	};
 	encryption = {
 		title = "Encryption";
+		description = "Encryption algorithm used (TLS cipher suite)";
 		width = 30;
 		key = "conn";
 		mapper = function(conn)
@@ -795,6 +817,7 @@ available_columns = {
 	};
 	cert = {
 		title = "Certificate";
+		description = "Validation status of certificate";
 		key = "cert_identity_status";
 		width = 13;
 		mapper = function(cert_status, session)
@@ -815,6 +838,7 @@ available_columns = {
 	};
 	sni = {
 		title = "SNI";
+		description = "Hostname requested in TLS";
 		width = 22;
 		mapper = function(_, session)
 			if not session.conn then return end
@@ -824,6 +848,7 @@ available_columns = {
 	};
 	alpn = {
 		title = "ALPN";
+		description = "Protocol requested in TLS";
 		width = 11;
 		mapper = function(_, session)
 			if not session.conn then return end
@@ -833,6 +858,7 @@ available_columns = {
 	};
 	smacks = {
 		title = "SM";
+		description = "Stream Management (XEP-0198) status";
 		key = "smacks";
 		width = 11;
 		mapper = function(smacks_xmlns, session)
@@ -843,6 +869,7 @@ available_columns = {
 	};
 	smacks_queue = {
 		title = "SM Queue";
+		description = "Length of Stream Management stanza queue";
 		key = "outgoing_stanza_queue";
 		width = 8;
 		align = "right";
@@ -852,17 +879,20 @@ available_columns = {
 	};
 	csi = {
 		title = "CSI State";
+		description = "Client State Indication (XEP-0352)";
 		key = "state";
 		-- TODO include counter
 	};
 	s2s_sasl = {
 		title = "SASL";
+		description = "Server authentication status";
 		key = "external_auth";
 		width = 10;
 		mapper = capitalize
 	};
 	dialback = {
 		title = "Dialback";
+		description = "Legacy server verification";
 		key = "dialback_key";
 		width = 13;
 		mapper = function (dialback_key, session)
