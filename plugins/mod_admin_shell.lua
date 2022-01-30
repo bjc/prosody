@@ -903,7 +903,7 @@ function def_env.c2s:show(match_jid, colspec)
 
 	local function match(session)
 		local jid = get_jid(session)
-		return (not match_jid) or jid:match(match_jid)
+		return (not match_jid) or jid == match_jid;
 	end
 
 	local group_by_host = true;
@@ -986,7 +986,7 @@ function def_env.s2s:show(match_jid, colspec)
 
 	local function match(session)
 		local host, remote = get_s2s_hosts(session);
-		return not match_jid or (host or ""):match(match_jid) or (remote or ""):match(match_jid);
+		return not match_jid or host == match_jid or remote == match_jid;
 	end
 
 	local group_by_host = true;
