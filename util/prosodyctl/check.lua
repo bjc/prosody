@@ -608,8 +608,8 @@ local function check(arg)
 			local function check_address(target)
 				local A, AAAA = dns.lookup(idna.to_ascii(target), "A"), dns.lookup(idna.to_ascii(target), "AAAA");
 				local prob = {};
-				if use_ipv4 and not A then table.insert(prob, "A"); end
-				if use_ipv6 and not AAAA then table.insert(prob, "AAAA"); end
+				if use_ipv4 and not (A and #A > 0) then table.insert(prob, "A"); end
+				if use_ipv6 and not (AAAA and #AAAA > 0) then table.insert(prob, "AAAA"); end
 				return prob;
 			end
 
