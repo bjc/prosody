@@ -422,6 +422,19 @@ local function check(arg)
 		local c2s_tls_ports = set.new(configmanager.get("*", "c2s_direct_tls_ports") or {});
 		local s2s_tls_ports = set.new(configmanager.get("*", "s2s_direct_tls_ports") or {});
 
+		if set.new(configmanager.get("*", "modules_enabled")):contains("net_multiplex") then
+			local multiplex_ports = set.new(configmanager.get("*", "ports") or {});
+			local multiplex_tls_ports = set.new(configmanager.get("*", "ssl_ports") or {});
+			if not multiplex_ports:empty() then
+				c2s_ports = c2s_ports + multiplex_ports;
+				s2s_ports = s2s_ports + multiplex_ports;
+			end
+			if not multiplex_tls_ports:empty() then
+				c2s_tls_ports = c2s_tls_ports + multiplex_tls_ports;
+				s2s_tls_ports = s2s_tls_ports + multiplex_tls_ports;
+			end
+		end
+
 		local c2s_srv_required, s2s_srv_required, c2s_tls_srv_required, s2s_tls_srv_required;
 		if not c2s_ports:contains(5222) then
 			c2s_srv_required = true;
