@@ -412,7 +412,7 @@ local function check(arg)
 			local unbound_config = configmanager.get("*", "unbound") or {};
 			unbound_config.hoststxt = false; -- don't look at /etc/hosts
 			configmanager.set("*", "unbound", unbound_config);
-			unbound.purge(); -- ensure the above config is used
+			unbound.dns.purge(); -- ensure the above config is used
 			dns = unbound.dns;
 		end)
 		local idna = require "util.encodings".idna;
