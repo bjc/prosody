@@ -1,24 +1,21 @@
 ---
 author:
-- 'Dwayne Bent <dbb.1@liqd.org>'
+- Dwayne Bent <dbb.1@liqd.org>
 - Kim Alvefur
-date: '2017-09-02'
+date: 2017-09-02
 section: 1
 title: PROSODYCTL
 ---
 
-NAME
-====
+# NAME
 
 prosodyctl - Manage a Prosody XMPP server
 
-SYNOPSIS
-========
+# SYNOPSIS
 
     prosodyctl command [--help]
 
-DESCRIPTION
-===========
+# DESCRIPTION
 
 prosodyctl is the control tool for the Prosody XMPP server. It may be
 used to control the server daemon and manage users.
@@ -28,11 +25,9 @@ its commands. This typically means executing prosodyctl as the root
 user. If a user named "prosody" is found then prosodyctl will change to
 that user before executing its commands.
 
-COMMANDS
-========
+# COMMANDS
 
-User Management
----------------
+## User Management
 
 In the following commands users are identified by a Jabber ID, jid, of
 the usual form: user@domain.
@@ -48,8 +43,7 @@ passwd jid
 deluser jid
 :   Deletes an existing user with Jabber ID, jid, from the server.
 
-Daemon Management
------------------
+## Daemon Management
 
 Although prosodyctl has commands to manage the prosody daemon it is
 recommended that you utilize your distributions daemon management
@@ -80,8 +74,7 @@ reload
 status
 :   Prints the current execution status of the prosody server daemon.
 
-Certificates
-------------
+## Certificates
 
 prosodyctl can create self-signed certificates, certificate requests and
 private keys for use with Prosody. Commands are of the form
@@ -108,8 +101,7 @@ included in the certificate.
 :   Copy certificates for hosts into the certificate path and reload
     prosody.
 
-Debugging
----------
+## Debugging
 
 prosodyctl can also show some information about the environment,
 dependencies and such to aid in debugging.
@@ -123,8 +115,7 @@ dependencies and such to aid in debugging.
     configured TLS certificates. `what` can be one of `config`, `dns`
     and `certs` to run only that check.
 
-Ejabberd Compatibility
-----------------------
+## Ejabberd Compatibility
 
 ejabberd is another XMPP server which provides a comparable control
 tool, ejabberdctl, to control its server's operations. prosodyctl
@@ -135,8 +126,7 @@ details of how these commands work you should see ejabberdctl(8).
 
     unregister user server
 
-OPTIONS
-=======
+# OPTIONS
 
 `--config filename`
 :   Use the specified config file instead of the default.
@@ -147,15 +137,13 @@ OPTIONS
 `--help`
 :   Display help text for the specified command.
 
-FILES
-=====
+# FILES
 
 `/etc/prosody/prosody.cfg.lua`
 :   The main prosody configuration file. prosodyctl reads this to
     determine the process ID file of the prosody server daemon and to
     determine if a host has been configured.
 
-ONLINE
-======
+# ONLINE
 
 More information may be found online at: <https://prosody.im/>
