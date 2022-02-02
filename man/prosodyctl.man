@@ -108,8 +108,9 @@ dependencies.
 \f[B]\f[CB]check [what]\f[B]\f[R]
 Performs various sanity checks on the configuration, DNS setup and
 configured TLS certificates.
-\f[C]what\f[R] can be one of \f[C]config\f[R], \f[C]dns\f[R] and
-\f[C]certs\f[R] to run only that check.
+\f[C]what\f[R] can be one of \f[C]config\f[R], \f[C]dns\f[R]
+\f[C]certs\f[R], \f[C]disabled\f[R] and \f[C]connectivity\f[R] to run
+only that check.
 .SS Ejabberd Compatibility
 .PP
 ejabberd is another XMPP server which provides a comparable control

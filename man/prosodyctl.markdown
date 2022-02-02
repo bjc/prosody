@@ -113,7 +113,7 @@ dependencies and such to aid in debugging.
 `check [what]`
 :   Performs various sanity checks on the configuration, DNS setup and
     configured TLS certificates. `what` can be one of `config`, `dns`
-    and `certs` to run only that check.
+    `certs`, `disabled` and `connectivity` to run only that check.
 
 ## Ejabberd Compatibility
 
