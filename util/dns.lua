@@ -198,7 +198,7 @@ function parsers.TLSA(packet)
 	}, tlsa_mt);
 end
 
-local svcb_params = {"alpn"; "no-default-alpn"; "port"; "ipv4hint"; "echconfig"; "ipv6hint"};
+local svcb_params = {"alpn"; "no-default-alpn"; "port"; "ipv4hint"; "ech"; "ipv6hint"};
 setmetatable(svcb_params, {__index = function(_, n) return "key" .. tostring(n); end});
 
 local svcb_mt = {
@@ -206,6 +206,7 @@ local svcb_mt = {
 		local kv = {};
 		for i = 1, #rr.fields do
 			t_insert(kv, s_format("%s=%q", svcb_params[rr.fields[i].key], tostring(rr.fields[i].value)));
+			-- FIXME the =value part may be omitted when the value is "empty"
 		end
 		return s_format("%d %s %s", rr.prio, rr.name, t_concat(kv, " "));
 	end;
