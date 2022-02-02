@@ -132,7 +132,7 @@ details of how these commands work you should see ejabberdctl(8).
 :   Use the specified config file instead of the default.
 
 `--root`
-:   Don't drop root privileges.
+:   Don't drop root privileges (e.g. when invoked with sudo).
 
 `--help`
 :   Display help text for the specified command.

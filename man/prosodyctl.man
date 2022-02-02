@@ -131,7 +131,7 @@ unregister user server
 Use the specified config file instead of the default.
 .TP
 \f[B]\f[CB]--root\f[B]\f[R]
-Don\[cq]t drop root privileges.
+Don\[cq]t drop root privileges (e.g.\ when invoked with sudo).
 .TP
 \f[B]\f[CB]--help\f[B]\f[R]
 Display help text for the specified command.
