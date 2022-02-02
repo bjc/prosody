@@ -227,6 +227,7 @@ end
 
 local function log_to_console(sink_config)
 	-- Really if we don't want pretty colours then just use plain stdout
+	-- FIXME refactor to allow console logging with colours on stderr
 	if not do_pretty_printing then
 		return log_to_stdout(sink_config);
 	end
