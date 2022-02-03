@@ -19,7 +19,10 @@ end
 local io_open = io.open;
 local envload = require "util.envload".envload;
 
-local function load_file(names)
+local pluginloader_methods = {};
+local pluginloader_mt = { __index = pluginloader_methods };
+
+function pluginloader_methods:load_file(names)
 	local file, err, path;
 	for i=1,#plugin_dir do
 		for j=1,#names do
@@ -35,8 +38,7 @@ local function load_file(names)
 	return file, err;
 end
 
-local function load_resource(plugin, resource)
-	resource = resource or "mod_"..plugin..".lua";
+function pluginloader_methods:load_resource(plugin, resource)
 	local names = {
 		"mod_"..plugin..dir_sep..plugin..dir_sep..resource; -- mod_hello/hello/mod_hello.lua
 		"mod_"..plugin..dir_sep..resource;                  -- mod_hello/mod_hello.lua
@@ -46,10 +48,10 @@ local function load_resource(plugin, resource)
 		"share"..dir_sep.."lua"..dir_sep..lua_version..dir_sep.."mod_"..plugin..dir_sep..resource;
 	};
 
-	return load_file(names);
+	return self:load_file(names);
 end
 
-local function load_code(plugin, resource, env)
+function pluginloader_methods:load_code(plugin, resource, env)
 	local content, err = load_resource(plugin, resource);
 	if not content then return content, err; end
 	local path = err;
@@ -58,7 +60,7 @@ local function load_code(plugin, resource, env)
 	return f, path;
 end
 
-local function load_code_ext(plugin, resource, extension, env)
+function pluginloader_methods:load_code_ext(plugin, resource, extension, env)
 	local content, err = load_resource(plugin, resource.."."..extension);
 	if not content and extension == "lib.lua" then
 		content, err = load_resource(plugin, resource..".lua");
@@ -75,9 +77,25 @@ local function load_code_ext(plugin, resource, extension, env)
 	return f, path;
 end
 
+local function init(options)
+	return setmetatable({
+		_options = options or {};
+	}, pluginloader_mt);
+end
+
+local function bind(self, method)
+	return function (...)
+		return method(self, ...);
+	end;
+end
+
+local default_loader = init();
+
 return {
-	load_file = load_file;
-	load_resource = load_resource;
-	load_code = load_code;
-	load_code_ext = load_code_ext;
+	load_file = bind(default_loader, default_loader.load_file);
+	load_resource = bind(default_loader, default_loader.load_resource);
+	load_code = bind(default_loader, default_loader.load_code);
+	load_code_ext = bind(default_loader, default_loader.load_code_ext);
+
+	init = init;
 };

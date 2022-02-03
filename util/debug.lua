@@ -31,7 +31,7 @@ local function get_locals_table(thread, level)
 	for local_num = 1, math.huge do
 		local name, value;
 		if thread then
-			name, value = debug.getlocal(thread, level, local_num);
+			name, value = debug.getlocal(thread, level-1, local_num);
 		else
 			name, value = debug.getlocal(level+1, local_num);
 		end
