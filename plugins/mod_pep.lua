@@ -193,14 +193,12 @@ local function get_subscriber_filter(username)
 end
 
 local nobody_service = pubsub.new({
-	service = pubsub.new({
-		node_defaults = {
-			["max_items"] = 1;
-			["persist_items"] = false;
-			["access_model"] = "presence";
-			["send_last_published_item"] = "on_sub_and_presence";
-		};
-	});
+	node_defaults = {
+		["max_items"] = 1;
+		["persist_items"] = false;
+		["access_model"] = "presence";
+		["send_last_published_item"] = "on_sub_and_presence";
+	};
 });
 
 function get_pep_service(username)
