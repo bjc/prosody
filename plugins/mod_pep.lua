@@ -192,6 +192,8 @@ local function get_subscriber_filter(username)
 	end
 end
 
+-- Read-only service with no nodes where nobody is allowed anything to act as a
+-- fallback for interactions with non-existant users
 local nobody_service = pubsub.new({
 	node_defaults = {
 		["max_items"] = 1;
@@ -199,6 +201,11 @@ local nobody_service = pubsub.new({
 		["access_model"] = "presence";
 		["send_last_published_item"] = "on_sub_and_presence";
 	};
+	autocreate_on_publish = false;
+	autocreate_on_subscribe = false;
+	get_affiliation = function ()
+		return "outcast";
+	end;
 });
 
 function get_pep_service(username)
