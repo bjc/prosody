@@ -24,6 +24,7 @@ local pluginloader_mt = { __index = pluginloader_methods };
 
 function pluginloader_methods:load_file(names)
 	local file, err, path;
+	local load_filter_cb = self._options.load_filter_cb;
 	for i=1,#plugin_dir do
 		for j=1,#names do
 			path = plugin_dir[i]..names[j];
@@ -31,7 +32,13 @@ function pluginloader_methods:load_file(names)
 			if file then
 				local content = file:read("*a");
 				file:close();
-				return content, path;
+				local metadata;
+				if load_filter_cb then
+					path, content, metadata = load_filter_cb(path, content);
+				end
+				if content and path then
+					return content, path, metadata;
+				end
 			end
 		end
 	end
@@ -39,6 +46,7 @@ function pluginloader_methods:load_file(names)
 end
 
 function pluginloader_methods:load_resource(plugin, resource)
+	resource = resource or "mod_"..plugin..".lua";
 	local names = {
 		"mod_"..plugin..dir_sep..plugin..dir_sep..resource; -- mod_hello/hello/mod_hello.lua
 		"mod_"..plugin..dir_sep..resource;                  -- mod_hello/mod_hello.lua
@@ -52,21 +60,21 @@ function pluginloader_methods:load_resource(plugin, resource)
 end
 
 function pluginloader_methods:load_code(plugin, resource, env)
-	local content, err = load_resource(plugin, resource);
+	local content, err, metadata = self:load_resource(plugin, resource);
 	if not content then return content, err; end
 	local path = err;
 	local f, err = envload(content, "@"..path, env);
 	if not f then return f, err; end
-	return f, path;
+	return f, path, metadata;
 end
 
 function pluginloader_methods:load_code_ext(plugin, resource, extension, env)
-	local content, err = load_resource(plugin, resource.."."..extension);
+	local content, err, metadata = self:load_resource(plugin, resource.."."..extension);
 	if not content and extension == "lib.lua" then
-		content, err = load_resource(plugin, resource..".lua");
+		content, err, metadata = self:load_resource(plugin, resource..".lua");
 	end
 	if not content then
-		content, err = load_resource(resource, resource.."."..extension);
+		content, err, metadata = self:load_resource(resource, resource.."."..extension);
 		if not content then
 			return content, err;
 		end
