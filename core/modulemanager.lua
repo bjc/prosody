@@ -52,6 +52,9 @@ local _G = _G;
 local _ENV = nil;
 -- luacheck: std none
 
+local loader = pluginloader.init({
+});
+
 local load_modules_for_host, load, unload, reload, get_module, get_items;
 local get_modules, is_loaded, module_has_method, call_module_method;
 
@@ -184,7 +187,7 @@ local function do_load_module(host, module_name, state)
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
 	api_instance.environment = pluginenv;
 
-	local mod, err = pluginloader.load_code(module_name, nil, pluginenv);
+	local mod, err = loader:load_code(module_name, nil, pluginenv);
 	if not mod then
 		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
 		api_instance:set_status("error", "Failed to load (see log)");
@@ -271,7 +274,7 @@ local function do_reload_module(host, name)
 	local mod = get_module(host, name);
 	if not mod then return nil, "module-not-loaded"; end
 
-	local _mod, err = pluginloader.load_code(name); -- checking for syntax errors
+	local _mod, err = loader:load_code(name); -- checking for syntax errors
 	if not _mod then
 		log("error", "Unable to load module '%s': %s", name or "nil", err or "nil");
 		return nil, err;
@@ -395,4 +398,6 @@ return {
 	is_loaded = is_loaded;
 	module_has_method = module_has_method;
 	call_module_method = call_module_method;
+
+	loader = loader;
 };

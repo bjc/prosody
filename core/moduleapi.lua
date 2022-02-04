@@ -10,7 +10,6 @@ local array = require "util.array";
 local set = require "util.set";
 local it = require "util.iterators";
 local logger = require "util.logger";
-local pluginloader = require "util.pluginloader";
 local timer = require "util.timer";
 local resolve_relative_path = require"util.paths".resolve_relative_path;
 local st = require "util.stanza";
@@ -129,7 +128,8 @@ function api:wrap_global(event, handler)
 end
 
 function api:require(lib)
-	local f, n = pluginloader.load_code_ext(self.name, lib, "lib.lua", self.environment);
+	local modulemanager = require"core.modulemanager";
+	local f, n = modulemanager.loader:load_code_ext(self.name, lib, "lib.lua", self.environment);
 	if not f then error("Failed to load plugin library '"..lib.."', error: "..n); end -- FIXME better error message
 	return f();
 end
