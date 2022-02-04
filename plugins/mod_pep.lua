@@ -193,7 +193,7 @@ local function get_subscriber_filter(username)
 end
 
 -- Read-only service with no nodes where nobody is allowed anything to act as a
--- fallback for interactions with non-existant users
+-- fallback for interactions with non-existent users
 local nobody_service = pubsub.new({
 	node_defaults = {
 		["max_items"] = 1;
