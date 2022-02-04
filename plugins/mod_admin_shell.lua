@@ -339,7 +339,7 @@ function commands.help(session, data)
 		end
 		print [[]]
 		print [[Most fields on the internal session structures can also be used as columns]]
-		-- Also, you can pass a table column specification directly, with mapper callabck and all
+		-- Also, you can pass a table column specification directly, with mapper callback and all
 	end
 end
 
