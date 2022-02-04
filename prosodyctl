@@ -83,7 +83,7 @@ function commands.install(arg)
 		return opts.help and 0 or 1;
 	end
 	-- TODO finalize config option name
-	local server = configmanager.get("*", "plugin_server");
+	local server = opts.server or configmanager.get("*", "plugin_server");
 	if not (arg[1]:match("^https://") or lfs.attributes(arg[1]) or server) then
 		show_warning("There is no 'plugin_server' option in the configuration file");
 		-- see https://prosody.im/doc/TODO documentation
