@@ -88,7 +88,7 @@ local function on_retrieve_legacy_pep(event)
 	local ok, ret = service:get_items(namespace, session.full_jid);
 	if not ok then
 		module:log("error", "Failed to retrieve PEP bookmarks of %s: %s", jid, ret);
-		session.send(st.error_reply(stanza, "cancel", ret, "Failed to retrive bookmarks from PEP"));
+		session.send(st.error_reply(stanza, "cancel", ret, "Failed to retrieve bookmarks from PEP"));
 		return true;
 	end
 
@@ -127,7 +127,7 @@ local function on_retrieve_private_xml(event)
 			session.send(st.reply(stanza):add_child(query));
 		else
 			module:log("error", "Failed to retrieve PEP bookmarks of %s: %s", jid, ret);
-			session.send(st.error_reply(stanza, "cancel", ret, "Failed to retrive bookmarks from PEP"));
+			session.send(st.error_reply(stanza, "cancel", ret, "Failed to retrieve bookmarks from PEP"));
 		end
 		return true;
 	end
