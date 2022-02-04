@@ -38,7 +38,7 @@ local resumption_age = module:metric(
 	"histogram",
 	"resumption_age", "seconds", "time the session had been hibernating at the time of a resumption",
 	{},
-	{buckets = { 0, 1, 2, 5, 10, 20, 50, 100, 200, 500 }}
+	{buckets = { 0, 1, 2, 5, 10, 30, 60, 120, 300, 600 }}
 ):with_labels();
 local sessions_expired = module:measure("sessions_expired", "counter");
 local sessions_started = module:measure("sessions_started", "counter");
