@@ -72,10 +72,13 @@ local parse_xml = (function()
 			end
 		end
 		handler.StartDoctypeDecl = restricted_handler;
-		handler.ProcessingInstruction = restricted_handler;
 		if not options or not options.allow_comments then
 			-- NOTE: comments are generally harmless and can be useful when parsing configuration files or other data, even user-provided data
 			handler.Comment = restricted_handler;
+		end
+		if not options or not options.allow_processing_instructions then
+			-- Processing instructions should generally be safe to just ignore
+			handler.ProcessingInstruction = restricted_handler;
 		end
 		local parser = lxp.new(handler, ns_separator);
 		local ok, err, line, col = parser:parse(xml);

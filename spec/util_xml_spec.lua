@@ -42,6 +42,13 @@ describe("util.xml", function()
 			assert.falsy(ok);
 		end);
 
+		it("should allow processing instructions if asked nicely", function()
+			local x = "<?xml-stylesheet href='make-fancy.xsl'?><foo/>";
+			local stanza = xml.parse(x, {allow_processing_instructions = true});
+			assert.truthy(stanza);
+			assert.are.equal(stanza.name, "foo");
+		end);
+
 		it("should allow an xml declaration", function()
 			local x = "<?xml version='1.0'?><foo/>";
 			local stanza = xml.parse(x);
