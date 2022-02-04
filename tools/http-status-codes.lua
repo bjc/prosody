@@ -1,7 +1,7 @@
 -- Generate net/http/codes.lua from IANA HTTP status code registry
 
 local xml = require "util.xml";
-local registry = xml.parse(io.read("*a"));
+local registry = xml.parse(io.read("*a"), { allow_processing_instructions = true });
 
 io.write([[
 

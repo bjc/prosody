@@ -1,6 +1,6 @@
 -- Generate util/dnsregistry.lua from IANA HTTP status code registry
 local xml = require "util.xml";
-local registries = xml.parse(io.read("*a"));
+local registries = xml.parse(io.read("*a"), { allow_processing_instructions = true });
 
 print("-- Source: https://www.iana.org/assignments/dns-parameters/dns-parameters.xml");
 print(os.date("-- Generated on %Y-%m-%d"))
