@@ -84,7 +84,7 @@ function commands.install(arg)
 	end
 	-- TODO finalize config option name
 	local server = configmanager.get("*", "plugin_server");
-	if not server then
+	if not (arg[1]:match("^https://") or lfs.attributes(arg[1]) or server) then
 		show_warning("There is no 'plugin_server' option in the configuration file");
 		-- see https://prosody.im/doc/TODO documentation
 		-- #1602
@@ -92,7 +92,7 @@ function commands.install(arg)
 	end
 	show_message("Installing %s in %s", arg[1], prosody.paths.installer);
 	local ret = call_luarocks("install", arg[1], server);
-	if ret == 0 then
+	if ret == 0 and arg[1]:match("^mod_") then
 		prosodyctl.show_module_configuration_help(arg[1]);
 	end
 	return ret;
