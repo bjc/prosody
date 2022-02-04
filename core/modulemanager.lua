@@ -66,16 +66,16 @@ local loader = pluginloader.init({
 			end
 		end
 
-		if metadata.conflicts_core_features then
-			local conflicts_core_features = set.new(array.collect(metadata.conflicts_core_features:gmatch("[^, ]+")));
-			local conflicted_features = set.intersection(conflicts_core_features, core_features);
+		if metadata.conflicts then
+			local conflicts_features = set.new(array.collect(metadata.conflicts:gmatch("[^, ]+")));
+			local conflicted_features = set.intersection(conflicts_features, core_features);
 			if not conflicted_features:empty() then
 				log("warn", "Not loading module, due to conflicting features '%s': %s", conflicted_features, path);
 				return; -- Don't load this module
 			end
 		end
-		if metadata.requires_core_features then
-			local required_features = set.new(array.collect(metadata.requires_core_features:gmatch("[^, ]+")));
+		if metadata.requires then
+			local required_features = set.new(array.collect(metadata.requires:gmatch("[^, ]+")));
 			local missing_features = required_features - core_features;
 			if not missing_features:empty() then
 				log("warn", "Not loading module, due to missing features '%s': %s", missing_features, path);
