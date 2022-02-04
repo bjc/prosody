@@ -82,7 +82,7 @@ function pluginloader_methods:load_code_ext(plugin, resource, extension, env)
 	local path = err;
 	local f, err = envload(content, "@"..path, env);
 	if not f then return f, err; end
-	return f, path;
+	return f, path, metadata;
 end
 
 local function init(options)
