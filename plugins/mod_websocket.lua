@@ -364,4 +364,6 @@ function module.add_host(module)
 	module:hook("c2s-read-timeout", keepalive, -0.9);
 end
 
-module:add_host();
+if require"core.modulemanager".get_modules_for_host("*"):contains(module.name) then
+	module:add_host();
+end
