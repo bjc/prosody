@@ -95,7 +95,7 @@ function moduleapi.http_url(module, app_name, default_path)
 			local url = {
 				scheme = service[1].service.name;
 				host = module:get_option_string("http_host", module.global
-					and module:get_option_string("http_default_host") or module.host);
+					and module:get_option_string("http_default_host", interface) or module.host);
 				port = port;
 				path = get_base_path(module, app_name, default_path or "/" .. app_name);
 			}
