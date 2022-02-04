@@ -6,12 +6,15 @@
 -- COPYING file in the source package for more information.
 --
 
+local array = require "util.array";
 local logger = require "util.logger";
 local log = logger.init("modulemanager");
 local config = require "core.configmanager";
 local pluginloader = require "util.pluginloader";
 local envload = require "util.envload";
 local set = require "util.set";
+
+local core_features = require "core.features".available;
 
 local new_multitable = require "util.multitable".new;
 local api = require "core.moduleapi"; -- Module API container
@@ -53,6 +56,35 @@ local _ENV = nil;
 -- luacheck: std none
 
 local loader = pluginloader.init({
+	load_filter_cb = function (path, content)
+		local metadata = {};
+		for line in content:gmatch("([^\r\n]+)\r?\n") do
+			local key, value = line:match("^%-%-%% *([%w_]+): *(.+)$");
+			if key then
+				value = value:gsub("%s+$", "");
+				metadata[key] = value;
+			end
+		end
+
+		if metadata.conflicts_core_features then
+			local conflicts_core_features = set.new(array.collect(metadata.conflicts_core_features:gmatch("[^, ]+")));
+			local conflicted_features = set.intersection(conflicts_core_features, core_features);
+			if not conflicted_features:empty() then
+				log("warn", "Not loading module, due to conflicting features '%s': %s", conflicted_features, path);
+				return; -- Don't load this module
+			end
+		end
+		if metadata.requires_core_features then
+			local required_features = set.new(array.collect(metadata.requires_core_features:gmatch("[^, ]+")));
+			local missing_features = required_features - core_features;
+			if not missing_features:empty() then
+				log("warn", "Not loading module, due to missing features '%s': %s", missing_features, path);
+				return; -- Don't load this module
+			end
+		end
+
+		return path, content, metadata;
+	end;
 });
 
 local load_modules_for_host, load, unload, reload, get_module, get_items;
