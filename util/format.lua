@@ -1,6 +1,6 @@
 --
 -- A string.format wrapper that gracefully handles invalid arguments since
--- certain format string and argument combinations may casue errors or other
+-- certain format string and argument combinations may cause errors or other
 -- issues like log spoofing
 --
 -- Provides some protection from e.g. CAPEC-135, CWE-117, CWE-134, CWE-93
