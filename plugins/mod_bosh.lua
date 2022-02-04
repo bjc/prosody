@@ -556,4 +556,6 @@ function module.add_host(module)
 	});
 end
 
-module:add_host();
+if require"core.modulemanager".get_modules_for_host("*"):contains(module.name) then
+	module:add_host();
+end
