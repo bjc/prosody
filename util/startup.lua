@@ -393,6 +393,7 @@ function startup.init_http_client()
 	local https_client = config.get("*", "client_https_ssl")
 	http.default.options.sslctx = require "core.certmanager".create_context("client_https port 0", "client",
 		{ capath = config_ssl.capath, cafile = config_ssl.cafile, verify = "peer", }, https_client);
+	http.default.options.use_dane = config.get("*", "use_dane")
 end
 
 function startup.init_promise()
