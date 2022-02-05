@@ -219,7 +219,7 @@ local function do_load_module(host, module_name, state)
 	local pluginenv = setmetatable({ module = api_instance }, { __index = _G });
 	api_instance.environment = pluginenv;
 
-	local mod, err = loader:load_code(module_name, nil, pluginenv);
+	local mod, err, meta = loader:load_code(module_name, nil, pluginenv);
 	if not mod then
 		log("error", "Unable to load module '%s': %s", module_name or "nil", err or "nil");
 		api_instance:set_status("error", "Failed to load (see log)");
@@ -227,6 +227,7 @@ local function do_load_module(host, module_name, state)
 	end
 
 	api_instance.path = err;
+	api_instance.meta = meta;
 
 	local custom_plugins = prosody.paths.installer;
 	if custom_plugins and err:sub(1, #custom_plugins+1) == custom_plugins.."/" then
