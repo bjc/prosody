@@ -287,12 +287,16 @@ local function request(self, u, ex, callback)
 	end
 	local port_number = port and tonumber(port) or (using_https and 443 or 80);
 
+	local use_dane = self.options and self.options.use_dane;
 	local sslctx = false;
 	if using_https then
 		sslctx = ex and ex.sslctx or self.options and self.options.sslctx;
+		if ex and ex.use_dane ~= nil then
+			use_dane = ex.use_dane;
+		end
 	end
 
-	local http_service = basic_resolver.new(host, port_number, "tcp", { servername = req.host });
+	local http_service = basic_resolver.new(host, port_number, "tcp", { servername = req.host; use_dane = use_dane });
 	connect(http_service, listener, { sslctx = sslctx }, req);
 
 	self.events.fire_event("request", { http = self, request = req, url = u });
