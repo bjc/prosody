@@ -1482,17 +1482,17 @@ function def_env.xmpp:ping(localhost, remotehost, timeout)
 			end
 		end
 	end
-	local oncreated = onchange("created");
+	local onconnected = onchange("connected");
 	local onauthenticated = onchange("authenticated");
 	local onestablished = onchange("established");
 	local ondestroyed = onchange("destroyed");
-	module:hook("s2s-created", oncreated, 1);
+	module:hook("s2s-connected", onconnected, 1);
 	module:context(localhost):hook("s2s-authenticated", onauthenticated, 1);
 	module:hook("s2sout-established", onestablished, 1);
 	module:hook("s2sin-established", onestablished, 1);
 	module:hook("s2s-destroyed", ondestroyed, 1);
 	return module:context(localhost):send_iq(iq, nil, timeout):finally(function()
-		module:unhook("s2s-created", oncreated);
+		module:unhook("s2s-connected", onconnected, 1);
 		module:context(localhost):unhook("s2s-authenticated", onauthenticated);
 		module:unhook("s2sout-established", onestablished);
 		module:unhook("s2sin-established", onestablished);
