@@ -820,11 +820,14 @@ function listener.onconnect(conn)
 		session = s2s_new_incoming(conn);
 		sessions[conn] = session;
 		session.log("debug", "Incoming s2s connection");
+		module:fire_event("s2sin-connected", { session = session })
 		initialize_session(session);
 		m_accepted_tcp_connections:with_labels():add(1)
 	else -- Outgoing session connected
+		module:fire_event("s2sout-connected", { session = session })
 		session:open_stream(session.from_host, session.to_host);
 	end
+	module:fire_event("s2s-connected", { session = session })
 	session.ip = conn:ip();
 end
 
