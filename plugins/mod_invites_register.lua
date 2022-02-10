@@ -4,7 +4,7 @@ local jid_bare = require "util.jid".bare;
 local rostermanager = require "core.rostermanager";
 
 local require_encryption = module:get_option_boolean("c2s_require_encryption",
-	module:get_option_boolean("require_encryption", false));
+	module:get_option_boolean("require_encryption", true));
 local invite_only = module:get_option_boolean("registration_invite_only", true);
 
 local invites;
