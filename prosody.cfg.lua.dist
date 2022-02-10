@@ -76,7 +76,6 @@ modules_enabled = {
 	-- HTTP modules
 		--"bosh"; -- Enable BOSH clients, aka "Jabber over HTTP"
 		--"websocket"; -- XMPP over WebSockets
-		--"http_files"; -- Serve static files from a directory over HTTP
 		--"http_openmetrics"; -- for exposing metrics to stats collectors
 
 	-- Other specific functionality
