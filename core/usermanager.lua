@@ -23,7 +23,7 @@ local hosts = prosody.hosts;
 
 local setmetatable = setmetatable;
 
-local default_provider = "internal_plain";
+local default_provider = "internal_hashed";
 
 local _ENV = nil;
 -- luacheck: std none

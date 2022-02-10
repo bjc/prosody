@@ -309,7 +309,7 @@ module:hook("stream-features", function(event)
 			return;
 		end
 
-		local authmod = module:get_option_string("authentication", "internal_plain");
+		local authmod = module:get_option_string("authentication", "internal_hashed");
 		if available_mechanisms:empty() then
 			log("warn", "No available SASL mechanisms, verify that the configured authentication module '%s' is loaded and configured correctly", authmod);
 			return;
