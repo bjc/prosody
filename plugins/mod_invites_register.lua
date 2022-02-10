@@ -8,7 +8,7 @@ local require_encryption = module:get_option_boolean("c2s_require_encryption",
 local invite_only = module:get_option_boolean("registration_invite_only", true);
 
 local invites;
-if prosody.shutdown then -- COMPAT hack to detect prosodyctl
+if prosody.process_type == "prosody" then
 	invites = module:depends("invites");
 end
 
