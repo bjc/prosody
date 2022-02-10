@@ -41,7 +41,6 @@ modules_enabled = {
 		"roster"; -- Allow users to have a roster. Recommended ;)
 		"saslauth"; -- Authentication for clients and servers. Recommended if you want to log in.
 		"tls"; -- Add support for secure TLS on c2s/s2s connections
-		"dialback"; -- s2s dialback support
 		"disco"; -- Service discovery
 
 	-- Not essential, but recommended
@@ -54,6 +53,7 @@ modules_enabled = {
 		"limits"; -- Enable bandwidth limiting for XMPP connections
 		"bookmarks"; -- Synchronise open rooms between clients
 		"smacks"; -- Stream management and resumption (XEP-0198)
+		"dialback"; -- s2s dialback support
 
 	-- Nice to have
 		"version"; -- Replies to server version requests
