@@ -10,6 +10,10 @@ local invite_only = module:get_option_boolean("registration_invite_only", true);
 local invites;
 if prosody.process_type == "prosody" then
 	invites = module:depends("invites");
+
+	if invite_only then
+		module:depends("register_ibr");
+	end
 end
 
 local legacy_invite_stream_feature = st.stanza("register", { xmlns = "urn:xmpp:invite" }):up();
