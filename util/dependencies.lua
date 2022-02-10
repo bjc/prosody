@@ -85,7 +85,7 @@ local function check_dependencies()
 				{ "Debian/Ubuntu", "sudo apt install lua-sec" };
 				{ "luarocks", "luarocks install luasec" };
 				{ "Source", "https://github.com/brunoos/luasec" };
-			}, "SSL/TLS support will not be available", err);
+			}, nil, err);
 	end
 
 	local bit, err = softreq"util.bitcompat";
