@@ -48,6 +48,7 @@ files["plugins/"] = {
 		"module.saved_state",
 		"module.global",
 		"module.path",
+		"module.items",
 
 		-- Module API
 		"module.add_extension",

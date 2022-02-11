@@ -423,6 +423,13 @@ end
 module:hook("c2s-read-timeout", keepalive, -1);
 
 module:hook("server-stopping", function(event)
+	-- Close ports
+	local pm = require "core.portmanager";
+	for _, netservice in pairs(module.items["net-provider"]) do
+		pm.unregister_service(netservice.name, netservice);
+	end
+
+	-- Close sessions
 	local reason = event.reason;
 	for _, session in pairs(sessions) do
 		session:close{ condition = "system-shutdown", text = reason };
