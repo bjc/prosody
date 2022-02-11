@@ -85,6 +85,22 @@ local all_old_sessions = module:open_store("smacks_h");
 local old_session_registry = module:open_store("smacks_h", "map");
 local session_registry = module:shared "/*/smacks/resumption-tokens"; -- > user@host/resumption-token --> resource
 
+local function track_session(session, id)
+	session_registry[jid.join(session.username, session.host, id or session.resumption_token)] = session;
+	session.resumption_token = id;
+end
+
+local function save_old_session(session)
+	session_registry[jid.join(session.username, session.host, session.resumption_token)] = nil;
+	return old_session_registry:set(session.username, session.resumption_token,
+		{ h = session.handled_stanza_count; t = os.time() })
+end
+
+local function clear_old_session(session, id)
+	session_registry[jid.join(session.username, session.host, id or session.resumption_token)] = nil;
+	return old_session_registry:set(session.username, id or session.resumption_token, nil)
+end
+
 local ack_errors = require"util.error".init("mod_smacks", xmlns_sm3, {
 	head = { condition = "undefined-condition"; text = "Client acknowledged more stanzas than sent by server" };
 	tail = { condition = "undefined-condition"; text = "Client acknowledged less stanzas than already acknowledged" };
@@ -237,8 +253,7 @@ module:hook("pre-session-close", function(event)
 	if session.smacks == nil then return end
 	if session.resumption_token then
 		session.log("debug", "Revoking resumption token");
-		session_registry[jid.join(session.username, session.host, session.resumption_token)] = nil;
-		old_session_registry:set(session.username, session.resumption_token, nil);
+		clear_old_session(session);
 		session.resumption_token = nil;
 	else
 		session.log("debug", "Session not resumable");
@@ -313,8 +328,7 @@ function handle_enable(session, stanza, xmlns_sm)
 	local resume = stanza.attr.resume;
 	if resume == "true" or resume == "1" then
 		resume_token = new_id();
-		session_registry[jid.join(session.username, session.host, resume_token)] = session;
-		session.resumption_token = resume_token;
+		track_session(session, resume_token);
 		resume_max = tostring(resume_timeout);
 	end
 	(session.sends2s or session.send)(st.stanza("enabled", { xmlns = xmlns_sm, id = resume_token, resume = resume, max = resume_max }));
@@ -482,9 +496,7 @@ module:hook("pre-resource-unbind", function (event)
 		end
 
 		session.log("debug", "Destroying session for hibernating too long");
-		session_registry[jid.join(session.username, session.host, session.resumption_token)] = nil;
-		old_session_registry:set(session.username, session.resumption_token,
-			{ h = session.handled_stanza_count; t = os.time() });
+		save_old_session(session);
 		session.resumption_token = nil;
 		session.resending_unacked = true; -- stop outgoing_stanza_filter from re-queueing anything anymore
 		sessionmanager.destroy_session(session, "Hibernating too long");
@@ -541,7 +553,7 @@ function handle_resume(session, stanza, xmlns_sm)
 			session.send(st.stanza("failed", { xmlns = xmlns_sm, h = format_h(old_session.h) })
 				:tag("item-not-found", { xmlns = xmlns_errors })
 			);
-			old_session_registry:set(session.username, id, nil);
+			clear_old_session(session, id);
 			resumption_expired(1);
 		else
 			session.log("debug", "Tried to resume non-existent session with id %s", id);
@@ -698,8 +710,7 @@ module:hook_global("server-stopping", function(event)
 	for _, user in pairs(local_sessions) do
 		for _, session in pairs(user.sessions) do
 			if session.resumption_token then
-				if old_session_registry:set(session.username, session.resumption_token,
-					{ h = session.handled_stanza_count; t = os.time() }) then
+				if save_old_session(session) then
 					session.resumption_token = nil;
 
 					-- Deal with unacked stanzas
