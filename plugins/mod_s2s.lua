@@ -964,6 +964,13 @@ module:hook("server-stopping", function(event)
 		pm.unregister_service(netservice.name, netservice);
 	end
 
+	-- Stop opening new connections
+	for host in pairs(prosody.hosts) do
+		if prosody.hosts[host].modules.s2s then
+			module:context(host):unhook("route/remote", route_to_new_session);
+		end
+	end
+
 	-- Close sessions
 	local reason = event.reason;
 	for _, session in pairs(sessions) do
