@@ -68,8 +68,7 @@ local default_config = { __index = {
 	min_wait = 0.001;
 
 	-- Enable extra noisy debug logging
-	-- TODO disable once considered stable
-	verbose = true;
+	verbose = false;
 
 	-- EXPERIMENTAL
 	-- Whether to kill connections in case of callback errors.
