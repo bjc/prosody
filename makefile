@@ -30,21 +30,39 @@ all: prosody.install prosodyctl.install prosody.cfg.lua.install prosody.version
 	$(MAKE) -C certs localhost.crt example.com.crt
 .endif
 
-install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodings.so util/encodings.so util/pposix.so util/signal.so
-	$(MKDIR) $(BIN) $(CONFIG) $(MODULES) $(SOURCE)
-	$(MKDIR_PRIVATE) $(DATA)
-	$(MKDIR) $(MAN)/man1
+install-etc: prosody.cfg.lua.install
+	$(MKDIR) $(CONFIG)
 	$(MKDIR) $(CONFIG)/certs
-	$(MKDIR) $(SOURCE)/core $(SOURCE)/net $(SOURCE)/util
+	test -f $(CONFIG)/prosody.cfg.lua || $(INSTALL_DATA) prosody.cfg.lua.install $(CONFIG)/prosody.cfg.lua
+.if $(EXCERTS) == "yes"
+	$(INSTALL_DATA) certs/localhost.crt certs/localhost.key $(CONFIG)/certs
+	$(INSTALL_DATA) certs/example.com.crt certs/example.com.key $(CONFIG)/certs
+.endif
+
+install-bin: prosody.install prosodyctl.install
+	$(MKDIR) $(BIN)
 	$(INSTALL_EXEC) ./prosody.install $(BIN)/prosody
 	$(INSTALL_EXEC) ./prosodyctl.install $(BIN)/prosodyctl
+
+install-core:
+	$(MKDIR) $(SOURCE)
+	$(MKDIR) $(SOURCE)/core
 	$(INSTALL_DATA) core/*.lua $(SOURCE)/core
+
+install-net:
+	$(MKDIR) $(SOURCE)
+	$(MKDIR) $(SOURCE)/net
 	$(INSTALL_DATA) net/*.lua $(SOURCE)/net
 	$(MKDIR) $(SOURCE)/net/http $(SOURCE)/net/resolvers $(SOURCE)/net/websocket
 	$(INSTALL_DATA) net/http/*.lua $(SOURCE)/net/http
 	$(INSTALL_DATA) net/resolvers/*.lua $(SOURCE)/net/resolvers
 	$(INSTALL_DATA) net/websocket/*.lua $(SOURCE)/net/websocket
+
+install-util: util/encodings.so util/encodings.so util/pposix.so util/signal.so
+	$(MKDIR) $(SOURCE)
+	$(MKDIR) $(SOURCE)/util
 	$(INSTALL_DATA) util/*.lua $(SOURCE)/util
+	$(MAKE) install -C util-src
 	$(INSTALL_DATA) util/*.so $(SOURCE)/util
 	$(MKDIR) $(SOURCE)/util/sasl
 	$(INSTALL_DATA) util/sasl/*.lua $(SOURCE)/util/sasl
@@ -52,20 +70,27 @@ install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodin
 	$(INSTALL_DATA) util/human/*.lua $(SOURCE)/util/human
 	$(MKDIR) $(SOURCE)/util/prosodyctl
 	$(INSTALL_DATA) util/prosodyctl/*.lua $(SOURCE)/util/prosodyctl
+
+install-plugins:
+	$(MKDIR) $(MODULES)
 	$(MKDIR) $(MODULES)/mod_pubsub $(MODULES)/adhoc $(MODULES)/muc $(MODULES)/mod_mam
 	$(INSTALL_DATA) plugins/*.lua $(MODULES)
 	$(INSTALL_DATA) plugins/mod_pubsub/*.lua $(MODULES)/mod_pubsub
 	$(INSTALL_DATA) plugins/adhoc/*.lua $(MODULES)/adhoc
 	$(INSTALL_DATA) plugins/muc/*.lua $(MODULES)/muc
 	$(INSTALL_DATA) plugins/mod_mam/*.lua $(MODULES)/mod_mam
-.if $(EXCERTS) == "yes"
-	$(INSTALL_DATA) certs/localhost.crt certs/localhost.key $(CONFIG)/certs
-	$(INSTALL_DATA) certs/example.com.crt certs/example.com.key $(CONFIG)/certs
-.endif
+
+install-man:
+	$(MKDIR) $(MAN)/man1
 	$(INSTALL_DATA) man/prosodyctl.man $(MAN)/man1/prosodyctl.1
-	test -f $(CONFIG)/prosody.cfg.lua || $(INSTALL_DATA) prosody.cfg.lua.install $(CONFIG)/prosody.cfg.lua
+
+install-meta:
 	-test -f prosody.version && $(INSTALL_DATA) prosody.version $(SOURCE)/prosody.version
-	$(MAKE) install -C util-src
+
+install-data:
+	$(MKDIR_PRIVATE) $(DATA)
+
+install: install-util install-net install-core install-plugins install-bin install-etc install-man install-meta install-data
 
 clean:
 	rm -f prosody.install
