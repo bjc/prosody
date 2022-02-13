@@ -218,7 +218,6 @@ VirtualHost "localhost"
 
 
 --VirtualHost "example.com"
---	certificate = "/path/to/example.crt"
 
 ------ Components ------
 -- You can specify components to add hosts that provide special services,
