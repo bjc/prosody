@@ -15,7 +15,7 @@ before you can build it. These are:
     -   [GNU libidn](http://www.gnu.org/software/libidn/)
 
 These can be installed on Debian/Ubuntu by running
-`apt-get build-dep prosody` or by installing the packages
+`apt build-dep prosody` or by installing the packages
 `liblua5.4-dev`, `libicu-dev` and `libssl-dev`.
 
 On Mandriva try:

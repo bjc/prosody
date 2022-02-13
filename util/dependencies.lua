@@ -46,7 +46,7 @@ local function check_dependencies()
 
 	if not lxp then
 		missingdep("luaexpat", {
-				{ "Debian/Ubuntu", "sudo apt-get install lua-expat" };
+				{ "Debian/Ubuntu", "sudo apt install lua-expat" };
 				{ "luarocks", "luarocks install luaexpat" };
 				{ "Source", "http://matthewwild.co.uk/projects/luaexpat/" };
 			}, nil, err);
@@ -57,7 +57,7 @@ local function check_dependencies()
 
 	if not socket then
 		missingdep("luasocket", {
-				{ "Debian/Ubuntu", "sudo apt-get install lua-socket" };
+				{ "Debian/Ubuntu", "sudo apt install lua-socket" };
 				{ "luarocks", "luarocks install luasocket" };
 				{ "Source", "http://www.tecgraf.puc-rio.br/~diego/professional/luasocket/" };
 			}, nil, err);
@@ -72,7 +72,7 @@ local function check_dependencies()
 	if not lfs then
 		missingdep("luafilesystem", {
 			{ "luarocks", "luarocks install luafilesystem" };
-			{ "Debian/Ubuntu", "sudo apt-get install lua-filesystem" };
+			{ "Debian/Ubuntu", "sudo apt install lua-filesystem" };
 			{ "Source", "http://www.keplerproject.org/luafilesystem/" };
 		}, nil, err);
 		fatal = true;
@@ -82,7 +82,7 @@ local function check_dependencies()
 
 	if not ssl then
 		missingdep("LuaSec", {
-				{ "Debian/Ubuntu", "sudo apt-get install lua-sec" };
+				{ "Debian/Ubuntu", "sudo apt install lua-sec" };
 				{ "luarocks", "luarocks install luasec" };
 				{ "Source", "https://github.com/brunoos/luasec" };
 			}, "SSL/TLS support will not be available", err);
@@ -92,7 +92,7 @@ local function check_dependencies()
 
 	if not bit then
 		missingdep("lua-bitops", {
-			{ "Debian/Ubuntu", "sudo apt-get install lua-bitop" };
+			{ "Debian/Ubuntu", "sudo apt install lua-bitop" };
 			{ "luarocks", "luarocks install luabitop" };
 			{ "Source", "http://bitop.luajit.org/" };
 		}, "WebSocket support will not be available", err);
@@ -101,7 +101,7 @@ local function check_dependencies()
 	local unbound, err = softreq"lunbound"; -- luacheck: ignore 211/err
 	if not unbound then
 		missingdep("lua-unbound", {
-				{ "Debian/Ubuntu", "sudo apt-get install lua-unbound" };
+				{ "Debian/Ubuntu", "sudo apt install lua-unbound" };
 				{ "luarocks", "luarocks install luaunbound" };
 				{ "Source", "https://www.zash.se/luaunbound.html" };
 			}, "Old DNS resolver library will be used", err);
