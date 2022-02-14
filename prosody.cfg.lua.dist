@@ -122,7 +122,8 @@ s2s_secure_auth = true
 
 --s2s_secure_domains = { "jabber.org" }
 
--- Enable rate limits for incoming client and server connections
+-- Enable rate limits for incoming client and server connections. These help
+-- protect from excessive resource consumption and denial-of-service attacks.
 
 limits = {
 	c2s = {
@@ -224,7 +225,7 @@ VirtualHost "localhost"
 ---Set up an external component (default component port is 5347)
 --
 -- External components allow adding various services, such as gateways/
--- transports to other networks like ICQ, MSN and Yahoo. For more info
+-- bridges to non-XMPP networks and services. For more info
 -- see: https://prosody.im/doc/components#adding_an_external_component
 --
 --Component "gateway.example.com"
