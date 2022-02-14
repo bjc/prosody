@@ -105,16 +105,6 @@ modules_disabled = {
 -- For more information see https://prosody.im/doc/creating_accounts
 allow_registration = false
 
--- Force clients to use encrypted connections? This option will
--- prevent clients from authenticating unless they are using encryption.
-
-c2s_require_encryption = true
-
--- Force servers to use encrypted connections? This option will
--- prevent servers from authenticating unless they are using encryption.
-
-s2s_require_encryption = true
-
 -- Force certificate authentication for server-to-server connections?
 
 s2s_secure_auth = false
