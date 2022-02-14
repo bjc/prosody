@@ -102,12 +102,7 @@ local function find_cert(user_certs, name)
 end
 
 local function find_matching_key(cert_path)
-	-- FIXME we shouldn't need to guess the key filename
-	if cert_path:sub(-4) == ".crt" then
-		return cert_path:sub(1, -4) .. "key";
-	elseif cert_path:sub(-14) == "/fullchain.pem" then
-		return cert_path:sub(1, -14) .. "privkey.pem";
-	end
+	return (cert_path:gsub("%.crt$", ".key"):gsub("fullchain", "privkey"));
 end
 
 local function index_certs(dir, files_by_name, depth_limit)
@@ -130,8 +125,7 @@ local function index_certs(dir, files_by_name, depth_limit)
 			if file:sub(1,1) ~= "." then
 				index_certs(full, files_by_name, depth_limit-1);
 			end
-			-- TODO support more filename patterns?
-		elseif full:match("%.crt$") or full:match("/fullchain%.pem$") then
+		elseif file:find("%.crt$") or file:find("fullchain") then -- This should catch most fullchain files
 			local f = io_open(full);
 			if f then
 				-- TODO look for chained certificates
