@@ -140,8 +140,13 @@ limits = {
 -- Authentication
 -- Select the authentication backend to use. The 'internal' providers
 -- use Prosody's configured data storage to store the authentication data.
+-- For more information see https://prosody.im/doc/authentication
 
 authentication = "internal_hashed"
+
+-- Many authentication providers, including the default one, allow you to
+-- create user accounts via Prosody's admin interfaces. For details, see the
+-- documentation at https://prosody.im/doc/creating_accounts
 
 
 -- Storage
