@@ -105,6 +105,7 @@ modules_disabled = {
 -- For more information see https://prosody.im/doc/creating_accounts
 allow_registration = false
 
+-- Server-to-server authentication
 -- Require valid certificates for server-to-server connections?
 -- If false, other methods such as dialback (DNS) may be used instead.
 
@@ -122,6 +123,8 @@ s2s_secure_auth = true
 
 --s2s_secure_domains = { "jabber.org" }
 
+
+-- Rate limits
 -- Enable rate limits for incoming client and server connections. These help
 -- protect from excessive resource consumption and denial-of-service attacks.
 
@@ -134,11 +137,14 @@ limits = {
 	};
 }
 
+-- Authentication
 -- Select the authentication backend to use. The 'internal' providers
 -- use Prosody's configured data storage to store the authentication data.
 
 authentication = "internal_hashed"
 
+
+-- Storage
 -- Select the storage backend to use. By default Prosody uses flat files
 -- in its configured data directory, but it also supports more backends
 -- through modules. An "sql" backend is included by default, but requires
@@ -174,6 +180,7 @@ archive_expires_after = "1w" -- Remove archived messages after 1 week
 --turn_external_host = "turn.example.com"
 --turn_external_secret = "your-secret-turn-access-token"
 
+
 -- Logging configuration
 -- For advanced logging see https://prosody.im/doc/logging
 log = {
@@ -183,9 +190,11 @@ log = {
 	-- "*console"; -- Log to the console, useful for debugging when running in the foreground
 }
 
+
 -- Uncomment to enable statistics
 -- For more info see https://prosody.im/doc/statistics
 -- statistics = "internal"
+
 
 -- Certificates
 -- Every virtual host and component needs a certificate so that clients and
