@@ -105,9 +105,10 @@ modules_disabled = {
 -- For more information see https://prosody.im/doc/creating_accounts
 allow_registration = false
 
--- Force certificate authentication for server-to-server connections?
+-- Require valid certificates for server-to-server connections?
+-- If false, other methods such as dialback (DNS) may be used instead.
 
-s2s_secure_auth = false
+s2s_secure_auth = true
 
 -- Some servers have invalid or self-signed certificates. You can list
 -- remote domains here that will not be required to authenticate using
