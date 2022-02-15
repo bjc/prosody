@@ -10,19 +10,11 @@ local t_concat = table.concat;
 local t_insert = table.insert;
 local s_byte = string.byte;
 local s_format = string.format;
-local s_gsub = string.gsub;
 local s_sub = string.sub;
-local s_match = string.match;
-local s_gmatch = string.gmatch;
-
-local have_net, net_util = pcall(require, "util.net");
 
 local iana_data = require "util.dnsregistry";
-if have_net and not net_util.ntop then -- Added in Prosody 0.11
-	have_net = false;
-end
-
 local tohex = require "util.hex".to;
+local inet_ntop = require "util.net".ntop;
 
 -- Simplified versions of Waqas DNS parsers
 -- Only the per RR parsers are needed and only feed a single RR
@@ -78,29 +70,8 @@ function parsers.SOA(packet)
 	}, soa_mt);
 end
 
-function parsers.A(packet)
-	return s_format("%d.%d.%d.%d", s_byte(packet, 1, 4));
-end
-
-local aaaa = { nil, nil, nil, nil, nil, nil, nil, nil, };
-function parsers.AAAA(packet)
-	local hi, lo, ip, len, token;
-	for i = 1, 8 do
-		hi, lo = s_byte(packet, i * 2 - 1, i * 2);
-		aaaa[i] = s_format("%x", hi * 256 + lo); -- skips leading zeros
-	end
-	ip = t_concat(aaaa, ":", 1, 8);
-	len = (s_match(ip, "^0:[0:]+()") or 1) - 1;
-	for s in s_gmatch(ip, ":0:[0:]+") do
-		if len < #s then len, token = #s, s; end -- find longest sequence of zeros
-	end
-	return (s_gsub(ip, token or "^0:[0:]+", "::", 1));
-end
-
-if have_net then
-	parsers.A = net_util.ntop;
-	parsers.AAAA = net_util.ntop;
-end
+parsers.A = inet_ntop;
+parsers.AAAA = inet_ntop;
 
 local mx_mt = {
 	__tostring = function(rr)
