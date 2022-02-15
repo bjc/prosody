@@ -274,7 +274,7 @@ function commands.help(session, data)
 		-- TODO `muc:room():foo()` commands
 		print [[muc:create(roomjid, { config }) - Create the specified MUC room with the given config]]
 		print [[muc:list(host) - List rooms on the specified MUC component]]
-		print [[muc:room(roomjid) - Create the specified MUC room with the given config]]
+		print [[muc:room(roomjid) - Reference the specified MUC room to access MUC API methods]]
 	elseif section == "server" then
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
