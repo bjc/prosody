@@ -9,7 +9,6 @@ local table = table;
 local t_concat = table.concat;
 local t_insert = table.insert;
 local s_byte = string.byte;
-local s_char = string.char;
 local s_format = string.format;
 local s_gsub = string.gsub;
 local s_sub = string.sub;
@@ -23,15 +22,7 @@ if have_net and not net_util.ntop then -- Added in Prosody 0.11
 	have_net = false;
 end
 
-local chartohex = {};
-
-for c = 0, 255 do
-	chartohex[s_char(c)] = s_format("%02X", c);
-end
-
-local function tohex(s)
-	return (s_gsub(s, ".", chartohex));
-end
+local tohex = require "util.hex".to;
 
 -- Simplified versions of Waqas DNS parsers
 -- Only the per RR parsers are needed and only feed a single RR
