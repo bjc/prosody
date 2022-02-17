@@ -819,7 +819,7 @@ available_columns = {
 		title = "Certificate";
 		description = "Validation status of certificate";
 		key = "cert_identity_status";
-		width = 13;
+		width = 11;
 		mapper = function(cert_status, session)
 			if cert_status then return capitalize(cert_status); end
 			if session.cert_chain_status == "Invalid" then
@@ -833,7 +833,7 @@ available_columns = {
 			elseif session.cert_identity_status == "invalid" then
 				return "Mismatched";
 			end
-			return "Not validated";
+			return "Unknown";
 		end;
 	};
 	sni = {
