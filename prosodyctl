@@ -115,6 +115,10 @@ function commands.list(arg)
 		show_usage([[list]], [[Shows installed rocks]]);
 		return 0;
 	end
+	if opts.outdated then
+		-- put this back for luarocks
+		arg[1] = "--outdated";
+	end
 	local ret = call_luarocks("list", arg[1]);
 	return ret;
 end
