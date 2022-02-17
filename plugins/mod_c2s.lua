@@ -16,7 +16,8 @@ local statsmanager = require "core.statsmanager";
 local st = require "util.stanza";
 local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionmanager.destroy_session;
 local uuid_generate = require "util.uuid".generate;
-local runner = require "util.async".runner;
+local async = require "util.async";
+local runner = async.runner;
 
 local tostring, type = tostring, type;
 
@@ -382,6 +383,7 @@ function listener.ondisconnect(conn, err)
 		session.conn = nil;
 		sessions[conn]  = nil;
 	end
+	module:fire_event("c2s-closed", { session = session; conn = conn });
 end
 
 function listener.onreadtimeout(conn)
@@ -431,11 +433,24 @@ module:hook("server-stopping", function(event)
 end, -80);
 
 module:hook("server-stopping", function(event)
+	local wait, done = async.waiter();
+	module:hook("c2s-closed", function ()
+		if next(sessions) == nil then done(); end
+	end)
+
 	-- Close sessions
 	local reason = event.reason;
 	for _, session in pairs(sessions) do
 		session:close{ condition = "system-shutdown", text = reason };
 	end
+
+	-- Wait for them to close properly if they haven't already
+	if next(sessions) ~= nil then
+		add_task(stream_close_timeout+1, done);
+		module:log("info", "Waiting for sessions to close");
+		wait();
+	end
+
 end, -100);
 
 

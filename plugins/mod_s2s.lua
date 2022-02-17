@@ -26,7 +26,8 @@ local s2s_new_incoming = require "core.s2smanager".new_incoming;
 local s2s_new_outgoing = require "core.s2smanager".new_outgoing;
 local s2s_destroy_session = require "core.s2smanager".destroy_session;
 local uuid_gen = require "util.uuid".generate;
-local runner = require "util.async".runner;
+local async = require "util.async";
+local runner = async.runner;
 local connect = require "net.connect".connect;
 local service = require "net.resolvers.service";
 local resolver_chain = require "net.resolvers.chain";
@@ -859,6 +860,7 @@ function listener.ondisconnect(conn, err)
 		end
 		s2s_destroy_session(session, err);
 	end
+	module:fire_event("s2s-closed", { session = session; conn = conn });
 end
 
 function listener.onfail(data, err)
@@ -971,11 +973,24 @@ module:hook("server-stopping", function(event)
 		end
 	end
 
+	local wait, done = async.waiter();
+	module:hook("s2s-closed", function ()
+		if next(sessions) == nil then done(); end
+	end, 1)
+
 	-- Close sessions
 	local reason = event.reason;
 	for _, session in pairs(sessions) do
 		session:close{ condition = "system-shutdown", text = reason };
 	end
+
+	-- Wait for them to close properly if they haven't already
+	if next(sessions) ~= nil then
+		module:log("info", "Waiting for sessions to close");
+		add_task(stream_close_timeout + 1, done);
+		wait();
+	end
+
 end, -200);
 
 
