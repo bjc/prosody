@@ -428,7 +428,9 @@ module:hook("server-stopping", function(event)
 	for _, netservice in pairs(module.items["net-provider"]) do
 		pm.unregister_service(netservice.name, netservice);
 	end
+end, -80);
 
+module:hook("server-stopping", function(event)
 	-- Close sessions
 	local reason = event.reason;
 	for _, session in pairs(sessions) do
