@@ -424,7 +424,7 @@ end
 
 module:hook("c2s-read-timeout", keepalive, -1);
 
-module:hook("server-stopping", function(event)
+module:hook("server-stopping", function(event) -- luacheck: ignore 212/event
 	-- Close ports
 	local pm = require "core.portmanager";
 	for _, netservice in pairs(module.items["net-provider"]) do
