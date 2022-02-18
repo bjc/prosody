@@ -47,6 +47,7 @@ TRUNK
 -   Promise based API for sending queries
 -   API for adding periodic tasks
 -   More APIs supporting ES6 Promises
+-   Async can be used during shutdown
 
 ### Other
 
@@ -69,6 +70,8 @@ TRUNK
 -   Rewritten migrator with archive support
 -   Improved automatic certificate locating and selecting
 -   Logging to syslog no longer missing startup messages
+-   Graceful shutdown sequence that closes ports first and waits for
+    connections to close
 
 ## Removed
 
