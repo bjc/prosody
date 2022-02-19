@@ -212,23 +212,25 @@ function commands.help(session, data)
 		print [[Commands are divided into multiple sections. For help on a particular section, ]]
 		print [[type: help SECTION (for example, 'help c2s'). Sections are: ]]
 		print [[]]
-		print [[c2s - Commands to manage local client-to-server sessions]]
-		print [[s2s - Commands to manage sessions between this server and others]]
-		print [[http - Commands to inspect HTTP services]] -- XXX plural but there is only one so far
-		print [[module - Commands to load/reload/unload modules/plugins]]
-		print [[host - Commands to activate, deactivate and list virtual hosts]]
-		print [[user - Commands to create and delete users, and change their passwords]]
-		print [[roles - Show information about user roles]]
-		print [[muc - Commands to create, list and manage chat rooms]]
-		print [[stats - Commands to show internal statistics]]
-		print [[server - Uptime, version, shutting down, etc.]]
-		print [[port - Commands to manage ports the server is listening on]]
-		print [[dns - Commands to manage and inspect the internal DNS resolver]]
-		print [[xmpp - Commands for sending XMPP stanzas]]
-		print [[debug - Commands for debugging the server]]
-		print [[config - Reloading the configuration, etc.]]
-		print [[columns - Information about customizing session listings]]
-		print [[console - Help regarding the console itself]]
+		local row = format_table({ { title = "Section"; width = 7 }; { title = "Description"; width = "100%" } })
+		print(row())
+		print(row { "c2s"; "Commands to manage local client-to-server sessions" })
+		print(row { "s2s"; "Commands to manage sessions between this server and others" })
+		print(row { "http"; "Commands to inspect HTTP services" }) -- XXX plural but there is only one so far
+		print(row { "module"; "Commands to load/reload/unload modules/plugins" })
+		print(row { "host"; "Commands to activate, deactivate and list virtual hosts" })
+		print(row { "user"; "Commands to create and delete users, and change their passwords" })
+		print(row { "roles"; "Show information about user roles" })
+		print(row { "muc"; "Commands to create, list and manage chat rooms" })
+		print(row { "stats"; "Commands to show internal statistics" })
+		print(row { "server"; "Uptime, version, shutting down, etc." })
+		print(row { "port"; "Commands to manage ports the server is listening on" })
+		print(row { "dns"; "Commands to manage and inspect the internal DNS resolver" })
+		print(row { "xmpp"; "Commands for sending XMPP stanzas" })
+		print(row { "debug"; "Commands for debugging the server" })
+		print(row { "config"; "Reloading the configuration, etc." })
+		print(row { "columns"; "Information about customizing session listings" })
+		print(row { "console"; "Help regarding the console itself" })
 	elseif section == "c2s" then
 		print [[c2s:show(jid, columns) - Show all client sessions with the specified JID (or all if no JID given)]]
 		print [[c2s:show_tls(jid) - Show TLS cipher info for encrypted sessions]]
