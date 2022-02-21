@@ -130,7 +130,7 @@ local function index_certs(dir, files_by_name, depth_limit)
 			if f then
 				-- TODO look for chained certificates
 				local firstline = f:read();
-				if firstline == "-----BEGIN CERTIFICATE-----" then
+				if firstline == "-----BEGIN CERTIFICATE-----" and lfs.attributes(find_matching_key(full), "mode") == "file" then
 					f:seek("set")
 					local cert = ssl.loadcertificate(f:read("*a"))
 					-- TODO if more than one cert is found for a name, the most recently
