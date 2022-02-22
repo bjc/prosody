@@ -987,7 +987,7 @@ module:hook("server-stopping", function(event)
 	-- Wait for them to close properly if they haven't already
 	if next(sessions) ~= nil then
 		module:log("info", "Waiting for sessions to close");
-		add_task(stream_close_timeout + 1, done);
+		add_task(stream_close_timeout + 1, function () done() end);
 		wait();
 	end
 
