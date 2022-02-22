@@ -433,7 +433,7 @@ module:hook("server-stopping", function(event) -- luacheck: ignore 212/event
 end, -80);
 
 module:hook("server-stopping", function(event)
-	local wait, done = async.waiter();
+	local wait, done = async.waiter(1, true);
 	module:hook("c2s-closed", function ()
 		if next(sessions) == nil then done(); end
 	end)

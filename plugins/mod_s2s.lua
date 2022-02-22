@@ -973,7 +973,7 @@ module:hook("server-stopping", function(event)
 		end
 	end
 
-	local wait, done = async.waiter();
+	local wait, done = async.waiter(1, true);
 	module:hook("s2s-closed", function ()
 		if next(sessions) == nil then done(); end
 	end, 1)
