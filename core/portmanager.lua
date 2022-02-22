@@ -216,7 +216,9 @@ function close(interface, port)
 end
 
 function get_service_at(interface, port)
-	local data = active_services:search(nil, interface, port)[1][1];
+	local data = active_services:search(nil, interface, port);
+	if not data or not data[1] or not data[1][1] then return nil, "not-found"; end
+	data = data[1][1];
 	return data.service, data.server;
 end
 
