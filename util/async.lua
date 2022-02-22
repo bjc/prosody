@@ -73,7 +73,7 @@ local function runner_continue(thread)
 	return true;
 end
 
-local function waiter(num)
+local function waiter(num, allow_many)
 	local thread = checkthread();
 	num = num or 1;
 	local waiting;
@@ -85,7 +85,7 @@ local function waiter(num)
 		num = num - 1;
 		if num == 0 and waiting then
 			runner_continue(thread);
-		elseif num < 0 then
+		elseif not allow_many and num < 0 then
 			error("done() called too many times");
 		end
 	end;
