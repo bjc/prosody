@@ -12,8 +12,10 @@
 #include <string.h>
 #include <errno.h>
 
-#ifdef __linux__
+#if defined(__linux__)
 #define USE_EPOLL
+#else
+#define USE_SELECT
 #endif
 
 #ifdef USE_EPOLL
@@ -21,7 +23,8 @@
 #ifndef MAX_EVENTS
 #define MAX_EVENTS 64
 #endif
-#else
+#endif
+#ifdef USE_SELECT
 #include <sys/select.h>
 #endif
 
@@ -30,7 +33,8 @@
 
 #ifdef USE_EPOLL
 #define STATE_MT "util.poll<epoll>"
-#else
+#endif
+#ifdef USE_SELECT
 #define STATE_MT "util.poll<select>"
 #endif
 
@@ -49,7 +53,8 @@ typedef struct Lpoll_state {
 #ifdef USE_EPOLL
 	int epoll_fd;
 	struct epoll_event events[MAX_EVENTS];
-#else
+#endif
+#ifdef USE_SELECT
 	fd_set wantread;
 	fd_set wantwrite;
 	fd_set readable;
@@ -96,7 +101,8 @@ static int Ladd(lua_State *L) {
 	lua_pushboolean(L, 1);
 	return 1;
 
-#else
+#endif
+#ifdef USE_SELECT
 
 	if(fd > FD_SETSIZE) {
 		luaL_pushfail(L);
@@ -169,7 +175,8 @@ static int Lset(lua_State *L) {
 		return 3;
 	}
 
-#else
+#endif
+#ifdef USE_SELECT
 
 	if(!FD_ISSET(fd, &state->all)) {
 		luaL_pushfail(L);
@@ -227,7 +234,8 @@ static int Ldel(lua_State *L) {
 		return 3;
 	}
 
-#else
+#endif
+#ifdef USE_SELECT
 
 	if(!FD_ISSET(fd, &state->all)) {
 		luaL_pushfail(L);
@@ -264,7 +272,8 @@ static int Lpushevent(lua_State *L, struct Lpoll_state *state) {
 		return 3;
 	}
 
-#else
+#endif
+#ifdef USE_SELECT
 
 	for(int fd = state->processed + 1; fd < FD_SETSIZE; fd++) {
 		if(FD_ISSET(fd, &state->readable) || FD_ISSET(fd, &state->writable) || FD_ISSET(fd, &state->err)) {
@@ -300,7 +309,8 @@ static int Lwait(lua_State *L) {
 
 #ifdef USE_EPOLL
 	ret = epoll_wait(state->epoll_fd, state->events, MAX_EVENTS, timeout * 1000);
-#else
+#endif
+#ifdef USE_SELECT
 	/*
 	 * select(2) mutates the fd_sets passed to it so in order to not
 	 * have to recreate it manually every time a copy is made.
@@ -341,7 +351,8 @@ static int Lwait(lua_State *L) {
 	 */
 #ifdef USE_EPOLL
 	state->processed = ret;
-#else
+#endif
+#ifdef USE_SELECT
 	state->processed = -1;
 #endif
 	return Lpushevent(L, state);
@@ -411,7 +422,8 @@ static int Lnew(lua_State *L) {
 	}
 
 	state->epoll_fd = epoll_fd;
-#else
+#endif
+#ifdef USE_SELECT
 	FD_ZERO(&state->wantread);
 	FD_ZERO(&state->wantwrite);
 	FD_ZERO(&state->readable);
