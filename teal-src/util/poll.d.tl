@@ -17,10 +17,12 @@ end
 
 local record lib
 	new : function () : state
-	ENOENT : integer
 	EEXIST : integer
+	EMFILE : integer
+	ENOENT : integer
 	enum api_backend
 		"epoll"
+		"poll"
 		"select"
 	end
 	api : api_backend

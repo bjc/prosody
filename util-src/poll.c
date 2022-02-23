@@ -1,7 +1,7 @@
 
 /*
  * Lua polling library
- * Copyright (C) 2017-2018 Kim Alvefur
+ * Copyright (C) 2017-2022 Kim Alvefur
  *
  * This project is MIT licensed. Please see the
  * COPYING file in the source package for more information.
@@ -15,6 +15,9 @@
 #if defined(__linux__)
 #define USE_EPOLL
 #define POLL_BACKEND "epoll"
+#elif defined(__unix__)
+#define USE_POLL
+#define POLL_BACKEND "poll"
 #else
 #define USE_SELECT
 #define POLL_BACKEND "select"
@@ -24,6 +27,12 @@
 #include <sys/epoll.h>
 #ifndef MAX_EVENTS
 #define MAX_EVENTS 64
+#endif
+#endif
+#ifdef USE_POLL
+#include <poll.h>
+#ifndef MAX_EVENTS
+#define MAX_EVENTS 10000
 #endif
 #endif
 #ifdef USE_SELECT
@@ -50,6 +59,10 @@ typedef struct Lpoll_state {
 #ifdef USE_EPOLL
 	int epoll_fd;
 	struct epoll_event events[MAX_EVENTS];
+#endif
+#ifdef USE_POLL
+	nfds_t count;
+	struct pollfd events[MAX_EVENTS];
 #endif
 #ifdef USE_SELECT
 	fd_set wantread;
@@ -98,6 +111,32 @@ static int Ladd(lua_State *L) {
 	lua_pushboolean(L, 1);
 	return 1;
 
+#endif
+#ifdef USE_POLL
+
+	for(nfds_t i = 0; i < state->count; i++) {
+		if(state->events[i].fd == fd) {
+			luaL_pushfail(L);
+			lua_pushstring(L, strerror(EEXIST));
+			lua_pushinteger(L, EEXIST);
+			return 3;
+		}
+	}
+
+	if(state->count >= MAX_EVENTS) {
+		luaL_pushfail(L);
+		lua_pushstring(L, strerror(EMFILE));
+		lua_pushinteger(L, EMFILE);
+		return 3;
+	}
+
+	state->events[state->count].fd = fd;
+	state->events[state->count].events = (wantread ? POLLIN : 0) | (wantwrite ? POLLOUT : 0);
+	state->events[state->count].revents = 0;
+	state->count++;
+
+	lua_pushboolean(L, 1);
+	return 1;
 #endif
 #ifdef USE_SELECT
 
@@ -173,6 +212,27 @@ static int Lset(lua_State *L) {
 	}
 
 #endif
+#ifdef USE_POLL
+	int wantread = lua_toboolean(L, 3);
+	int wantwrite = lua_toboolean(L, 4);
+
+	for(nfds_t i = 0; i < state->count; i++) {
+		struct pollfd *event =  &state->events[i];
+
+		if(event->fd == fd) {
+			event->events = (wantread ? POLLIN : 0) | (wantwrite ? POLLOUT : 0);
+			lua_pushboolean(L, 1);
+			return 1;
+		} else if(event->fd == -1) {
+			break;
+		}
+	}
+
+	luaL_pushfail(L);
+	lua_pushstring(L, strerror(ENOENT));
+	lua_pushinteger(L, ENOENT);
+	return 3;
+#endif
 #ifdef USE_SELECT
 
 	if(!FD_ISSET(fd, &state->all)) {
@@ -232,6 +292,40 @@ static int Ldel(lua_State *L) {
 	}
 
 #endif
+#ifdef USE_POLL
+
+	if(state->count == 0) {
+		luaL_pushfail(L);
+		lua_pushstring(L, strerror(ENOENT));
+		lua_pushinteger(L, ENOENT);
+		return 3;
+	}
+
+	/*
+	 * Move the last item on top of the removed one
+	 */
+	struct pollfd *last = &state->events[state->count - 1];
+
+	for(nfds_t i = 0; i < state->count; i++) {
+		struct pollfd *event = &state->events[i];
+
+		if(event->fd == fd) {
+			event->fd = last->fd;
+			event->events = last->events;
+			event->revents = last->revents;
+			last->fd = -1;
+			state->count--;
+
+			lua_pushboolean(L, 1);
+			return 1;
+		}
+	}
+
+	luaL_pushfail(L);
+	lua_pushstring(L, strerror(ENOENT));
+	lua_pushinteger(L, ENOENT);
+	return 3;
+#endif
 #ifdef USE_SELECT
 
 	if(!FD_ISSET(fd, &state->all)) {
@@ -267,6 +361,22 @@ static int Lpushevent(lua_State *L, struct Lpoll_state *state) {
 		lua_pushboolean(L, event.events & (EPOLLIN | EPOLLHUP | EPOLLRDHUP | EPOLLERR));
 		lua_pushboolean(L, event.events & EPOLLOUT);
 		return 3;
+	}
+
+#endif
+#ifdef USE_POLL
+
+	for(int i = state->processed - 1; i >= 0; i--) {
+		struct pollfd *event = &state->events[i];
+
+		if(event->fd != -1 && event->revents != 0) {
+			lua_pushinteger(L, event->fd);
+			lua_pushboolean(L, event->revents & (POLLIN | POLLHUP | POLLERR));
+			lua_pushboolean(L, event->revents & POLLOUT);
+			event->revents = 0;
+			state->processed = i;
+			return 3;
+		}
 	}
 
 #endif
@@ -306,6 +416,9 @@ static int Lwait(lua_State *L) {
 
 #ifdef USE_EPOLL
 	ret = epoll_wait(state->epoll_fd, state->events, MAX_EVENTS, timeout * 1000);
+#endif
+#ifdef USE_POLL
+	ret = poll(state->events, state->count, timeout * 1000);
 #endif
 #ifdef USE_SELECT
 	/*
@@ -348,6 +461,9 @@ static int Lwait(lua_State *L) {
 	 */
 #ifdef USE_EPOLL
 	state->processed = ret;
+#endif
+#ifdef USE_POLL
+	state->processed = state->count;
 #endif
 #ifdef USE_SELECT
 	state->processed = -1;
@@ -420,6 +536,17 @@ static int Lnew(lua_State *L) {
 
 	state->epoll_fd = epoll_fd;
 #endif
+#ifdef USE_POLL
+	state->processed = -1;
+	state->count = 0;
+
+	for(nfds_t i = 0; i < MAX_EVENTS; i++) {
+		state->events[i].fd = -1;
+		state->events[i].events = 0;
+		state->events[i].revents = 0;
+	}
+
+#endif
 #ifdef USE_SELECT
 	FD_ZERO(&state->wantread);
 	FD_ZERO(&state->wantwrite);
@@ -482,6 +609,7 @@ int luaopen_util_poll(lua_State *L) {
 		lua_setfield(L, -2, #named_error);
 
 		push_errno(EEXIST);
+		push_errno(EMFILE);
 		push_errno(ENOENT);
 
 		lua_pushliteral(L, POLL_BACKEND);
