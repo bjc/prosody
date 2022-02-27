@@ -14,8 +14,10 @@
 
 #if defined(__linux__)
 #define USE_EPOLL
+#define POLL_BACKEND "epoll"
 #else
 #define USE_SELECT
+#define POLL_BACKEND "select"
 #endif
 
 #ifdef USE_EPOLL
@@ -31,12 +33,7 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
-#ifdef USE_EPOLL
-#define STATE_MT "util.poll<epoll>"
-#endif
-#ifdef USE_SELECT
-#define STATE_MT "util.poll<select>"
-#endif
+#define STATE_MT "util.poll<" POLL_BACKEND ">"
 
 #if (LUA_VERSION_NUM == 501)
 #define luaL_setmetatable(L, tname) luaL_getmetatable(L, tname); lua_setmetatable(L, -2)
@@ -486,6 +483,9 @@ int luaopen_util_poll(lua_State *L) {
 
 		push_errno(EEXIST);
 		push_errno(ENOENT);
+
+		lua_pushliteral(L, POLL_BACKEND);
+		lua_setfield(L, -2, "api");
 
 	}
 	return 1;
