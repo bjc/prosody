@@ -546,6 +546,11 @@ local function check(arg)
 			end
 		end
 
+		-- Allow admin to specify additional (e.g. undiscoverable) IP addresses in the config
+		for _, address in ipairs(configmanager.get("*", "external_addresses") or {}) do
+			external_addresses:add(address);
+		end
+
 		if external_addresses:empty() then
 			print("");
 			print("   Failed to determine the external addresses of this server. Checks may be inaccurate.");
