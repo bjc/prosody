@@ -560,6 +560,8 @@ local function check(arg)
 			return (n:gsub("%.$", ""));
 		end
 
+		local unknown_addresses = set.new();
+
 		for jid, host_options in enabled_hosts() do
 			local all_targets_ok, some_targets_ok = true, false;
 			local node, host = jid_split(jid);
@@ -742,6 +744,7 @@ local function check(arg)
 								print("    "..target_host.." A record points to internal address, external connections might fail");
 							else
 								print("    "..target_host.." A record points to unknown address "..record.a);
+								unknown_addresses:add(record.a);
 								all_targets_ok = false;
 							end
 						end
@@ -760,6 +763,7 @@ local function check(arg)
 								print("    "..target_host.." AAAA record points to internal address, external connections might fail");
 							else
 								print("    "..target_host.." AAAA record points to unknown address "..record.aaaa);
+								unknown_addresses:add(record.aaaa);
 								all_targets_ok = false;
 							end
 						end
@@ -805,6 +809,18 @@ local function check(arg)
 			print("");
 		end
 		if not problem_hosts:empty() then
+			if not unknown_addresses:empty() then
+				print("");
+				print("Some of your DNS records point to unknown IP addresses. This may be expected if your server");
+				print("is behind a NAT or proxy. The unrecognized addresses were:");
+				print("");
+				print("    Unrecognized: "..tostring(unknown_addresses));
+				print("");
+				print("The addresses we found on this system are:");
+				print("");
+				print("    Internal: "..tostring(internal_addresses));
+				print("    External: "..tostring(external_addresses));
+			end
 			print("");
 			print("For more information about DNS configuration please see https://prosody.im/doc/dns");
 			print("");
