@@ -60,7 +60,7 @@ modules_enabled = {
 		"invites"; -- Create and manage invites
 		"invites_register"; -- Create accounts using invites
 		"invites_adhoc"; -- Create invites via AdHoc command
-		--"mam"; -- Store messages in an archive and allow users to access it
+		--"mam"; -- Store recent messages to allow multi-device synchronization
 		--"turn_external"; -- Provide external STUN/TURN service for e.g. audio/video calls
 
 	-- Admin interfaces
