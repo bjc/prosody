@@ -403,6 +403,34 @@ local function check(arg)
 			ok = false;
 		end
 
+		do
+			local global_modules = set.new(config["*"].modules_enabled);
+			local registration_enabled_hosts = {};
+			for host in enabled_hosts() do
+				local host_modules = set.new(config[host].modules_enabled) + global_modules;
+				local allow_registration = config[host].allow_registration;
+				local mod_register = host_modules:contains("register");
+				local mod_register_ibr = host_modules:contains("register_ibr");
+				local mod_invites_register = host_modules:contains("invites_register");
+				local registration_invite_only = config[host].registration_invite_only;
+				local is_vhost = not config[host].component_module;
+				if is_vhost and (mod_register_ibr or (mod_register and allow_registration))
+				   and not (mod_invites_register and registration_invite_only) then
+					table.insert(registration_enabled_hosts, host);
+				end
+			end
+			if #registration_enabled_hosts > 0 then
+				table.sort(registration_enabled_hosts);
+				print("");
+				print("    Public registration is enabled on:");
+				print("        "..table.concat(registration_enabled_hosts, ", "));
+				print("");
+				print("        If this is intentional, review our guidelines on running a public server");
+				print("        at https://prosody.im/doc/public_servers - otherwise, consider switching to");
+				print("        invite-based registration, which is more secure.");
+			end
+		end
+
 		print("Done.\n");
 	end
 	if not what or what == "dns" then
