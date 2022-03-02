@@ -33,33 +33,33 @@ admins = { }
 modules_enabled = {
 
 	-- Generally required
+		"disco"; -- Service discovery
 		"roster"; -- Allow users to have a roster. Recommended ;)
 		"saslauth"; -- Authentication for clients and servers. Recommended if you want to log in.
 		"tls"; -- Add support for secure TLS on c2s/s2s connections
-		"disco"; -- Service discovery
 
 	-- Not essential, but recommended
+		"blocklist"; -- Allow users to block communications with other users
+		"bookmarks"; -- Synchronise open rooms between clients
 		"carbons"; -- Keep multiple clients in sync
+		"dialback"; -- s2s dialback support
+		"limits"; -- Enable bandwidth limiting for XMPP connections
 		"pep"; -- Enables users to publish their avatar, mood, activity, playing music and more
 		"private"; -- Private XML storage (for room bookmarks, etc.)
-		"blocklist"; -- Allow users to block communications with other users
+		"smacks"; -- Stream management and resumption (XEP-0198)
 		"vcard4"; -- User profiles (stored in PEP)
 		"vcard_legacy"; -- Conversion between legacy vCard and PEP Avatar, vcard
-		"limits"; -- Enable bandwidth limiting for XMPP connections
-		"bookmarks"; -- Synchronise open rooms between clients
-		"smacks"; -- Stream management and resumption (XEP-0198)
-		"dialback"; -- s2s dialback support
 
 	-- Nice to have
 		"csi_simple"; -- Simple Mobile optimizations
-		"version"; -- Replies to server version requests
-		"uptime"; -- Report how long server has been running
-		"time"; -- Let others know the time here on this server
-		"ping"; -- Replies to XMPP pings with pongs
-		"register"; -- Allow users to register on this server using a client and change passwords
 		"invites"; -- Create and manage invites
 		"invites_register"; -- Create accounts using invites
 		"invites_adhoc"; -- Create invites via AdHoc command
+		"ping"; -- Replies to XMPP pings with pongs
+		"register"; -- Allow users to register on this server using a client and change passwords
+		"time"; -- Let others know the time here on this server
+		"uptime"; -- Report how long server has been running
+		"version"; -- Replies to server version requests
 		--"mam"; -- Store recent messages to allow multi-device synchronization
 		--"turn_external"; -- Provide external STUN/TURN service for e.g. audio/video calls
 
@@ -69,21 +69,21 @@ modules_enabled = {
 
 	-- HTTP modules
 		--"bosh"; -- Enable BOSH clients, aka "Jabber over HTTP"
-		--"websocket"; -- XMPP over WebSockets
 		--"http_openmetrics"; -- for exposing metrics to stats collectors
+		--"websocket"; -- XMPP over WebSockets
 
 	-- Other specific functionality
-		--"groups"; -- Shared roster support
-		--"server_contact_info"; -- Publish contact information for this service
 		--"announce"; -- Send announcement to all online users
-		--"welcome"; -- Welcome users who register accounts
-		--"watchregistrations"; -- Alert admins of registrations
-		--"motd"; -- Send a message to users when they log in
+		--"groups"; -- Shared roster support
 		--"legacyauth"; -- Legacy authentication. Only used by some old clients and bots.
-		--"proxy65"; -- Enables a file transfer proxy service which clients behind NAT can use
 		--"mimicking"; -- Prevent address spoofing
-		--"tombstones"; -- Prevent registration of deleted accounts
+		--"motd"; -- Send a message to users when they log in
+		--"proxy65"; -- Enables a file transfer proxy service which clients behind NAT can use
 		--"s2s_bidi"; -- Bi-directional server-to-server (XEP-0288)
+		--"server_contact_info"; -- Publish contact information for this service
+		--"tombstones"; -- Prevent registration of deleted accounts
+		--"watchregistrations"; -- Alert admins of registrations
+		--"welcome"; -- Welcome users who register accounts
 }
 
 -- These modules are auto-loaded, but should you want
