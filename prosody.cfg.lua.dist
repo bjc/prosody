@@ -23,9 +23,8 @@
 -- Example: admins = { "user1@example.com", "user2@example.net" }
 admins = { }
 
--- Prosody will always look in its source directory for modules, but
--- this option allows you to specify additional locations where Prosody
--- will look for modules first. For community modules, see https://modules.prosody.im/
+-- You can use this option allows you to specify additional locations where Prosody
+-- will first look for modules. For community modules, see https://modules.prosody.im/
 --plugin_paths = {}
 
 -- This is the list of modules Prosody will load on startup.
