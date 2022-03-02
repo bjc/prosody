@@ -431,6 +431,41 @@ local function check(arg)
 			end
 		end
 
+		do
+			local orphan_components = {};
+			local referenced_components = set.new();
+			local enabled_hosts_set = set.new();
+			for host, host_options in it.filter("*", pairs(configmanager.getconfig())) do
+				if host_options.enabled ~= false then
+					enabled_hosts_set:add(host);
+					for _, disco_item in ipairs(host_options.disco_items or {}) do
+						referenced_components:add(disco_item[1]);
+					end
+				end
+			end
+			for host, host_config in enabled_hosts() do
+				local is_component = not not host_config.component_module;
+				if is_component then
+					local parent_domain = host:match("^[^.]+%.(.+)$");
+					local is_orphan = not (enabled_hosts_set:contains(parent_domain) or referenced_components:contains(host));
+					if is_orphan then
+						table.insert(orphan_components, host);
+					end
+				end
+			end
+			if #orphan_components > 0 then
+				table.sort(orphan_components);
+				print("");
+				print("    Your configuration contains the following unreferenced components:\n");
+				print("        "..table.concat(orphan_components, "\n        "));
+				print("");
+				print("    Clients may not be able to discover these services because they are not linked to");
+				print("    any VirtualHost. They are automatically linked if they are direct subdomains of a");
+				print("    VirtualHost. Alternatively, you can explicitly link them using the disco_items option.");
+				print("    For more information see https://prosody.im/doc/modules/mod_disco#items");
+			end
+		end
+
 		print("Done.\n");
 	end
 	if not what or what == "dns" then
