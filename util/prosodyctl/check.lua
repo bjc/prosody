@@ -60,6 +60,108 @@ local function check_probe(base_url, probe_module, target)
 	return false, "Probe endpoint did not return a success status";
 end
 
+local function check_turn_service(turn_service)
+	local stun = require "net.stun";
+
+	-- Create UDP socket for communication with the server
+	local sock = assert(require "socket".udp());
+	sock:setsockname("*", 0);
+	sock:setpeername(turn_service.host, turn_service.port);
+	sock:settimeout(10);
+
+	-- Helper function to receive a packet
+	local function receive_packet()
+		local raw_packet, err = sock:receive();
+		if not raw_packet then
+			return nil, err;
+		end
+		return stun.new_packet():deserialize(raw_packet);
+	end
+
+	local result = { warnings = {} };
+
+	-- Send a "binding" query, i.e. a request for our external IP/port
+	local bind_query = stun.new_packet("binding", "request");
+	bind_query:add_attribute("software", "prosodyctl check turn");
+	sock:send(bind_query:serialize());
+
+	local bind_result, err = receive_packet();
+	if not bind_result then
+		result.error = "No STUN response: "..err;
+		return result;
+	elseif bind_result:is_err_resp() then
+		result.error = ("STUN server returned error: %d (%s)"):format(bind_result:get_error());
+		return result;
+	elseif not bind_result:is_success_resp() then
+		result.error = ("Unexpected STUN response: %d (%s)"):format(bind_result:get_type());
+		return result;
+	end
+
+	result.external_ip = bind_result:get_xor_mapped_address();
+	if not result.external_ip then
+		result.error = "STUN server did not return an address";
+		return result;
+	end
+
+	-- Send a TURN "allocate" request. Expected to fail due to auth, but
+	-- necessary to obtain a valid realm/nonce from the server.
+	local pre_request = stun.new_packet("allocate", "request");
+	sock:send(pre_request:serialize());
+
+	local pre_result, err = receive_packet();
+	if not pre_result then
+		result.error = "No initial TURN response: "..err;
+		return result;
+	elseif pre_result:is_success_resp() then
+		result.error = "TURN server does not have authentication enabled";
+		return result;
+	end
+
+	local realm = pre_result:get_attribute("realm");
+	local nonce = pre_result:get_attribute("nonce");
+
+	if not realm then
+		table.insert(result.warnings, "TURN server did not return an authentication realm");
+	end
+	if not nonce then
+		table.insert(result.warnings, "TURN server did not return a nonce");
+	end
+
+	-- Use the configured secret to obtain temporary user/pass credentials
+	local turn_user, turn_pass = stun.get_user_pass_from_secret(turn_service.secret);
+
+	-- Send a TURN allocate request, will fail if auth is wrong
+	local alloc_request = stun.new_packet("allocate", "request");
+	alloc_request:add_requested_transport("udp");
+	alloc_request:add_attribute("username", turn_user);
+	if realm then
+		alloc_request:add_attribute("realm", realm);
+	end
+	if nonce then
+		alloc_request:add_attribute("nonce", nonce);
+	end
+	local key = stun.get_long_term_auth_key(realm or turn_service.host, turn_user, turn_pass);
+	alloc_request:add_message_integrity(key);
+	sock:send(alloc_request:serialize());
+
+	-- Check the response
+	local alloc_response, err = receive_packet();
+	if not alloc_response then
+		result.error = "TURN server did not response to allocation request: "..err;
+		return;
+	elseif alloc_response:is_err_resp() then
+		result.error = ("TURN allocation failed: %d (%s)"):format(alloc_response:get_error());
+		return result;
+	elseif not alloc_response:is_success_resp() then
+		result.error = ("Unexpected TURN response: %d (%s)"):format(alloc_response:get_type());
+		return result;
+	end
+
+	-- No errors? Ok!
+
+	return result;
+end
+
 local function skip_bare_jid_hosts(host)
 	if jid_split(host) then
 		-- See issue #779
@@ -80,8 +182,8 @@ local function check(arg)
 	local ok = true;
 	local function disabled_hosts(host, conf) return host ~= "*" and conf.enabled ~= false; end
 	local function enabled_hosts() return it.filter(disabled_hosts, pairs(configmanager.getconfig())); end
-	if not (what == nil or what == "disabled" or what == "config" or what == "dns" or what == "certs" or what == "connectivity") then
-		show_warning("Don't know how to check '%s'. Try one of 'config', 'dns', 'certs', 'disabled' or 'connectivity'.", what);
+	if not (what == nil or what == "disabled" or what == "config" or what == "dns" or what == "certs" or what == "connectivity" or what == "turn") then
+		show_warning("Don't know how to check '%s'. Try one of 'config', 'dns', 'certs', 'disabled', 'turn' or 'connectivity'.", what);
 		show_warning("Note: The connectivity check will connect to a remote server.");
 		return 1;
 	end
@@ -920,6 +1022,65 @@ local function check(arg)
 		print("Note: The connectivity check only checks the reachability of the domain.")
 		print("Note: It does not ensure that the check actually reaches this specific prosody instance.")
 	end
+
+	if what == "turn" then
+		local turn_enabled_hosts = {};
+		local turn_services = {};
+
+		for host in enabled_hosts() do
+			local has_external_turn = modulemanager.get_modules_for_host(host):contains("turn_external");
+			if has_external_turn then
+				table.insert(turn_enabled_hosts, host);
+				local turn_host = configmanager.get(host, "turn_external_host") or host;
+				local turn_port = configmanager.get(host, "turn_external_port") or 3478;
+				local turn_secret = configmanager.get(host, "turn_external_secret");
+				if not turn_secret then
+					print("Error: Your configuration is missing a turn_external_secret for "..host);
+					print("Error: TURN will not be advertised for this host.");
+					ok = false;
+				else
+					local turn_id = ("%s:%d"):format(turn_host, turn_port);
+					if turn_services[turn_id] and turn_services[turn_id].secret ~= turn_secret then
+						print("Error: Your configuration contains multiple differing secrets");
+						print("       for the TURN service at "..turn_id.." - we will only test one.");
+					elseif not turn_services[turn_id] then
+						turn_services[turn_id] = {
+							host = turn_host;
+							port = turn_port;
+							secret = turn_secret;
+						};
+					end
+				end
+			end
+		end
+
+		if what == "turn" then
+			local count = it.count(pairs(turn_services));
+			if count == 0 then
+				print("Error: Unable to find any TURN services configured. Enable mod_turn_external!");
+			else
+				print("Identified "..tostring(count).." TURN services.");
+				print("");
+			end
+		end
+
+		for turn_id, turn_service in pairs(turn_services) do
+			print("Testing "..turn_id.."...");
+
+			local result = check_turn_service(turn_service);
+			if #result.warnings > 0 then
+				print(("%d warnings:\n\n    "):format(#result.warnings));
+				print(table.concat(result.warnings, "\n    "));
+			end
+			if result.error then
+				print("Error: "..result.error.."\n");
+				ok = false;
+			else
+				print("Success!\n");
+			end
+		end
+	end
+
 	if not ok then
 		print("Problems found, see above.");
 	else
