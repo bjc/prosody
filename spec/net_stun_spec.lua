@@ -46,9 +46,6 @@ local sample_packet = parse[[
       8c a8 96 66  }
 ]];
 
---print(hex.encode(sample_packet))
-print(sample_packet)
-
 describe("net.stun", function ()
 	local stun = require "net.stun";
 
