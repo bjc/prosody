@@ -67,7 +67,7 @@ function ip_methods:normal()
 end
 
 function ip_methods.bits(ip)
-	return hex.to(ip.packed):upper():gsub(".", hex2bits);
+	return hex.encode(ip.packed):upper():gsub(".", hex2bits);
 end
 
 function ip_methods.bits_full(ip)

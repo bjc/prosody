@@ -7,8 +7,8 @@ local hmac = require "util.hmac";
 local hex = require "util.hex";
 
 describe("Test case 1", function ()
-	local Key  = hex.from("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b");
-	local Data = hex.from("4869205468657265");
+	local Key  = hex.decode("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b");
+	local Data = hex.decode("4869205468657265");
 	describe("HMAC-SHA-256", function ()
 		it("works", function()
 			assert.equal("b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7", hmac.sha256(Key, Data, true))
@@ -21,8 +21,8 @@ describe("Test case 1", function ()
 	end);
 end);
 describe("Test case 2", function ()
-	local Key  = hex.from("4a656665");
-	local Data = hex.from("7768617420646f2079612077616e7420666f72206e6f7468696e673f");
+	local Key  = hex.decode("4a656665");
+	local Data = hex.decode("7768617420646f2079612077616e7420666f72206e6f7468696e673f");
 	describe("HMAC-SHA-256", function ()
 		it("works", function()
 			assert.equal("5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843", hmac.sha256(Key, Data, true))
@@ -35,8 +35,8 @@ describe("Test case 2", function ()
 	end);
 end);
 describe("Test case 3", function ()
-	local Key  = hex.from("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-	local Data = hex.from("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd");
+	local Key  = hex.decode("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+	local Data = hex.decode("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd");
 	describe("HMAC-SHA-256", function ()
 		it("works", function()
 			assert.equal("773ea91e36800e46854db8ebd09181a72959098b3ef8c122d9635514ced565fe", hmac.sha256(Key, Data, true))
@@ -49,8 +49,8 @@ describe("Test case 3", function ()
 	end);
 end);
 describe("Test case 4", function ()
-	local Key  = hex.from("0102030405060708090a0b0c0d0e0f10111213141516171819");
-	local Data = hex.from("cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd");
+	local Key  = hex.decode("0102030405060708090a0b0c0d0e0f10111213141516171819");
+	local Data = hex.decode("cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd");
 	describe("HMAC-SHA-256", function ()
 		it("works", function()
 			assert.equal("82558a389a443c0ea4cc819899f2083a85f0faa3e578f8077a2e3ff46729665b", hmac.sha256(Key, Data, true))
@@ -63,8 +63,8 @@ describe("Test case 4", function ()
 	end);
 end);
 describe("Test case 5", function ()
-	local Key  = hex.from("0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c");
-	local Data = hex.from("546573742057697468205472756e636174696f6e");
+	local Key  = hex.decode("0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c");
+	local Data = hex.decode("546573742057697468205472756e636174696f6e");
 	describe("HMAC-SHA-256", function ()
 		it("works", function()
 			assert.equal("a3b6167473100ee06e0c796c2955552b", hmac.sha256(Key, Data, true):sub(1,128/4))
@@ -77,8 +77,8 @@ describe("Test case 5", function ()
 	end);
 end);
 describe("Test case 6", function ()
-	local Key  = hex.from("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-	local Data = hex.from("54657374205573696e67204c6172676572205468616e20426c6f636b2d53697a65204b6579202d2048617368204b6579204669727374");
+	local Key  = hex.decode("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+	local Data = hex.decode("54657374205573696e67204c6172676572205468616e20426c6f636b2d53697a65204b6579202d2048617368204b6579204669727374");
 	describe("HMAC-SHA-256", function ()
 		it("works", function()
 			assert.equal("60e431591ee0b67f0d8a26aacbf5b77f8e0bc6213728c5140546040f0ee37f54", hmac.sha256(Key, Data, true))
@@ -91,8 +91,8 @@ describe("Test case 6", function ()
 	end);
 end);
 describe("Test case 7", function ()
-	local Key  = hex.from("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-	local Data = hex.from("5468697320697320612074657374207573696e672061206c6172676572207468616e20626c6f636b2d73697a65206b657920616e642061206c6172676572207468616e20626c6f636b2d73697a6520646174612e20546865206b6579206e6565647320746f20626520686173686564206265666f7265206265696e6720757365642062792074686520484d414320616c676f726974686d2e");
+	local Key  = hex.decode("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+	local Data = hex.decode("5468697320697320612074657374207573696e672061206c6172676572207468616e20626c6f636b2d73697a65206b657920616e642061206c6172676572207468616e20626c6f636b2d73697a6520646174612e20546865206b6579206e6565647320746f20626520686173686564206265666f7265206265696e6720757365642062792074686520484d414320616c676f726974686d2e");
 	describe("HMAC-SHA-256", function ()
 		it("works", function()
 			assert.equal("9b09ffa71b942fcb27635fbcd5b0e944bfdc63644f0713938a7f51535c3a35e2", hmac.sha256(Key, Data, true))

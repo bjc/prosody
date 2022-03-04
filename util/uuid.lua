@@ -8,7 +8,7 @@
 
 local random = require "util.random";
 local random_bytes = random.bytes;
-local hex = require "util.hex".to;
+local hex = require "util.hex".encode;
 local m_ceil = math.ceil;
 
 local function get_nibbles(n)

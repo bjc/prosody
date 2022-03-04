@@ -14,7 +14,7 @@ local usermanager = require "core.usermanager";
 local generate_uuid = require "util.uuid".generate;
 local new_sasl = require "util.sasl".new;
 local hex = require"util.hex";
-local to_hex, from_hex = hex.to, hex.from;
+local to_hex, from_hex = hex.encode, hex.decode;
 local saslprep = require "util.encodings".stringprep.saslprep;
 local secure_equals = require "util.hashes".equals;
 

@@ -68,11 +68,11 @@ local function createOuterXml(user, host)
 end
 
 local function hex_to_base64(s)
-	return base64.encode(hex.from(s));
+	return base64.encode(hex.decode(s));
 end
 
 local function base64_to_hex(s)
-	return base64.encode(hex.from(s));
+	return base64.encode(hex.decode(s));
 end
 
 local handlers = {};
