@@ -23,4 +23,8 @@ local function from(s)
 	return (s_gsub(s_lower(s), "%X*(%x%x)%X*", hex_to_char));
 end
 
-return { to = to, from = from }
+return {
+	encode = to, decode = from;
+	-- COMPAT w/pre-0.12:
+	to = to, from = from;
+};

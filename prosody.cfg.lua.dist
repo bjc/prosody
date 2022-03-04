@@ -23,67 +23,67 @@
 -- Example: admins = { "user1@example.com", "user2@example.net" }
 admins = { }
 
--- Prosody includes several alternative modules for keeping track of network connections.
--- For more information see: https://prosody.im/doc/network_backend
---network_backend = "epoll"
-
--- Prosody will always look in its source directory for modules, but
--- this option allows you to specify additional locations where Prosody
--- will look for modules first. For community modules, see https://modules.prosody.im/
+-- This option allows you to specify additional locations where Prosody
+-- will search first for modules. For additional modules you can install, see
+-- the community module repository at https://modules.prosody.im/
 --plugin_paths = {}
 
--- Single directory for custom prosody plugins and/or Lua libraries installation
--- This path takes priority over plugin_paths, when prosody is searching for modules
---installer_plugin_path = ""
-
 -- This is the list of modules Prosody will load on startup.
--- It looks for mod_modulename.lua in the plugins folder, so make sure that exists too.
 -- Documentation for bundled modules can be found at: https://prosody.im/doc/modules
 modules_enabled = {
 
 	-- Generally required
+		"disco"; -- Service discovery
 		"roster"; -- Allow users to have a roster. Recommended ;)
 		"saslauth"; -- Authentication for clients and servers. Recommended if you want to log in.
 		"tls"; -- Add support for secure TLS on c2s/s2s connections
-		"dialback"; -- s2s dialback support
-		"disco"; -- Service discovery
 
 	-- Not essential, but recommended
-		"carbons"; -- Keep multiple clients in sync
-		"pep"; -- Enables users to publish their avatar, mood, activity, playing music and more
-		"private"; -- Private XML storage (for room bookmarks, etc.)
 		"blocklist"; -- Allow users to block communications with other users
+		"bookmarks"; -- Synchronise the list of open rooms between clients
+		"carbons"; -- Keep multiple online clients in sync
+		"dialback"; -- Support for verifying remote servers using DNS
+		"limits"; -- Enable bandwidth limiting for XMPP connections
+		"pep"; -- Allow users to store public and private data in their account
+		"private"; -- Legacy account storage mechanism (XEP-0049)
+		"smacks"; -- Stream management and resumption (XEP-0198)
 		"vcard4"; -- User profiles (stored in PEP)
 		"vcard_legacy"; -- Conversion between legacy vCard and PEP Avatar, vcard
-		"limits"; -- Enable bandwidth limiting for XMPP connections
 
 	-- Nice to have
-		"version"; -- Replies to server version requests
-		"uptime"; -- Report how long server has been running
-		"time"; -- Let others know the time here on this server
+		"csi_simple"; -- Simple but effective traffic optimizations for mobile devices
+		"invites"; -- Create and manage invites
+		"invites_adhoc"; -- Allow admins/users to create invitations via their client
+		"invites_register"; -- Allows invited users to create accounts
 		"ping"; -- Replies to XMPP pings with pongs
 		"register"; -- Allow users to register on this server using a client and change passwords
-		--"mam"; -- Store messages in an archive and allow users to access it
-		--"csi_simple"; -- Simple Mobile optimizations
+		"time"; -- Let others know the time here on this server
+		"uptime"; -- Report how long server has been running
+		"version"; -- Replies to server version requests
+		--"mam"; -- Store recent messages to allow multi-device synchronization
+		--"turn_external"; -- Provide external STUN/TURN service for e.g. audio/video calls
 
 	-- Admin interfaces
 		"admin_adhoc"; -- Allows administration via an XMPP client that supports ad-hoc commands
-		--"admin_telnet"; -- Opens telnet console interface on localhost port 5582
+		"admin_shell"; -- Allow secure administration via 'prosodyctl shell'
 
 	-- HTTP modules
 		--"bosh"; -- Enable BOSH clients, aka "Jabber over HTTP"
+		--"http_openmetrics"; -- for exposing metrics to stats collectors
 		--"websocket"; -- XMPP over WebSockets
-		--"http_files"; -- Serve static files from a directory over HTTP
 
 	-- Other specific functionality
-		--"groups"; -- Shared roster support
-		--"server_contact_info"; -- Publish contact information for this service
 		--"announce"; -- Send announcement to all online users
-		--"welcome"; -- Welcome users who register accounts
-		--"watchregistrations"; -- Alert admins of registrations
-		--"motd"; -- Send a message to users when they log in
+		--"groups"; -- Shared roster support
 		--"legacyauth"; -- Legacy authentication. Only used by some old clients and bots.
+		--"mimicking"; -- Prevent address spoofing
+		--"motd"; -- Send a message to users when they log in
 		--"proxy65"; -- Enables a file transfer proxy service which clients behind NAT can use
+		--"s2s_bidi"; -- Bi-directional server-to-server (XEP-0288)
+		--"server_contact_info"; -- Publish contact information for this service
+		--"tombstones"; -- Prevent registration of deleted accounts
+		--"watchregistrations"; -- Alert admins of registrations
+		--"welcome"; -- Welcome users who register accounts
 }
 
 -- These modules are auto-loaded, but should you want
@@ -95,28 +95,17 @@ modules_disabled = {
 	-- "posix"; -- POSIX functionality, sends server to background, etc.
 }
 
--- Disable account creation by default, for security
--- For more information see https://prosody.im/doc/creating_accounts
-allow_registration = false
 
--- Force clients to use encrypted connections? This option will
--- prevent clients from authenticating unless they are using encryption.
+-- Server-to-server authentication
+-- Require valid certificates for server-to-server connections?
+-- If false, other methods such as dialback (DNS) may be used instead.
 
-c2s_require_encryption = true
-
--- Force servers to use encrypted connections? This option will
--- prevent servers from authenticating unless they are using encryption.
-
-s2s_require_encryption = true
-
--- Force certificate authentication for server-to-server connections?
-
-s2s_secure_auth = false
+s2s_secure_auth = true
 
 -- Some servers have invalid or self-signed certificates. You can list
 -- remote domains here that will not be required to authenticate using
--- certificates. They will be authenticated using DNS instead, even
--- when s2s_secure_auth is enabled.
+-- certificates. They will be authenticated using other methods instead,
+-- even when s2s_secure_auth is enabled.
 
 --s2s_insecure_domains = { "insecure.example" }
 
@@ -125,7 +114,10 @@ s2s_secure_auth = false
 
 --s2s_secure_domains = { "jabber.org" }
 
--- Enable rate limits for incoming client and server connections
+
+-- Rate limits
+-- Enable rate limits for incoming client and server connections. These help
+-- protect from excessive resource consumption and denial-of-service attacks.
 
 limits = {
 	c2s = {
@@ -136,11 +128,19 @@ limits = {
 	};
 }
 
+-- Authentication
 -- Select the authentication backend to use. The 'internal' providers
 -- use Prosody's configured data storage to store the authentication data.
+-- For more information see https://prosody.im/doc/authentication
 
 authentication = "internal_hashed"
 
+-- Many authentication providers, including the default one, allow you to
+-- create user accounts via Prosody's admin interfaces. For details, see the
+-- documentation at https://prosody.im/doc/creating_accounts
+
+
+-- Storage
 -- Select the storage backend to use. By default Prosody uses flat files
 -- in its configured data directory, but it also supports more backends
 -- through modules. An "sql" backend is included by default, but requires
@@ -165,18 +165,35 @@ archive_expires_after = "1w" -- Remove archived messages after 1 week
 -- You can also configure messages to be stored in-memory only. For more
 -- archiving options, see https://prosody.im/doc/modules/mod_mam
 
+
+-- Audio/video call relay (STUN/TURN)
+-- To ensure clients connected to the server can establish connections for
+-- low-latency media streaming (such as audio and video calls), it is
+-- recommended to run a STUN/TURN server for clients to use. If you do this,
+-- specify the details here so clients can discover it.
+-- Find more information at https://prosody.im/doc/turn
+
+-- Specify the address of the TURN service (you may use the same domain as XMPP)
+--turn_external_host = "turn.example.com"
+
+-- This secret must be set to the same value in both Prosody and the TURN server
+--turn_external_secret = "your-secret-turn-access-token"
+
+
 -- Logging configuration
 -- For advanced logging see https://prosody.im/doc/logging
 log = {
 	info = "prosody.log"; -- Change 'info' to 'debug' for verbose logging
 	error = "prosody.err";
 	-- "*syslog"; -- Uncomment this for logging to syslog
-	-- "*console"; -- Log to the console, useful for debugging with daemonize=false
+	-- "*console"; -- Log to the console, useful for debugging when running in the foreground
 }
+
 
 -- Uncomment to enable statistics
 -- For more info see https://prosody.im/doc/statistics
 -- statistics = "internal"
+
 
 -- Certificates
 -- Every virtual host and component needs a certificate so that clients and
@@ -188,17 +205,16 @@ log = {
 -- Location of directory to find certificates in (relative to main config file):
 certificates = "certs"
 
--- HTTPS currently only supports a single certificate, specify it here:
---https_certificate = "certs/localhost.crt"
-
 ----------- Virtual hosts -----------
 -- You need to add a VirtualHost entry for each domain you wish Prosody to serve.
 -- Settings under each VirtualHost entry apply *only* to that host.
 
 VirtualHost "localhost"
+-- Prosody requires at least one enabled VirtualHost to function. You can
+-- safely remove or disable 'localhost' once you have added another.
+
 
 --VirtualHost "example.com"
---	certificate = "/path/to/example.crt"
 
 ------ Components ------
 -- You can specify components to add hosts that provide special services,
@@ -210,10 +226,13 @@ VirtualHost "localhost"
 --- Store MUC messages in an archive and allow users to access it
 --modules_enabled = { "muc_mam" }
 
+---Set up a file sharing component
+--Component "share.example.com" "http_file_share"
+
 ---Set up an external component (default component port is 5347)
 --
 -- External components allow adding various services, such as gateways/
--- transports to other networks like ICQ, MSN and Yahoo. For more info
+-- bridges to non-XMPP networks and services. For more info
 -- see: https://prosody.im/doc/components#adding_an_external_component
 --
 --Component "gateway.example.com"

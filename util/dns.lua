@@ -13,7 +13,7 @@ local s_format = string.format;
 local s_sub = string.sub;
 
 local iana_data = require "util.dnsregistry";
-local tohex = require "util.hex".to;
+local tohex = require "util.hex".encode;
 local inet_ntop = require "util.net".ntop;
 
 -- Simplified versions of Waqas DNS parsers

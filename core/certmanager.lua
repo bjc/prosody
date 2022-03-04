@@ -6,20 +6,10 @@
 -- COPYING file in the source package for more information.
 --
 
-local softreq = require"util.dependencies".softreq;
-local ssl = softreq"ssl";
-if not ssl then
-	return {
-		create_context = function ()
-			return nil, "LuaSec (required for encryption) was not found";
-		end;
-		reload_ssl_config = function () end;
-	}
-end
-
+local ssl = require "ssl";
 local configmanager = require "core.configmanager";
 local log = require "util.logger".init("certmanager");
-local ssl_context = ssl.context or softreq"ssl.context";
+local ssl_context = ssl.context or require "ssl.context";
 local ssl_newcontext = ssl.newcontext;
 local new_config = require"util.sslconfig".new;
 local stat = require "lfs".attributes;
@@ -48,7 +38,7 @@ end
 
 local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
 local luasec_version = tonumber(luasec_major) * 100 + tonumber(luasec_minor);
-local luasec_has = ssl.config or softreq"ssl.config" or {
+local luasec_has = ssl.config or {
 	algorithms = {
 		ec = luasec_version >= 5;
 	};

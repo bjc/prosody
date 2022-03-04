@@ -56,7 +56,7 @@ install-net:
 	$(INSTALL_DATA) net/resolvers/*.lua $(SOURCE)/net/resolvers
 	$(INSTALL_DATA) net/websocket/*.lua $(SOURCE)/net/websocket
 
-install-util: util/encodings.so util/encodings.so util/pposix.so util/signal.so
+install-util: util/encodings.so util/encodings.so util/pposix.so util/signal.so util/struct.so
 	$(MKDIR) $(SOURCE)
 	$(MKDIR) $(SOURCE)/util
 	$(INSTALL_DATA) util/*.lua $(SOURCE)/util

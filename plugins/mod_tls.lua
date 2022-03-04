@@ -10,8 +10,8 @@ local create_context = require "core.certmanager".create_context;
 local rawgetopt = require"core.configmanager".rawget;
 local st = require "util.stanza";
 
-local c2s_require_encryption = module:get_option("c2s_require_encryption", module:get_option("require_encryption"));
-local s2s_require_encryption = module:get_option("s2s_require_encryption");
+local c2s_require_encryption = module:get_option("c2s_require_encryption", module:get_option("require_encryption", true));
+local s2s_require_encryption = module:get_option("s2s_require_encryption", true);
 local allow_s2s_tls = module:get_option("s2s_allow_encryption") ~= false;
 local s2s_secure_auth = module:get_option("s2s_secure_auth");
 
