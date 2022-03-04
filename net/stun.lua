@@ -3,6 +3,7 @@ local hashes = require "util.hashes";
 local net = require "util.net";
 local random = require "util.random";
 local struct = require "util.struct";
+local bit32 = require"util.bitcompat";
 local sxor = require"util.strbitop".sxor;
 
 --- Public helpers
