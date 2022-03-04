@@ -35,6 +35,10 @@ util-src/signal.c:
   Copyright (C) 2007  Patrick J. Donnelly (batrick@batbytes.com)
   See full copyright notice in the source file.
 
+util-src/struct.c:
+  Copyright (C) 2010-2018 Lua.org, PUC-Rio. All rights reserved.
+  See full copyright notice in the source file.
+
 net/dns.lua:
   public domain 20080404 lua@ztact.com
 

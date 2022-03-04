@@ -31,7 +31,9 @@ ifeq ($(EXCERTS),yes)
 	-$(MAKE) -C certs localhost.crt example.com.crt
 endif
 
-install: prosody.install prosodyctl.install prosody.cfg.lua.install util/encodings.so util/encodings.so util/pposix.so util/signal.so
+CMODULES=util/encodings.so util/encodings.so util/pposix.so util/signal.so util/struct.so
+
+install: prosody.install prosodyctl.install prosody.cfg.lua.install $(CMODULES)
 	$(MKDIR) $(BIN) $(CONFIG) $(MODULES) $(SOURCE)
 	$(MKDIR_PRIVATE) $(DATA)
 	$(MKDIR) $(MAN)/man1
