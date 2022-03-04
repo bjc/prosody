@@ -6,7 +6,8 @@ INSTALL_DATA=install -m644
 TARGET?=../util/
 
 ALL=encodings.so hashes.so net.so pposix.so signal.so table.so \
-    ringbuffer.so time.so poll.so compat.so strbitop.so
+    ringbuffer.so time.so poll.so compat.so strbitop.so \
+    struct.so
 
 .ifdef $(RANDOM)
 ALL+=crand.so
