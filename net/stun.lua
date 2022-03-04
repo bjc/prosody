@@ -3,17 +3,7 @@ local hashes = require "util.hashes";
 local net = require "util.net";
 local random = require "util.random";
 local struct = require "util.struct";
-
---- Private helpers
-
--- XORs a string with another string
-local function sxor(x, y)
-	local r = {};
-	for i = 1, #x do
-		r[i] = string.char(bit32.bxor(x:byte(i), y:byte(i)));
-	end
-	return table.concat(r);
-end
+local sxor = require"util.strbitop".sxor;
 
 --- Public helpers
 
