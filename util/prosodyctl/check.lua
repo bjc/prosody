@@ -254,6 +254,9 @@ local check_opts = {
 	short_params = {
 		h = "help", v = "verbose";
 	};
+	value_params = {
+		ping = true;
+	};
 };
 
 local function check(arg)
@@ -262,7 +265,14 @@ local function check(arg)
 		return 1;
 	end
 	local what = table.remove(arg, 1);
-	local opts = assert(parse_args(arg, check_opts));
+	local opts, opts_err, opts_info = parse_args(arg, check_opts);
+	if opts_err == "missing-value" then
+		print("Error: Expected a value after '"..opts_info.."'");
+		return 1;
+	elseif opts_err == "param-not-found" then
+		print("Error: Unknown parameter: "..opts_info);
+		return 1;
+	end
 	local array = require "util.array";
 	local set = require "util.set";
 	local it = require "util.iterators";
