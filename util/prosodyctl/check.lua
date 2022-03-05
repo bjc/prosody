@@ -122,7 +122,7 @@ local function check_turn_service(turn_service, ping_service)
 	local nonce = pre_result:get_attribute("nonce");
 
 	if not realm then
-		table.insert(result.warnings, "TURN server did not return an authentication realm");
+		table.insert(result.warnings, "TURN server did not return an authentication realm. Is authentication enabled?");
 	end
 	if not nonce then
 		table.insert(result.warnings, "TURN server did not return a nonce");
@@ -243,6 +243,10 @@ local function check_turn_service(turn_service, ping_service)
 	if not result.external_ip_pong then
 		result.error = "Ping server did not return an address";
 		return result;
+	end
+
+	if result.external_ip.address ~= result.external_ip_pong.address then
+		table.insert(result.warnings, "TURN external IP vs relay address mismatch! Is the TURN server behind a NAT and misconfigured?");
 	end
 
 	--
