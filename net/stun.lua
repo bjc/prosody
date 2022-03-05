@@ -207,11 +207,13 @@ function packet_methods:get_attribute(attr_type)
 	end
 end
 
-function packet_methods:get_mapped_address()
-	local data = self:get_attribute("mapped-address");
-	if not data then return; end
+function packet_methods:_unpack_address(data, xor)
 	local family, port = struct.unpack("x>BI2", data);
 	local addr = data:sub(5);
+	if xor then
+		port = bit32.bxor(port, 0x2112);
+		addr = sxor(addr, magic_cookie..self.transaction_id);
+	end
 	return {
 		family = addr_families[family] or "unknown";
 		port = port;
@@ -219,17 +221,16 @@ function packet_methods:get_mapped_address()
 	};
 end
 
+
+function packet_methods:get_mapped_address()
+	local data = self:get_attribute("mapped-address");
+	if not data then return; end
+	return self:_unpack_address(data, false);
+end
 function packet_methods:get_xor_mapped_address()
 	local data = self:get_attribute("xor-mapped-address");
 	if not data then return; end
-	local family, port = struct.unpack("x>BI2", data);
-	local addr = sxor(data:sub(5), magic_cookie..self.transaction_id);
-	return {
-		family = addr_families[family] or "unknown";
-		port = bit32.bxor(port, 0x2112);
-		address = net.ntop(addr);
-		address_raw = data:sub(5);
-	};
+	return self:_unpack_address(data, true);
 end
 
 function packet_methods:add_message_integrity(key)
