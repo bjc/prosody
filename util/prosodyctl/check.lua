@@ -1204,7 +1204,7 @@ local function check(arg)
 		print("Note: It does not ensure that the check actually reaches this specific prosody instance.")
 	end
 
-	if what == "turn" then
+	if not what or what == "turn" then
 		local turn_enabled_hosts = {};
 		local turn_services = {};
 
@@ -1246,7 +1246,7 @@ local function check(arg)
 		end
 
 		for turn_id, turn_service in pairs(turn_services) do
-			print("Testing "..turn_id.."...");
+			print("Testing TURN service "..turn_id.."...");
 
 			local result = check_turn_service(turn_service, opts.ping);
 			if #result.warnings > 0 then
