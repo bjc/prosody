@@ -34,6 +34,15 @@ local packet_mt = { __index = packet_methods };
 
 local magic_cookie = string.char(0x21, 0x12, 0xA4, 0x42);
 
+local function lookup_table(t)
+	local lookup = {};
+	for k, v in pairs(t) do
+		lookup[k] = v;
+		lookup[v] = k;
+	end
+	return lookup;
+end
+
 local methods = {
 	binding = 0x001;
 	-- TURN
@@ -44,11 +53,7 @@ local methods = {
 	["create-permission"] = 0x008;
 	["channel-bind"] = 0x009;
 };
-local method_lookup = {};
-for name, value in pairs(methods) do
-	method_lookup[name] = value;
-	method_lookup[value] = name;
-end
+local method_lookup = lookup_table(methods);
 
 local classes = {
 	request = 0;
@@ -56,11 +61,10 @@ local classes = {
 	success = 2;
 	error = 3;
 };
-local class_lookup = {};
-for name, value in pairs(classes) do
-	class_lookup[name] = value;
-	class_lookup[value] = name;
-end
+local class_lookup = lookup_table(classes);
+
+local addr_families = { "IPv4", "IPv6" };
+local addr_family_lookup = lookup_table(addr_families);
 
 local attributes = {
 	["mapped-address"] = 0x0001;
@@ -83,11 +87,7 @@ local attributes = {
 	-- TURN
 	["requested-transport"] = 0x0019;
 };
-local attribute_lookup = {};
-for name, value in pairs(attributes) do
-	attribute_lookup[name] = value;
-	attribute_lookup[value] = name;
-end
+local attribute_lookup = lookup_table(attributes);
 
 function packet_methods:serialize_header(length)
 	assert(#self.transaction_id == 12, "invalid transaction id length");
@@ -204,7 +204,6 @@ function packet_methods:get_attribute(attr_type)
 	end
 end
 
-local addr_families = { "IPv4", "IPv6" };
 function packet_methods:get_mapped_address()
 	local data = self:get_attribute("mapped-address");
 	if not data then return; end
