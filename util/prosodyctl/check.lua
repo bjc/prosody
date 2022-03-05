@@ -158,6 +158,8 @@ local function check_turn_service(turn_service, ping_service)
 		return result;
 	end
 
+	result.relayed_addresses = alloc_response:get_xor_relayed_addresses();
+
 	if not ping_service then
 		-- Success! We won't be running the relay test.
 		return result;
@@ -1247,6 +1249,11 @@ local function check(arg)
 			else
 				if opts.verbose then
 					print(("External IP: %s"):format(result.external_ip.address));
+					if result.relayed_addresses then
+						for i, relayed_address in ipairs(result.relayed_addresses) do
+							print(("Relayed address %d: %s:%d"):format(i, relayed_address.address, relayed_address.port));
+						end
+					end
 					if result.external_ip_pong then
 						print(("TURN external IP: %s"):format(result.external_ip_pong.address));
 					end
