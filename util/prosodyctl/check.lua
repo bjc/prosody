@@ -2,6 +2,7 @@ local configmanager = require "core.configmanager";
 local show_usage = require "util.prosodyctl".show_usage;
 local show_warning = require "util.prosodyctl".show_warning;
 local is_prosody_running = require "util.prosodyctl".isrunning;
+local parse_args = require "util.argparse".parse;
 local dependencies = require "util.dependencies";
 local socket = require "socket";
 local socket_url = require "socket.url";
@@ -60,7 +61,7 @@ local function check_probe(base_url, probe_module, target)
 	return false, "Probe endpoint did not return a success status";
 end
 
-local function check_turn_service(turn_service)
+local function check_turn_service(turn_service, ping_service)
 	local stun = require "net.stun";
 
 	-- Create UDP socket for communication with the server
@@ -157,7 +158,77 @@ local function check_turn_service(turn_service)
 		return result;
 	end
 
-	-- No errors? Ok!
+	if not ping_service then
+		-- Success! We won't be running the relay test.
+		return result;
+	end
+
+	-- Run the relay test - i.e. send a binding request to ping_service
+	-- and receive a response.
+
+	-- Resolve the IP of the ping service
+	local ping_service_ip, err = socket.dns.toip(ping_service);
+	if not ping_service_ip then
+		result.error = "Unable to resolve external service: "..err;
+		return result;
+	end
+
+	-- Ask the TURN server to allow packets from the ping service IP
+	local perm_request = stun.new_packet("create-permission");
+	perm_request:add_xor_peer_address(ping_service_ip);
+	perm_request:add_attribute("username", turn_user);
+	perm_request:add_attribute("realm", realm);
+	perm_request:add_attribute("nonce", nonce);
+	perm_request:add_message_integrity(key);
+	sock:send(perm_request:serialize());
+
+	local perm_response, err = receive_packet();
+	if not perm_response then
+		result.error = "No response from TURN server when requesting peer permission: "..err;
+		return result;
+	elseif perm_response:is_err_resp() then
+		result.error = ("TURN permission request failed: %d (%s)"):format(perm_response:get_error());
+		return result;
+	elseif not perm_response:is_success_resp() then
+		result.error = ("Unexpected TURN response: %d (%s)"):format(perm_response:get_type());
+		return result;
+	end
+
+	-- Ask the TURN server to relay a STUN binding request to the ping server
+	local ping_data = stun.new_packet("binding"):serialize();
+
+	local ping_request = stun.new_packet("send", "indication");
+	ping_request:add_xor_peer_address(ping_service_ip, 3478);
+	ping_request:add_attribute("data", ping_data);
+	ping_request:add_attribute("username", turn_user);
+	ping_request:add_attribute("realm", realm);
+	ping_request:add_attribute("nonce", nonce);
+	ping_request:add_message_integrity(key);
+	sock:send(ping_request:serialize());
+
+	local ping_response, err = receive_packet();
+	if not ping_response then
+		result.error = "No response from ping server ("..ping_service_ip.."): "..err;
+		return result;
+	elseif not ping_response:is_indication() or select(2, ping_response:get_method()) ~= "data" then
+		result.error = ("Unexpected TURN response: %s %s"):format(select(2, ping_response:get_method()), select(2, ping_response:get_type()));
+		return result;
+	end
+
+	local pong_data = ping_response:get_attribute("data");
+	if not pong_data then
+		result.error = "No data relayed from remote server";
+		return;
+	end
+	local pong = stun.new_packet():deserialize(pong_data);
+
+	result.external_ip_pong = pong:get_xor_mapped_address();
+	if not result.external_ip_pong then
+		result.error = "Ping server did not return an address";
+		return result;
+	end
+
+	--
 
 	return result;
 end
@@ -170,12 +241,19 @@ local function skip_bare_jid_hosts(host)
 	return true;
 end
 
+local check_opts = {
+	short_params = {
+		h = "help", v = "verbose";
+	};
+};
+
 local function check(arg)
-	if arg[1] == "--help" then
+	if arg[1] == "help" or arg[1] == "--help" then
 		show_usage([[check]], [[Perform basic checks on your Prosody installation]]);
 		return 1;
 	end
 	local what = table.remove(arg, 1);
+	local opts = assert(parse_args(arg, check_opts));
 	local array = require "util.array";
 	local set = require "util.set";
 	local it = require "util.iterators";
@@ -1151,7 +1229,7 @@ local function check(arg)
 		for turn_id, turn_service in pairs(turn_services) do
 			print("Testing "..turn_id.."...");
 
-			local result = check_turn_service(turn_service);
+			local result = check_turn_service(turn_service, opts.ping);
 			if #result.warnings > 0 then
 				print(("%d warnings:\n\n    "):format(#result.warnings));
 				print(table.concat(result.warnings, "\n    "));
@@ -1160,6 +1238,12 @@ local function check(arg)
 				print("Error: "..result.error.."\n");
 				ok = false;
 			else
+				if opts.verbose then
+					print(("External IP: %s"):format(result.external_ip.address));
+					if result.external_ip_pong then
+						print(("TURN external IP: %s"):format(result.external_ip_pong.address));
+					end
+				end
 				print("Success!\n");
 			end
 		end
