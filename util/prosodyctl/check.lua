@@ -178,7 +178,7 @@ local function check_turn_service(turn_service, ping_service)
 	end
 	local ping_service_ip, err = socket.dns.toip(ping_host);
 	if not ping_service_ip then
-		result.error = "Unable to resolve external service: "..err;
+		result.error = "Unable to resolve ping service hostname: "..err;
 		return result;
 	end
 
