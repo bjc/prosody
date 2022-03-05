@@ -5,6 +5,7 @@ local random = require "util.random";
 local struct = require "util.struct";
 local bit32 = require"util.bitcompat";
 local sxor = require"util.strbitop".sxor;
+local new_ip = require "util.ip".new_ip;
 
 --- Public helpers
 
@@ -221,16 +222,31 @@ function packet_methods:_unpack_address(data, xor)
 	};
 end
 
+function packet_methods:_pack_address(family, addr, port, xor)
+	if xor then
+		port = bit32.bxor(port, 0x2112);
+		addr = sxor(addr, magic_cookie..self.transaction_id);
+	end
+	local family_port = struct.pack("x>BI2", family, port);
+	return family_port..addr
+end
 
 function packet_methods:get_mapped_address()
 	local data = self:get_attribute("mapped-address");
 	if not data then return; end
 	return self:_unpack_address(data, false);
 end
+
 function packet_methods:get_xor_mapped_address()
 	local data = self:get_attribute("xor-mapped-address");
 	if not data then return; end
 	return self:_unpack_address(data, true);
+end
+
+function packet_methods:add_xor_peer_address(address, port)
+	local parsed_ip = assert(new_ip(address));
+	local family = assert(addr_family_lookup[parsed_ip.proto], "Unknown IP address family: "..parsed_ip.proto);
+	self:add_attribute("xor-peer-address", self:_pack_address(family, parsed_ip.packed, port or 0, true));
 end
 
 function packet_methods:add_message_integrity(key)
