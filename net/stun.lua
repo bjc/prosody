@@ -86,6 +86,9 @@ local attributes = {
 
 	-- TURN
 	["requested-transport"] = 0x0019;
+	["xor-peer-address"] = 0x0012;
+	["data"] = 0x0013;
+	["xor-relayed-address"] = 0x0016;
 };
 local attribute_lookup = lookup_table(attributes);
 
