@@ -186,8 +186,12 @@ local function check_turn_service(turn_service, ping_service)
 	local perm_request = stun.new_packet("create-permission");
 	perm_request:add_xor_peer_address(ping_service_ip);
 	perm_request:add_attribute("username", turn_user);
-	perm_request:add_attribute("realm", realm);
-	perm_request:add_attribute("nonce", nonce);
+	if realm then
+		perm_request:add_attribute("realm", realm);
+	end
+	if nonce then
+		perm_request:add_attribute("nonce", nonce);
+	end
 	perm_request:add_message_integrity(key);
 	sock:send(perm_request:serialize());
 
@@ -210,8 +214,12 @@ local function check_turn_service(turn_service, ping_service)
 	ping_request:add_xor_peer_address(ping_service_ip, ping_port);
 	ping_request:add_attribute("data", ping_data);
 	ping_request:add_attribute("username", turn_user);
-	ping_request:add_attribute("realm", realm);
-	ping_request:add_attribute("nonce", nonce);
+	if realm then
+		ping_request:add_attribute("realm", realm);
+	end
+	if nonce then
+		ping_request:add_attribute("nonce", nonce);
+	end
 	ping_request:add_message_integrity(key);
 	sock:send(ping_request:serialize());
 
