@@ -63,6 +63,7 @@ end
 
 local function check_turn_service(turn_service, ping_service)
 	local stun = require "net.stun";
+	local ip = require "util.ip";
 
 	-- Create UDP socket for communication with the server
 	local sock = assert(require "socket".udp());
@@ -102,6 +103,9 @@ local function check_turn_service(turn_service, ping_service)
 	if not result.external_ip then
 		result.error = "STUN server did not return an address";
 		return result;
+	end
+	if ip.new_ip(result.external_ip.address).private then
+		table.insert(result.warnings, "STUN returned a private IP! Is the TURN server behind a NAT and misconfigured?");
 	end
 
 	-- Send a TURN "allocate" request. Expected to fail due to auth, but
