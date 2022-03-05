@@ -1253,21 +1253,25 @@ local function check(arg)
 				print(("%d warnings:\n\n    "):format(#result.warnings));
 				print(table.concat(result.warnings, "\n    "));
 			end
+
+			if opts.verbose then
+				if result.external_ip then
+					print(("External IP: %s"):format(result.external_ip.address));
+				end
+				if result.relayed_addresses then
+					for i, relayed_address in ipairs(result.relayed_addresses) do
+						print(("Relayed address %d: %s:%d"):format(i, relayed_address.address, relayed_address.port));
+					end
+				end
+				if result.external_ip_pong then
+					print(("TURN external IP: %s"):format(result.external_ip_pong.address));
+				end
+			end
+
 			if result.error then
 				print("Error: "..result.error.."\n");
 				ok = false;
 			else
-				if opts.verbose then
-					print(("External IP: %s"):format(result.external_ip.address));
-					if result.relayed_addresses then
-						for i, relayed_address in ipairs(result.relayed_addresses) do
-							print(("Relayed address %d: %s:%d"):format(i, relayed_address.address, relayed_address.port));
-						end
-					end
-					if result.external_ip_pong then
-						print(("TURN external IP: %s"):format(result.external_ip_pong.address));
-					end
-				end
 				print("Success!\n");
 			end
 		end
