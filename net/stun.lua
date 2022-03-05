@@ -41,8 +41,8 @@ local methods = {
 	refresh = 0x004;
 	send = 0x006;
 	data = 0x007;
-	create_permission = 0x008;
-	channel_bind = 0x009;
+	["create-permission"] = 0x008;
+	["channel-bind"] = 0x009;
 };
 local method_lookup = {};
 for name, value in pairs(methods) do
