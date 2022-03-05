@@ -1250,8 +1250,9 @@ local function check(arg)
 
 			local result = check_turn_service(turn_service, opts.ping);
 			if #result.warnings > 0 then
-				print(("%d warnings:\n\n    "):format(#result.warnings));
-				print(table.concat(result.warnings, "\n    "));
+				print(("%d warnings:\n"):format(#result.warnings));
+				print("    "..table.concat(result.warnings, "\n    "));
+				print("");
 			end
 
 			if opts.verbose then
