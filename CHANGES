@@ -57,6 +57,7 @@ TRUNK
 -   MUC presence broadcast controls
 -   MUC: support for XEP-0421 occupant identifiers
 -   `prosodyctl check connectivity` via observe.jabber.network
+-   STUN/TURN server tests in `prosodyctl check`
 -   libunbound for DNS queries
 -   The POSIX poll() API used by server_epoll on \*nix other than Linux
 
