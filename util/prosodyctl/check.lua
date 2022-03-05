@@ -167,7 +167,14 @@ local function check_turn_service(turn_service, ping_service)
 	-- and receive a response.
 
 	-- Resolve the IP of the ping service
-	local ping_service_ip, err = socket.dns.toip(ping_service);
+	local ping_host, ping_port = ping_service:match("^([^:]+):(%d+)$");
+	if ping_host then
+		ping_port = tonumber(ping_port);
+	else
+		-- Only a hostname specified, use default STUN port
+		ping_host, ping_port = ping_service, 3478;
+	end
+	local ping_service_ip, err = socket.dns.toip(ping_host);
 	if not ping_service_ip then
 		result.error = "Unable to resolve external service: "..err;
 		return result;
@@ -198,7 +205,7 @@ local function check_turn_service(turn_service, ping_service)
 	local ping_data = stun.new_packet("binding"):serialize();
 
 	local ping_request = stun.new_packet("send", "indication");
-	ping_request:add_xor_peer_address(ping_service_ip, 3478);
+	ping_request:add_xor_peer_address(ping_service_ip, ping_port);
 	ping_request:add_attribute("data", ping_data);
 	ping_request:add_attribute("username", turn_user);
 	ping_request:add_attribute("realm", realm);
