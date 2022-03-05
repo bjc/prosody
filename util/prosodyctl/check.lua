@@ -62,8 +62,10 @@ local function check_probe(base_url, probe_module, target)
 end
 
 local function check_turn_service(turn_service, ping_service)
-	local stun = require "net.stun";
+	local array = require "util.array";
 	local ip = require "util.ip";
+	local set = require "util.set";
+	local stun = require "net.stun";
 
 	-- Create UDP socket for communication with the server
 	local sock = assert(require "socket".udp());
@@ -249,7 +251,8 @@ local function check_turn_service(turn_service, ping_service)
 		return result;
 	end
 
-	if result.external_ip.address ~= result.external_ip_pong.address then
+	local relayed_address_set = set.new(array.pluck(result.relayed_addresses, "address"));
+	if not relayed_address_set:contains(result.external_ip_pong.address) then
 		table.insert(result.warnings, "TURN external IP vs relay address mismatch! Is the TURN server behind a NAT and misconfigured?");
 	end
 
