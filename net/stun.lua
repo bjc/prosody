@@ -197,13 +197,18 @@ function packet_methods:deserialize(bytes)
 	return self;
 end
 
-function packet_methods:get_attribute(attr_type)
+function packet_methods:get_attribute(attr_type, idx)
+	idx = math.max(idx or 1, 1);
 	if type(attr_type) == "string" then
 		attr_type = assert(attribute_lookup[attr_type:lower()], "unknown attribute: "..attr_type);
 	end
 	for _, attribute in ipairs(self.attributes) do
 		if struct.unpack(">I2", attribute) == attr_type then
-			return attribute:sub(5);
+			if idx == 1 then
+				return attribute:sub(5);
+			else
+				idx = idx - 1;
+			end
 		end
 	end
 end
@@ -247,6 +252,19 @@ function packet_methods:add_xor_peer_address(address, port)
 	local parsed_ip = assert(new_ip(address));
 	local family = assert(addr_family_lookup[parsed_ip.proto], "Unknown IP address family: "..parsed_ip.proto);
 	self:add_attribute("xor-peer-address", self:_pack_address(family, parsed_ip.packed, port or 0, true));
+end
+
+function packet_methods:get_xor_relayed_address(idx)
+	local data = self:get_attribute("xor-relayed-address", idx);
+	if not data then return; end
+	return self:_unpack_address(data, true);
+end
+
+function packet_methods:get_xor_relayed_addresses()
+	return {
+		self:get_xor_relayed_address(1);
+		self:get_xor_relayed_address(2);
+	};
 end
 
 function packet_methods:add_message_integrity(key)
