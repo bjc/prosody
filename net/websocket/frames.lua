@@ -6,71 +6,36 @@
 -- COPYING file in the source package for more information.
 --
 
-local softreq = require "util.dependencies".softreq;
 local random_bytes = require "util.random".bytes;
 
 local bit = require "util.bitcompat";
 local band = bit.band;
 local bor = bit.bor;
-local lshift = bit.lshift;
-local rshift = bit.rshift;
 local sbit = require "util.strbitop";
 local sxor = sbit.sxor;
 
-local s_char= string.char;
-local s_pack = string.pack;
-local s_unpack = string.unpack;
+local s_char = string.char;
+local s_pack = require"util.struct".pack;
+local s_unpack = require"util.struct".unpack;
 
-if not s_pack and softreq"struct" then
-	s_pack = softreq"struct".pack;
-	s_unpack = softreq"struct".unpack;
+local function pack_uint16be(x)
+	return s_pack(">I2", x);
+end
+local function pack_uint64be(x)
+	return s_pack(">I8", x);
 end
 
 local function read_uint16be(str, pos)
-	local l1, l2 = str:byte(pos, pos+1);
-	return l1*256 + l2;
+	if type(str) ~= "string" then
+		str, pos = str:sub(pos, pos+1), 1;
+	end
+	return s_unpack(">I2", str, pos);
 end
--- FIXME: this may lose precision
 local function read_uint64be(str, pos)
-	local l1, l2, l3, l4, l5, l6, l7, l8 = str:byte(pos, pos+7);
-	local h = lshift(l1, 24) + lshift(l2, 16) + lshift(l3, 8) + l4;
-	local l = lshift(l5, 24) + lshift(l6, 16) + lshift(l7, 8) + l8;
-	return h * 2^32 + l;
-end
-local function pack_uint16be(x)
-	return s_char(rshift(x, 8), band(x, 0xFF));
-end
-local function get_byte(x, n)
-	return band(rshift(x, n), 0xFF);
-end
-local function pack_uint64be(x)
-	local h = band(x / 2^32, 2^32-1);
-	return s_char(get_byte(h, 24), get_byte(h, 16), get_byte(h, 8), band(h, 0xFF),
-		get_byte(x, 24), get_byte(x, 16), get_byte(x, 8), band(x, 0xFF));
-end
-
-if s_pack then
-	function pack_uint16be(x)
-		return s_pack(">I2", x);
+	if type(str) ~= "string" then
+		str, pos = str:sub(pos, pos+7), 1;
 	end
-	function pack_uint64be(x)
-		return s_pack(">I8", x);
-	end
-end
-
-if s_unpack then
-	function read_uint16be(str, pos)
-		if type(str) ~= "string" then
-			str, pos = str:sub(pos, pos+1), 1;
-		end
-		return s_unpack(">I2", str, pos);
-	end
-	function read_uint64be(str, pos)
-		if type(str) ~= "string" then
-			str, pos = str:sub(pos, pos+7), 1;
-		end
-		return s_unpack(">I8", str, pos);
-	end
+	return s_unpack(">I8", str, pos);
 end
 
 local function parse_frame_header(frame)
