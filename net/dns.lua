@@ -344,7 +344,7 @@ local function encodeHeader(o)    -- - - - - - - - - - - - - - -  encodeHeader
 				--	4 not implemented
 				--	5 refused
 				--	6-15 reserved
-	o.z = o.z  or 0;		--  3b  0 resvered
+	o.z = o.z  or 0;		--  3b  0 reserved
 	o.ra = o.ra or 0;		--  1b  1 recursion available
 
 	o.qdcount = o.qdcount or 1;	-- 16b	number of question RRs
@@ -885,7 +885,7 @@ function resolver:query(qname, qtype, qclass)    -- - - - - - - - - - -- query
 	if co then
 		set(self.wanted, qclass, qtype, qname, co, true);
 	end
-	
+
 	if have_timer and self.timeout then
 		local num_servers = #self.server;
 		local i = 1;
@@ -941,7 +941,7 @@ function resolver:servfail(sock, err)
 							sock:send(o.packet);
 						end
 					end
-				end	
+				end
 				if not retried then
 					log("debug", 'tried all servers, giving up');
 					self:cancel(o.qclass, o.qtype, o.qname);
@@ -994,7 +994,7 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 					-- retire the query
 					local queries = self.active[response.header.id];
 					queries[response.question.raw] = nil;
-					
+
 					if not next(queries) then self.active[response.header.id] = nil; end
 					if not next(self.active) then self:closeall(); end
 
@@ -1008,7 +1008,7 @@ function resolver:receive(rset)    -- - - - - - - - - - - - - - - - -  receive
 						set(self.wanted, q.class, q.type, q.name, nil);
 					end
 				end
-				
+
 			end
 		end
 	end

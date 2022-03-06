@@ -222,7 +222,7 @@ local function store(username, host, datastore, data)
 			os_remove(getpath(username, host, datastore));
 		end
 		-- we write data even when we are deleting because lua doesn't have a
-		-- platform independent way of checking for non-exisitng files
+		-- platform independent way of checking for non-existing files
 	until ok;
 	return true;
 end
@@ -290,7 +290,7 @@ local function list_store(username, host, datastore, data)
 		os_remove(getpath(username, host, datastore, "list"));
 	end
 	-- we write data even when we are deleting because lua doesn't have a
-	-- platform independent way of checking for non-exisitng files
+	-- platform independent way of checking for non-existing files
 	return true;
 end
 

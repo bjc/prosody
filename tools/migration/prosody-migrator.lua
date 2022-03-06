@@ -38,7 +38,7 @@ local function usage()
 	print("Usage: " .. arg[0] .. " [OPTIONS] FROM_STORE TO_STORE");
 	print("  --config FILE         Specify config file")
 	print("  --keep-going          Keep going in case of errors");
-	print("  -v, --verbose         Incease log-level");
+	print("  -v, --verbose         Increase log-level");
 	print("");
 	print("If no stores are specified, 'input' and 'output' are used.");
 end
@@ -153,7 +153,7 @@ local function users(store, host)
 		log("debug", "Using store user iterator")
 		return store:users();
 	else
-		log("debug", "Using usermanagre user iterator")
+		log("debug", "Using usermanager user iterator")
 		return um.users(host);
 	end
 end

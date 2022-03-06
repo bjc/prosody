@@ -85,7 +85,7 @@ local histogram_metric_mt = {}
 histogram_metric_mt.__index = histogram_metric_mt
 
 local function new_histogram_metric(buckets, full_name, impl)
-	-- NOTE: even though the more or less proprietrary dogstatsd has its own
+	-- NOTE: even though the more or less proprietary dogstatsd has Its own
 	-- histogram implementation, we push the individual buckets in this statsd
 	-- backend for both consistency and compatibility across statsd
 	-- implementations.

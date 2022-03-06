@@ -139,7 +139,7 @@ local function load_roster(username, host)
 		-- Due to map store use, we need to manually delete this entry
 		log("debug", "Removing legacy 'pending' entry");
 		if not save_roster(username, host, roster, "pending") then
-			log("warn", "Could not remove legacy 'pendig' entry");
+			log("warn", "Could not remove legacy 'pending' entry");
 		end
 	end
 	if roster[jid] then

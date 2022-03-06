@@ -237,7 +237,7 @@ function cert_commands.import(arg)
 	for _, host in ipairs(hostnames) do
 		local paths = cm.find_cert_in_index(files_by_name, host);
 		if paths and imported[paths.certificate] then
-			-- One certificate, many mames!
+			-- One certificate, many names!
 			table.insert(imported, host);
 		elseif paths then
 			local c = copy(paths.certificate, cert_basedir .. "/" .. host .. ".crt", nil, owner, group);

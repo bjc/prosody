@@ -91,7 +91,7 @@ end, 500);
 
 local function adhoc_added(event)
 	local item = event.item;
-	-- Dang this was noicy
+	-- Dang this was noisy
 	module:log("debug", "Command added by mod_%s: %q, %q", item._provided_by or "<unknown module>", item.name, item.node);
 	commands[item.node] = item;
 end

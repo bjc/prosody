@@ -10,7 +10,7 @@
 ** > - big endian
 ** < - little endian
 ** ![num] - alignment
-** x - pading
+** x - padding
 ** b/B - signed/unsigned byte
 ** h/H - signed/unsigned short
 ** l/L - signed/unsigned long

@@ -262,7 +262,7 @@ end
 
 --TODO: Deprecate
 function interface_mt:lock_read(switch)
-	log("warn", ":lock_read is deprecated, use :pasue() and :resume()");
+	log("warn", ":lock_read is deprecated, use :pause() and :resume()");
 	if switch then
 		return self:pause();
 	else
@@ -540,7 +540,7 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 					--vdebug( "tried to read in writecallback, result:", ret )
 				end
 				if interface.eventwritetimeout then  -- luasec only
-					interface.eventwritetimeout:close( )  -- first we have to close timeout event which where regged after a wantread error
+					interface.eventwritetimeout:close( )  -- first we have to close timeout event which where registered after a wantread error
 					interface.eventwritetimeout = false
 				end
 			end
@@ -607,7 +607,7 @@ local function handleclient( client, ip, port, server, pattern, listener, sslctx
 			return -1 -- took too long to get some data from client -> disconnect
 		end
 		if interface._usingssl then  -- handle luasec
-			if interface.eventwritetimeout then  -- ok, in the past writecallback was regged
+			if interface.eventwritetimeout then  -- ok, in the past writecallback was registered
 				local ret = interface.writecallback( )  -- call it
 				--vdebug( "tried to write in readcallback, result:", tostring(ret) )
 			end

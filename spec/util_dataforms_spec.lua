@@ -452,14 +452,14 @@ describe("util.dataforms", function ()
 				assert.string(e.number);
 			end);
 
-			it("bounds-cheking work works", function ()
+			it("bounds-checking work works", function ()
 				local d,e = f:data(f:form({number = 100}));
 				assert.not_equal(100, d.number);
 				assert.table(e);
 				assert.string(e.number);
 			end);
 
-			it("serializes largeer ints okay", function ()
+			it("serializes larger ints okay", function ()
 				local x = f:form{number=1125899906842624}
 				assert.equal("1125899906842624", x:find("field/value#"))
 			end);

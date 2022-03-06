@@ -19,7 +19,7 @@ local record lib
 		length : function (s : string) : integer
 	end
 	record confusable
-		skeleteon : function (s : string) : string
+		skeleton : function (s : string) : string
 	end
 	version : string
 end

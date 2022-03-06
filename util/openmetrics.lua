@@ -10,7 +10,7 @@ The following metric types are supported:
 - Histogram
 - Summary
 
-It is used by util.statsd and util.statistics to provite the OpenMetrics API.
+It is used by util.statsd and util.statistics to provide the OpenMetrics API.
 
 To understand what this module is about, it is useful to familiarize oneself
 with the terms MetricFamily, Metric, LabelSet, Label and MetricPoint as

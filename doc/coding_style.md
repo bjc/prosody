@@ -20,7 +20,7 @@ end
 ```
 
 Tab width is configurable in editors, so never assume a particular width.
-Specically this means you should not mix tabs and spaces, or use tabs for
+Specifically this means you should not mix tabs and spaces, or use tabs for
 alignment of items at different indentation levels.
 
 * Use LF (Unix) line endings.

@@ -75,12 +75,12 @@ function serve(opts)
 		opts.index_files = dir_indices;
 	end
 	-- TODO Crank up to warning
-	module:log("debug", "%s should be updated to use 'net.http.files' insead of mod_http_files", get_calling_module());
+	module:log("debug", "%s should be updated to use 'net.http.files' instead of mod_http_files", get_calling_module());
 	return fileserver.serve(opts);
 end
 
 function wrap_route(routes)
-	module:log("debug", "%s should be updated to use 'net.http.files' insead of mod_http_files", get_calling_module());
+	module:log("debug", "%s should be updated to use 'net.http.files' instead of mod_http_files", get_calling_module());
 	for route,handler in pairs(routes) do
 		if type(handler) ~= "function" then
 			routes[route] = fileserver.serve(handler);
