@@ -36,7 +36,7 @@ do -- validate disco_items
 end
 
 if module:get_host_type() == "local" then
-	module:add_identity("server", "im", module:get_option_string("name", "Prosody")); -- FIXME should be in the non-existing mod_router
+	module:add_identity("server", "im", module:get_option_string("name", "Prosody")); -- FIXME should be in the nonexisting mod_router
 end
 module:add_feature("http://jabber.org/protocol/disco#info");
 module:add_feature("http://jabber.org/protocol/disco#items");
