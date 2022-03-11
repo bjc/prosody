@@ -62,9 +62,7 @@ local function check_probe(base_url, probe_module, target)
 end
 
 local function check_turn_service(turn_service, ping_service)
-	local array = require "util.array";
 	local ip = require "util.ip";
-	local set = require "util.set";
 	local stun = require "net.stun";
 
 	-- Create UDP socket for communication with the server
@@ -251,9 +249,17 @@ local function check_turn_service(turn_service, ping_service)
 		return result;
 	end
 
-	local relayed_address_set = set.new(array.pluck(result.relayed_addresses, "address"));
-	if not relayed_address_set:contains(result.external_ip_pong.address) then
+	local relay_address_found, relay_port_matches;
+	for _, relayed_address in ipairs(result.relayed_addresses) do
+		if relayed_address.address == result.external_ip_pong.address then
+			relay_address_found = true;
+			relay_port_matches = result.external_ip_pong.port == relayed_address.port;
+		end
+	end
+	if not relay_address_found then
 		table.insert(result.warnings, "TURN external IP vs relay address mismatch! Is the TURN server behind a NAT and misconfigured?");
+	elseif not relay_port_matches then
+		table.insert(result.warnings, "External port does not match reported relay port! This is probably caused by a NAT in front of the TURN server.");
 	end
 
 	--
@@ -1284,7 +1290,7 @@ local function check(arg)
 					end
 				end
 				if result.external_ip_pong then
-					print(("TURN external IP: %s"):format(result.external_ip_pong.address));
+					print(("TURN external address: %s:%d"):format(result.external_ip_pong.address, result.external_ip_pong.port));
 				end
 			end
 
