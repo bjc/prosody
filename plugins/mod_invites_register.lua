@@ -141,6 +141,7 @@ module:hook("user-registered", function (event)
 	if inviter_username then
 		module:log("debug", "Creating mutual subscription between %s and %s", inviter_username, contact_username);
 		subscribe_both(module.host, inviter_username, contact_username);
+		rostermanager.roster_push(inviter_username, module.host, contact_username.."@"..module.host);
 	end
 
 	if validated_invite.additional_data then
