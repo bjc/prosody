@@ -2,6 +2,9 @@ module:set_global();
 
 local have_unix, unix = pcall(require, "socket.unix");
 
+if have_unix and type(unix) == "function" then
+	unix = { stream = unix };
+end
 if not have_unix or type(unix) ~= "table" then
 	module:log_status("error", "LuaSocket unix socket support not available or incompatible, ensure it is up to date");
 	return;

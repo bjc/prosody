@@ -139,6 +139,9 @@ end
 
 local function new_connection(socket_path, listeners)
 	local have_unix, unix = pcall(require, "socket.unix");
+	if have_unix and type(unix) == "function" then
+		unix = { stream = unix };
+	end
 	if type(unix) ~= "table" then
 		have_unix = false;
 	end
