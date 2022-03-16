@@ -140,6 +140,12 @@ end
 local function new_connection(socket_path, listeners)
 	local have_unix, unix = pcall(require, "socket.unix");
 	if have_unix and type(unix) == "function" then
+		-- COMPAT #1717
+		-- Before the introduction of datagram support, only the stream socket
+		-- constructor was exported instead of a module table. Due to the lack of a
+		-- proper release of LuaSocket, distros have settled on shipping either the
+		-- last RC tag or some commit since then.
+		-- Here we accomodate both variants.
 		unix = { stream = unix };
 	end
 	if type(unix) ~= "table" then
