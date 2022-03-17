@@ -89,11 +89,15 @@ local function start(arg) --luacheck: ignore 212/arg
 		local errors = 0; -- TODO This is weird, but works for now.
 		client.events.add_handler("received", function(stanza)
 			if stanza.name == "repl-output" or stanza.name == "repl-result" then
+				local dest = io.stdout;
 				if stanza.attr.type == "error" then
 					errors = errors + 1;
-					io.stderr:write(stanza:get_text(), "\n");
+					dest = io.stderr;
+				end
+				if stanza.attr.eol == "0" then
+					dest:write(stanza:get_text());
 				else
-					print(stanza:get_text());
+					dest:write(stanza:get_text(), "\n");
 				end
 			end
 			if stanza.name == "repl-result" then
