@@ -83,8 +83,8 @@ function runner_callbacks:error(err)
 	self.data.print("Error: "..tostring(err));
 end
 
-local function send_repl_output(session, line)
-	return session.send(st.stanza("repl-output"):text(tostring(line)));
+local function send_repl_output(session, line, attr)
+	return session.send(st.stanza("repl-output", attr):text(tostring(line)));
 end
 
 function console:new_session(admin_session)
@@ -98,6 +98,9 @@ function console:new_session(admin_session)
 				t[i] = tostring(select(i, ...));
 			end
 			return send_repl_output(admin_session, table.concat(t, "\t"));
+		end;
+		write = function (t)
+			return send_repl_output(admin_session, t, { eol = "0" });
 		end;
 		serialize = tostring;
 		disconnect = function () admin_session:close(); end;
