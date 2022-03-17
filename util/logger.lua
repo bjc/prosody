@@ -10,6 +10,7 @@
 local pairs = pairs;
 local ipairs = ipairs;
 local require = require;
+local t_remove = table.remove;
 
 local _ENV = nil;
 -- luacheck: std none
@@ -80,6 +81,19 @@ local function add_simple_sink(simple_sink_function, levels)
 	end
 end
 
+local function remove_sink(sink_function)
+	local removed;
+	for level, sinks in pairs(level_sinks) do
+		for i = #sinks, 1, -1 do
+			if sinks[i] == sink_function then
+				t_remove(sinks, i);
+				removed = true;
+			end
+		end
+	end
+	return removed;
+end
+
 return {
 	init = init;
 	make_logger = make_logger;
@@ -87,4 +101,5 @@ return {
 	add_level_sink = add_level_sink;
 	add_simple_sink = add_simple_sink;
 	new = make_logger;
+	remove_sink = remove_sink;
 };
