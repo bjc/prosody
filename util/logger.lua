@@ -79,6 +79,7 @@ local function add_simple_sink(simple_sink_function, levels)
 	for _, level in ipairs(levels or {"debug", "info", "warn", "error"}) do
 		add_level_sink(level, sink_function);
 	end
+	return sink_function;
 end
 
 local function remove_sink(sink_function)
