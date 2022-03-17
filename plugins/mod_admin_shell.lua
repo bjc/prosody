@@ -36,6 +36,7 @@ local serialization = require "util.serialization";
 local serialize_config = serialization.new ({ fatal = false, unquoted = true});
 local time = require "util.time";
 local promise = require "util.promise";
+local logger = require "util.logger";
 
 local t_insert = table.insert;
 local t_concat = table.concat;
@@ -1588,6 +1589,26 @@ function def_env.http:list(hosts)
 	end
 	return true;
 end
+
+def_env.watch = {};
+
+function def_env.watch:log()
+	local writing = false;
+	local sink = logger.add_simple_sink(function (source, level, message)
+		if writing then return; end
+		writing = true;
+		self.session.print(source, level, message);
+		writing = false;
+	end);
+
+	while self.session.is_connected() do
+		async.sleep(3);
+	end
+	if not logger.remove_sink(sink) then
+		module:log("warn", "Unable to remove watch:log() sink");
+	end
+end
+
 
 def_env.debug = {};
 
