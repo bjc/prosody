@@ -104,6 +104,9 @@ function console:new_session(admin_session)
 		end;
 		serialize = tostring;
 		disconnect = function () admin_session:close(); end;
+		is_connected = function ()
+			return not not admin_session.conn;
+		end
 	};
 	session.env = setmetatable({}, default_env_mt);
 
