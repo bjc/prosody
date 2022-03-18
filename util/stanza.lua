@@ -22,6 +22,7 @@ local s_gsub        =   string.gsub;
 local s_sub         =    string.sub;
 local s_find        =   string.find;
 local t_move        =    table.move or require "util.table".move;
+local t_create = require"util.table".create;
 
 local valid_utf8 = require "util.encodings".utf8.valid;
 
@@ -276,14 +277,26 @@ function stanza_mt:find(path)
 end
 
 local function _clone(stanza, only_top)
-	local attr, tags = {}, {};
+	local attr = {};
 	for k,v in pairs(stanza.attr) do attr[k] = v; end
 	local old_namespaces, namespaces = stanza.namespaces;
 	if old_namespaces then
 		namespaces = {};
 		for k,v in pairs(old_namespaces) do namespaces[k] = v; end
 	end
-	local new = { name = stanza.name, attr = attr, namespaces = namespaces, tags = tags };
+	local tags, new;
+	if only_top then
+		tags = {};
+		new = { name = stanza.name, attr = attr, namespaces = namespaces, tags = tags };
+	else
+		tags = t_create(#stanza.tags, 0);
+		new = t_create(#stanza, 4);
+		new.name = stanza.name;
+		new.attr = attr;
+		new.namespaces = namespaces;
+		new.tags = tags;
+	end
+
 	setmetatable(new, stanza_mt);
 	if not only_top then
 		t_move(stanza, 1, #stanza, 1, new);
