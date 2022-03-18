@@ -42,8 +42,16 @@ end
 
 local function merge_targets(ipv4_targets, ipv6_targets)
 	local result = { secure = ipv4_targets.secure and ipv6_targets.secure };
-	t_move(ipv6_targets, 1, #ipv6_targets, 1, result);
-	t_move(ipv4_targets, 1, #ipv4_targets, #result+1, result);
+	local common_length = math.min(#ipv4_targets, #ipv6_targets);
+	for i = 1, common_length do
+		table.insert(result, ipv6_targets[i]);
+		table.insert(result, ipv4_targets[i]);
+	end
+	if common_length < #ipv4_targets then
+		t_move(ipv4_targets, common_length+1, #ipv4_targets, common_length+1, result);
+	elseif common_length < #ipv6_targets then
+		t_move(ipv6_targets, common_length+1, #ipv6_targets, common_length+1, result);
+	end
 	return result;
 end
 
