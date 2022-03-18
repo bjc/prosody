@@ -80,7 +80,7 @@ function methods:next(cb)
 	local dns_lookups = {
 		ipv4 = do_dns_lookup(self, dns_resolver, "A", self.hostname);
 		ipv6 = do_dns_lookup(self, dns_resolver, "AAAA", self.hostname);
-		tlsa = do_dns_lookup(self, dns_resolver, "TLSA", ("_%d._%s.%s"):format(self.port, self.conntype, self.hostname));
+		tlsa = do_dns_lookup(self, dns_resolver, "TLSA", ("_%d._%s.%s"):format(self.port, self.conn_type, self.hostname));
 	};
 
 	promise.all_settled(dns_lookups):next(function (dns_results)
