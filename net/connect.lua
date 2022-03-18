@@ -1,6 +1,7 @@
 local server = require "net.server";
 local log = require "util.logger".init("net.connect");
 local new_id = require "util.id".short;
+local timer = require "util.timer";
 
 -- TODO #1246 Happy Eyeballs
 -- FIXME RFC 6724
@@ -28,7 +29,7 @@ local pending_connection_listeners = {};
 
 local function attempt_connection(p)
 	p:log("debug", "Checking for targets...");
-	p.target_resolver:next(function (conn_type, ip, port, extra)
+	p.target_resolver:next(function (conn_type, ip, port, extra, more_targets_available)
 		if not conn_type then
 			-- No more targets to try
 			p:log("debug", "No more connection targets to try", p.target_resolver.last_error);
@@ -47,6 +48,14 @@ local function attempt_connection(p)
 		end
 		p.conns[conn] = true;
 		pending_connections_map[conn] = p;
+		if more_targets_available then
+			timer.add_task(0.250, function ()
+				if not p.connected then
+					p:log("debug", "Still not connected, making parallel connection attempt...");
+					attempt_connection(p);
+				end
+			end);
+		end
 	end);
 end
 
