@@ -64,7 +64,7 @@ function methods:next(cb)
 			return;
 		end
 		local next_target = table.remove(self.targets, 1);
-		cb(next_target[1], next_target[2], next_target[3], next_target[4]);
+		cb(next_target[1], next_target[2], next_target[3], next_target[4], not not self.targets[1]);
 		return;
 	end
 
