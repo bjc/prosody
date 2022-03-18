@@ -6,6 +6,10 @@
 #define LUA_MAXINTEGER PTRDIFF_MAX
 #endif
 
+#if (LUA_VERSION_NUM > 501)
+#define lua_equal(L, A, B) lua_compare(L, A, B, LUA_OPEQ)
+#endif
+
 static int Lcreate_table(lua_State *L) {
 	lua_createtable(L, luaL_checkinteger(L, 1), luaL_checkinteger(L, 2));
 	return 1;
@@ -43,7 +47,7 @@ static int Lmove (lua_State *L) {
 		n = e - f + 1;  /* number of elements to move */
 		luaL_argcheck(L, t <= LUA_MAXINTEGER - n + 1, 4,
 		"destination wrap around");
-		if (t > e || t <= f || (tt != 1 && !lua_compare(L, 1, tt, LUA_OPEQ))) {
+		if (t > e || t <= f || (tt != 1 && !lua_equal(L, 1, tt))) {
 			for (i = 0; i < n; i++) {
 				lua_rawgeti(L, 1, f + i);
 				lua_rawseti(L, tt, t + i);
