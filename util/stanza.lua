@@ -21,6 +21,7 @@ local type          =          type;
 local s_gsub        =   string.gsub;
 local s_sub         =    string.sub;
 local s_find        =   string.find;
+local t_move        =    table.move or require "util.table".move;
 
 local valid_utf8 = require "util.encodings".utf8.valid;
 
@@ -283,17 +284,13 @@ local function _clone(stanza, only_top)
 		for k,v in pairs(old_namespaces) do namespaces[k] = v; end
 	end
 	local new = { name = stanza.name, attr = attr, namespaces = namespaces, tags = tags };
+	setmetatable(new, stanza_mt);
 	if not only_top then
-		for i=1,#stanza do
-			local child = stanza[i];
-			if child.name then
-				child = _clone(child);
-				t_insert(tags, child);
-			end
-			t_insert(new, child);
-		end
+		t_move(stanza, 1, #stanza, 1, new);
+		t_move(stanza.tags, 1, #stanza.tags, 1, tags);
+		new:maptags(_clone);
 	end
-	return setmetatable(new, stanza_mt);
+	return new;
 end
 
 local function clone(stanza, only_top)
