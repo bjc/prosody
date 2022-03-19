@@ -62,8 +62,16 @@ function module.load()
 	sock = unix.stream();
 	sock:settimeout(0);
 	os.remove(socket_path);
-	assert(sock:bind(socket_path));
-	assert(sock:listen());
+	local ok, err = sock:bind(socket_path);
+	if not ok then
+		module:log_status("error", "Unable to bind admin socket %s: %s", socket_path, err);
+		return;
+	end
+	local ok, err = sock:listen();
+	if not ok then
+		module:log_status("error", "Unable to listen on admin socket %s: %s", socket_path, err);
+		return;
+	end
 	if server.wrapserver then
 		conn = server.wrapserver(sock, socket_path, 0, listeners);
 	else
