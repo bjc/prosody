@@ -180,6 +180,12 @@ local function check_turn_service(turn_service, ping_service)
 		-- Only a hostname specified, use default STUN port
 		ping_host, ping_port = ping_service, 3478;
 	end
+
+	if ping_host == turn_service.host then
+		result.error = ("Unable to perform ping test: please supply an external STUN server address. See https://prosody.im/doc/turn#prosodyctl-check");
+		return result;
+	end
+
 	local ping_service_ip, err = socket.dns.toip(ping_host);
 	if not ping_service_ip then
 		result.error = "Unable to resolve ping service hostname: "..err;
