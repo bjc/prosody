@@ -667,7 +667,7 @@ local function check(arg)
 					end
 				end
 			end
-			for host, host_config in enabled_hosts() do
+			for host, host_config in it.filter(skip_bare_jid_hosts, enabled_hosts()) do
 				local is_component = not not host_config.component_module;
 				if is_component then
 					local parent_domain = host:match("^[^.]+%.(.+)$");
