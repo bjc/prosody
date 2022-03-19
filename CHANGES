@@ -1,3 +1,17 @@
+TRUNK
+=====
+
+## New
+
+### Administration
+
+- Add 'watch log' command to follow live debug logs at runtime (even if disabled)
+
+### Networking
+
+- Honour 'weight' parameter during SRV record selection
+- Support for RFC 8305 "Happy Eyeballs" to improve IPv4/IPv6 connectivity
+
 0.12.0
 ======
 
