@@ -33,8 +33,13 @@ local function attempt_connection(p)
 		if not conn_type then
 			-- No more targets to try
 			p:log("debug", "No more connection targets to try", p.target_resolver.last_error);
-			if p.listeners.onfail then
-				p.listeners.onfail(p.data, p.last_error or p.target_resolver.last_error or "unable to resolve service");
+			if next(p.conns) == nil then
+				p:log("debug", "No more targets, no pending connections. Connection failed.");
+				if p.listeners.onfail then
+					p.listeners.onfail(p.data, p.last_error or p.target_resolver.last_error or "unable to resolve service");
+				end
+			else
+				p:log("debug", "One or more connection attempts are still pending. Waiting for now.");
 			end
 			return;
 		end
@@ -88,7 +93,10 @@ function pending_connection_listeners.ondisconnect(conn, reason)
 	p.conns[conn] = nil;
 	p.last_error = reason or "unknown reason";
 	p:log("debug", "Connection attempt failed: %s", p.last_error);
-	attempt_connection(p);
+	if next(p.conns) == nil and not p.connected then
+		p:log("debug", "No pending connection attempts, and not yet connected");
+		attempt_connection(p);
+	end
 end
 
 local function connect(target_resolver, listeners, options, data)
