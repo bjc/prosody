@@ -93,9 +93,13 @@ function pending_connection_listeners.ondisconnect(conn, reason)
 	p.conns[conn] = nil;
 	p.last_error = reason or "unknown reason";
 	p:log("debug", "Connection attempt failed: %s", p.last_error);
-	if next(p.conns) == nil and not p.connected then
+	if p.connected then
+		p:log("debug", "Connection already established, ignoring failure");
+	elseif next(p.conns) == nil then
 		p:log("debug", "No pending connection attempts, and not yet connected");
 		attempt_connection(p);
+	else
+		p:log("debug", "Other attempts are still pending, ignoring failure");
 	end
 end
 
