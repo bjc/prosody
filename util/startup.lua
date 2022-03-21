@@ -46,12 +46,19 @@ function startup.parse_args(profile)
 		end
 		os.exit(1);
 	end
-	if opts.help and prosody.process_type == "prosody" then
-		print("prosody [ -D | -F ] [ --config /path/to/prosody.cfg.lua ]");
-		print("  -D, --daemonize       Run in the background")
-		print("  -F, --no-daemonize    Run in the foreground")
-		print("  --config FILE         Specify config file")
-		os.exit(0);
+	if prosody.process_type == "prosody" then
+		if #arg > 0 then
+			print("Unrecognized option: "..arg[1]);
+			print("(Did you mean 'prosodyctl "..arg[1].."'?)");
+			print("");
+		end
+		if opts.help or #arg > 0 then
+			print("prosody [ -D | -F ] [ --config /path/to/prosody.cfg.lua ]");
+			print("  -D, --daemonize       Run in the background")
+			print("  -F, --no-daemonize    Run in the foreground")
+			print("  --config FILE         Specify config file")
+			os.exit(0);
+		end
 	end
 	prosody.opts = opts;
 end
