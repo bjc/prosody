@@ -84,7 +84,7 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj, service) --lu
 			end
 			if not expose_publisher then
 				item.attr.publisher = nil;
-			elseif not item.attr.publisher then
+			elseif not item.attr.publisher and actor ~= true then
 				item.attr.publisher = service.config.normalize_jid(actor);
 			end
 		end
