@@ -79,12 +79,12 @@ module:hook("iq-set/host/"..xmlns_cmd..":command", function (event)
 		    or (command.permission == "global_admin" and not global_admin)
 		    or (command.permission == "local_user" and hostname ~= module.host) then
 			origin.send(st.error_reply(stanza, "auth", "forbidden", "You don't have permission to execute this command"):up()
-			    :add_child(commands[node]:cmdtag("canceled")
+			    :add_child(command:cmdtag("canceled")
 				:tag("note", {type="error"}):text("You don't have permission to execute this command")));
 			return true
 		end
 		-- User has permission now execute the command
-		adhoc_handle_cmd(commands[node], origin, stanza);
+		adhoc_handle_cmd(command, origin, stanza);
 		return true;
 	end
 end, 500);
