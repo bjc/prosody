@@ -1609,6 +1609,40 @@ function def_env.watch:log()
 	end
 end
 
+local stanza_watchers = module:require("mod_debug_stanzas/watcher");
+function def_env.watch:stanzas(target_spec, filter_spec)
+	local function handler(event_type, stanza, session)
+		if stanza then
+			if event_type == "sent" then
+				self.session.print(("\n<!-- sent to %s -->"):format(session.id));
+			elseif event_type == "received" then
+				self.session.print(("\n<!-- received from %s -->"):format(session.id));
+			else
+				self.session.print(("\n<!-- %s (%s) -->"):format(event_type, session.id));
+			end
+			self.session.print(stanza);
+		elseif session then
+			self.session.print("\n<!-- session "..session.id.." "..event_type.." -->");
+		elseif event_type then
+			self.session.print("\n<!-- "..event_type.." -->");
+		end
+	end
+
+	stanza_watchers.add({
+		target_spec = {
+			jid = target_spec;
+		};
+		filter_spec = filter_spec and {
+			with_jid = filter_spec;
+		};
+	}, handler);
+
+	while self.session.is_connected() do
+		async.sleep(3);
+	end
+
+	stanza_watchers.remove(handler);
+end
 
 def_env.debug = {};
 
@@ -1952,6 +1986,10 @@ function def_env.stats:show(name_filter)
 	return displayed_stats;
 end
 
+
+function module.unload()
+	stanza_watchers.cleanup();
+end
 
 
 -------------
