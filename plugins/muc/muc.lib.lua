@@ -1583,15 +1583,16 @@ function room_mt:may_set_role(actor, occupant, role)
 		return event.allowed, event.error, event.condition;
 	end
 
-	-- Can't do anything to other owners or admins
-	local occupant_affiliation = self:get_affiliation(occupant.bare_jid);
-	if occupant_affiliation == "owner" or occupant_affiliation == "admin" then
+	local actor_affiliation = self:get_affiliation(actor) or "none";
+	local occupant_affiliation = self:get_affiliation(occupant.bare_jid) or "none";
+
+	-- Can't do anything to someone with higher affiliation
+	if valid_affiliations[actor_affiliation] < valid_affiliations[occupant_affiliation] then
 		return nil, "cancel", "not-allowed";
 	end
 
 	-- If you are trying to give or take moderator role you need to be an owner or admin
 	if occupant.role == "moderator" or role == "moderator" then
-		local actor_affiliation = self:get_affiliation(actor);
 		if actor_affiliation ~= "owner" and actor_affiliation ~= "admin" then
 			return nil, "cancel", "not-allowed";
 		end
