@@ -146,16 +146,14 @@ local function bounce_sendq(session, reason)
 	elseif type(reason) == "string" then
 		reason_text = reason;
 	end
-	for i, data in ipairs(sendq) do
-		local reply = data[2];
-		if reply and not(reply.attr.xmlns) and bouncy_stanzas[reply.name] then
-			reply.attr.type = "error";
-			reply:tag("error", {type = error_type, by = session.from_host})
-				:tag(condition, {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"}):up();
-			if reason_text then
-				reply:tag("text", {xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"})
-					:text("Server-to-server connection failed: "..reason_text):up();
-			end
+	for i, stanza in ipairs(sendq) do
+		if not stanza.attr.xmlns and bouncy_stanzas[stanza.name] then
+			local reply = st.error_reply(
+				stanza,
+				error_type,
+				condition,
+				reason_text and ("Server-to-server connection failed: "..reason_text) or nil
+			);
 			core_process_stanza(dummy, reply);
 		end
 		sendq[i] = nil;
@@ -182,15 +180,11 @@ function route_to_existing_session(event)
 		(host.log or log)("debug", "trying to send over unauthed s2sout to "..to_host);
 
 		-- Queue stanza until we are able to send it
-		local queued_item = {
-			tostring(stanza),
-			stanza.attr.type ~= "error" and stanza.attr.type ~= "result" and st.reply(stanza);
-		};
 		if host.sendq then
-			t_insert(host.sendq, queued_item);
+			t_insert(host.sendq, st.clone(stanza));
 		else
 			-- luacheck: ignore 122
-			host.sendq = { queued_item };
+			host.sendq = { st.clone(stanza) };
 		end
 		host.log("debug", "stanza [%s] queued ", stanza.name);
 		return true;
@@ -215,7 +209,7 @@ function route_to_new_session(event)
 
 	-- Store in buffer
 	host_session.bounce_sendq = bounce_sendq;
-	host_session.sendq = { {tostring(stanza), stanza.attr.type ~= "error" and stanza.attr.type ~= "result" and st.reply(stanza)} };
+	host_session.sendq = { st.clone(stanza) };
 	log("debug", "stanza [%s] queued until connection complete", stanza.name);
 	-- FIXME Cleaner solution to passing extra data from resolvers to net.server
 	-- This mt-clone allows resolvers to add extra data, currently used for DANE TLSA records
@@ -324,8 +318,8 @@ function mark_connected(session)
 		if sendq then
 			session.log("debug", "sending %d queued stanzas across new outgoing connection to %s", #sendq, session.to_host);
 			local send = session.sends2s;
-			for i, data in ipairs(sendq) do
-				send(data[1]);
+			for i, stanza in ipairs(sendq) do
+				send(stanza);
 				sendq[i] = nil;
 			end
 			session.sendq = nil;
