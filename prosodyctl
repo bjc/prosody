@@ -484,6 +484,7 @@ function commands.about(arg)
 	local library_versions = {};
 	dependencies.softreq"ssl";
 	dependencies.softreq"DBI";
+	dependencies.softreq"readline";
 	local friendly_names = {
 		DBI = "LuaDBI";
 		lfs = "LuaFileSystem";
@@ -492,17 +493,22 @@ function commands.about(arg)
 		socket = "LuaSocket";
 		ssl = "LuaSec";
 	};
+	local alternate_version_fields = {
+		-- These diverge from the module._VERSION convention
+		readline = "Version";
+	}
 	local lunbound = dependencies.softreq"lunbound";
 	local lxp = dependencies.softreq"lxp";
 	local hashes = dependencies.softreq"util.hashes";
 	for name, module in pairs(package.loaded) do
-		if type(module) == "table" and rawget(module, "_VERSION")
+		local version_field = alternate_version_fields[name] or "_VERSION";
+		if type(module) == "table" and rawget(module, version_field)
 			and name ~= "_G" and not name:match("%.") then
 			name = friendly_names[name] or name;
 			if #name > longest_name then
 				longest_name = #name;
 			end
-			local mod_version = module._VERSION;
+			local mod_version = module[version_field];
 			if tostring(mod_version):sub(1, #name+1) == name .. " " then
 				mod_version = mod_version:sub(#name+2);
 			end
