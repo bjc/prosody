@@ -2,12 +2,13 @@
 -- e.g. via telnet or other admin interface
 local datetime = require "util.datetime";
 local errors = require "util.error";
-local jid_split = require"util.jid".split;
+local jid_node = require"util.jid".node;
 local st = require "util.stanza";
 
 -- Using a map store as key-value store so that removal of all user data
 -- does not also remove the tombstone, which would defeat the point
 local graveyard = module:open_store(nil, "map");
+local graveyard_cache = require "util.cache".new(module:get_option_number("tombstone_cache_size", 1024));
 
 local ttl = module:get_option_number("user_tombstone_expiry", nil);
 -- Keep tombstones forever by default
@@ -29,15 +30,40 @@ end);
 
 -- Public API
 function has_tombstone(username)
-	local tombstone, err = graveyard:get(nil, username);
+	local tombstone;
 
-	if err or not tombstone then return tombstone, err; end
+	-- Check cache
+	local cached_result = graveyard_cache:get(username);
+	if cached_result == false then
+		-- We cached that there is no tombstone for this user
+		return false;
+	elseif cached_result then
+		tombstone = cached_result;
+	else
+		local stored_result, err = graveyard:get(nil, username);
+		if not stored_result and not err then
+			-- Cache that there is no tombstone for this user
+			graveyard_cache:set(username, false);
+			return false;
+		elseif err then
+			-- Failed to check tombstone status
+			return nil, err;
+		end
+		-- We have a tombstone stored, so let's continue with that
+		tombstone = stored_result;
+	end
 
+	-- Check expiry
 	if ttl and tombstone + ttl < os.time() then
 		module:log("debug", "Tombstone for %s created at %s has expired", username, datetime.datetime(tombstone));
 		graveyard:set(nil, username, nil);
+		graveyard_cache:set(username, nil); -- clear cache entry (if any)
 		return nil;
 	end
+
+	-- Cache for the future
+	graveyard_cache:set(username, tombstone);
+
 	return tombstone;
 end
 
@@ -59,6 +85,8 @@ end);
 
 module:hook("presence/bare", function(event)
 	local origin, presence = event.origin, event.stanza;
+	local local_username = jid_node(presence.attr.to);
+	if not local_username then return; end
 
 	-- We want to undo any left-over presence subscriptions and notify the former
 	-- contact that they're gone.
@@ -66,14 +94,17 @@ module:hook("presence/bare", function(event)
 	-- FIXME This leaks that the user once existed. Hard to avoid without keeping
 	-- the contact list in some form, which we don't want to do for privacy
 	-- reasons.  Bloom filter perhaps?
-	if has_tombstone(jid_split(presence.attr.to)) then
-		if presence.attr.type == "probe" then
-			origin.send(st.error_reply(presence, "cancel", "gone", "User deleted"));
-			origin.send(st.presence({ type = "unsubscribed"; to = presence.attr.from; from = presence.attr.to }));
-		elseif presence.attr.type == nil or presence.attr.type == "unavailable" then
-			origin.send(st.error_reply(presence, "cancel", "gone", "User deleted"));
-			origin.send(st.presence({ type = "unsubscribe"; to = presence.attr.from; from = presence.attr.to }));
-		end
+
+	local pres_type = presence.attr.type;
+	local is_probe = pres_type == "probe";
+	local is_normal = pres_type == nil or pres_type == "unavailable";
+	if is_probe and has_tombstone(local_username) then
+		origin.send(st.error_reply(presence, "cancel", "gone", "User deleted"));
+		origin.send(st.presence({ type = "unsubscribed"; to = presence.attr.from; from = presence.attr.to }));
+		return true;
+	elseif is_normal and has_tombstone(local_username) then
+		origin.send(st.error_reply(presence, "cancel", "gone", "User deleted"));
+		origin.send(st.presence({ type = "unsubscribe"; to = presence.attr.from; from = presence.attr.to }));
 		return true;
 	end
 end, 1);

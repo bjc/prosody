@@ -8,7 +8,10 @@ local ttl = module:get_option_number("turn_external_ttl", 86400);
 local tcp = module:get_option_boolean("turn_external_tcp", false);
 local tls_port = module:get_option_number("turn_external_tls_port");
 
-if not secret then error("mod_" .. module.name .. " requires that 'turn_external_secret' be set") end
+if not secret then
+	module:log_status("error", "Failed to initialize: the 'turn_external_secret' option is not set in your configuration");
+	return;
+end
 
 local services = set.new({ "stun-udp"; "turn-udp" });
 if tcp then
