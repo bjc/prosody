@@ -31,6 +31,7 @@ local parser = nil;
 
 local config_mt = { __index = function (t, _) return rawget(t, "*"); end};
 local config = setmetatable({ ["*"] = { } }, config_mt);
+local files = {};
 
 -- When host not found, use global
 local host_mt = { __index = function(_, k) return config["*"][k] end }
@@ -96,6 +97,10 @@ function _M.load(filename, config_format)
 	else
 		return nil, "file", "no parser for "..(config_format);
 	end
+end
+
+function _M.files()
+	return files;
 end
 
 -- Built-in Lua parser
@@ -252,6 +257,8 @@ do
 		if not ok then
 			return nil, err;
 		end
+
+		t_insert(files, config_file);
 
 		return true, warnings;
 	end

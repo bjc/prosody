@@ -332,6 +332,13 @@ local function check(arg)
 	end
 	if not what or what == "config" then
 		print("Checking config...");
+
+		if what == "config" then
+			local files = configmanager.files();
+			print("    The following configuration files have been loaded:");
+			print("      -  "..table.concat(files, "\n      -  "));
+		end
+
 		local obsolete = set.new({ --> remove
 			"archive_cleanup_interval",
 			"cross_domain_bosh",
