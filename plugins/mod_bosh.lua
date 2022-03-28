@@ -547,6 +547,9 @@ function module.add_host(module)
 	module:depends("http");
 	module:provides("http", {
 		default_path = "/http-bind";
+		cors = {
+			enabled = true;
+		};
 		route = {
 			["GET"] = GET_response;
 			["GET /"] = GET_response;

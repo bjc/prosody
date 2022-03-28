@@ -163,7 +163,7 @@ function module.add_host(module)
 
 		local cors = cors_overrides[app_name] or event.item.cors;
 		if cors then
-			if cors.enabled ~= false then
+			if cors.enabled == true then
 				if cors.credentials ~= nil then
 					app_credentials = cors.credentials;
 				end
