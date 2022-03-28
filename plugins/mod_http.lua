@@ -31,8 +31,10 @@ server.set_option("body_size_limit", module:get_option_number("http_max_content_
 server.set_option("buffer_size_limit", module:get_option_number("http_max_buffer_size"));
 
 -- CORS settings
+local cors_overrides = module:get_option("http_cors_override", {});
 local opt_methods = module:get_option_set("access_control_allow_methods", { "GET", "OPTIONS" });
 local opt_headers = module:get_option_set("access_control_allow_headers", { "Content-Type" });
+local opt_origins = module:get_option_set("access_control_allow_origins");
 local opt_credentials = module:get_option_boolean("access_control_allow_credentials", false);
 local opt_max_age = module:get_option_number("access_control_max_age", 2 * 60 * 60);
 
@@ -109,7 +111,10 @@ function moduleapi.http_url(module, app_name, default_path)
 	return "http://disabled.invalid/";
 end
 
-local function apply_cors_headers(response, methods, headers, max_age, allow_credentials, origin)
+local function apply_cors_headers(response, methods, headers, max_age, allow_credentials, allowed_origins, origin)
+	if allowed_origins and not allowed_origins[origin] then
+		return;
+	end
 	response.headers.access_control_allow_methods = tostring(methods);
 	response.headers.access_control_allow_headers = tostring(headers);
 	response.headers.access_control_max_age = tostring(max_age)
@@ -141,10 +146,14 @@ function module.add_host(module)
 		local app_methods = opt_methods;
 		local app_headers = opt_headers;
 		local app_credentials = opt_credentials;
+		local app_origins;
+		if opt_origins and not (opt_origins:empty() or opt_origins:contains("*")) then
+			opt_origins = opt_origins._items;
+		end
 
 		local function cors_handler(event_data)
 			local request, response = event_data.request, event_data.response;
-			apply_cors_headers(response, app_methods, app_headers, opt_max_age, app_credentials, request.headers.origin);
+			apply_cors_headers(response, app_methods, app_headers, opt_max_age, app_credentials, app_origins, request.headers.origin);
 		end
 
 		local function options_handler(event_data)
@@ -152,17 +161,26 @@ function module.add_host(module)
 			return "";
 		end
 
-		if event.item.cors then
-			local cors = event.item.cors;
-			if cors.credentials ~= nil then
-				app_credentials = cors.credentials;
-			end
-			if cors.headers then
-				for header, enable in pairs(cors.headers) do
-					if enable and not app_headers:contains(header) then
-						app_headers = app_headers + set.new { header };
-					elseif not enable and app_headers:contains(header) then
-						app_headers = app_headers - set.new { header };
+		local cors = cors_overrides[app_name] or event.item.cors;
+		if cors then
+			if cors.enabled == true then
+				if cors.credentials ~= nil then
+					app_credentials = cors.credentials;
+				end
+				if cors.headers then
+					for header, enable in pairs(cors.headers) do
+						if enable and not app_headers:contains(header) then
+							app_headers = app_headers + set.new { header };
+						elseif not enable and app_headers:contains(header) then
+							app_headers = app_headers - set.new { header };
+						end
+					end
+				end
+				if cors.origins then
+					if cors.origins == "*" or cors.origins[1] == "*" then
+						app_origins = nil;
+					else
+						app_origins = set.new(cors.origins)._items;
 					end
 				end
 			end

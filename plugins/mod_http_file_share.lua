@@ -578,6 +578,7 @@ if not external_base_url then
 module:provides("http", {
 		streaming_uploads = true;
 		cors = {
+			enabled = true;
 			credentials = true;
 			headers = {
 				Authorization = true;

@@ -355,6 +355,9 @@ function module.add_host(module)
 	module:provides("http", {
 		name = "websocket";
 		default_path = "xmpp-websocket";
+		cors = {
+			enabled = true;
+		};
 		route = {
 			["GET"] = handle_request;
 			["GET /"] = handle_request;
