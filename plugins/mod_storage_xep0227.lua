@@ -59,7 +59,7 @@ local function getUserElement(xml)
 			end
 		end
 	end
-	module:log("warn", "Unable to find user element");
+	module:log("warn", "Unable to find user element in %s", xml and xml:top_tag() or "nothing");
 end
 local function createOuterXml(user, host)
 	return st.stanza("server-data", {xmlns='urn:xmpp:pie:0'})
