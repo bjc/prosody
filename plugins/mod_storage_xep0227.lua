@@ -279,6 +279,7 @@ handlers.roster = {
 };
 
 -- PEP node configuration/etc. (not items)
+local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_owner = "http://jabber.org/protocol/pubsub#owner";
 local lib_pubsub = module:require "pubsub";
 handlers.pep = {
@@ -300,7 +301,16 @@ handlers.pep = {
 		};
 		local owner_el = user_el:get_child("pubsub", xmlns_pubsub_owner);
 		if not owner_el then
-			return nil;
+			local pubsub_el = user_el:get_child("pubsub", xmlns_pubsub);
+			if not pubsub_el then
+				return nil;
+			end
+			for node_el in pubsub_el:childtags("items") do
+				nodes[node_el.attr.node] = {
+					node = node_el.attr.node;
+				}
+			end
+			return nodes;
 		end
 		for node_el in owner_el:childtags() do
 			local node_name = node_el.attr.node;
@@ -396,7 +406,6 @@ handlers.pep = {
 };
 
 -- PEP items
-local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 handlers.pep_ = {
 	_stores = function (self, xml) --luacheck: ignore 212/self
 		local store_names = set.new();
