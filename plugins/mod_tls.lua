@@ -129,6 +129,13 @@ end);
 module:hook("stanza/urn:ietf:params:xml:ns:xmpp-tls:starttls", function(event)
 	local origin = event.origin;
 	if can_do_tls(origin) then
+		if origin.conn.block_reads then
+			-- we need to ensure that no data is read anymore, otherwise we could end up in a situation where
+			-- <proceed/> is sent and the socket receives the TLS handshake (and passes the data to lua) before
+			-- it is asked to initiate TLS
+			-- (not with the classical single-threaded server backends)
+			origin.conn:block_reads()
+		end
 		(origin.sends2s or origin.send)(starttls_proceed);
 		if origin.destroyed then return end
 		origin:reset_stream();
