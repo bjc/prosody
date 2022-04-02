@@ -27,6 +27,8 @@ local inet_pton = inet.pton;
 local _SOCKETINVALID = socket._SOCKETINVALID or -1;
 local new_id = require "util.id".short;
 local xpcall = require "util.xpcall".xpcall;
+local sslconfig = require "util.sslconfig";
+local tls_impl = require "net.tls_luasec";
 
 local poller = require "util.poll"
 local EEXIST = poller.EEXIST;
@@ -1103,6 +1105,10 @@ return {
 	set_config = function (newconfig)
 		cfg = setmetatable(newconfig, default_config);
 	end;
+
+	tls_builder = function(basedir)
+		return sslconfig._new(tls_impl.new_context, basedir)
+	end,
 
 	-- libevent emulation
 	event = { EV_READ = "r", EV_WRITE = "w", EV_READWRITE = "rw", EV_LEAVE = -1 };

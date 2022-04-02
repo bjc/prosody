@@ -8,11 +8,7 @@ local error = error;
 local t_concat = table.concat;
 local t_insert = table.insert;
 local setmetatable = setmetatable;
-local config_path = prosody.paths.config or ".";
 local resolve_path = require"util.paths".resolve_relative_path;
-
--- TODO: use net.server directly here
-local tls_impl  = require"net.tls_luasec";
 
 local _ENV = nil;
 -- luacheck: std none
@@ -78,9 +74,9 @@ finalisers.curveslist = finalisers.ciphers;
 finalisers.ciphersuites = finalisers.ciphers;
 
 -- Path expansion
-function finalisers.key(path)
+function finalisers.key(path, config)
 	if type(path) == "string" then
-		return resolve_path(config_path, path);
+		return resolve_path(config._basedir, path);
 	else
 		return nil
 	end
@@ -110,11 +106,13 @@ end
 
 -- Merge options from 'new' config into 'config'
 local function apply(config, new)
-	-- 0 == cache
-	rawset(config, 0, nil);
+	rawset(config, "_cache", nil);
 	if type(new) == "table" then
 		for field, value in pairs(new) do
-			(handlers[field] or rawset)(config, field, value);
+			-- exclude keys which are internal to the config builder
+			if field:sub(1, 1) ~= "_" then
+				(handlers[field] or rawset)(config, field, value);
+			end
 		end
 	end
 	return config
@@ -124,7 +122,10 @@ end
 local function final(config)
 	local output = { };
 	for field, value in pairs(config) do
-		output[field] = (finalisers[field] or id)(value);
+		-- exclude keys which are internal to the config builder
+		if field:sub(1, 1) ~= "_" then
+			output[field] = (finalisers[field] or id)(value, config);
+		end
 	end
 	-- Need to handle protocols last because it adds to the options list
 	protocol(output);
@@ -132,14 +133,14 @@ local function final(config)
 end
 
 local function build(config)
-	local cached = rawget(config, 0);
+	local cached = rawget(config, "_cache");
 	if cached then
 		return cached, nil
 	end
 
-	local ctx, err = tls_impl.new_context(config:final(), config);
+	local ctx, err = rawget(config, "_context_factory")(config:final(), config);
 	if ctx then
-		rawset(config, 0, ctx);
+		rawset(config, "_cache", ctx);
 	end
 	return ctx, err
 end
@@ -156,13 +157,21 @@ local sslopts_mt = {
 };
 
 
-local function new()
-	return setmetatable({options={}}, sslopts_mt);
+-- passing basedir through everything is required to avoid sslconfig depending
+-- on prosody.paths.config
+local function new(context_factory, basedir)
+	return setmetatable({
+		_context_factory = context_factory,
+		_basedir = basedir,
+		options={},
+	}, sslopts_mt);
 end
 
 local function clone(config)
 	local result = new();
 	for k, v in pairs(config) do
+		-- note that we *do* copy the internal keys on clone -- we have to carry
+		-- both the factory and the cache with us
 		rawset(result, k, v);
 	end
 	return result
@@ -173,5 +182,5 @@ sslopts_mt.__index.clone = clone;
 return {
 	apply = apply;
 	final = final;
-	new = new;
+	_new = new;
 };

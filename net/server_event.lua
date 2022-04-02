@@ -52,6 +52,8 @@ local socket = require "socket"
 local levent = require "luaevent.core"
 local inet = require "util.net";
 local inet_pton = inet.pton;
+local sslconfig = require "util.sslconfig";
+local tls_impl = require "net.tls_luasec";
 
 local socket_gettime = socket.gettime
 
@@ -943,6 +945,10 @@ return {
 	hook_signal = hook_signal,
 	add_task = add_task,
 	watchfd = watchfd,
+
+	tls_builder = function(basedir)
+		return sslconfig._new(tls_impl.new_context, basedir)
+	end,
 
 	__NAME = SCRIPT_NAME,
 	__DATE = LAST_MODIFIED,

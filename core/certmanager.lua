@@ -10,7 +10,7 @@ local ssl = require "ssl";
 local configmanager = require "core.configmanager";
 local log = require "util.logger".init("certmanager");
 local ssl_newcontext = ssl.newcontext;
-local new_config = require"util.sslconfig".new;
+local new_config = require"net.server".tls_builder;
 local stat = require "lfs".attributes;
 
 local x509 = require "util.x509";

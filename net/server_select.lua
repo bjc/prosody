@@ -52,6 +52,8 @@ local luasocket = use "socket" or require "socket"
 local luasocket_gettime = luasocket.gettime
 local inet = require "util.net";
 local inet_pton = inet.pton;
+local sslconfig = require "util.sslconfig";
+local tls_impl = require "net.tls_luasec";
 
 --// extern lib methods //--
 
@@ -1181,4 +1183,8 @@ return {
 	removeserver = removeserver,
 	get_backend = get_backend,
 	changesettings = changesettings,
+
+	tls_builder = function(basedir)
+		return sslconfig._new(tls_impl.new_context, basedir)
+	end,
 }
