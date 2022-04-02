@@ -7,7 +7,7 @@
 --
 
 local ok, crand = pcall(require, "util.crand");
-if ok then return crand; end
+if ok and pcall(crand.bytes, 1) then return crand; end
 
 local urandom, urandom_err = io.open("/dev/urandom", "r");
 
