@@ -160,6 +160,11 @@ do
 			set(config_table, name or "*", "defined", true);
 			return function (config_options)
 				rawset(env, "__currenthost", "*"); -- Return to global scope
+				if type(config_options) == "string" then
+					error(format("VirtualHost entries do not accept a module name (module '%s' provided for host '%s')", config_options, name), 2);
+				elseif type(config_options) ~= "table" then
+					error("Invalid syntax following VirtualHost, expected options but received a "..type(config_options), 2);
+				end
 				for option_name, option_value in pairs(config_options) do
 					set(config_table, name or "*", option_name, option_value);
 				end
