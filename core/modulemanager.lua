@@ -189,6 +189,7 @@ local function do_load_module(host, module_name, state)
 		if module_has_method(mod, "add_host") then
 			local _log = logger.init(host..":"..module_name);
 			local host_module_api = setmetatable({
+				global = false,
 				host = host, event_handlers = new_multitable(), items = {};
 				_log = _log, log = function (self, ...) return _log(...); end; --luacheck: ignore 212/self
 			},{
