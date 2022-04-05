@@ -115,11 +115,17 @@ function commands.list(arg)
 		show_usage([[list]], [[Shows installed rocks]]);
 		return 0;
 	end
+	local server = opts.server or configmanager.get("*", "plugin_server");
 	if opts.outdated then
 		-- put this back for luarocks
 		arg[1] = "--outdated";
+
+		if not server then
+			show_warning("There is no 'plugin_server' option in the configuration file, but this is needed for 'list --outdated' to work.");
+			return 1;
+		end
 	end
-	local ret = call_luarocks("list", arg[1]);
+	local ret = call_luarocks("list", arg[1], server);
 	return ret;
 end
 
