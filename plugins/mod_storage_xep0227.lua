@@ -299,6 +299,9 @@ handlers.pep = {
 			]]
 		};
 		local owner_el = user_el:get_child("pubsub", xmlns_pubsub_owner);
+		if not owner_el then
+			return nil;
+		end
 		for node_el in owner_el:childtags() do
 			local node_name = node_el.attr.node;
 			local node = nodes[node_name];
