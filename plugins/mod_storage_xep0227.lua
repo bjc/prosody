@@ -306,9 +306,7 @@ handlers.pep = {
 				return nil;
 			end
 			for node_el in pubsub_el:childtags("items") do
-				nodes[node_el.attr.node] = {
-					node = node_el.attr.node;
-				}
+				nodes[node_el.attr.node] = true; -- relies on COMPAT behavior in mod_pep
 			end
 			return nodes;
 		end
