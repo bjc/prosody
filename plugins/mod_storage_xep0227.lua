@@ -72,7 +72,7 @@ local function hex_to_base64(s)
 end
 
 local function base64_to_hex(s)
-	return base64.encode(hex.decode(s));
+	return hex.encode(base64.decode(s));
 end
 
 local handlers = {};
