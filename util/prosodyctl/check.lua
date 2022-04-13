@@ -153,7 +153,7 @@ local function check_turn_service(turn_service, ping_service)
 	local alloc_response, err = receive_packet();
 	if not alloc_response then
 		result.error = "TURN server did not response to allocation request: "..err;
-		return;
+		return result;
 	elseif alloc_response:is_err_resp() then
 		result.error = ("TURN allocation failed: %d (%s)"):format(alloc_response:get_error());
 		return result;
@@ -245,7 +245,7 @@ local function check_turn_service(turn_service, ping_service)
 	local pong_data = ping_response:get_attribute("data");
 	if not pong_data then
 		result.error = "No data relayed from remote server";
-		return;
+		return result;
 	end
 	local pong = stun.new_packet():deserialize(pong_data);
 
