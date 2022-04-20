@@ -91,6 +91,7 @@ function pending_connection_listeners.ondisconnect(conn, reason)
 		return;
 	end
 	p.conns[conn] = nil;
+	pending_connections_map[conn] = nil;
 	p.last_error = reason or "unknown reason";
 	p:log("debug", "Connection attempt failed: %s", p.last_error);
 	if p.connected then
