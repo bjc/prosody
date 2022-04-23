@@ -45,7 +45,7 @@
 #endif
 
 /* This wasn't present before glibc 2.25 */
-int getrandom(void *buf, size_t buflen, unsigned int flags) {
+static int getrandom(void *buf, size_t buflen, unsigned int flags) {
 	return syscall(SYS_getrandom, buf, buflen, flags);
 }
 #else
@@ -66,7 +66,7 @@ int getrandom(void *buf, size_t buflen, unsigned int flags) {
 #define SMALLBUFSIZ 32
 #endif
 
-int Lrandom(lua_State *L) {
+static int Lrandom(lua_State *L) {
 	char smallbuf[SMALLBUFSIZ];
 	char *buf = &smallbuf[0];
 	const lua_Integer l = luaL_checkinteger(L, 1);
