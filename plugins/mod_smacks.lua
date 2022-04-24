@@ -2,7 +2,7 @@
 --
 -- Copyright (C) 2010-2015 Matthew Wild
 -- Copyright (C) 2010 Waqas Hussain
--- Copyright (C) 2012-2021 Kim Alvefur
+-- Copyright (C) 2012-2022 Kim Alvefur
 -- Copyright (C) 2012 Thijs Alkemade
 -- Copyright (C) 2014 Florian Zeitz
 -- Copyright (C) 2016-2020 Thilo Molitor
@@ -10,6 +10,7 @@
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
 --
+-- TODO unify sendq and smqueue
 
 local tonumber = tonumber;
 local tostring = tostring;
@@ -322,26 +323,20 @@ end
 module:hook_tag(xmlns_sm2, "enable", function (session, stanza) return handle_enable(session, stanza, xmlns_sm2); end, 100);
 module:hook_tag(xmlns_sm3, "enable", function (session, stanza) return handle_enable(session, stanza, xmlns_sm3); end, 100);
 
-module:hook_tag("http://etherx.jabber.org/streams", "features",
-		function (session, stanza)
-			-- Needs to be done after flushing sendq since those aren't stored as
-			-- stanzas and counting them is weird.
-			-- TODO unify sendq and smqueue
-			timer.add_task(1e-6, function ()
-				if can_do_smacks(session) then
-					if stanza:get_child("sm", xmlns_sm3) then
-						session.sends2s(st.stanza("enable", sm3_attr));
-						session.smacks = xmlns_sm3;
-					elseif stanza:get_child("sm", xmlns_sm2) then
-						session.sends2s(st.stanza("enable", sm2_attr));
-						session.smacks = xmlns_sm2;
-					else
-						return;
-					end
-					wrap_session_out(session, false);
-				end
-			end);
-		end);
+module:hook_tag("http://etherx.jabber.org/streams", "features", function(session, stanza)
+	if can_do_smacks(session) then
+		session.smacks_feature = stanza:get_child("sm", xmlns_sm3) or stanza:get_child("sm", xmlns_sm2);
+	end
+end);
+
+module:hook("s2sout-established", function (event)
+	local session = event.session;
+	if not session.smacks_feature then return end
+
+	session.smacks = session.smacks_feature.attr.xmlns;
+	session.sends2s(st.stanza("enable", { xmlns = session.smacks }));
+	wrap_session_out(session, false);
+end);
 
 function handle_enabled(session, stanza, xmlns_sm) -- luacheck: ignore 212/stanza
 	module:log("debug", "Enabling stream management");
