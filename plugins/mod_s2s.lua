@@ -918,6 +918,14 @@ local function friendly_cert_error(session) --> string
 			elseif cert_errors:contains("self signed certificate") then
 				return "is self-signed";
 			end
+
+			local chain_errors = set.new(session.cert_chain_errors[2]);
+			for i, e in pairs(session.cert_chain_errors) do
+				if i > 2 then chain_errors:add_list(e); end
+			end
+			if chain_errors:contains("certificate has expired") then
+				return "has an expired certificate chain";
+			end
 		end
 		return "is not trusted"; -- for some other reason
 	elseif session.cert_identity_status == "invalid" then
