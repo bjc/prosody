@@ -925,6 +925,8 @@ local function friendly_cert_error(session) --> string
 			end
 			if chain_errors:contains("certificate has expired") then
 				return "has an expired certificate chain";
+			elseif chain_errors:contains("No matching DANE TLSA records") then
+				return "does not match any DANE TLSA records";
 			end
 		end
 		return "is not trusted"; -- for some other reason
