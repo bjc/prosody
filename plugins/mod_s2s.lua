@@ -343,6 +343,15 @@ function make_authenticated(event)
 			}, nil, "Could not establish encrypted connection to remote server");
 		end
 	end
+
+	if session.type == "s2sout_unauthed" and not session.authenticated_remote and secure_auth and not insecure_domains[host] then
+		session:close({
+			condition = "policy-violation";
+			text = "Failed to verify certificate (internal error)";
+		});
+		return;
+	end
+
 	if hosts[host] then
 		session:close({ condition = "undefined-condition", text = "Attempt to authenticate as a host we serve" });
 	end
@@ -525,6 +534,8 @@ function stream_callbacks._streamopened(session, attr)
 		if session.secure and not session.cert_chain_status then
 			if check_cert_status(session) == false then
 				return;
+			else
+				session.authenticated_remote = true;
 			end
 		end
 
