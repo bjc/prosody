@@ -20,7 +20,7 @@ describe("parse", function()
 		local arg = { "--foo"; "bar"; "--baz" };
 		local opts, err = parse(arg);
 		assert.falsy(err);
-		assert.same({ foo = true }, opts);
+		assert.same({ foo = true, "bar", "--baz" }, opts);
 		assert.same({ "bar"; "--baz" }, arg);
 	end);
 
