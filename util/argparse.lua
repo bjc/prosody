@@ -5,7 +5,7 @@ local function parse(arg, config)
 	local parsed_opts = {};
 
 	if #arg == 0 then
-		return parsed_opts;
+		return parsed_opts, arg;
 	end
 	while true do
 		local raw_param = arg[1];
@@ -47,7 +47,7 @@ local function parse(arg, config)
 		end
 		parsed_opts[param_k] = param_v;
 	end
-	return parsed_opts;
+	return parsed_opts, arg;
 end
 
 return {
