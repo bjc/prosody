@@ -47,17 +47,15 @@ local coroutine_yield = coroutine.yield
 
 --// extern libs //--
 
-local has_luasec, luasec = pcall ( require , "ssl" )
 local luasocket = use "socket" or require "socket"
 local luasocket_gettime = luasocket.gettime
 local inet = require "util.net";
 local inet_pton = inet.pton;
 local sslconfig = require "util.sslconfig";
-local tls_impl = require "net.tls_luasec";
+local has_luasec, tls_impl = pcall(require, "net.tls_luasec");
 
 --// extern lib methods //--
 
-local ssl_wrap = ( has_luasec and luasec.wrap )
 local socket_bind = luasocket.bind
 local socket_select = luasocket.select
 
