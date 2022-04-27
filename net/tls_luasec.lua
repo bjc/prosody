@@ -16,10 +16,9 @@ commonly used things (such as SNI contexts). Eventually, network backends
 which do not rely on LuaSocket+LuaSec should be able to provide *this* API
 instead of having to mimic LuaSec.
 ]]
-local softreq = require"util.dependencies".softreq;
-local ssl = softreq"ssl";
+local ssl = require "ssl";
 local ssl_newcontext = ssl.newcontext;
-local ssl_context = ssl.context or softreq"ssl.context";
+local ssl_context = ssl.context or require "ssl.context";
 local io_open = io.open;
 
 local context_api = {};
