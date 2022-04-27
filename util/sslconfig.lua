@@ -3,9 +3,16 @@
 local type = type;
 local pairs = pairs;
 local rawset = rawset;
+local rawget = rawget;
+local error = error;
 local t_concat = table.concat;
 local t_insert = table.insert;
 local setmetatable = setmetatable;
+local config_path = prosody.paths.config or ".";
+local resolve_path = require"util.paths".resolve_relative_path;
+
+-- TODO: use net.server directly here
+local tls_impl  = require"net.tls_luasec";
 
 local _ENV = nil;
 -- luacheck: std none
@@ -34,7 +41,7 @@ function handlers.options(config, field, new)
 			options[value] = true;
 		end
 	end
-	config[field] = options;
+	rawset(config, field, options)
 end
 
 handlers.verifyext = handlers.options;
@@ -70,6 +77,20 @@ finalisers.curveslist = finalisers.ciphers;
 -- TLS 1.3 ciphers
 finalisers.ciphersuites = finalisers.ciphers;
 
+-- Path expansion
+function finalisers.key(path)
+	if type(path) == "string" then
+		return resolve_path(config_path, path);
+	else
+		return nil
+	end
+end
+finalisers.certificate = finalisers.key;
+finalisers.cafile = finalisers.key;
+finalisers.capath = finalisers.key;
+-- XXX: copied from core/certmanager.lua, but this seems odd, because it would remove a dhparam function from the config
+finalisers.dhparam = finalisers.key;
+
 -- protocol = "x" should enable only that protocol
 -- protocol = "x+" should enable x and later versions
 
@@ -89,11 +110,14 @@ end
 
 -- Merge options from 'new' config into 'config'
 local function apply(config, new)
+	-- 0 == cache
+	rawset(config, 0, nil);
 	if type(new) == "table" then
 		for field, value in pairs(new) do
 			(handlers[field] or rawset)(config, field, value);
 		end
 	end
+	return config
 end
 
 -- Finalize the config into the form LuaSec expects
@@ -107,16 +131,44 @@ local function final(config)
 	return output;
 end
 
+local function build(config)
+	local cached = rawget(config, 0);
+	if cached then
+		return cached, nil
+	end
+
+	local ctx, err = tls_impl.new_context(config:final(), config);
+	if ctx then
+		rawset(config, 0, ctx);
+	end
+	return ctx, err
+end
+
 local sslopts_mt = {
 	__index = {
 		apply = apply;
 		final = final;
+		build = build;
 	};
+	__newindex = function()
+		error("SSL config objects cannot be modified directly. Use :apply()")
+	end;
 };
+
 
 local function new()
 	return setmetatable({options={}}, sslopts_mt);
 end
+
+local function clone(config)
+	local result = new();
+	for k, v in pairs(config) do
+		rawset(result, k, v);
+	end
+	return result
+end
+
+sslopts_mt.__index.clone = clone;
 
 return {
 	apply = apply;

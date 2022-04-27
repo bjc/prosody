@@ -117,8 +117,7 @@ function stream_callbacks._streamopened(session, attr)
 		session.secure = true;
 		session.encrypted = true;
 
-		local sock = session.conn:socket();
-		local info = sock.info and sock:info();
+		local info = session.conn:ssl_info();
 		if type(info) == "table" then
 			(session.log or log)("info", "Stream encrypted (%s with %s)", info.protocol, info.cipher);
 			session.compressed = info.compression;
@@ -295,8 +294,7 @@ function listener.onconnect(conn)
 		session.encrypted = true;
 
 		-- Check if TLS compression is used
-		local sock = conn:socket();
-		local info = sock.info and sock:info();
+		local info = conn:ssl_info();
 		if type(info) == "table" then
 			(session.log or log)("info", "Stream encrypted (%s with %s)", info.protocol, info.cipher);
 			session.compressed = info.compression;

@@ -359,6 +359,18 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	handler.sslctx = function ( )
 		return sslctx
 	end
+	handler.ssl_info = function( )
+		return socket.info and socket:info()
+	end
+	handler.ssl_peercertificate = function( )
+		return socket.getpeercertificate and socket:getpeercertificate()
+	end
+	handler.ssl_peerverification = function( )
+		return socket.getpeerverification and socket:getpeerverification()
+	end
+	handler.ssl_peerfinished = function( )
+		return socket.getpeerfinished and socket:getpeerfinished()
+	end
 	handler.send = function( _, data, i, j )
 		return send( socket, data, i, j )
 	end
@@ -652,7 +664,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			end
 			out_put( "server.lua: attempting to start tls on " .. tostring( socket ) )
 			local oldsocket, err = socket
-			socket, err = ssl_wrap( socket, sslctx )	-- wrap socket
+			socket, err = sslctx:wrap(socket)	-- wrap socket
 
 			if not socket then
 				out_put( "server.lua: error while starting tls on client: ", tostring(err or "unknown error") )
@@ -662,8 +674,8 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			if socket.sni then
 				if self.servername then
 					socket:sni(self.servername);
-				elseif self._server and type(self._server.hosts) == "table" and next(self._server.hosts) ~= nil then
-					socket:sni(self.server().hosts, true);
+				elseif next(sslctx._sni_contexts) ~= nil then
+					socket:sni(sslctx._sni_contexts, true);
 				end
 			end
 

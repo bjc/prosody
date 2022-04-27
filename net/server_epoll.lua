@@ -18,7 +18,6 @@ local traceback = debug.traceback;
 local logger = require "util.logger";
 local log = logger.init("server_epoll");
 local socket = require "socket";
-local luasec = require "ssl";
 local realtime = require "util.time".now;
 local monotonic = require "util.time".monotonic;
 local indexedbheap = require "util.indexedbheap";
@@ -614,6 +613,30 @@ function interface:set_sslctx(sslctx)
 	self._sslctx = sslctx;
 end
 
+function interface:sslctx()
+	return self.tls_ctx
+end
+
+function interface:ssl_info()
+	local sock = self.conn;
+	return sock.info and sock:info();
+end
+
+function interface:ssl_peercertificate()
+	local sock = self.conn;
+	return sock.getpeercertificate and sock:getpeercertificate();
+end
+
+function interface:ssl_peerverification()
+	local sock = self.conn;
+	return sock.getpeerverification and sock:getpeerverification();
+end
+
+function interface:ssl_peerfinished()
+	local sock = self.conn;
+	return sock.getpeerfinished and sock:getpeerfinished();
+end
+
 function interface:starttls(tls_ctx)
 	if tls_ctx then self.tls_ctx = tls_ctx; end
 	self.starttls = false;
@@ -641,11 +664,7 @@ function interface:inittls(tls_ctx, now)
 	self.starttls = false;
 	self:debug("Starting TLS now");
 	self:updatenames(); -- Can't getpeer/sockname after wrap()
-	local ok, conn, err = pcall(luasec.wrap, self.conn, self.tls_ctx);
-	if not ok then
-		conn, err = ok, conn;
-		self:debug("Failed to initialize TLS: %s", err);
-	end
+	local conn, err = self.tls_ctx:wrap(self.conn);
 	if not conn then
 		self:on("disconnect", err);
 		self:destroy();
@@ -656,8 +675,8 @@ function interface:inittls(tls_ctx, now)
 	if conn.sni then
 		if self.servername then
 			conn:sni(self.servername);
-		elseif self._server and type(self._server.hosts) == "table" and next(self._server.hosts) ~= nil then
-			conn:sni(self._server.hosts, true);
+		elseif next(self.tls_ctx._sni_contexts) ~= nil then
+			conn:sni(self.tls_ctx._sni_contexts, true);
 		end
 	end
 	if self.extra and self.extra.tlsa and conn.settlsa then

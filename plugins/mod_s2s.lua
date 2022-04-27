@@ -383,10 +383,10 @@ end
 --- Helper to check that a session peer's certificate is valid
 local function check_cert_status(session)
 	local host = session.direction == "outgoing" and session.to_host or session.from_host
-	local conn = session.conn:socket()
+	local conn = session.conn
 	local cert
-	if conn.getpeercertificate then
-		cert = conn:getpeercertificate()
+	if conn.ssl_peercertificate then
+		cert = conn:ssl_peercertificate()
 	end
 
 	return module:fire_event("s2s-check-certificate", { host = host, session = session, cert = cert });
@@ -398,8 +398,7 @@ local function session_secure(session)
 	session.secure = true;
 	session.encrypted = true;
 
-	local sock = session.conn:socket();
-	local info = sock.info and sock:info();
+	local info = session.conn:ssl_info();
 	if type(info) == "table" then
 		(session.log or log)("info", "Stream encrypted (%s with %s)", info.protocol, info.cipher);
 		session.compressed = info.compression;

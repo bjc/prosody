@@ -242,7 +242,7 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:abort", function(event)
 end);
 
 local function tls_unique(self)
-	return self.userdata["tls-unique"]:getpeerfinished();
+	return self.userdata["tls-unique"]:ssl_peerfinished();
 end
 
 local mechanisms_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-sasl' };
@@ -262,18 +262,17 @@ module:hook("stream-features", function(event)
 			-- check whether LuaSec has the nifty binding to the function needed for tls-unique
 			-- FIXME: would be nice to have this check only once and not for every socket
 			if sasl_handler.add_cb_handler then
-				local socket = origin.conn:socket();
-				local info = socket.info and socket:info();
-				if info.protocol == "TLSv1.3" then
+				local info = origin.conn:ssl_info();
+				if info and info.protocol == "TLSv1.3" then
 					log("debug", "Channel binding 'tls-unique' undefined in context of TLS 1.3");
-				elseif socket.getpeerfinished and socket:getpeerfinished() then
+				elseif origin.conn.ssl_peerfinished and origin.conn:ssl_peerfinished() then
 					log("debug", "Channel binding 'tls-unique' supported");
 					sasl_handler:add_cb_handler("tls-unique", tls_unique);
 				else
 					log("debug", "Channel binding 'tls-unique' not supported (by LuaSec?)");
 				end
 				sasl_handler["userdata"] = {
-					["tls-unique"] = socket;
+					["tls-unique"] = origin.conn;
 				};
 			else
 				log("debug", "Channel binding not supported by SASL handler");

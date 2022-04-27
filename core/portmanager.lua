@@ -240,21 +240,22 @@ local function add_sni_host(host, service)
 	log("debug", "Gathering certificates for SNI for host %s, %s service", host, service or "default");
 	for name, interface, port, n, active_service --luacheck: ignore 213
 		in active_services:iter(service, nil, nil, nil) do
-		if active_service.server.hosts and active_service.tls_cfg then
-			local config_prefix = (active_service.config_prefix or name).."_";
-			if config_prefix == "_" then config_prefix = ""; end
-			local prefix_ssl_config = config.get(host, config_prefix.."ssl");
+		if active_service.server and active_service.tls_cfg then
 			local alternate_host = name and config.get(host, name.."_host");
 			if not alternate_host and name == "https" then
 				-- TODO should this be some generic thing? e.g. in the service definition
 				alternate_host = config.get(host, "http_host");
 			end
 			local autocert = certmanager.find_host_cert(alternate_host or host);
-			-- luacheck: ignore 211/cfg
-			local ssl, err, cfg = certmanager.create_context(host, "server", prefix_ssl_config, autocert, active_service.tls_cfg);
-			if ssl then
-				active_service.server.hosts[alternate_host or host] = ssl;
-			else
+			local manualcert = active_service.tls_cfg;
+			local certificate = (autocert and autocert.certificate) or manualcert.certificate;
+			local key = (autocert and autocert.key) or manualcert.key;
+			local ok, err = active_service.server:sslctx():set_sni_host(
+				host,
+				certificate,
+				key
+			);
+			if not ok then
 				log("error", "Error creating TLS context for SNI host %s: %s", host, err);
 			end
 		end
@@ -277,7 +278,7 @@ prosody.events.add_handler("host-deactivated", function (host)
 	for name, interface, port, n, active_service --luacheck: ignore 213
 		in active_services:iter(nil, nil, nil, nil) do
 		if active_service.tls_cfg then
-			active_service.server.hosts[host] = nil;
+			active_service.server:sslctx():remove_sni_host(host)
 		end
 	end
 end);

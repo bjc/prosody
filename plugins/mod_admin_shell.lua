@@ -807,9 +807,7 @@ available_columns = {
 		mapper = function(conn, session)
 			if not session.secure then return "insecure"; end
 			if not conn or not conn:ssl() then return "secure" end
-			local sock = conn and conn:socket();
-			if not sock then return "secure"; end
-			local tls_info = sock.info and sock:info();
+			local tls_info = conn.ssl_info and conn:ssl_info();
 			return tls_info and tls_info.protocol or "secure";
 		end;
 	};
@@ -819,8 +817,7 @@ available_columns = {
 		width = 30;
 		key = "conn";
 		mapper = function(conn)
-			local sock = conn:socket();
-			local info = sock and sock.info and sock:info();
+			local info = conn and conn.ssl_info and conn:ssl_info();
 			if info then return info.cipher end
 		end;
 	};

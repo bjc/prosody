@@ -9,7 +9,7 @@ local measure_cert_statuses = module:metric("counter", "checked", "", "Certifica
 
 module:hook("s2s-check-certificate", function(event)
 	local session, host, cert = event.session, event.host, event.cert;
-	local conn = session.conn:socket();
+	local conn = session.conn;
 	local log = session.log or log;
 
 	if not cert then
@@ -18,8 +18,8 @@ module:hook("s2s-check-certificate", function(event)
 	end
 
 	local chain_valid, errors;
-	if conn.getpeerverification then
-		chain_valid, errors = conn:getpeerverification();
+	if conn.ssl_peerverification then
+		chain_valid, errors = conn:ssl_peerverification();
 	else
 		chain_valid, errors = false, { { "Chain verification not supported by this version of LuaSec" } };
 	end
