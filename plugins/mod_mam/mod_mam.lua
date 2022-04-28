@@ -36,7 +36,8 @@ local is_stanza = st.is_stanza;
 local tostring = tostring;
 local time_now = require "prosody.util.time".now;
 local m_min = math.min;
-local timestamp, datestamp = import("prosody.util.datetime", "datetime", "date");
+local timestamp, datestamp = import( "util.datetime", "datetime", "date");
+local parse_duration = require "util.human.io".parse_duration;
 local default_max_items, max_max_items = 20, module:get_option_number("max_archive_query_results", 50);
 local strip_tags = module:get_option_set("dont_archive_namespaces", { "http://jabber.org/protocol/chatstates" });
 
@@ -510,15 +511,12 @@ if cleanup_after ~= "never" then
 	local cleanup_storage = module:open_store("archive_cleanup");
 	local cleanup_map = module:open_store("archive_cleanup", "map");
 
-	local day = 86400;
-	local multipliers = { d = day, w = day * 7, m = 31 * day, y = 365.2425 * day };
-	local n, m = cleanup_after:lower():match("(%d+)%s*([dwmy]?)");
-	if not n then
-		module:log("error", "Could not parse archive_expires_after string %q", cleanup_after);
+	local cleanup_after_seconds, parse_err = parse_duration(cleanup_after);
+	if parse_err ~= nil then
+		module:log("error", "Could not parse archive_expires_after string %q: %s", cleanup_after, parse_err);
 		return false;
 	end
-
-	cleanup_after = tonumber(n) * ( multipliers[m] or 1 );
+	cleanup_after = cleanup_after_seconds;
 
 	module:log("debug", "archive_expires_after = %d -- in seconds", cleanup_after);
 
