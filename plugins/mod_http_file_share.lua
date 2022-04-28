@@ -19,6 +19,7 @@ local dt = require "prosody.util.datetime";
 local hi = require "prosody.util.human.units";
 local cache = require "prosody.util.cache";
 local lfs = require "lfs";
+local parse_duration = require "prosody.util.human.io".parse_duration;
 
 local unknown = math.abs(0/0);
 local unlimited = math.huge;
@@ -39,7 +40,12 @@ local external_base_url = module:get_option_string(module.name .. "_base_url");
 local file_size_limit = module:get_option_number(module.name .. "_size_limit", 10 * 1024 * 1024); -- 10 MB
 local file_types = module:get_option_set(module.name .. "_allowed_file_types", {});
 local safe_types = module:get_option_set(module.name .. "_safe_file_types", {"image/*","video/*","audio/*","text/plain"});
-local expiry = module:get_option_number(module.name .. "_expires_after", 7 * 86400);
+local expiry_str = module:get_option_string(module.name .. "_expires_after", "1w");
+local expiry, parse_err = parse_duration(expiry_str);
+if expiry == nil then
+	module:log("error", "Could not parse "..module.name.."_expire_after string %q: %s", expiry_str, parse_err);
+	return false;
+end
 local daily_quota = module:get_option_number(module.name .. "_daily_quota", file_size_limit*10); -- 100 MB / day
 local total_storage_limit = module:get_option_number(module.name.."_global_quota", unlimited);
 
