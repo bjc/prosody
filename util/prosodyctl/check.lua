@@ -1277,6 +1277,7 @@ local function check(arg)
 			local count = it.count(pairs(turn_services));
 			if count == 0 then
 				print("Error: Unable to find any TURN services configured. Enable mod_turn_external!");
+				ok = false;
 			else
 				print("Identified "..tostring(count).." TURN services.");
 				print("");
