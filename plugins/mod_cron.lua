@@ -45,6 +45,7 @@ local function should_run(when, last) return not last or last + periods[when] * 
 local function run_task(task)
 	local started_at = os.time();
 	task:run(started_at);
+	task.last = started_at;
 	task:save(started_at);
 end
 

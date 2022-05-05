@@ -84,6 +84,7 @@ end
 local function run_task(task : task_spec)
 	local started_at = os.time();
 	task:run(started_at);
+	task.last = started_at;
 	task:save(started_at);
 end
 
