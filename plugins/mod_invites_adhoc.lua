@@ -45,7 +45,11 @@ local invite_result_form = dataforms.new({
 local function may_invite_new_users(jid)
 	if usermanager.get_roles then
 		local user_roles = usermanager.get_roles(jid, module.host);
-		if not user_roles then return; end
+		if not user_roles then
+			-- User has no roles we can check, just return default
+			return allow_user_invites;
+		end
+
 		if user_roles["prosody:admin"] then
 			return true;
 		end
