@@ -147,7 +147,7 @@ local function bounce_sendq(session, reason)
 		reason_text = reason;
 	end
 	for i, stanza in ipairs(sendq) do
-		if not stanza.attr.xmlns and bouncy_stanzas[stanza.name] then
+		if not stanza.attr.xmlns and bouncy_stanzas[stanza.name] and stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
 			local reply = st.error_reply(
 				stanza,
 				error_type,
