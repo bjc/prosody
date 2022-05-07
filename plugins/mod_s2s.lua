@@ -155,6 +155,8 @@ local function bounce_sendq(session, reason)
 				reason_text and ("Server-to-server connection failed: "..reason_text) or nil
 			);
 			core_process_stanza(dummy, reply);
+		else
+			(session.log or log)("debug", "Not eligible for bouncing, discarding %s", stanza:top_tag());
 		end
 		sendq[i] = nil;
 	end
