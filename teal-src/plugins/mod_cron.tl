@@ -88,7 +88,7 @@ local function run_task(task : task_spec)
 	task:save(started_at);
 end
 
-local task_runner = async.runner(run_task);
+local task_runner : async.runner_t<task_spec> = async.runner(run_task);
 module:add_timer(1, function() : integer
 	module:log("info", "Running periodic tasks");
 	local delay = 3600;
