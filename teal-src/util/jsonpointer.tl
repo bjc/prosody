@@ -24,7 +24,7 @@ local function resolve_json_pointer(ref : table, path : string) : any, ptr_error
 		elseif idx is integer then
 			local i = tonumber(token)
 			if token == "-" then i = #ref + 1 end
-			new_ref = ref[i]
+			new_ref = ref[i+1]
 		else
 			return nil, "invalid-table"
 		end
