@@ -1,3 +1,7 @@
+local m_type = math.type or function (n)
+	return n % 1 == 0 and n <= 9007199254740992 and n >= -9007199254740992 and "integer" or "float";
+end;
+
 local function unescape_token(escaped_token)
 	local unescaped = escaped_token:gsub("~1", "/"):gsub("~0", "~")
 	return unescaped
@@ -15,7 +19,7 @@ local function resolve_json_pointer(ref, path)
 
 		if type(idx) == "string" then
 			new_ref = ref[token]
-		elseif math.type(idx) == "integer" then
+		elseif m_type(idx) == "integer" then
 			local i = tonumber(token)
 			if token == "-" then
 				i = #ref + 1

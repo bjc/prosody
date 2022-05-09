@@ -1,3 +1,6 @@
+local m_type = math.type or function (n)
+	return n % 1 == 0 and n <= 9007199254740992 and n >= -9007199254740992 and "integer" or "float";
+end;
 local json = require("util.json")
 local null = json.null;
 
@@ -17,7 +20,7 @@ local function simple_validate(schema, data)
 	elseif schema == "array" and type(data) == "table" then
 		return type(data) == "table" and (next(data) == nil or type((next(data, nil))) == "number")
 	elseif schema == "integer" then
-		return math.type(data) == schema
+		return m_type(data) == schema
 	elseif schema == "null" then
 		return data == null
 	else
