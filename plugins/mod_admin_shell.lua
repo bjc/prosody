@@ -50,12 +50,12 @@ local function capitalize(s)
 end
 
 local function pre(prefix, str, alt)
-	if (str or "") == "" then return alt or ""; end
+	if type(str) ~= "string" or str == "" then return alt or ""; end
 	return prefix .. str;
 end
 
 local function suf(str, suffix, alt)
-	if (str or "") == "" then return alt or ""; end
+	if type(str) ~= "string" or str == "" then return alt or ""; end
 	return str .. suffix;
 end
 
