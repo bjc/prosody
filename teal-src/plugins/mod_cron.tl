@@ -89,7 +89,7 @@ local function run_task(task : task_spec)
 end
 
 local task_runner : async.runner_t<task_spec> = async.runner(run_task);
-module:add_timer(1, function() : integer
+scheduled = module:add_timer(1, function() : integer
 	module:log("info", "Running periodic tasks");
 	local delay = 3600;
 	for host in pairs(active_hosts) do
