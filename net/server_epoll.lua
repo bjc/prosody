@@ -95,6 +95,9 @@ local default_config = { __index = {
 
 	-- TCP Fast Open
 	tcp_fastopen = false;
+
+	-- Defer accept until incoming data is available
+	tcp_defer_accept = false;
 }};
 local cfg = default_config.__index;
 
@@ -911,6 +914,9 @@ local function wrapserver(conn, addr, port, listeners, config)
 	server:debug("Server %s created", server);
 	if cfg.tcp_fastopen then
 		server:setoption("tcp-fastopen", cfg.tcp_fastopen);
+	end
+	if type(cfg.tcp_defer_accept) == "number" then
+		server:setoption("tcp-defer-accept", cfg.tcp_defer_accept);
 	end
 	server:add(true, false);
 	return server;
