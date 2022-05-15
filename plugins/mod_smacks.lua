@@ -334,8 +334,8 @@ module:hook("s2sout-established", function (event)
 	if not session.smacks_feature then return end
 
 	session.smacks = session.smacks_feature.attr.xmlns;
-	session.sends2s(st.stanza("enable", { xmlns = session.smacks }));
 	wrap_session_out(session, false);
+	session.sends2s(st.stanza("enable", { xmlns = session.smacks }));
 end);
 
 function handle_enabled(session, stanza, xmlns_sm) -- luacheck: ignore 212/stanza
