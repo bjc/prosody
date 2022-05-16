@@ -158,7 +158,7 @@ local function find_cert_in_index(index, host)
 	if certs then
 		local cert_filename, services = next(certs);
 		if services["*"] then
-			log("debug", "Using cert %q from index", cert_filename);
+			log("debug", "Using cert %q from index for host %q", cert_filename, host);
 			return {
 				certificate = cert_filename,
 				key = find_matching_key(cert_filename),
@@ -184,7 +184,7 @@ local function find_service_cert(service, port)
 	for _, certs in pairs(cert_index) do
 		for cert_filename, services in pairs(certs) do
 			if services[service] or services["*"] then
-				log("debug", "Using cert %q from index", cert_filename);
+				log("debug", "Using cert %q from index for service %s port %d", cert_filename, service, port);
 				return {
 					certificate = cert_filename,
 					key = find_matching_key(cert_filename),
