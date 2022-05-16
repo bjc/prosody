@@ -25,13 +25,22 @@ local dns_utils = require"util.dns";
 local classes, types, errors = dns_utils.classes, dns_utils.types, dns_utils.errors;
 local parsers = dns_utils.parsers;
 
+local builtin_defaults = { hoststxt = false }
+
 local function add_defaults(conf)
 	if conf then
+		for option, default in pairs(builtin_defaults) do
+			if conf[option] == nil then
+				conf[option] = default;
+			end
+		end
 		for option, default in pairs(libunbound.config) do
 			if conf[option] == nil then
 				conf[option] = default;
 			end
 		end
+	else
+		return builtin_defaults;
 	end
 	return conf;
 end
