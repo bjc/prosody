@@ -4,6 +4,39 @@ local record lib
 	type childtags_iter = function () : stanza_t
 	type maptags_cb = function ( stanza_t ) : stanza_t
 
+
+	enum stanza_error_type
+		"auth"
+		"cancel"
+		"continue"
+		"modify"
+		"wait"
+	end
+	enum stanza_error_condition
+		"bad-request"
+		"conflict"
+		"feature-not-implemented"
+		"forbidden"
+		"gone"
+		"internal-server-error"
+		"item-not-found"
+		"jid-malformed"
+		"not-acceptable"
+		"not-allowed"
+		"not-authorized"
+		"policy-violation"
+		"recipient-unavailable"
+		"redirect"
+		"registration-required"
+		"remote-server-not-found"
+		"remote-server-timeout"
+		"resource-constraint"
+		"service-unavailable"
+		"subscription-required"
+		"undefined-condition"
+		"unexpected-request"
+	end
+
 	record stanza_t
 		name : string
 		attr : { string : string }
@@ -35,7 +68,7 @@ local record lib
 		pretty_print : function ( stanza_t ) : string
 		pretty_top_tag : function ( stanza_t ) : string
 
-		get_error : function ( stanza_t ) : string, string, string, stanza_t
+		get_error : function ( stanza_t ) : stanza_error_type, stanza_error_condition, string, stanza_t
 		indent : function ( stanza_t, integer, string ) : stanza_t
 	end
 
@@ -53,7 +86,7 @@ local record lib
 	message : function ( { string : string }, string ) : stanza_t
 	iq : function ( { string : string } ) : stanza_t
 	reply : function ( stanza_t ) : stanza_t
-	error_reply : function ( stanza_t, string, string, string, string )
+	error_reply : function ( stanza_t, stanza_error_type, stanza_error_condition, string, string ) : stanza_t
 	presence : function ( { string : string } ) : stanza_t
 	xml_escape : function ( string ) : string
 	pretty_print : function ( string ) : string
