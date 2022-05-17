@@ -78,16 +78,61 @@ local record lib
 		{ serialized_stanza_t | string }
 	end
 
+	record message_attr
+		["xml:lang"] : string
+		from : string
+		id : string
+		to : string
+		type : message_type
+		enum message_type
+			"chat"
+			"error"
+			"groupchat"
+			"headline"
+			"normal"
+		end
+	end
+
+	record presence_attr
+		["xml:lang"] : string
+		from : string
+		id : string
+		to : string
+		type : presence_type
+		enum presence_type
+			"error"
+			"probe"
+			"subscribe"
+			"subscribed"
+			"unsubscribe"
+			"unsubscribed"
+		end
+	end
+
+	record iq_attr
+		["xml:lang"] : string
+		from : string
+		id : string
+		to : string
+		type : iq_type
+		enum iq_type
+			"error"
+			"get"
+			"result"
+			"set"
+		end
+	end
+
 	stanza : function ( string, { string : string } ) : stanza_t
 	is_stanza : function ( any ) : boolean
 	preserialize : function ( stanza_t ) : serialized_stanza_t
 	deserialize : function ( serialized_stanza_t ) : stanza_t
 	clone : function ( stanza_t, boolean ) : stanza_t
-	message : function ( { string : string }, string ) : stanza_t
-	iq : function ( { string : string } ) : stanza_t
+	message : function ( message_attr, string ) : stanza_t
+	iq : function ( iq_attr ) : stanza_t
 	reply : function ( stanza_t ) : stanza_t
 	error_reply : function ( stanza_t, stanza_error_type, stanza_error_condition, string, string ) : stanza_t
-	presence : function ( { string : string } ) : stanza_t
+	presence : function ( presence_attr ) : stanza_t
 	xml_escape : function ( string ) : string
 	pretty_print : function ( string ) : string
 end
