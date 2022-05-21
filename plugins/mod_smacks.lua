@@ -302,7 +302,7 @@ function handle_enable(session, stanza, xmlns_sm)
 
 	if session.username then
 		local old_sessions, err = all_old_sessions:get(session.username);
-		module:log("debug", "Old sessions: %q", old_sessions)
+		session.log("debug", "Old sessions: %q", old_sessions)
 		if old_sessions then
 			local keep, count = {}, 0;
 			for token, info in it.sorted_pairs(old_sessions, function(a, b)
@@ -314,11 +314,11 @@ function handle_enable(session, stanza, xmlns_sm)
 			end
 			all_old_sessions:set(session.username, keep);
 		elseif err then
-			module:log("error", "Unable to retrieve old resumption counters: %s", err);
+			session.log("error", "Unable to retrieve old resumption counters: %s", err);
 		end
 	end
 
-	module:log("debug", "Enabling stream management");
+	session.log("debug", "Enabling stream management");
 	session.smacks = xmlns_sm;
 
 	wrap_session(session, false);
@@ -353,7 +353,7 @@ module:hook("s2sout-established", function (event)
 end);
 
 function handle_enabled(session, stanza, xmlns_sm) -- luacheck: ignore 212/stanza
-	module:log("debug", "Enabling stream management");
+	session.log("debug", "Enabling stream management");
 	session.smacks = xmlns_sm;
 
 	wrap_session_in(session, false);
@@ -367,10 +367,10 @@ module:hook_tag(xmlns_sm3, "enabled", function (session, stanza) return handle_e
 
 function handle_r(origin, stanza, xmlns_sm) -- luacheck: ignore 212/stanza
 	if not origin.smacks then
-		module:log("debug", "Received ack request from non-smack-enabled session");
+		origin.log("debug", "Received ack request from non-smack-enabled session");
 		return;
 	end
-	module:log("debug", "Received ack request, acking for %d", origin.handled_stanza_count);
+	origin.log("debug", "Received ack request, acking for %d", origin.handled_stanza_count);
 	-- Reply with <a>
 	(origin.sends2s or origin.send)(st.stanza("a", { xmlns = xmlns_sm, h = format_h(origin.handled_stanza_count) }));
 	-- piggyback our own ack request if needed (see request_ack_if_needed() for explanation of last_requested_h)
