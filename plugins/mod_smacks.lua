@@ -160,7 +160,7 @@ local function should_ack(session, force)
 	if session.awaiting_ack then return end -- already waiting
 	if force then return force end
 	local queue = session.outgoing_stanza_queue;
-	local expected_h = session.last_acknowledged_stanza + queue:count_unacked();
+	local expected_h = queue:count_acked() + queue:count_unacked();
 	local max_unacked = max_unacked_stanzas;
 	if session.state == "inactive" then
 		max_unacked = max_inactive_unacked_stanzas;
@@ -178,7 +178,7 @@ local function request_ack(session, reason)
 	if session.destroyed then return end -- sending something can trigger destruction
 	session.awaiting_ack = true;
 	-- expected_h could be lower than this expression e.g. more stanzas added to the queue meanwhile)
-	session.last_requested_h = session.last_acknowledged_stanza + queue:count_unacked();
+	session.last_requested_h = queue:count_acked() + queue:count_unacked();
 	session.log("debug", "Sending <r> (inside timer, after send) from %s - #queue=%d", reason, queue:count_unacked());
 	if not session.delayed_ack_timer then
 		session.delayed_ack_timer = timer.add_task(delayed_ack_timeout, function()
@@ -240,7 +240,6 @@ end
 local function wrap_session_out(session, resume)
 	if not resume then
 		session.outgoing_stanza_queue = smqueue.new(queue_size);
-		session.last_acknowledged_stanza = 0;
 	end
 
 	add_filter(session, "stanzas/out", outgoing_stanza_filter, -999);
