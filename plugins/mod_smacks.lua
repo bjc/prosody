@@ -173,13 +173,12 @@ end
 
 local function request_ack(session, reason)
 	local queue = session.outgoing_stanza_queue;
-	session.log("debug", "Sending <r> (inside timer, before send) from %s - #queue=%d", reason, queue:count_unacked());
+	session.log("debug", "Sending <r> from %s - #queue=%d", reason, queue:count_unacked());
 	(session.sends2s or session.send)(st.stanza("r", { xmlns = session.smacks }))
 	if session.destroyed then return end -- sending something can trigger destruction
 	session.awaiting_ack = true;
 	-- expected_h could be lower than this expression e.g. more stanzas added to the queue meanwhile)
 	session.last_requested_h = queue:count_acked() + queue:count_unacked();
-	session.log("debug", "Sending <r> (inside timer, after send) from %s - #queue=%d", reason, queue:count_unacked());
 	if not session.delayed_ack_timer then
 		session.delayed_ack_timer = timer.add_task(delayed_ack_timeout, function()
 			ack_delayed(session, nil); -- we don't know if this is the only new stanza in the queue
