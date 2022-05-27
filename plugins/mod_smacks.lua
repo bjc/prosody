@@ -56,7 +56,6 @@ local watchdog = require "util.watchdog";
 local it = require"util.iterators";
 
 local sessionmanager = require "core.sessionmanager";
-local core_process_stanza = prosody.core_process_stanza;
 
 local xmlns_errors = "urn:ietf:params:xml:ns:xmpp-stanzas";
 local xmlns_delay = "urn:xmpp:delay";
@@ -426,9 +425,9 @@ local function handle_unacked_stanzas(session)
 		session.outgoing_stanza_queue = nil;
 		for stanza in queue._queue:consume() do
 			if not module:fire_event("delivery/failure", { session = session, stanza = stanza }) then
-				if stanza.attr.type ~= "error" and stanza.attr.to ~= session.full_jid then
+				if stanza.attr.type ~= "error" and stanza.attr.from ~= session.full_jid then
 					local reply = st.error_reply(stanza, "cancel", "recipient-unavailable");
-					core_process_stanza(session, reply);
+					module:send(reply);
 				end
 			end
 		end
