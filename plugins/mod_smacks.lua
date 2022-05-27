@@ -420,13 +420,14 @@ local function handle_unacked_stanzas(session)
 	local queue = session.outgoing_stanza_queue;
 	local unacked = queue:count_unacked()
 	if unacked > 0 then
+		local error_from = jid.join(session.username, session.host or module.host);
 		tx_dropped_stanzas:sample(unacked);
 		session.smacks = false; -- Disable queueing
 		session.outgoing_stanza_queue = nil;
 		for stanza in queue._queue:consume() do
 			if not module:fire_event("delivery/failure", { session = session, stanza = stanza }) then
 				if stanza.attr.type ~= "error" and stanza.attr.from ~= session.full_jid then
-					local reply = st.error_reply(stanza, "cancel", "recipient-unavailable");
+					local reply = st.error_reply(stanza, "cancel", "recipient-unavailable", nil, error_from);
 					module:send(reply);
 				end
 			end
