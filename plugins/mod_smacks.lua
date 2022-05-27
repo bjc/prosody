@@ -418,7 +418,7 @@ local function handle_unacked_stanzas(session)
 		session.outgoing_stanza_queue = nil;
 		for stanza in queue._queue:consume() do
 			if not module:fire_event("delivery/failure", { session = session, stanza = stanza }) then
-				if stanza.attr.type ~= "error" and stanza.attr.to ~= session.full_jid then
+				if stanza.attr.type ~= "error" and stanza.attr.from ~= session.full_jid then
 					local reply = st.error_reply(stanza, "cancel", "recipient-unavailable");
 					core_process_stanza(session, reply);
 				end
