@@ -40,16 +40,10 @@ function _M.getconfig()
 	return config;
 end
 
-function _M.get(host, key, _oldkey)
-	if key == "core" then
-		key = _oldkey; -- COMPAT with code that still uses "core"
-	end
+function _M.get(host, key)
 	return config[host][key];
 end
-function _M.rawget(host, key, _oldkey)
-	if key == "core" then
-		key = _oldkey; -- COMPAT with code that still uses "core"
-	end
+function _M.rawget(host, key)
 	local hostconfig = rawget(config, host);
 	if hostconfig then
 		return rawget(hostconfig, key);
@@ -68,10 +62,7 @@ local function set(config_table, host, key, value)
 	return false;
 end
 
-function _M.set(host, key, value, _oldvalue)
-	if key == "core" then
-		key, value = value, _oldvalue; --COMPAT with code that still uses "core"
-	end
+function _M.set(host, key, value)
 	return set(config, host, key, value);
 end
 
