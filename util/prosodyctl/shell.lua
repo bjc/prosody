@@ -27,7 +27,7 @@ local function read_line(prompt_string)
 end
 
 local function send_line(client, line)
-	client.send(st.stanza("repl-input"):text(line));
+	client.send(st.stanza("repl-input", { width = os.getenv "COLUMNS" }):text(line));
 end
 
 local function repl(client)

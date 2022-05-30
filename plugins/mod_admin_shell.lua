@@ -133,6 +133,11 @@ local function handle_line(event)
 		session = console:new_session(event.origin);
 		event.origin.shell_session = session;
 	end
+
+	local default_width = 132; -- The common default of 80 is a bit too narrow for e.g. s2s:show(), 132 was another common width for hardware terminals
+	local margin = 2; -- To account for '| ' when lines are printed
+	session.width = (tonumber(event.stanza.attr.width) or default_width)-margin;
+
 	local line = event.stanza:get_text();
 	local useglobalenv;
 
@@ -219,7 +224,7 @@ function commands.help(session, data)
 		print [[Commands are divided into multiple sections. For help on a particular section, ]]
 		print [[type: help SECTION (for example, 'help c2s'). Sections are: ]]
 		print [[]]
-		local row = format_table({ { title = "Section"; width = 7 }; { title = "Description"; width = "100%" } })
+		local row = format_table({ { title = "Section", width = 7 }, { title = "Description", width = "100%" } }, session.width)
 		print(row())
 		print(row { "c2s"; "Commands to manage local client-to-server sessions" })
 		print(row { "s2s"; "Commands to manage sessions between this server and others" })
@@ -341,7 +346,7 @@ function commands.help(session, data)
 			meta_columns[2].width = math.max(meta_columns[2].width or 0, #(spec.title or ""));
 			meta_columns[3].width = math.max(meta_columns[3].width or 0, #(spec.description or ""));
 		end
-		local row = format_table(meta_columns, 120)
+		local row = format_table(meta_columns, session.width)
 		print(row());
 		for column, spec in iterators.sorted_pairs(available_columns) do
 			print(row({ column, spec.title, spec.description }));
@@ -935,7 +940,7 @@ end
 function def_env.c2s:show(match_jid, colspec)
 	local print = self.session.print;
 	local columns = get_colspec(colspec, { "id"; "jid"; "ipv"; "status"; "secure"; "smacks"; "csi" });
-	local row = format_table(columns, 120);
+	local row = format_table(columns, self.session.width);
 
 	local function match(session)
 		local jid = get_jid(session)
@@ -1018,7 +1023,7 @@ end
 function def_env.s2s:show(match_jid, colspec)
 	local print = self.session.print;
 	local columns = get_colspec(colspec, { "id"; "host"; "dir"; "remote"; "ipv"; "secure"; "s2s_sasl"; "dialback" });
-	local row = format_table(columns, 132);
+	local row = format_table(columns, self.session.width);
 
 	local function match(session)
 		local host, remote = get_s2s_hosts(session);
@@ -1556,7 +1561,7 @@ function def_env.http:list(hosts)
 	local output = format_table({
 			{ title = "Module", width = "20%" },
 			{ title = "URL", width = "80%" },
-		}, 132);
+		}, self.session.width);
 
 	for _, host in ipairs(hosts) do
 		local http_apps = modulemanager.get_items("http-provider", host);
