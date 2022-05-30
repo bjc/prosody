@@ -513,7 +513,17 @@ function def_env.module:info(name, hosts)
 		["auth-provider"] = item_name,
 		["storage-provider"] = item_name,
 		["http-provider"] = function(item, mod) return mod:http_url(item.name, item.default_path); end,
-		["net-provider"] = item_name,
+		["net-provider"] = function(item, mod)
+			local service_name = item.name;
+			local ports_list = {};
+			for _, interface, port in portmanager.get_active_services():iter(service_name, nil, nil) do
+				table.insert(ports_list, "["..interface.."]:"..port);
+			end
+			if not ports_list[1] then
+				return service_name..": not listening on any ports";
+			end
+			return service_name..": "..table.concat(ports_list, ", ");
+		end,
 		["measure"] = function(item) return item.name .. " (" .. suf(item.conf and item.conf.unit, " ") .. item.type .. ")"; end,
 		["metric"] = function(item)
 			return ("%s (%s%s)%s"):format(item.name, suf(item.mf.unit, " "), item.mf.type_, pre(": ", item.mf.description));
