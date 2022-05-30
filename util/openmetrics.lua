@@ -38,7 +38,7 @@ local metric_proxy_mt = {}
 metric_proxy_mt.__index = metric_proxy_mt
 
 local function new_metric_proxy(metric_family, with_labels_proxy_fun)
-	return {
+	return setmetatable({
 		_family = metric_family,
 		with_labels = function(self, ...)
 			return with_labels_proxy_fun(self._family, ...)
@@ -48,7 +48,7 @@ local function new_metric_proxy(metric_family, with_labels_proxy_fun)
 				return family:with_labels(label, ...)
 			end)
 		end
-	}
+	}, metric_proxy_mt);
 end
 
 -- END of Utility: "metric proxy"
