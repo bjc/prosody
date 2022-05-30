@@ -240,6 +240,7 @@ function commands.help(session, data)
 		print(row { "dns"; "Commands to manage and inspect the internal DNS resolver" })
 		print(row { "xmpp"; "Commands for sending XMPP stanzas" })
 		print(row { "debug"; "Commands for debugging the server" })
+		print(row { "watch"; "Commands for watching live logs from the server" })
 		print(row { "config"; "Reloading the configuration, etc." })
 		print(row { "columns"; "Information about customizing session listings" })
 		print(row { "console"; "Help regarding the console itself" })
@@ -316,6 +317,9 @@ function commands.help(session, data)
 		print [[debug:logevents(host) - Enable logging of fired events on host]]
 		print [[debug:events(host, event) - Show registered event handlers]]
 		print [[debug:timers() - Show information about scheduled timers]]
+	elseif section == "watch" then
+		print [[watch:log() - Follow debug logs]]
+		print [[watch:stanzas(target, filter) - Watch live stanzas matching the specified target and filter]]
 	elseif section == "console" then
 		print [[Hey! Welcome to Prosody's admin console.]]
 		print [[First thing, if you're ever wondering how to get out, simply type 'quit'.]]
