@@ -513,7 +513,7 @@ function def_env.module:info(name, hosts)
 		["auth-provider"] = item_name,
 		["storage-provider"] = item_name,
 		["http-provider"] = function(item, mod) return mod:http_url(item.name, item.default_path); end,
-		["net-provider"] = function(item, mod)
+		["net-provider"] = function(item)
 			local service_name = item.name;
 			local ports_list = {};
 			for _, interface, port in portmanager.get_active_services():iter(service_name, nil, nil) do
