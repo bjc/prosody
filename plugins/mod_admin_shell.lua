@@ -496,6 +496,16 @@ function def_env.module:info(name, hosts)
 
 	local function item_name(item) return item.name; end
 
+	local function task_timefmt(t)
+		if not t then
+			return "no last run time"
+		elseif os.difftime(os.time(), t) < 86400 then
+			return os.date("last run today at %H:%M", t);
+		else
+			return os.date("last run %A at %H:%M", t);
+		end
+	end
+
 	local friendly_descriptions = {
 		["adhoc-provider"] = "Ad-hoc commands",
 		["auth-provider"] = "Authentication provider",
@@ -528,7 +538,7 @@ function def_env.module:info(name, hosts)
 		["metric"] = function(item)
 			return ("%s (%s%s)%s"):format(item.name, suf(item.mf.unit, " "), item.mf.type_, pre(": ", item.mf.description));
 		end,
-		["task"] = function (item) return string.format("%s (%s)", item.name or item.id, item.when); end
+		["task"] = function (item) return string.format("%s (%s, %s)", item.name or item.id, item.when, task_timefmt(item.last)); end
 	};
 
 	for host in hosts do
