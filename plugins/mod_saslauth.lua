@@ -245,6 +245,15 @@ local function tls_unique(self)
 	return self.userdata["tls-unique"]:ssl_peerfinished();
 end
 
+local function tls_exporter(conn)
+	if not conn.ssl_exportkeyingmaterial then return end
+	return conn:ssl_exportkeyingmaterial("EXPORTER-Channel-Binding", 32, "");
+end
+
+local function sasl_tls_exporter(self)
+	return tls_exporter(self.userdata["tls-exporter"]);
+end
+
 local mechanisms_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-sasl' };
 local bind_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-bind' };
 local xmpp_session_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-session' };
@@ -266,6 +275,11 @@ module:hook("stream-features", function(event)
 				local info = origin.conn:ssl_info();
 				if info and info.protocol == "TLSv1.3" then
 					log("debug", "Channel binding 'tls-unique' undefined in context of TLS 1.3");
+					if tls_exporter(origin.conn) then
+						log("debug", "Channel binding 'tls-exporter' supported");
+						sasl_handler:add_cb_handler("tls-exporter", sasl_tls_exporter);
+						channel_bindings:add("tls-exporter");
+					end
 				elseif origin.conn.ssl_peerfinished and origin.conn:ssl_peerfinished() then
 					log("debug", "Channel binding 'tls-unique' supported");
 					sasl_handler:add_cb_handler("tls-unique", tls_unique);
@@ -275,6 +289,7 @@ module:hook("stream-features", function(event)
 				end
 				sasl_handler["userdata"] = {
 					["tls-unique"] = origin.conn;
+					["tls-exporter"] = origin.conn;
 				};
 			else
 				log("debug", "Channel binding not supported by SASL handler");

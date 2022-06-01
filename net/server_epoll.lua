@@ -649,6 +649,14 @@ function interface:ssl_peerfinished()
 	return sock:getpeerfinished();
 end
 
+function interface:ssl_exportkeyingmaterial(label, len, context)
+	local sock = self.conn;
+	if sock.exportkeyingmaterial then
+		return sock:exportkeyingmaterial(label, len, context);
+	end
+end
+
+
 function interface:starttls(tls_ctx)
 	if tls_ctx then self.tls_ctx = tls_ctx; end
 	self.starttls = false;
