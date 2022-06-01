@@ -4,6 +4,8 @@ local st = require "util.stanza";
 local path = require "util.paths";
 local parse_args = require "util.argparse".parse;
 local unpack = table.unpack or _G.unpack;
+local tc = require "util.termcolours";
+local isatty = require "util.pposix".isatty;
 
 local have_readline, readline = pcall(require, "readline");
 
@@ -64,6 +66,7 @@ end
 local function start(arg) --luacheck: ignore 212/arg
 	local client = adminstream.client();
 	local opts, err, where = parse_args(arg);
+	local ttyout = isatty(io.stdout);
 
 	if not opts then
 		if err == "param-not-found" then
@@ -122,7 +125,11 @@ local function start(arg) --luacheck: ignore 212/arg
 	client.events.add_handler("received", function (stanza)
 		if stanza.name == "repl-output" or stanza.name == "repl-result" then
 			local result_prefix = stanza.attr.type == "error" and "!" or "|";
-			print(result_prefix.." "..stanza:get_text());
+			local out = result_prefix.." "..stanza:get_text();
+			if ttyout and stanza.attr.type == "error" then
+				out = tc.getstring(tc.getstyle("red"), out);
+			end
+			print(out);
 		end
 		if stanza.name == "repl-result" then
 			repl(client);
