@@ -281,19 +281,27 @@ function interface_mt:sslctx()
 end
 
 function interface_mt:ssl_info()
-	return self.conn.info and self.conn:info()
+	local sock = self.conn;
+	if not sock.info then return nil, "not-implemented"; end
+	return sock:info();
 end
 
 function interface_mt:ssl_peercertificate()
-	return self.conn.getpeercertificate and self.conn:getpeercertificate()
+	local sock = self.conn;
+	if not sock.getpeercertificate then return nil, "not-implemented"; end
+	return sock:getpeercertificate();
 end
 
 function interface_mt:ssl_peerverification()
-	return self.conn.getpeerverification and self.conn:getpeerverification()
+	local sock = self.conn;
+	if not sock.getpeerverification then return nil, { { "Chain verification not supported" } }; end
+	return sock:getpeerverification();
 end
 
 function interface_mt:ssl_peerfinished()
-	return self.conn.getpeerfinished and self.conn:getpeerfinished()
+	local sock = self.conn;
+	if not sock.getpeerfinished then return nil, "not-implemented"; end
+	return sock:getpeerfinished();
 end
 
 function interface_mt:resume()

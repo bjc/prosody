@@ -363,13 +363,16 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 		return socket.info and socket:info()
 	end
 	handler.ssl_peercertificate = function( )
-		return socket.getpeercertificate and socket:getpeercertificate()
+		if not socket.getpeercertificate then return nil, "not-implemented"; end
+		return socket:getpeercertificate()
 	end
 	handler.ssl_peerverification = function( )
-		return socket.getpeerverification and socket:getpeerverification()
+		if not socket.getpeerverification then return nil, { { "Chain verification not supported" } }; end
+		return socket:getpeerverification();
 	end
 	handler.ssl_peerfinished = function( )
-		return socket.getpeerfinished and socket:getpeerfinished()
+		if not socket.getpeerfinished then return nil, "not-implemented"; end
+		return socket:getpeerfinished();
 	end
 	handler.send = function( _, data, i, j )
 		return send( socket, data, i, j )

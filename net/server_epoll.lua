@@ -627,22 +627,26 @@ end
 
 function interface:ssl_info()
 	local sock = self.conn;
-	return sock.info and sock:info();
+	if not sock.info then return nil, "not-implemented"; end
+	return sock:info();
 end
 
 function interface:ssl_peercertificate()
 	local sock = self.conn;
-	return sock.getpeercertificate and sock:getpeercertificate();
+	if not sock.getpeercertificate then return nil, "not-implemented"; end
+	return sock:getpeercertificate();
 end
 
 function interface:ssl_peerverification()
 	local sock = self.conn;
-	return sock.getpeerverification and sock:getpeerverification();
+	if not sock.getpeerverification then return nil, { { "Chain verification not supported" } }; end
+	return sock:getpeerverification();
 end
 
 function interface:ssl_peerfinished()
 	local sock = self.conn;
-	return sock.getpeerfinished and sock:getpeerfinished();
+	if not sock.getpeerfinished then return nil, "not-implemented"; end
+	return sock:getpeerfinished();
 end
 
 function interface:starttls(tls_ctx)
