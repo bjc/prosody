@@ -9,27 +9,30 @@ local watchdog_methods = {};
 local watchdog_mt = { __index = watchdog_methods };
 
 local function new(timeout, callback)
-	local watchdog = setmetatable({ timeout = timeout, last_reset = os_time(), callback = callback }, watchdog_mt);
-	timer.add_task(timeout+1, function (current_time)
-		local last_reset = watchdog.last_reset;
-		if not last_reset then
-			return;
-		end
-		local time_left = (last_reset + timeout) - current_time;
-		if time_left < 0 then
-			return watchdog:callback();
-		end
-		return time_left + 1;
+	local watchdog = setmetatable({
+		timeout = timeout;
+		callback = callback;
+		timer_id = nil;
+	}, watchdog_mt);
+
+	watchdog.timer_id = timer.add_task(timeout+1, function ()
+		return watchdog:callback();
 	end);
+
 	return watchdog;
 end
 
 function watchdog_methods:reset()
-	self.last_reset = os_time();
+	if self.timer_id then
+		timer.reschedule(self.timer_id, self.timeout);
+	end
 end
 
 function watchdog_methods:cancel()
-	self.last_reset = nil;
+	if self.timer_id then
+		timer.stop(self.timer_id);
+		self.timer_id = nil;
+	end
 end
 
 return {
