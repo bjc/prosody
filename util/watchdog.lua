@@ -19,7 +19,10 @@ local function new(timeout, callback)
 	return watchdog;
 end
 
-function watchdog_methods:reset()
+function watchdog_methods:reset(new_timeout)
+	if new_timeout then
+		self.timeout = new_timeout;
+	end
 	if self.timer_id then
 		timer.reschedule(self.timer_id, self.timeout+1);
 	else
