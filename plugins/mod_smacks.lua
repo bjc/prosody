@@ -173,9 +173,9 @@ end
 local function request_ack(session, reason)
 	local queue = session.outgoing_stanza_queue;
 	session.log("debug", "Sending <r> from %s - #queue=%d", reason, queue:count_unacked());
+	session.awaiting_ack = true;
 	(session.sends2s or session.send)(st.stanza("r", { xmlns = session.smacks }))
 	if session.destroyed then return end -- sending something can trigger destruction
-	session.awaiting_ack = true;
 	-- expected_h could be lower than this expression e.g. more stanzas added to the queue meanwhile)
 	session.last_requested_h = queue:count_acked() + queue:count_unacked();
 	if not session.delayed_ack_timer then
