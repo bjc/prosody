@@ -1533,7 +1533,7 @@ function def_env.xmpp:ping(localhost, remotehost, timeout)
 		module:unhook("s2sin-established", onestablished);
 		module:unhook("s2s-destroyed", ondestroyed);
 	end):next(function(pong)
-		return ("pong from %s in %gs"):format(pong.stanza.attr.from, time.now() - time_start);
+		return ("pong from %s on %s in %gs"):format(pong.stanza.attr.from, pong.origin.id, time.now() - time_start);
 	end);
 end
 
