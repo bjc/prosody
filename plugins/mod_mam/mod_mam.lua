@@ -53,7 +53,7 @@ if not archive.find then
 end
 local use_total = module:get_option_boolean("mam_include_total", true);
 
-function schedule_cleanup(_username, _date)
+function schedule_cleanup(_username, _date) -- luacheck: ignore 212
 	-- Called to make a note of which users have messages on which days, which in
 	-- turn is used to optimize the message expiry routine.
 	--
