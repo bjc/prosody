@@ -116,6 +116,9 @@ local flush_reasons = module:metric(
 	{ "reason" }
 );
 
+local flush_sizes = module:metric("histogram", "flush_stanza_count", "", "Number of stanzas flushed at once", {},
+	{ buckets = { 0, 1, 2, 4, 8, 16, 32, 64, 128, 256 } }):with_labels();
+
 local function manage_buffer(stanza, session)
 	local ctr = session.csi_counter or 0;
 	if session.state ~= "inactive" then
@@ -129,6 +132,7 @@ local function manage_buffer(stanza, session)
 			session.csi_measure_buffer_hold = nil;
 		end
 		flush_reasons:with_labels(why or "important"):add(1);
+		flush_sizes:sample(ctr);
 		session.log("debug", "Flushing buffer (%s; queue size is %d)", why or "important", session.csi_counter);
 		session.state = "flushing";
 		module:fire_event("csi-flushing", { session = session });
@@ -147,6 +151,7 @@ local function flush_buffer(data, session)
 	session.log("debug", "Flushing buffer (%s; queue size is %d)", "client activity", session.csi_counter);
 	session.state = "flushing";
 	module:fire_event("csi-flushing", { session = session });
+	flush_sizes:sample(ctr);
 	flush_reasons:with_labels("client activity"):add(1);
 	if session.csi_measure_buffer_hold then
 		session.csi_measure_buffer_hold();
