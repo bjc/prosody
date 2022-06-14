@@ -82,4 +82,4 @@ end
 
 loop();
 
-thread:run(startup.shutdown);
+startup.exit();

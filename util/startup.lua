@@ -353,7 +353,7 @@ function startup.add_global_prosody_functions()
 			reason = reason;
 			code = code;
 		});
-		server.setquitting(true);
+		prosody.main_thread:run(startup.shutdown);
 	end
 end
 
@@ -644,6 +644,10 @@ function startup.shutdown()
 
 	prosody.log("debug", "Shutdown reason was: %s", prosody.shutdown_reason or "not specified");
 	prosody.log("debug", "Exiting with status code: %d", prosody.shutdown_code or 0);
+	server.setquitting(true);
+end
+
+function startup.exit()
 	os.exit(prosody.shutdown_code);
 end
 
