@@ -53,8 +53,12 @@ if not archive.find then
 end
 local use_total = module:get_option_boolean("mam_include_total", true);
 
-function schedule_cleanup()
-	-- replaced later if cleanup is enabled
+function schedule_cleanup(_username, _date)
+	-- Called to make a note of which users have messages on which days, which in
+	-- turn is used to optimize the message expiry routine.
+	--
+	-- This noop is conditionally replaced later depending on retention settings
+	-- and storage backend capabilities.
 end
 
 -- Handle prefs.
