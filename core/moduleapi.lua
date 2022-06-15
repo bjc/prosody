@@ -619,7 +619,7 @@ function api:may(action, context)
 		local role;
 		local node, host = jid_split(context);
 		if host == self.host then
-			role = hosts[host].authz.get_user_role(node);
+			role = hosts[host].authz.get_user_default_role(node);
 		else
 			role = hosts[self.host].authz.get_jid_role(context);
 		end
