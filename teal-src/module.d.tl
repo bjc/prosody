@@ -126,6 +126,11 @@ global record moduleapi
 	path : string
 	resource_path : string
 
+	-- access control
+	may : function (moduleapi, string, table|string)
+	default_permission : function (string, string)
+	default_permissions : function (string, { string })
+
 	-- methods the module can add
 	load : function ()
 	add_host : function (moduleapi)
