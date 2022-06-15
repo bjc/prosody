@@ -57,10 +57,16 @@ local function set_send(session)
 	return session;
 end
 
+local function set_role(session, role)
+	session.role = role;
+end
+
 return {
 	new = new_session;
+
 	set_id = set_id;
 	set_logger = set_logger;
 	set_conn = set_conn;
 	set_send = set_send;
+	set_role = set_role;
 }
