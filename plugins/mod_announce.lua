@@ -9,7 +9,6 @@
 local st, jid = require "util.stanza", require "util.jid";
 
 local hosts = prosody.hosts;
-local is_admin = require "core.usermanager".is_admin;
 
 function send_to_online(message, host)
 	local sessions;
@@ -34,6 +33,7 @@ function send_to_online(message, host)
 	return c;
 end
 
+module:default_permission("prosody:admin", ":send-announcement");
 
 -- Old <message>-based jabberd-style announcement sending
 function handle_announcement(event)
@@ -45,8 +45,8 @@ function handle_announcement(event)
 		return; -- Not an announcement
 	end
 
-	if not is_admin(stanza.attr.from, host) then
-		-- Not an admin? Not allowed!
+	if not module:may(":send-announcement", event) then
+		-- Not allowed!
 		module:log("warn", "Non-admin '%s' tried to send server announcement", stanza.attr.from);
 		return;
 	end

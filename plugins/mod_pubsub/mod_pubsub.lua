@@ -1,7 +1,6 @@
 local pubsub = require "util.pubsub";
 local st = require "util.stanza";
 local jid_bare = require "util.jid".bare;
-local usermanager = require "core.usermanager";
 local new_id = require "util.id".medium;
 local storagemanager = require "core.storagemanager";
 local xtemplate = require "util.xtemplate";
@@ -177,9 +176,10 @@ module:hook("host-disco-items", function (event)
 end);
 
 local admin_aff = module:get_option_string("default_admin_affiliation", "owner");
+module:default_permission("prosody:admin", ":service-admin");
 local function get_affiliation(jid)
 	local bare_jid = jid_bare(jid);
-	if bare_jid == module.host or usermanager.is_admin(bare_jid, module.host) then
+	if bare_jid == module.host or module:may(":service-admin", bare_jid) then
 		return admin_aff;
 	end
 end

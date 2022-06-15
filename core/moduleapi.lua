@@ -19,6 +19,7 @@ local promise = require "util.promise";
 local time_now = require "util.time".now;
 local format = require "util.format".format;
 local jid_node = require "util.jid".node;
+local jid_split = require "util.jid".split;
 local jid_resource = require "util.jid".resource;
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
@@ -599,6 +600,68 @@ end
 
 function api:get_status()
 	return self.status_type, self.status_message, self.status_time;
+end
+
+function api:default_permission(role_name, permission)
+	permission = permission:gsub("^:", self.name..":");
+	hosts[self.host].authz.add_default_permission(role_name, permission);
+end
+
+function api:default_permissions(role_name, permissions)
+	for _, permission in ipairs(permissions) do
+		permission = permission:gsub("^:", self.name..":");
+		self:default_permission(role_name, permission);
+	end
+end
+
+function api:may(action, context)
+	if type(context) == "string" then -- check JID permissions
+		local role;
+		local node, host = jid_split(context);
+		if host == self.host then
+			role = hosts[host].authz.get_user_role(node);
+		else
+			role = hosts[self.host].authz.get_jid_role(context);
+		end
+		if not role then
+			self:log("debug", "Access denied: JID <%s> may not %s (no role found)", context, action);
+			return false;
+		end
+		local permit = role:may(action);
+		if not permit then
+			self:log("debug", "Access denied: JID <%s> may not %s (not permitted by role %s)", context, action, role.name);
+		end
+		return permit;
+	end
+
+	local session = context.origin or context.session;
+	if not session then
+		error("Unable to identify actor session from context");
+	end
+	if action:byte(1) == 58 then -- action begins with ':'
+		action = self.name..action; -- prepend module name
+	end
+	if session.type == "s2sin" or (session.type == "c2s" and session.host ~= self.host) then
+		local actor_jid = context.stanza.attr.from;
+		local role = hosts[self.host].authz.get_jid_role(actor_jid);
+		if not role then
+			self:log("debug", "Access denied: JID <%s> may not %s (no role found)", actor_jid, action);
+			return false;
+		end
+		local permit = role:may(action, context);
+		if not permit then
+			self:log("debug", "Access denied: JID <%s> may not %s (not permitted by role %s)", actor_jid, action, role.name);
+		end
+		return permit;
+	elseif session.role then
+		local permit = session.role:may(action, context);
+		if not permit then
+			self:log("debug", "Access denied: session %s (%s) may not %s (not permitted by role %s)",
+				session.id, session.full_jid, action, session.role.name
+			);
+		end
+		return permit;
+	end
 end
 
 return api;

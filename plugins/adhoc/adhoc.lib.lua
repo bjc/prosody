@@ -23,9 +23,15 @@ end
 function _M.new(name, node, handler, permission)
 	if not permission then
 		error "adhoc.new() expects a permission argument, none given"
-	end
-	if permission == "user" then
+	elseif permission == "user" then
 		error "the permission mode 'user' has been renamed 'any', please update your code"
+	end
+	if permission == "admin" then
+		module:default_permission("prosody:admin", "mod_adhoc:"..node);
+		permission = "check";
+	elseif permission == "global_admin" then
+		module:default_permission("prosody:operator", "mod_adhoc:"..node);
+		permission = "check";
 	end
 	return { name = name, node = node, handler = handler, cmdtag = _cmdtag, permission = permission };
 end

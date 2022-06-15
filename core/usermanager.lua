@@ -188,11 +188,6 @@ local function set_roles(jid, host, roles)
 	end
 end
 
-local function is_admin(jid, host)
-	local roles = get_roles(jid, host);
-	return roles and roles["prosody:admin"];
-end
-
 local function get_users_with_role(role, host)
 	if not hosts[host] then return false; end
 	if type(role) ~= "string" then return false; end
@@ -224,7 +219,6 @@ return {
 	get_provider = get_provider;
 	get_roles = get_roles;
 	set_roles = set_roles;
-	is_admin = is_admin;
 	get_users_with_role = get_users_with_role;
 	get_jids_with_role = get_jids_with_role;
 };
