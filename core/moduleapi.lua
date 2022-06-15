@@ -615,6 +615,9 @@ function api:default_permissions(role_name, permissions)
 end
 
 function api:may(action, context)
+	if action:byte(1) == 58 then -- action begins with ':'
+		action = self.name..action; -- prepend module name
+	end
 	if type(context) == "string" then -- check JID permissions
 		local role;
 		local node, host = jid_split(context);
@@ -637,9 +640,6 @@ function api:may(action, context)
 	local session = context.origin or context.session;
 	if not session then
 		error("Unable to identify actor session from context");
-	end
-	if action:byte(1) == 58 then -- action begins with ':'
-		action = self.name..action; -- prepend module name
 	end
 	if session.type == "s2sin" or (session.type == "c2s" and session.host ~= self.host) then
 		local actor_jid = context.stanza.attr.from;
