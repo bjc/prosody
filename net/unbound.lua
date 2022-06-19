@@ -28,19 +28,16 @@ local parsers = dns_utils.parsers;
 local builtin_defaults = { hoststxt = false }
 
 local function add_defaults(conf)
-	if conf then
-		for option, default in pairs(builtin_defaults) do
-			if conf[option] == nil then
-				conf[option] = default;
-			end
+	conf = conf or {};
+	for option, default in pairs(builtin_defaults) do
+		if conf[option] == nil then
+			conf[option] = default;
 		end
-		for option, default in pairs(libunbound.config) do
-			if conf[option] == nil then
-				conf[option] = default;
-			end
+	end
+	for option, default in pairs(libunbound.config) do
+		if conf[option] == nil then
+			conf[option] = default;
 		end
-	else
-		return builtin_defaults;
 	end
 	return conf;
 end
