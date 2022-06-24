@@ -28,6 +28,7 @@ typedef unsigned __int32 uint32_t;
 #include <openssl/md5.h>
 #include <openssl/hmac.h>
 #include <openssl/evp.h>
+#include <openssl/err.h>
 
 #if (LUA_VERSION_NUM == 501)
 #define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
@@ -85,7 +86,7 @@ static int Levp_hash(lua_State *L, const EVP_MD *evp) {
 
 fail:
 	EVP_MD_CTX_free(ctx);
-	return luaL_error(L, "hash function failed");
+	return luaL_error(L, ERR_error_string(ERR_get_error(), NULL));
 }
 
 static int Lsha1(lua_State *L) {
@@ -178,7 +179,7 @@ static int Levp_hmac(lua_State *L, const EVP_MD *evp) {
 fail:
 	EVP_MD_CTX_free(ctx);
 	EVP_PKEY_free(pkey);
-	return luaL_error(L, "hash function failed");
+	return luaL_error(L, ERR_error_string(ERR_get_error(), NULL));
 }
 
 static int Lhmac_sha1(lua_State *L) {
@@ -231,7 +232,7 @@ static int Levp_pbkdf2(lua_State *L, const EVP_MD *evp, size_t out_len) {
 	const int iter = luaL_checkinteger(L, 3);
 
 	if(PKCS5_PBKDF2_HMAC(pass, pass_len, salt, salt_len, iter, evp, out_len, out) == 0) {
-		return luaL_error(L, "PKCS5_PBKDF2_HMAC() failed");
+		return luaL_error(L, ERR_error_string(ERR_get_error(), NULL));
 	}
 
 	lua_pushlstring(L, (char *)out, out_len);
