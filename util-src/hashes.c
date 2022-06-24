@@ -129,14 +129,6 @@ static int Lsha3_512(lua_State *L) {
 	return Levp_hash(L, EVP_sha3_512());
 }
 
-struct hash_desc {
-	int (*Init)(void *);
-	int (*Update)(void *, const void *, size_t);
-	int (*Final)(unsigned char *, void *);
-	size_t digestLength;
-	void *ctx, *ctxo;
-};
-
 static int Levp_hmac(lua_State *L, const EVP_MD *evp) {
 	unsigned char hash[EVP_MAX_MD_SIZE], result[EVP_MAX_MD_SIZE * 2];
 	size_t key_len, msg_len;
