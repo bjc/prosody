@@ -34,9 +34,6 @@ typedef unsigned __int32 uint32_t;
 #define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
 #endif
 
-#define HMAC_IPAD 0x36363636
-#define HMAC_OPAD 0x5c5c5c5c
-
 static const char *hex_tab = "0123456789abcdef";
 static void toHex(const unsigned char *in, int length, unsigned char *out) {
 	int i;
