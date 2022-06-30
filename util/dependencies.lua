@@ -155,7 +155,7 @@ local function log_warnings()
 	if _VERSION > "Lua 5.4" then
 		prosody.log("warn", "Support for %s is experimental, please report any issues", _VERSION);
 	elseif _VERSION < "Lua 5.2" then
-		prosody.log("warn", "%s has several issues and support is being phased out, consider upgrading", _VERSION);
+		prosody.log("warn", "%s support is deprecated, upgrade as soon as possible", _VERSION);
 	end
 	local ssl = softreq"ssl";
 	if ssl then
