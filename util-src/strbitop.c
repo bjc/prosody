@@ -8,9 +8,6 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#if (LUA_VERSION_NUM == 501)
-#define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
-#endif
 
 /* TODO Deduplicate code somehow */
 

@@ -30,9 +30,6 @@ typedef unsigned __int32 uint32_t;
 #include <openssl/evp.h>
 #include <openssl/err.h>
 
-#if (LUA_VERSION_NUM == 501)
-#define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
-#endif
 
 static const char *hex_tab = "0123456789abcdef";
 static void toHex(const unsigned char *in, int length, unsigned char *out) {
@@ -258,9 +255,7 @@ static const luaL_Reg Reg[] = {
 };
 
 LUALIB_API int luaopen_util_hashes(lua_State *L) {
-#if (LUA_VERSION_NUM > 501)
 	luaL_checkversion(L);
-#endif
 	lua_newtable(L);
 	luaL_setfuncs(L, Reg, 0);
 	lua_pushliteral(L, "-3.14");

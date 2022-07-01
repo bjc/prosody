@@ -124,9 +124,7 @@ static int Lrandom(lua_State *L) {
 }
 
 int luaopen_util_crand(lua_State *L) {
-#if (LUA_VERSION_NUM > 501)
 	luaL_checkversion(L);
-#endif
 
 	lua_createtable(L, 0, 2);
 	lua_pushcfunction(L, Lrandom);
