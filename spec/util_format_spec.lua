@@ -333,29 +333,27 @@ describe("util.format", function()
 				end);
 			end);
 
-			if _VERSION > "Lua 5.1" then -- COMPAT no %a or %A in Lua 5.1
-				describe("to %a", function ()
-					it("works", function ()
-						assert.equal("0x1.84p+6", format("%a", 97))
-						assert.equal("-0x1.81c8p+13", format("%a", -12345))
-						assert.equal("0x1.8p+0", format("%a", 1.5))
-						assert.equal("0x1p+66", format("%a", 73786976294838206464))
-						assert.equal("inf", format("%a", math.huge))
-						assert.equal("0x1.fffffffcp+30", format("%a", 2147483647))
-					end);
+			describe("to %a", function ()
+				it("works", function ()
+					assert.equal("0x1.84p+6", format("%a", 97))
+					assert.equal("-0x1.81c8p+13", format("%a", -12345))
+					assert.equal("0x1.8p+0", format("%a", 1.5))
+					assert.equal("0x1p+66", format("%a", 73786976294838206464))
+					assert.equal("inf", format("%a", math.huge))
+					assert.equal("0x1.fffffffcp+30", format("%a", 2147483647))
 				end);
+			end);
 
-				describe("to %A", function ()
-					it("works", function ()
-						assert.equal("0X1.84P+6", format("%A", 97))
-						assert.equal("-0X1.81C8P+13", format("%A", -12345))
-						assert.equal("0X1.8P+0", format("%A", 1.5))
-						assert.equal("0X1P+66", format("%A", 73786976294838206464))
-						assert.equal("INF", format("%A", math.huge))
-						assert.equal("0X1.FFFFFFFCP+30", format("%A", 2147483647))
-					end);
+			describe("to %A", function ()
+				it("works", function ()
+					assert.equal("0X1.84P+6", format("%A", 97))
+					assert.equal("-0X1.81C8P+13", format("%A", -12345))
+					assert.equal("0X1.8P+0", format("%A", 1.5))
+					assert.equal("0X1P+66", format("%A", 73786976294838206464))
+					assert.equal("INF", format("%A", math.huge))
+					assert.equal("0X1.FFFFFFFCP+30", format("%A", 2147483647))
 				end);
-			end
+			end);
 
 			describe("to %e", function ()
 				it("works", function ()

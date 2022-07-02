@@ -314,7 +314,7 @@ describe("util.cache", function()
 
 		end);
 
-		(_VERSION=="Lua 5.1" and pending or it)(":table works", function ()
+		it(":table works", function ()
 			local t = cache.new(3):table();
 			assert.is.table(t);
 			t["a"] = "1";
