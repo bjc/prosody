@@ -1,32 +1,4 @@
-local test_keys = {
-	ecdsa_private_pem = [[
------BEGIN PRIVATE KEY-----
-MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg7taVK6bPtPz4ah32
-aD9CfvOah5omBxRVtzypwQXvZeahRANCAAQpKFeNIy27+lVo6bJslO6r2ty5rlb5
-xEiCx8GrrbJ8S7b5IPZCS7OrBaO2iqgOf7NMsgO12eLCfMZRnA+gCC34
------END PRIVATE KEY-----
-]];
-
-	ecdsa_public_pem = [[
------BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEKShXjSMtu/pVaOmybJTuq9rcua5W
-+cRIgsfBq62yfEu2+SD2QkuzqwWjtoqoDn+zTLIDtdniwnzGUZwPoAgt+A==
------END PUBLIC KEY-----
-]];
-
-	eddsa_private_pem = [[
------BEGIN PRIVATE KEY-----
-MC4CAQAwBQYDK2VwBCIEIOmrajEfnqdzdJzkJ4irQMCGbYRqrl0RlwPHIw+a5b7M
------END PRIVATE KEY-----
-]];
-
-	eddsa_public_pem = [[
------BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEAFipbSXeGvPVK7eA4+hIOdutZTUUyXswVSbMGi0j1QKE=
------END PUBLIC KEY-----
-]];
-
-};
+local test_keys = require "spec.inputs.test_keys";
 
 describe("util.crypto", function ()
 	local crypto = require "util.crypto";
