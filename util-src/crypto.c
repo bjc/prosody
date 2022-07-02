@@ -45,6 +45,8 @@ MANAGED_POINTER_ALLOCATOR(new_managed_EVP_MD_CTX, EVP_MD_CTX*, EVP_MD_CTX_new, E
 MANAGED_POINTER_ALLOCATOR(new_managed_BIO_s_mem, BIO*, new_memory_BIO, BIO_free)
 MANAGED_POINTER_ALLOCATOR(new_managed_EVP_CIPHER_CTX, EVP_CIPHER_CTX*, EVP_CIPHER_CTX_new, EVP_CIPHER_CTX_free)
 
+#define CRYPTO_KEY_TYPE_ERR "unexpected key type: got '%s', expected '%s'"
+
 static EVP_PKEY* pkey_from_arg(lua_State *L, int idx, const int type, const int require_private) {
 	EVP_PKEY *pkey = *(EVP_PKEY**)luaL_checkudata(L, idx, PKEY_MT_TAG);
 	int got_type;
@@ -54,7 +56,10 @@ static EVP_PKEY* pkey_from_arg(lua_State *L, int idx, const int type, const int 
 			lua_getfield(L, -1, "type");
 			got_type = lua_tointeger(L, -1);
 			if(got_type != type) {
-				luaL_argerror(L, idx, "unexpected key type");
+				const char *got_key_type_name = OBJ_nid2sn(got_type);
+				const char *want_key_type_name = OBJ_nid2sn(type);
+				lua_pushfstring(L, CRYPTO_KEY_TYPE_ERR, got_key_type_name, want_key_type_name);
+				luaL_argerror(L, idx, lua_tostring(L, -1));
 			}
 			lua_pop(L, 1);
 		}
