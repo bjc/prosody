@@ -133,12 +133,11 @@ describe("util.crypto", function ()
 				string.rep("\255", 72);
 				string.rep("\255", 3);
 			};
-			for _, sig in ipairs(invalid_sigs) do
-				local r, s = crypto.parse_ecdsa_signature("");
+			for _, invalid_sig in ipairs(invalid_sigs) do
+				local r, s = crypto.parse_ecdsa_signature(invalid_sig);
 				assert.is_nil(r);
 				assert.is_nil(s);
 			end
-			
 		end);
 		it("can be built", function ()
 			local r, s = crypto.parse_ecdsa_signature(sig);
