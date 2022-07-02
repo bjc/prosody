@@ -1,4 +1,5 @@
 local test_keys = {
+	-- ECDSA keypair from jwt.io
 	ecdsa_private_pem = [[
 -----BEGIN PRIVATE KEY-----
 MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2
@@ -14,6 +15,23 @@ q9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==
 -----END PUBLIC KEY-----
 ]];
 
+	-- Self-generated ECDSA keypair
+	alt_ecdsa_private_pem = [[
+-----BEGIN PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgQnn4AHz2Zy+JMAgp
+AZfKAm9F3s6791PstPf5XjHtETKhRANCAAScv9jI3+BOXXlCOXwmQYosIbl9mf4V
+uOwfIoCYSLylAghyxO0n2of8Kji+D+4C1zxNKmZIQa4s8neaIIzXnMY1
+-----END PRIVATE KEY-----
+]];
+
+	alt_ecdsa_public_pem = [[
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEnL/YyN/gTl15Qjl8JkGKLCG5fZn+
+FbjsHyKAmEi8pQIIcsTtJ9qH/Co4vg/uAtc8TSpmSEGuLPJ3miCM15zGNQ==
+-----END PUBLIC KEY-----
+]];
+
+	-- Self-generated EdDSA (Ed25519) keypair
 	eddsa_private_pem = [[
 -----BEGIN PRIVATE KEY-----
 MC4CAQAwBQYDK2VwBCIEIOmrajEfnqdzdJzkJ4irQMCGbYRqrl0RlwPHIw+a5b7M
@@ -26,6 +44,7 @@ MCowBQYDK2VwAyEAFipbSXeGvPVK7eA4+hIOdutZTUUyXswVSbMGi0j1QKE=
 -----END PUBLIC KEY-----
 ]];
 
+	-- RSA keypair from jwt.io
 	rsa_private_pem = [[
 -----BEGIN PRIVATE KEY-----
 MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQC7VJTUt9Us8cKj
@@ -69,6 +88,49 @@ mwIDAQAB
 -----END PUBLIC KEY-----
 ]];
 
+
+	-- Self-generated RSA keypair
+	alt_rsa_private_pem = [[
+-----BEGIN RSA PRIVATE KEY-----
+MIIEowIBAAKCAQEA4bt6kor2TomqRXfjCFe6T42ibatloyHntZCUdlDDAkUh4oJ/
+4jDCXAUMYqmEsZKCPXxUGQgrmSmNnJPEDMTq3XLDsjhyN4stxEi0UVAiqqBkcEnk
+qbQIJSc9v5gpQF8IuJFWRvSNic0uClFL5W9R2s5AHcOhdFYKeDuitqHT5r+dC7cy
+WZs5YleKaESxmK6i6wMVhL9adAilTuETyMH0yLSh+aXsPYhjns4AbjGmiKOjqd5w
+sPwllEg6rGcIUi/o79z9HN8yLMXq3XNFCCA8RI4Zh3cADI1I5fe6wk1ETN+30cDw
+dGQ+uQbaQrzqmKVRNjZcorMwBjsOX5AMQBFx7wIDAQABAoIBAGxj5pZpTZ4msnEL
+ASQnY9oBS4ZXr8UmaamgU/mADDOR2JR4T0ngWeNvtSPG/GV70TgO9B7U8oJoFoyh
+05jCEXjmO5vfSNDs7rv6oUMONKczvybABKGMRgD5F8hhGyXCvGBLwV7u3OvXbw0b
+PlNcIbTsJpNkNam0CvDyyc3iZOq+HjIqituREV7lDw0rFeAR2YfEWn4VjZsQRZUZ
+XkpQJ5silrXgGemIEGqVA4YyM7i2HmTiLozfVYaVckMc02VFgOaoK9Z/wGlBxtS5
+evc/IGErSA4dc7uXBEeVjhtZoBkof2JV9BNt4hl4KN9wX3tkEX5Aq1K2lirSmg2r
+k+UEtwkCgYEA/5uYg25OR+jCFY/7uNS8e32Re1lgDeO+TeT1m+hcF1gCb2GBLifL
+yprnuytaz1/mPqawfwbilaxntLBoa5cmNKB3zDsgv4sM451yGZ0oxU0dXpDVHblu
+3nhxcaOXtb8jiSsr2MqgMbFlu7m8OupIliS+s8Pq72s6HUQQRKbJ+9MCgYEA4hQl
+1W/7nDI2SR4Q3UapQnaUjmDVxX5OD+E4RpKuRF6xF7Ao2CLZusMVo8WN8YiSQP2c
+RnzQNKgAVy/1zlhaaQDTs2TmSy9iStbuNZ8P+Gh6kmQXuHxwPyURSmwdpgZdL3+D
+8tt6pQNQ0vsLjA9VwHmzIT+rsxPmTxKNvBdNK/UCgYByP6zqyioJMDtYAfRkiAn7
+NIQLW0Z4ztvn2zgAyNoowPjNqgpgg/8t/xEm8tjzKg0y4bSwAnbSqa3s8JCrznKQ
+QU1qpt8bXl6TenNeiYWIstA2zYvEbnbkz3b9cT7FSLrse7RsgR0bOQyc3QcKWl+5
+ZJEsrpxbCVV/cUXIObi8awKBgQDOI8rfk+0bXhlrkBOWf/CjnpYUQK2LF4C8MALt
+Lp/hzWmyjLihYx2eknUv0Fl966ZXxidxiisaaDlvRlbeIGfHqK5fu9fUpE7+qH2p
+vPCF81YYF1YdrLF4kiby8iQSl2juf1nj3kY1IhHXXnsH6Y+qIg24emLntXRhkyxT
+XffK5QKBgGbzEvVgDkerw1SiefAaZnLumJJXBlKjJ00Sq8YLeViyFC/sr4EfG/cV
+7VYRhBw3e7RcYSBAA7uv8i3iIeCFjFooIZUARqXk4+yW753tY5nSJTWfkR7Bp5Pa
+9jKloxckbZKMjH23a+ABOxomY3l93KOBvjLvMYqccuREOwaT12cn
+-----END RSA PRIVATE KEY-----
+]];
+
+	alt_rsa_public_pem = [[
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4bt6kor2TomqRXfjCFe6
+T42ibatloyHntZCUdlDDAkUh4oJ/4jDCXAUMYqmEsZKCPXxUGQgrmSmNnJPEDMTq
+3XLDsjhyN4stxEi0UVAiqqBkcEnkqbQIJSc9v5gpQF8IuJFWRvSNic0uClFL5W9R
+2s5AHcOhdFYKeDuitqHT5r+dC7cyWZs5YleKaESxmK6i6wMVhL9adAilTuETyMH0
+yLSh+aXsPYhjns4AbjGmiKOjqd5wsPwllEg6rGcIUi/o79z9HN8yLMXq3XNFCCA8
+RI4Zh3cADI1I5fe6wk1ETN+30cDwdGQ+uQbaQrzqmKVRNjZcorMwBjsOX5AMQBFx
+7wIDAQAB
+-----END PUBLIC KEY-----
+]];
 };
 
 return test_keys;
