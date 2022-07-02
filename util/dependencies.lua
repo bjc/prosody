@@ -32,10 +32,10 @@ local function missingdep(name, sources, msg, err) -- luacheck: ignore err
 end
 
 local function check_dependencies()
-	if _VERSION < "Lua 5.1" then
+	if _VERSION < "Lua 5.2" then
 		print "***********************************"
 		print("Unsupported Lua version: ".._VERSION);
-		print("At least Lua 5.1 is required.");
+		print("At least Lua 5.2 is required.");
 		print "***********************************"
 		return false;
 	end
