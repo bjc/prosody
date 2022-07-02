@@ -47,11 +47,13 @@ MANAGED_POINTER_ALLOCATOR(new_managed_EVP_CIPHER_CTX, EVP_CIPHER_CTX*, EVP_CIPHE
 
 static EVP_PKEY* pkey_from_arg(lua_State *L, int idx, const int type, const int require_private) {
 	EVP_PKEY *pkey = *(EVP_PKEY**)luaL_checkudata(L, idx, PKEY_MT_TAG);
+	int got_type;
 	if(type || require_private) {
 		lua_getuservalue(L, idx);
 		if(type != 0) {
 			lua_getfield(L, -1, "type");
-			if(lua_tointeger(L, -1) != type) {
+			got_type = lua_tointeger(L, -1);
+			if(got_type != type) {
 				luaL_argerror(L, idx, "unexpected key type");
 			}
 			lua_pop(L, 1);
@@ -83,7 +85,7 @@ static int Lpkey_meth_get_type(lua_State *L) {
 }
 
 static int base_evp_sign(lua_State *L, const int key_type, const EVP_MD *digest_type) {
-	EVP_PKEY *pkey = pkey_from_arg(L, 1, key_type, 1);
+	EVP_PKEY *pkey = pkey_from_arg(L, 1, (key_type!=NID_rsassaPss)?key_type:NID_rsaEncryption, 1);
 	luaL_Buffer sigbuf;
 
 	size_t msg_len;
@@ -96,6 +98,9 @@ static int base_evp_sign(lua_State *L, const int key_type, const EVP_MD *digest_
 	if(EVP_DigestSignInit(md_ctx, NULL, digest_type, NULL, pkey) != 1) {
 		lua_pushnil(L);
 		return 1;
+	}
+	if(key_type == NID_rsassaPss) {
+		EVP_PKEY_CTX_set_rsa_padding(EVP_MD_CTX_pkey_ctx(md_ctx), RSA_PKCS1_PSS_PADDING);
 	}
 	if(EVP_DigestSign(md_ctx, NULL, &sig_len, msg, msg_len) != 1) {
 		lua_pushnil(L);
@@ -119,7 +124,7 @@ static int base_evp_sign(lua_State *L, const int key_type, const EVP_MD *digest_
 }
 
 static int base_evp_verify(lua_State *L, const int key_type, const EVP_MD *digest_type) {
-	EVP_PKEY *pkey = pkey_from_arg(L, 1, key_type, 0);
+	EVP_PKEY *pkey = pkey_from_arg(L, 1, (key_type!=NID_rsassaPss)?key_type:NID_rsaEncryption, 0);
 
 	size_t msg_len;
 	const unsigned char *msg = (unsigned char*)luaL_checklstring(L, 2, &msg_len);
@@ -132,6 +137,9 @@ static int base_evp_verify(lua_State *L, const int key_type, const EVP_MD *diges
 	if(EVP_DigestVerifyInit(md_ctx, NULL, digest_type, NULL, pkey) != 1) {
 		lua_pushnil(L);
 		goto cleanup;
+	}
+	if(key_type == NID_rsassaPss) {
+		EVP_PKEY_CTX_set_rsa_padding(EVP_MD_CTX_pkey_ctx(md_ctx), RSA_PKCS1_PSS_PADDING);
 	}
 	int result = EVP_DigestVerify(md_ctx, sig, sig_len, msg, msg_len);
 	if(result == 0) {
@@ -277,6 +285,22 @@ static int Led25519_sign(lua_State *L) {
 
 static int Led25519_verify(lua_State *L) {
 	return base_evp_verify(L, NID_ED25519, NULL);
+}
+
+static int Lrsassa_pkcs1_256_sign(lua_State *L) {
+	return base_evp_sign(L, NID_rsaEncryption, EVP_sha256());
+}
+
+static int Lrsassa_pkcs1_256_verify(lua_State *L) {
+	return base_evp_verify(L, NID_rsaEncryption, EVP_sha256());
+}
+
+static int Lrsassa_pss_256_sign(lua_State *L) {
+	return base_evp_sign(L, NID_rsassaPss, EVP_sha256());
+}
+
+static int Lrsassa_pss_256_verify(lua_State *L) {
+	return base_evp_verify(L, NID_rsassaPss, EVP_sha256());
 }
 
 /* gcm_encrypt(key, iv, plaintext) */
@@ -503,6 +527,10 @@ static int Lbuild_ecdsa_signature(lua_State *L) {
 static const luaL_Reg Reg[] = {
 	{ "ed25519_sign",                Led25519_sign             },
 	{ "ed25519_verify",              Led25519_verify           },
+	{ "rsassa_pkcs1_256_sign",       Lrsassa_pkcs1_256_sign    },
+	{ "rsassa_pkcs1_256_verify",     Lrsassa_pkcs1_256_verify  },
+	{ "rsassa_pss_256_sign",         Lrsassa_pss_256_sign      },
+	{ "rsassa_pss_256_verify",       Lrsassa_pss_256_verify    },
 	{ "aes_128_gcm_encrypt",         Laes_128_gcm_encrypt      },
 	{ "aes_128_gcm_decrypt",         Laes_128_gcm_decrypt      },
 	{ "aes_256_gcm_encrypt",         Laes_256_gcm_encrypt      },
