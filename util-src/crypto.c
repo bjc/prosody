@@ -201,16 +201,6 @@ static int Lpkey_meth_private_pem(lua_State *L) {
 	return 1;
 }
 
-/* ecdsa_sha256_sign(key, data) */
-static int Lecdsa_sha256_sign(lua_State *L) {
-	return base_evp_sign(L, NID_X9_62_id_ecPublicKey, EVP_sha256());
-}
-
-/* ecdsa_sha256_verify(key, data, sig) */
-static int Lecdsa_sha256_verify(lua_State *L) {
-	return base_evp_verify(L, NID_X9_62_id_ecPublicKey, EVP_sha256());
-}
-
 static int push_pkey(lua_State *L, EVP_PKEY *pkey, const int type, const int privkey) {
 	EVP_PKEY **ud = lua_newuserdata(L, sizeof(EVP_PKEY*));
 	*ud = pkey;
@@ -290,22 +280,6 @@ static int Led25519_sign(lua_State *L) {
 
 static int Led25519_verify(lua_State *L) {
 	return base_evp_verify(L, NID_ED25519, NULL);
-}
-
-static int Lrsassa_pkcs1_256_sign(lua_State *L) {
-	return base_evp_sign(L, NID_rsaEncryption, EVP_sha256());
-}
-
-static int Lrsassa_pkcs1_256_verify(lua_State *L) {
-	return base_evp_verify(L, NID_rsaEncryption, EVP_sha256());
-}
-
-static int Lrsassa_pss_256_sign(lua_State *L) {
-	return base_evp_sign(L, NID_rsassaPss, EVP_sha256());
-}
-
-static int Lrsassa_pss_256_verify(lua_State *L) {
-	return base_evp_verify(L, NID_rsassaPss, EVP_sha256());
 }
 
 /* gcm_encrypt(key, iv, plaintext) */
@@ -529,22 +503,56 @@ static int Lbuild_ecdsa_signature(lua_State *L) {
 	return 1;
 }
 
+#define REG_SIGN_VERIFY(algorithm, digest) \
+	{ #algorithm "_" #digest "_sign",       L ## algorithm ## _ ## digest ## _sign    },\
+	{ #algorithm "_" #digest "_verify",     L ## algorithm ## _ ## digest ## _verify  },
+
+#define IMPL_SIGN_VERIFY(algorithm, key_type, digest) \
+  static int L ## algorithm ## _ ## digest ## _sign(lua_State *L) {   \
+  	return base_evp_sign(L, key_type, EVP_ ## digest());          \
+  }                                                                   \
+  static int L ## algorithm ## _ ## digest ## _verify(lua_State *L) { \
+  	return base_evp_verify(L, key_type, EVP_ ## digest());        \
+  }
+
+IMPL_SIGN_VERIFY(ecdsa, NID_X9_62_id_ecPublicKey, sha256)
+IMPL_SIGN_VERIFY(ecdsa, NID_X9_62_id_ecPublicKey, sha384)
+IMPL_SIGN_VERIFY(ecdsa, NID_X9_62_id_ecPublicKey, sha512)
+
+IMPL_SIGN_VERIFY(rsassa_pkcs1, NID_rsaEncryption, sha256)
+IMPL_SIGN_VERIFY(rsassa_pkcs1, NID_rsaEncryption, sha384)
+IMPL_SIGN_VERIFY(rsassa_pkcs1, NID_rsaEncryption, sha512)
+
+IMPL_SIGN_VERIFY(rsassa_pss, NID_rsassaPss, sha256)
+IMPL_SIGN_VERIFY(rsassa_pss, NID_rsassaPss, sha384)
+IMPL_SIGN_VERIFY(rsassa_pss, NID_rsassaPss, sha512)
+
 static const luaL_Reg Reg[] = {
 	{ "ed25519_sign",                Led25519_sign             },
 	{ "ed25519_verify",              Led25519_verify           },
-	{ "rsassa_pkcs1_256_sign",       Lrsassa_pkcs1_256_sign    },
-	{ "rsassa_pkcs1_256_verify",     Lrsassa_pkcs1_256_verify  },
-	{ "rsassa_pss_256_sign",         Lrsassa_pss_256_sign      },
-	{ "rsassa_pss_256_verify",       Lrsassa_pss_256_verify    },
+
+	REG_SIGN_VERIFY(ecdsa, sha256)
+	REG_SIGN_VERIFY(ecdsa, sha384)
+	REG_SIGN_VERIFY(ecdsa, sha512)
+
+	REG_SIGN_VERIFY(rsassa_pkcs1, sha256)
+	REG_SIGN_VERIFY(rsassa_pkcs1, sha384)
+	REG_SIGN_VERIFY(rsassa_pkcs1, sha512)
+
+	REG_SIGN_VERIFY(rsassa_pss, sha256)
+	REG_SIGN_VERIFY(rsassa_pss, sha384)
+	REG_SIGN_VERIFY(rsassa_pss, sha512)
+
 	{ "aes_128_gcm_encrypt",         Laes_128_gcm_encrypt      },
 	{ "aes_128_gcm_decrypt",         Laes_128_gcm_decrypt      },
 	{ "aes_256_gcm_encrypt",         Laes_256_gcm_encrypt      },
 	{ "aes_256_gcm_decrypt",         Laes_256_gcm_decrypt      },
-	{ "ecdsa_sha256_sign",           Lecdsa_sha256_sign        },
-	{ "ecdsa_sha256_verify",         Lecdsa_sha256_verify      },
+
 	{ "generate_ed25519_keypair",    Lgenerate_ed25519_keypair },
+
 	{ "import_private_pem",          Limport_private_pem       },
 	{ "import_public_pem",           Limport_public_pem        },
+
 	{ "parse_ecdsa_signature",       Lparse_ecdsa_signature    },
 	{ "build_ecdsa_signature",       Lbuild_ecdsa_signature    },
 	{ NULL,                          NULL                      }

@@ -142,8 +142,8 @@ end
 local algorithms = {
 	HS256 = new_hmac_algorithm("HS256", hashes.hmac_sha256);
 	ES256 = new_ecdsa_algorithm("ES256", crypto.ecdsa_sha256_sign, crypto.ecdsa_sha256_verify);
-	RS256 = new_rsa_algorithm("RS256", crypto.rsassa_pkcs1_256_sign, crypto.rsassa_pkcs1_256_verify);
-	PS256 = new_rsa_algorithm("PS256", crypto.rsassa_pss_256_sign, crypto.rsassa_pss_256_verify);
+	RS256 = new_rsa_algorithm("RS256", crypto.rsassa_pkcs1_sha256_sign, crypto.rsassa_pkcs1_sha256_verify);
+	PS256 = new_rsa_algorithm("PS256", crypto.rsassa_pss_sha256_sign, crypto.rsassa_pss_sha256_verify);
 };
 
 local function new_signer(algorithm, key_input)
