@@ -35,7 +35,6 @@ local control_symbols = {
 	["\030"] = "\226\144\158", ["\031"] = "\226\144\159", ["\127"] = "\226\144\161",
 };
 local supports_p = pcall(string.format, "%p", ""); -- >= Lua 5.4
-local supports_a = pcall(string.format, "%a", 0.0); -- > Lua 5.1
 
 local function format(formatstring, ...)
 	local args = pack(...);
@@ -93,8 +92,6 @@ local function format(formatstring, ...)
 			elseif expects_positive[option] and arg < 0 then
 				args[i] = tostring(arg);
 				return "[%s]";
-			elseif (option == "a" or option == "A") and not supports_a then
-				return "%x";
 			else
 				return -- acceptable number
 			end

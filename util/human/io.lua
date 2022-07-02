@@ -30,10 +30,7 @@ local function getline()
 end
 
 local function getpass()
-	local stty_ret, _, status_code = os.execute("stty -echo 2>/dev/null");
-	if status_code then -- COMPAT w/ Lua 5.1
-		stty_ret = status_code;
-	end
+	local stty_ret = os.execute("stty -echo 2>/dev/null");
 	if stty_ret ~= 0 then
 		io.write("\027[08m"); -- ANSI 'hidden' text attribute
 	end

@@ -6,14 +6,6 @@ local math_max = math.max;
 local math_min = math.min;
 local unpack = table.unpack or unpack; --luacheck: ignore 113
 
-if math_log(10, 10) ~= 1 then
-	-- Lua 5.1 COMPAT
-	local log10 = math.log10;
-	function math_log(n, base)
-		return log10(n) / log10(base);
-	end
-end
-
 local large = {
 	"k", 1000,
 	"M", 1000000,
