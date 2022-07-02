@@ -66,8 +66,7 @@ local function new_hmac_algorithm(name, hmac)
 	return { sign = sign, verify = verify, load_key = load_key };
 end
 
--- ES*** family
-local function new_ecdsa_algorithm(name, c_sign, c_verify)
+local function new_crypto_algorithm(name, key_type, c_sign, c_verify, sig_encode, sig_decode)
 	local static_header = new_static_header(name);
 
 	return {
@@ -75,25 +74,27 @@ local function new_ecdsa_algorithm(name, c_sign, c_verify)
 			local encoded_payload = json.encode(payload);
 			local signed = static_header .. b64url(encoded_payload);
 
-			local der_sig = c_sign(private_key, signed);
+			local signature = c_sign(private_key, signed);
+			if sig_encode then
+				signature = sig_encode(signature);
+			end
 
-			local r, s = crypto.parse_ecdsa_signature(der_sig);
-
-			return signed.."."..b64url(r..s);
+			return signed.."."..b64url(signature);
 		end;
 
-	verify = function (public_key, blob)
+		verify = function (public_key, blob)
 			local signed, signature, raw_payload = decode_jwt(blob, name);
 			if not signed then return nil, signature; end -- nil, err
 
-			local raw_signature = unb64url(signature);
-
-			local der_sig = crypto.build_ecdsa_signature(raw_signature:sub(1, 32), raw_signature:sub(33, 64));
-			if not der_sig then
+			signature = unb64url(signature);
+			if sig_decode and signature then
+				signature = sig_decode(signature);
+			end
+			if not signature then
 				return false, "signature-mismatch";
 			end
 
-			local verify_ok = c_verify(public_key, signed, der_sig);
+			local verify_ok = c_verify(public_key, signed, signature);
 			if not verify_ok then
 				return false, "signature-mismatch";
 			end
@@ -108,21 +109,41 @@ local function new_ecdsa_algorithm(name, c_sign, c_verify)
 
 		load_public_key = function (public_key_pem)
 			local key = assert(crypto.import_public_pem(public_key_pem));
-			assert(key:get_type() == "id-ecPublicKey", "incorrect key type");
+			assert(key:get_type() == key_type, "incorrect key type");
 			return key;
 		end;
 
 		load_private_key = function (private_key_pem)
 			local key = assert(crypto.import_private_pem(private_key_pem));
-			assert(key:get_type() == "id-ecPublicKey", "incorrect key type");
+			assert(key:get_type() == key_type, "incorrect key type");
 			return key;
 		end;
 	};
 end
 
+-- RS***, PS***
+local function new_rsa_algorithm(name, c_sign, c_verify)
+	return new_crypto_algorithm(name, "rsaEncryption", c_sign, c_verify);
+end
+
+-- ES***
+local function new_ecdsa_algorithm(name, c_sign, c_verify)
+	local function encode_ecdsa_sig(der_sig)
+		local r, s = crypto.parse_ecdsa_signature(der_sig);
+		return r..s;
+	end
+
+	local function decode_ecdsa_sig(jwk_sig)
+		return crypto.build_ecdsa_signature(jwk_sig:sub(1, 32), jwk_sig:sub(33, 64));
+	end
+	return new_crypto_algorithm(name, "id-ecPublicKey", c_sign, c_verify, encode_ecdsa_sig, decode_ecdsa_sig);
+end
+
 local algorithms = {
 	HS256 = new_hmac_algorithm("HS256", hashes.hmac_sha256);
 	ES256 = new_ecdsa_algorithm("ES256", crypto.ecdsa_sha256_sign, crypto.ecdsa_sha256_verify);
+	RS256 = new_rsa_algorithm("RS256", crypto.rsassa_pkcs1_256_sign, crypto.rsassa_pkcs1_256_verify);
+	PS256 = new_rsa_algorithm("PS256", crypto.rsassa_pss_256_sign, crypto.rsassa_pss_256_verify);
 };
 
 local function new_signer(algorithm, key_input)
