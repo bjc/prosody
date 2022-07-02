@@ -34,8 +34,10 @@ local function new_static_header(algorithm_name)
 end
 
 -- HS*** family
-local function new_hmac_algorithm(name, hmac)
+local function new_hmac_algorithm(name)
 	local static_header = new_static_header(name);
+
+	local hmac = hashes["hmac_sha"..name:sub(-3)];
 
 	local function sign(key, payload)
 		local encoded_payload = json.encode(payload);
@@ -122,7 +124,11 @@ local function new_crypto_algorithm(name, key_type, c_sign, c_verify, sig_encode
 end
 
 -- RS***, PS***
-local function new_rsa_algorithm(name, c_sign, c_verify)
+local rsa_sign_algos = { RS = "rsassa_pkcs1", PS = "rsassa_pss" };
+local function new_rsa_algorithm(name)
+	local family, digest_bits = name:match("^(..)(...)$");
+	local c_sign = crypto[rsa_sign_algos[family].."_sha"..digest_bits.."_sign"];
+	local c_verify = crypto[rsa_sign_algos[family].."_sha"..digest_bits.."_verify"];
 	return new_crypto_algorithm(name, "rsaEncryption", c_sign, c_verify);
 end
 
@@ -140,10 +146,10 @@ local function new_ecdsa_algorithm(name, c_sign, c_verify)
 end
 
 local algorithms = {
-	HS256 = new_hmac_algorithm("HS256", hashes.hmac_sha256);
+	HS256 = new_hmac_algorithm("HS256"), HS384 = new_hmac_algorithm("HS384"), HS512 = new_hmac_algorithm("HS512");
 	ES256 = new_ecdsa_algorithm("ES256", crypto.ecdsa_sha256_sign, crypto.ecdsa_sha256_verify);
-	RS256 = new_rsa_algorithm("RS256", crypto.rsassa_pkcs1_sha256_sign, crypto.rsassa_pkcs1_sha256_verify);
-	PS256 = new_rsa_algorithm("PS256", crypto.rsassa_pss_sha256_sign, crypto.rsassa_pss_sha256_verify);
+	RS256 = new_rsa_algorithm("RS256"), RS384 = new_rsa_algorithm("RS384"), RS512 = new_rsa_algorithm("RS512");
+	PS256 = new_rsa_algorithm("PS256"), PS384 = new_rsa_algorithm("PS384"), PS512 = new_rsa_algorithm("PS512");
 };
 
 local function new_signer(algorithm, key_input)
@@ -167,6 +173,7 @@ end
 return {
 	new_signer = new_signer;
 	new_verifier = new_verifier;
+	_algorithms = algorithms;
 	-- Deprecated
 	sign = algorithms.HS256.sign;
 	verify = algorithms.HS256.verify;
