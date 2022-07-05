@@ -18,6 +18,10 @@ TRUNK
 
 - Advertise supported SASL Channel-Binding types (XEP-0440)
 
+## Removed
+
+- Lua 5.1 support
+
 0.12.0
 ======
 
