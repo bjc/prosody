@@ -6,38 +6,19 @@
 --
 -- luacheck: ignore 113/setfenv 113/loadstring
 
-local load, loadstring, setfenv = load, loadstring, setfenv;
+local load = load;
 local io_open = io.open;
-local envload;
-local envloadfile;
 
-if setfenv then
-	function envload(code, source, env)
-		local f, err = loadstring(code, source);
-		if f and env then setfenv(f, env); end
-		return f, err;
-	end
+local function envload(code, source, env)
+	return load(code, source, nil, env);
+end
 
-	function envloadfile(file, env)
-		local fh, err, errno = io_open(file);
-		if not fh then return fh, err, errno; end
-		local f, err = load(function () return fh:read(2048); end, "@"..file);
-		fh:close();
-		if f and env then setfenv(f, env); end
-		return f, err;
-	end
-else
-	function envload(code, source, env)
-		return load(code, source, nil, env);
-	end
-
-	function envloadfile(file, env)
-		local fh, err, errno = io_open(file);
-		if not fh then return fh, err, errno; end
-		local f, err = load(fh:lines(2048), "@"..file, nil, env);
-		fh:close();
-		return f, err;
-	end
+local function envloadfile(file, env)
+	local fh, err, errno = io_open(file);
+	if not fh then return fh, err, errno; end
+	local f, err = load(fh:lines(2048), "@" .. file, nil, env);
+	fh:close();
+	return f, err;
 end
 
 return { envload = envload, envloadfile = envloadfile };
