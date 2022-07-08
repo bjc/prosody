@@ -1,3 +1,5 @@
+-- This file is generated from teal-src/util/datamapper.lua
+
 local st = require("util.stanza");
 local pointer = require("util.jsonpointer");
 
@@ -29,13 +31,26 @@ end
 local value_goes = {}
 
 local function resolve_schema(schema, root)
-	if type(schema) == "table" and schema["$ref"] and schema["$ref"]:sub(1, 1) == "#" then
-		local referenced = pointer.resolve(root, schema["$ref"]:sub(2));
-		if referenced ~= nil then
-			return referenced
+	if type(schema) == "table" then
+		if schema["$ref"] and schema["$ref"]:sub(1, 1) == "#" then
+			return pointer.resolve(root, schema["$ref"]:sub(2))
 		end
 	end
 	return schema
+end
+
+local function guess_schema_type(schema)
+	local schema_types = schema.type
+	if type(schema_types) == "string" then
+		return schema_types
+	elseif schema_types ~= nil then
+		error("schema has unsupported 'type' property")
+	elseif schema.properties then
+		return "object"
+	elseif schema.items then
+		return "array"
+	end
+	return "string"
 end
 
 local function unpack_propschema(propschema, propname, current_ns)
@@ -49,9 +64,9 @@ local function unpack_propschema(propschema, propname, current_ns)
 	local enums
 
 	if type(propschema) == "table" then
-		proptype = propschema.type
+		proptype = guess_schema_type(propschema);
 	elseif type(propschema) == "string" then
-		proptype = propschema
+		error("schema as string is not supported: " .. propschema .. " {" .. current_ns .. "}" .. propname)
 	end
 
 	if proptype == "object" or proptype == "array" then
@@ -209,9 +224,10 @@ function parse_array(schema, s, root)
 end
 
 local function parse(schema, s)
-	if schema.type == "object" then
+	local s_type = guess_schema_type(schema)
+	if s_type == "object" then
 		return parse_object(schema, s, schema)
-	elseif schema.type == "array" then
+	elseif s_type == "array" then
 		return parse_array(schema, s, schema)
 	else
 		error("top-level scalars unsupported")
@@ -306,7 +322,8 @@ function unparse(schema, t, current_name, current_ns, ctx, root)
 
 	local out = ctx or st.stanza(current_name, {xmlns = current_ns})
 
-	if schema.type == "object" then
+	local s_type = guess_schema_type(schema)
+	if s_type == "object" then
 
 		for prop, propschema in pairs(schema.properties) do
 			propschema = resolve_schema(propschema, root)
@@ -319,7 +336,7 @@ function unparse(schema, t, current_name, current_ns, ctx, root)
 		end
 		return out
 
-	elseif schema.type == "array" then
+	elseif s_type == "array" then
 		local itemschema = resolve_schema(schema.items, root)
 		local proptype, value_where, name, namespace, prefix, single_attribute = unpack_propschema(itemschema, current_name, current_ns)
 		for _, item in ipairs(t) do

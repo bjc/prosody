@@ -25,7 +25,7 @@ describe("util.datamapper", function()
 				from = attr();
 				type = attr();
 				id = attr();
-				body = "string";
+				body = true; -- should be assumed to be a string
 				lang = {type = "string"; xml = {attribute = true; prefix = "xml"}};
 				delay = {
 					type = "object";
@@ -56,7 +56,8 @@ describe("util.datamapper", function()
 					xml = {namespace = "urn:xmpp:reactions:0"; name = "reactions"};
 					properties = {
 						to = {type = "string"; xml = {attribute = true; name = "id"}};
-						reactions = {type = "array"; items = {type = "string"; xml = {name = "reaction"}}};
+						-- should be assumed to be array since it has 'items'
+						reactions = { items = { xml = { name = "reaction" } } };
 					};
 				};
 				stanza_ids = {
@@ -190,7 +191,8 @@ describe("util.datamapper", function()
 					version = {
 						type = "object";
 						xml = {name = "query"; namespace = "jabber:iq:version"};
-						properties = {name = "string"; version = "string"; os = "string"};
+						-- properties should be assumed to be strings
+						properties = {name = true; version = {}; os = {}};
 					};
 				};
 			};
