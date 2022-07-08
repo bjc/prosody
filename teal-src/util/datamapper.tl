@@ -25,7 +25,7 @@ local pointer = require"util.jsonpointer";
 
 local json_type_name = json.json_type_name;
 local json_schema_object = require "util.jsonschema"
-local type schema_t = boolean | json_type_name | json_schema_object
+local type schema_t = boolean | json_schema_object
 
 local function toboolean ( s : string ) : boolean
 	if s == "true" or s == "1" then
@@ -59,13 +59,26 @@ local enum value_goes
 end
 
 local function resolve_schema(schema  : schema_t, root : json_schema_object) : schema_t
-	if schema is json_schema_object and schema["$ref"] and schema["$ref"]:sub(1, 1) == "#" then
-		local referenced = pointer.resolve(root as table, schema["$ref"]:sub(2)) as schema_t;
-		if referenced ~= nil then
-			return referenced
+	if schema is json_schema_object then
+		if schema["$ref"] and schema["$ref"]:sub(1, 1) == "#" then
+			return pointer.resolve(root as table, schema["$ref"]:sub(2)) as schema_t;
 		end
 	end
 	return schema;
+end
+
+local function guess_schema_type(schema : json_schema_object) : json_type_name
+	local schema_types = schema.type
+	if schema_types is json_type_name then
+		return schema_types
+	elseif schema_types ~= nil then
+		error "schema has unsupported 'type' property"
+	elseif schema.properties then
+		return "object"
+	elseif schema.items then
+		return "array"
+	end
+	return "string" -- default assumption
 end
 
 local function unpack_propschema( propschema : schema_t, propname : string, current_ns : string )
@@ -79,9 +92,9 @@ local function unpack_propschema( propschema : schema_t, propname : string, curr
 	local enums : { any }
 
 	if propschema is json_schema_object then
-		proptype = propschema.type
-	elseif propschema is json_type_name then
-		proptype = propschema
+		proptype = guess_schema_type(propschema);
+	elseif propschema is string then -- Teal says this can never be a string, but it could before so best be sure
+		error("schema as string is not supported: "..propschema.." {"..current_ns.."}"..propname)
 	end
 
 	if proptype == "object" or proptype == "array" then
@@ -118,6 +131,10 @@ local function unpack_propschema( propschema : schema_t, propname : string, curr
 		elseif propschema["enum"] then
 			enums = propschema["enum"]
 		end
+	end
+
+	if current_ns == "urn:xmpp:reactions:0" and name == "reactions" then
+		assert(proptype=="array")
 	end
 
 	return proptype, value_where, name, namespace, prefix, single_attribute, enums
@@ -239,9 +256,10 @@ function parse_array (schema : json_schema_object, s : st.stanza_t, root : json_
 end
 
 local function parse (schema : json_schema_object, s : st.stanza_t) : table
-	if schema.type == "object" then
+	local s_type = guess_schema_type(schema)
+	if s_type == "object" then
 		return parse_object(schema, s, schema)
-	elseif schema.type == "array" then
+	elseif s_type == "array" then
 		return parse_array(schema, s, schema)
 	else
 		error "top-level scalars unsupported"
@@ -333,7 +351,8 @@ function unparse ( schema : json_schema_object, t : table, current_name : string
 
 	local out = ctx or st.stanza(current_name, { xmlns = current_ns })
 
-	if schema.type == "object" then
+	local s_type = guess_schema_type(schema)
+	if s_type == "object" then
 
 		for prop, propschema in pairs(schema.properties) do
 			propschema = resolve_schema(propschema, root)
@@ -346,7 +365,7 @@ function unparse ( schema : json_schema_object, t : table, current_name : string
 		end
 		return out;
 
-	elseif schema.type == "array" then
+	elseif s_type == "array" then
 		local itemschema = resolve_schema(schema.items, root)
 		local proptype, value_where, name, namespace, prefix, single_attribute = unpack_propschema(itemschema, current_name, current_ns)
 		for _, item in ipairs(t as { string }) do
