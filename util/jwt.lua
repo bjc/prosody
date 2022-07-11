@@ -197,9 +197,15 @@ local function new_verifier(algorithm, key_input, options)
 	end
 end
 
+local function init(algorithm, private_key, public_key, options)
+	return new_signer(algorithm, private_key, options), new_verifier(algorithm, public_key or private_key, options);
+end
+
 return {
+	init = init;
 	new_signer = new_signer;
 	new_verifier = new_verifier;
+	-- Exported mainly for tests
 	_algorithms = algorithms;
 	-- Deprecated
 	sign = algorithms.HS256.sign;
