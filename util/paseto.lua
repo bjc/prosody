@@ -8,11 +8,6 @@ local s_pack = require "util.struct".pack;
 
 local s_gsub = string.gsub;
 
-local pubkey_methods = {};
-local privkey_methods = {};
-
-local v4_public_pubkey_mt = { __index = pubkey_methods };
-local v4_public_privkey_mt = { __index = privkey_methods };
 local v4_public = {};
 
 local b64url_rep = { ["+"] = "-", ["/"] = "_", ["="] = "", ["-"] = "+", ["_"] = "/" };
@@ -35,25 +30,14 @@ local function pae(parts)
 	return table.concat(o);
 end
 
-function privkey_methods:export()
-	return self.key:private_pem();
-end
-
-function pubkey_methods:export()
-	return self.key:public_pem();
-end
-
 function v4_public.sign(m, sk, f, i)
-	if getmetatable(sk) ~= v4_public_privkey_mt then
-		error("cannot sign v4.public tokens with this key");
-	end
 	if type(m) ~= "table" then
 		return nil, "PASETO payloads must be a table";
 	end
 	m = json.encode(m);
 	local h = "v4.public.";
 	local m2 = pae({ h, m, f or "", i or "" });
-	local sig = crypto.ed25519_sign(sk.key, m2);
+	local sig = crypto.ed25519_sign(sk, m2);
 	if not f or f == "" then
 		return h..b64url(m..sig);
 	else
@@ -62,9 +46,6 @@ function v4_public.sign(m, sk, f, i)
 end
 
 function v4_public.verify(tok, pk, expected_f, i)
-	if getmetatable(pk) ~= v4_public_pubkey_mt then
-		error("cannot verify v4.public tokens with this key");
-	end
 	local h, sm, f = tok:match("^(v4%.public%.)([^%.]+)%.?(.*)$");
 	if not h then
 		return nil, "invalid-token-format";
@@ -81,7 +62,7 @@ function v4_public.verify(tok, pk, expected_f, i)
 	end
 	local s, m = raw_sm:sub(-64), raw_sm:sub(1, -65);
 	local m2 = pae({ h, m, f or "", i or "" });
-	local ok = crypto.ed25519_verify(pk.key, m2, s);
+	local ok = crypto.ed25519_verify(pk, m2, s);
 	if not ok then
 		return nil, "invalid-token";
 	end
@@ -92,32 +73,10 @@ function v4_public.verify(tok, pk, expected_f, i)
 	return payload;
 end
 
+v4_public.import_private_key = crypto.import_private_pem;
+v4_public.import_public_key = crypto.import_public_pem;
 function v4_public.new_keypair()
-	local key = crypto.generate_ed25519_keypair();
-	return {
-		private_key = setmetatable({
-			key = key;
-		}, v4_public_privkey_mt);
-		public_key = setmetatable({
-			key = key;
-		}, v4_public_pubkey_mt);
-	};
-end
-
-function v4_public.import_public_key(pem)
-	local key = crypto.import_public_pem(pem);
-	assert(key:get_type() == "ED25519", "Invalid public key type for v4.public");
-	return setmetatable({
-		key = key;
-	}, v4_public_pubkey_mt);
-end
-
-function v4_public.import_private_key(pem)
-	local key = crypto.import_private_pem(pem);
-	assert(key:get_type() == "ED25519", "Invalid private key type for v4.public");
-	return setmetatable({
-		key = key;
-	}, v4_public_privkey_mt);
+	return crypto.generate_ed25519_keypair();
 end
 
 function v4_public.init(private_key_pem, public_key_pem, options)

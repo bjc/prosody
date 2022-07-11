@@ -73,7 +73,7 @@ describe("util.paseto", function ()
 		describe("basic sign/verify", function ()
 			local function new_keypair()
 				local kp = paseto.v4_public.new_keypair();
-				return kp.private_key:export(), kp.public_key:export();
+				return kp:private_pem(), kp:public_pem();
 			end
 
 			local privkey1, pubkey1 = new_keypair();
