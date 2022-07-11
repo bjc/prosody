@@ -152,21 +152,46 @@ local algorithms = {
 	PS256 = new_rsa_algorithm("PS256"), PS384 = new_rsa_algorithm("PS384"), PS512 = new_rsa_algorithm("PS512");
 };
 
-local function new_signer(algorithm, key_input)
+local function new_signer(algorithm, key_input, options)
 	local impl = assert(algorithms[algorithm], "Unknown JWT algorithm: "..algorithm);
 	local key = (impl.load_private_key or impl.load_key)(key_input);
 	local sign = impl.sign;
+	local default_ttl = (options and options.default_ttl) or 3600;
 	return function (payload)
+		local issued_at;
+		if not payload.iat then
+			issued_at = os.time();
+			payload.iat = issued_at;
+		end
+		if not payload.exp then
+			payload.exp = (issued_at or os.time()) + default_ttl;
+		end
 		return sign(key, payload);
 	end
 end
 
-local function new_verifier(algorithm, key_input)
+local function new_verifier(algorithm, key_input, options)
 	local impl = assert(algorithms[algorithm], "Unknown JWT algorithm: "..algorithm);
 	local key = (impl.load_public_key or impl.load_key)(key_input);
 	local verify = impl.verify;
+	local check_expiry = not (options and options.accept_expired);
+	local claim_verifier = options and options.claim_verifier;
 	return function (token)
-		return verify(key, token);
+		local ok, payload = verify(key, token);
+		if ok then
+			local expires_at = check_expiry and payload.exp;
+			if expires_at then
+				if type(expires_at) ~= "number" then
+					return nil, "invalid-expiry";
+				elseif expires_at < os.time() then
+					return nil, "token-expired";
+				end
+			end
+			if claim_verifier and not claim_verifier(payload) then
+				return nil, "incorrect-claims";
+			end
+		end
+		return ok, payload;
 	end
 end
 
