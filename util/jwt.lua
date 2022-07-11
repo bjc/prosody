@@ -33,6 +33,16 @@ local function new_static_header(algorithm_name)
 	return b64url('{"alg":"'..algorithm_name..'","typ":"JWT"}') .. '.';
 end
 
+local function decode_raw_payload(raw_payload)
+	local payload, err = json.decode(unb64url(raw_payload));
+	if err ~= nil then
+		return nil, "json-decode-error";
+	elseif type(payload) ~= "table" then
+		return nil, "invalid-payload-type";
+	end
+	return true, payload;
+end
+
 -- HS*** family
 local function new_hmac_algorithm(name)
 	local static_header = new_static_header(name);
@@ -53,11 +63,8 @@ local function new_hmac_algorithm(name)
 		if not secure_equals(b64url(hmac(key, signed)), signature) then
 			return false, "signature-mismatch";
 		end
-		local payload, err = json.decode(unb64url(raw_payload));
-		if err ~= nil then
-			return nil, "json-decode-error";
-		end
-		return true, payload;
+
+		return decode_raw_payload(raw_payload);
 	end
 
 	local function load_key(key)
@@ -101,12 +108,7 @@ local function new_crypto_algorithm(name, key_type, c_sign, c_verify, sig_encode
 				return false, "signature-mismatch";
 			end
 
-			local payload, err = json.decode(unb64url(raw_payload));
-			if err ~= nil then
-				return nil, "json-decode-error";
-			end
-
-			return true, payload;
+			return decode_raw_payload(raw_payload);
 		end;
 
 		load_public_key = function (public_key_pem)
