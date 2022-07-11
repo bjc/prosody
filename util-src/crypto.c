@@ -485,12 +485,7 @@ static int Lbuild_ecdsa_signature(lua_State *L) {
 
 	luaL_buffinit(L, &sigbuf);
 
-	// COMPAT w/ Lua 5.1
-	#if LUAL_BUFFERSIZE < 128
-	#error Configured LUAL_BUFFERSIZE is too small for this operation
-	#endif
-
-	unsigned char *buffer = (unsigned char*)luaL_prepbuffer(&sigbuf);
+	unsigned char *buffer = (unsigned char*)luaL_prepbuffsize(&sigbuf, rlen+slen+32);
 	int len = i2d_ECDSA_SIG(sig, &buffer);
 	luaL_addsize(&sigbuf, len);
 	luaL_pushresult(&sigbuf);
