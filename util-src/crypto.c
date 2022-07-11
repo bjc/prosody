@@ -434,7 +434,8 @@ static int Lparse_ecdsa_signature(lua_State *L) {
 	size_t sig_der_len;
 	const unsigned char *sig_der = (unsigned char*)luaL_checklstring(L, 1, &sig_der_len);
 	const BIGNUM *r, *s;
-	luaL_Buffer rb, sb;
+	unsigned char rb[32];
+	unsigned char sb[32];
 	int rlen, slen;
 
 	sig = d2i_ECDSA_SIG(NULL, &sig_der, sig_der_len);
@@ -449,22 +450,18 @@ static int Lparse_ecdsa_signature(lua_State *L) {
 	rlen = BN_num_bytes(r);
 	slen = BN_num_bytes(s);
 
-	// COMPAT w/ Lua 5.1
-	#if LUAL_BUFFERSIZE < 32
-	#error Configured LUAL_BUFFERSIZE is too small for this operation
-	#endif
+	if (rlen > 32 || slen > 32) {
+		ECDSA_SIG_free(sig);
+		luaL_error(L, "unexpectedly large signature integers");
+	}
 
-	luaL_buffinit(L, &rb);
-	BN_bn2bin(r, (unsigned char*)luaL_prepbuffer(&rb));
-	luaL_addsize(&rb, rlen);
-	luaL_pushresult(&rb);
-
-	luaL_buffinit(L, &sb);
-	BN_bn2bin(s, (unsigned char*)luaL_prepbuffer(&sb));
-	luaL_addsize(&sb, slen);
-	luaL_pushresult(&sb);
+	BN_bn2bin(r, rb);
+	BN_bn2bin(s, sb);
 
 	ECDSA_SIG_free(sig);
+
+	lua_pushlstring(L, (const char*)rb, rlen);
+	lua_pushlstring(L, (const char*)sb, slen);
 
 	return 2;
 }
