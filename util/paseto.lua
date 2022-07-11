@@ -23,6 +23,9 @@ local function le64(n)
 end
 
 local function pae(parts)
+	if type(parts) ~= "table" then
+		error("bad argument #1 to 'pae' (table expected, got "..type(parts)..")");
+	end
 	local o = { le64(#parts) };
 	for _, part in ipairs(parts) do
 		table.insert(o, le64(#part)..part);
