@@ -11,7 +11,7 @@ static int Lcreate_table(lua_State *L) {
 	return 1;
 }
 
-/* COMPAT: w/ Lua pre-5.4 */
+/* COMPAT: w/ Lua pre-5.2 */
 static int Lpack(lua_State *L) {
 	unsigned int n_args = lua_gettop(L);
 	lua_createtable(L, n_args, 1);
