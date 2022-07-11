@@ -120,6 +120,27 @@ function v4_public.import_private_key(pem)
 	}, v4_public_privkey_mt);
 end
 
+function v4_public.init(private_key_pem, public_key_pem, options)
+	local sign, verify = v4_public.sign, v4_public.verify;
+	local public_key = public_key_pem and v4_public.import_public_key(public_key_pem);
+	local private_key = private_key_pem and v4_public.import_private_key(private_key_pem);
+	local default_footer = options and options.default_footer;
+	local default_assertion = options and options.default_implicit_assertion;
+	return private_key and function (token, token_footer, token_assertion)
+		return sign(token, private_key, token_footer or default_footer, token_assertion or default_assertion);
+	end, public_key and function (token, expected_footer, token_assertion)
+		return verify(token, public_key, expected_footer or default_footer, token_assertion or default_assertion);
+	end;
+end
+
+function v4_public.new_signer(private_key_pem, options)
+	return (v4_public.init(private_key_pem, nil, options));
+end
+
+function v4_public.new_verifier(public_key_pem, options)
+	return (select(2, v4_public.init(public_key_pem, options)));
+end
+
 return {
 	pae = pae;
 	v4_public = v4_public;
