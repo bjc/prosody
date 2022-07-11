@@ -69,6 +69,7 @@ function v4_public.verify(tok, pk, expected_f, i)
 	if not h then
 		return nil, "invalid-token-format";
 	end
+	f = f and unb64url(f) or nil;
 	if expected_f then
 		if not f or not secure_equals(expected_f, f) then
 			return nil, "invalid-footer";
