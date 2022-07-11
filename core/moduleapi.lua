@@ -26,7 +26,7 @@ local error, setmetatable, type = error, setmetatable, type;
 local ipairs, pairs, select = ipairs, pairs, select;
 local tonumber, tostring = tonumber, tostring;
 local require = require;
-local pack = table.pack or require "util.table".pack; -- table.pack is only in 5.2
+local pack = table.pack;
 local unpack = table.unpack;
 
 local prosody = prosody;

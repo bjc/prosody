@@ -7,7 +7,7 @@
 
 local tostring = tostring;
 local unpack = table.unpack;
-local pack = require "util.table".pack; -- TODO table.pack in 5.2+
+local pack = table.pack;
 local valid_utf8 = require "util.encodings".utf8.valid;
 local type = type;
 local dump = require "util.serialization".new("debug");

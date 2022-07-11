@@ -13,7 +13,7 @@ local it = {};
 local t_insert = table.insert;
 local next = next;
 local unpack = table.unpack;
-local pack = table.pack or require "util.table".pack;
+local pack = table.pack;
 local type = type;
 local table, setmetatable = table, setmetatable;
 
