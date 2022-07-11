@@ -2,7 +2,7 @@ local promise_methods = {};
 local promise_mt = { __name = "promise", __index = promise_methods };
 
 local xpcall = require "util.xpcall".xpcall;
-local unpack = table.unpack or unpack; --luacheck: ignore 113
+local unpack = table.unpack;
 
 function promise_mt:__tostring()
 	return  "promise (" .. (self._state or "invalid") .. ")";

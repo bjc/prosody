@@ -13,7 +13,7 @@ local is_stanza = require"util.stanza".is_stanza;
 local t_concat = table.concat;
 
 local noop = function() end
-local unpack = table.unpack or unpack; -- luacheck: ignore 113
+local unpack = table.unpack;
 local function iterator(result)
 	return function(result_)
 		local row = result_();

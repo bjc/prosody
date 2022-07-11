@@ -1,4 +1,4 @@
-local unpack = table.unpack or unpack; -- luacheck: ignore 113
+local unpack = table.unpack;
 local server = require "net.server_select";
 package.loaded["net.server"] = server;
 

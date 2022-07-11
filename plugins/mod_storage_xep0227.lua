@@ -2,7 +2,7 @@
 local ipairs, pairs = ipairs, pairs;
 local setmetatable = setmetatable;
 local tostring = tostring;
-local next, unpack = next, table.unpack or unpack; --luacheck: ignore 113/unpack
+local next, unpack = next, table.unpack;
 local os_remove = os.remove;
 local io_open = io.open;
 local jid_bare = require "util.jid".bare;

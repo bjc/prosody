@@ -26,7 +26,7 @@ local log = require "util.logger".init("util.openmetrics");
 local new_multitable = require "util.multitable".new;
 local iter_multitable = require "util.multitable".iter;
 local t_concat, t_insert = table.concat, table.insert;
-local t_pack, t_unpack = require "util.table".pack, table.unpack or unpack; --luacheck: ignore 113/unpack
+local t_pack, t_unpack = require "util.table".pack, table.unpack;
 
 -- BEGIN of Utility: "metric proxy"
 -- This allows to wrap a MetricFamily in a proxy which only provides the

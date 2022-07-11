@@ -4,7 +4,7 @@ local math_floor = math.floor;
 local math_log = math.log;
 local math_max = math.max;
 local math_min = math.min;
-local unpack = table.unpack or unpack; --luacheck: ignore 113
+local unpack = table.unpack;
 
 local large = {
 	"k", 1000,

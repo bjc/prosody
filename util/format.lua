@@ -6,7 +6,7 @@
 -- Provides some protection from e.g. CAPEC-135, CWE-117, CWE-134, CWE-93
 
 local tostring = tostring;
-local unpack = table.unpack or unpack; -- luacheck: ignore 113/unpack
+local unpack = table.unpack;
 local pack = require "util.table".pack; -- TODO table.pack in 5.2+
 local valid_utf8 = require "util.encodings".utf8.valid;
 local type = type;

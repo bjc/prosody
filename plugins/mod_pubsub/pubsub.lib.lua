@@ -1,4 +1,4 @@
-local t_unpack = table.unpack or unpack; -- luacheck: ignore 113
+local t_unpack = table.unpack;
 local time_now = os.time;
 
 local jid_prep = require "util.jid".prep;
