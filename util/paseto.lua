@@ -106,6 +106,7 @@ end
 
 function v4_public.import_public_key(pem)
 	local key = crypto.import_public_pem(pem);
+	assert(key:get_type() == "ED25519", "Invalid public key type for v4.public");
 	return setmetatable({
 		key = key;
 	}, v4_public_pubkey_mt);
@@ -113,6 +114,7 @@ end
 
 function v4_public.import_private_key(pem)
 	local key = crypto.import_private_pem(pem);
+	assert(key:get_type() == "ED25519", "Invalid private key type for v4.public");
 	return setmetatable({
 		key = key;
 	}, v4_public_privkey_mt);
