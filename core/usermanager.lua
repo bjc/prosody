@@ -116,6 +116,12 @@ local function set_password(username, password, host, resource)
 	return ok, err;
 end
 
+local function get_account_info(username, host)
+	local method = hosts[host].users.get_account_info;
+	if not method then return nil, "method-not-supported"; end
+	return method(username);
+end
+
 local function user_exists(username, host)
 	if hosts[host].sessions[username] then return true; end
 	return hosts[host].users.user_exists(username);
@@ -211,6 +217,7 @@ return {
 	test_password = test_password;
 	get_password = get_password;
 	set_password = set_password;
+	get_account_info = get_account_info;
 	user_exists = user_exists;
 	create_user = create_user;
 	delete_user = delete_user;

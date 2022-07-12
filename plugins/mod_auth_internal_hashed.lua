@@ -86,9 +86,19 @@ function provider.set_password(username, password)
 		account.server_key = server_key_hex
 
 		account.password = nil;
+		account.updated = os.time();
 		return accounts:set(username, account);
 	end
 	return nil, "Account not available.";
+end
+
+function provider.get_account_info(username)
+	local account = accounts:get(username);
+	if not account then return nil, "Account not available"; end
+	return {
+		created = account.created;
+		password_updated = account.updated;
+	};
 end
 
 function provider.user_exists(username)
@@ -115,9 +125,11 @@ function provider.create_user(username, password)
 	end
 	local stored_key_hex = to_hex(stored_key);
 	local server_key_hex = to_hex(server_key);
+	local now = os.time();
 	return accounts:set(username, {
 		stored_key = stored_key_hex, server_key = server_key_hex,
-		salt = salt, iteration_count = default_iteration_count
+		salt = salt, iteration_count = default_iteration_count,
+		created = now, updated = now;
 	});
 end
 
