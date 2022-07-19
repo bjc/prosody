@@ -10,8 +10,6 @@ local modulemanager = require "core.modulemanager";
 local log = require "util.logger".init("usermanager");
 local type = type;
 local it = require "util.iterators";
-local jid_bare = require "util.jid".bare;
-local jid_split = require "util.jid".split;
 local jid_prep = require "util.jid".prep;
 local config = require "core.configmanager";
 local sasl_new = require "util.sasl".new;
@@ -150,48 +148,54 @@ local function get_provider(host)
 	return hosts[host].users;
 end
 
-local function get_roles(jid, host)
+-- Returns a map of { [role_name] = role, ... } that a user is allowed to assume
+local function get_user_roles(user, host)
 	if host and not hosts[host] then return false; end
-	if type(jid) ~= "string" then return false; end
+	if type(user) ~= "string" then return false; end
 
-	jid = jid_bare(jid);
 	host = host or "*";
 
-	local actor_user, actor_host = jid_split(jid);
-	local roles;
-
 	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
-
-	if actor_user and actor_host == host then -- Local user
-		roles = authz_provider.get_user_roles(actor_user);
-	else -- Remote user/JID
-		roles = authz_provider.get_jid_roles(jid);
-	end
-
-	return roles;
+	return authz_provider.get_user_roles(user);
 end
 
-local function set_roles(jid, host, roles)
+local function get_user_default_role(user, host)
 	if host and not hosts[host] then return false; end
-	if type(jid) ~= "string" then return false; end
+	if type(user) ~= "string" then return false; end
 
-	jid = jid_bare(jid);
 	host = host or "*";
 
-	local actor_user, actor_host = jid_split(jid);
+	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
+	return authz_provider.get_user_default_role(user);
+end
+
+-- Accepts a set of role names which the user is allowed to assume
+local function set_user_roles(user, host, roles)
+	if host and not hosts[host] then return false; end
+	if type(user) ~= "string" then return false; end
+
+	host = host or "*";
 
 	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
-	if actor_user and actor_host == host then -- Local user
-		local ok, err = authz_provider.set_user_roles(actor_user, roles);
-		if ok then
-			prosody.events.fire_event("user-roles-changed", {
-				username = actor_user, host = actor_host
-			});
-		end
-		return ok, err;
-	else -- Remote entity
-		return authz_provider.set_jid_roles(jid, roles)
+	local ok, err = authz_provider.set_user_roles(user, roles);
+	if ok then
+		prosody.events.fire_event("user-roles-changed", {
+			username = user, host = host
+		});
 	end
+	return ok, err;
+end
+
+local function get_jid_role(jid, host)
+	host = host or "*";
+	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
+	return authz_provider.get_jid_role(jid);
+end
+
+local function set_jid_role(jid, host, role_name)
+	host = host or "*";
+	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
+	return authz_provider.set_jid_role(jid, role_name)
 end
 
 local function get_users_with_role(role, host)
@@ -211,6 +215,16 @@ local function get_jids_with_role(role, host)
 	return authz_provider.get_jids_with_role(role);
 end
 
+local function get_role_by_name(role_name, host)
+	if host and not hosts[host] then return false; end
+	if type(role_name) ~= "string" then return false; end
+
+	host = host or "*";
+
+	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
+	return authz_provider.get_role_by_name(role_name);
+end
+
 return {
 	new_null_provider = new_null_provider;
 	initialize_host = initialize_host;
@@ -224,8 +238,12 @@ return {
 	users = users;
 	get_sasl_handler = get_sasl_handler;
 	get_provider = get_provider;
-	get_roles = get_roles;
-	set_roles = set_roles;
+	get_user_default_role = get_user_default_role;
+	get_user_roles = get_user_roles;
+	set_user_roles = set_user_roles;
 	get_users_with_role = get_users_with_role;
+	get_jid_role = get_jid_role;
+	set_jid_role = set_jid_role;
 	get_jids_with_role = get_jids_with_role;
+	get_role_by_name = get_role_by_name;
 };

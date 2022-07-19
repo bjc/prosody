@@ -133,7 +133,7 @@ local function make_authenticated(session, username, role_name)
 
 	local role;
 	if role_name then
-		role = hosts[session.host].authz.get_role_info(role_name);
+		role = hosts[session.host].authz.get_role_by_name(role_name);
 	else
 		role = hosts[session.host].authz.get_user_default_role(username);
 	end
