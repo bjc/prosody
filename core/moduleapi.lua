@@ -617,7 +617,6 @@ end
 
 function api:default_permissions(role_name, permissions)
 	for _, permission in ipairs(permissions) do
-		permission = permission:gsub("^:", self.name..":");
 		self:default_permission(role_name, permission);
 	end
 end
