@@ -604,6 +604,14 @@ end
 
 function api:default_permission(role_name, permission)
 	permission = permission:gsub("^:", self.name..":");
+	if self.host == "*" then
+		for _, host in pairs(hosts) do
+			if host.authz then
+				host.authz.add_default_permission(role_name, permission);
+			end
+		end
+		return
+	end
 	hosts[self.host].authz.add_default_permission(role_name, permission);
 end
 
