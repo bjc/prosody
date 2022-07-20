@@ -645,7 +645,7 @@ function api:may(action, context)
 	end
 
 	local session = context.origin or context.session;
-	if not session then
+	if type(session) ~= "table" then
 		error("Unable to identify actor session from context");
 	end
 	if session.type == "s2sin" or (session.type == "c2s" and session.host ~= self.host) then
