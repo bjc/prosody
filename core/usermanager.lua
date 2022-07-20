@@ -54,6 +54,13 @@ local global_authz_provider = {
 	end;
 	set_user_roles = function (user, roles) end; -- luacheck: ignore 212
 	set_jid_roles = function (jid, roles) end; -- luacheck: ignore 212
+
+	get_user_default_role = function (user) end; -- luacheck: ignore 212
+	get_users_with_role = function (role_name) end; -- luacheck: ignore 212
+	get_jid_role = function (jid) end; -- luacheck: ignore 212
+	set_jid_role = function (jid) end; -- luacheck: ignore 212
+	add_default_permission = function (role_name, action, policy) end; -- luacheck: ignore 212
+	get_role_info = function (role_name) end; -- luacheck: ignore 212
 };
 
 local provider_mt = { __index = new_null_provider() };
