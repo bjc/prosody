@@ -1,6 +1,4 @@
-local record Promise
-	-- util.promise
-end
+local Promise = require "util.promise".Promise;
 
 local record sslctx -- from LuaSec
 end
