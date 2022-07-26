@@ -1,0 +1,27 @@
+# mod_scansion_record on host 'localhost' recording started 2022-07-26T21:39:55Z
+
+[Client] Romeo
+	password: password
+	jid: juliet@localhost/UaksS4M1xYZB
+
+-----
+
+Romeo connects
+
+Romeo sends:
+	<iq xml:lang='en' type='get' id='bNBJLtpIJXpq'>
+		<pubsub xmlns='http://jabber.org/protocol/pubsub'>
+			<items node='storage:bookmarks'/>
+		</pubsub>
+	</iq>
+
+Romeo receives:
+	<iq id='bNBJLtpIJXpq' type='error'>
+		<error type='cancel'>
+			<item-not-found xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
+		</error>
+	</iq>
+
+Romeo disconnects
+
+# recording ended on 2022-07-26T21:40:45Z
