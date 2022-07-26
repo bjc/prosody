@@ -832,7 +832,7 @@ local function normalize_params(params)
 end
 
 function module.load()
-	if prosody.prosodyctl then return; end
+	if prosody.process_type == "prosodyctl" then return; end
 	local engines = module:shared("/*/sql/connections");
 	local params = normalize_params(module:get_option("sql", default_params));
 	local db_uri = sql.db2uri(params);
