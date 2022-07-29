@@ -575,6 +575,23 @@ describe("storagemanager", function ()
 					end
 				end);
 
+				it("the summary api works", function()
+					assert.truthy(archive:delete("summary-user"));
+					local first_sid = archive:append("summary-user", nil, test_stanza, test_time, "contact@example.com");
+					local second_sid = archive:append("summary-user", nil, test_stanza, test_time+1, "contact@example.com");
+					assert.truthy(first_sid and second_sid, "preparations failed")
+					---
+
+					local user_summary, err = archive:summary("summary-user");
+					assert.is_table(user_summary, err);
+					assert.same({ ["contact@example.com"] = 2 }, user_summary.counts, "summary.counts matches");
+					assert.same({ ["contact@example.com"] = test_time }, user_summary.earliest, "summary.earliest matches");
+					assert.same({ ["contact@example.com"] = test_time+1 }, user_summary.latest, "summary.latest matches");
+					if user_summary.body then
+						assert.same({ ["contact@example.com"] = test_stanza:get_child_text("body") }, user_summary.body, "summary.body matches");
+					end
+				end);
+
 			end);
 		end);
 	end

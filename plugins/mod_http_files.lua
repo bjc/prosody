@@ -74,8 +74,7 @@ function serve(opts)
 	if opts.index_files == nil then
 		opts.index_files = dir_indices;
 	end
-	-- TODO Crank up to warning
-	module:log("debug", "%s should be updated to use 'net.http.files' instead of mod_http_files", get_calling_module());
+	module:log("warn", "%s should be updated to use 'net.http.files' instead of mod_http_files", get_calling_module());
 	return fileserver.serve(opts);
 end
 

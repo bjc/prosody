@@ -543,8 +543,7 @@ function archive_store:summary(username, query)
 		SELECT DISTINCT "with", COUNT(*), MIN("when"), MAX("when")
 		FROM "prosodyarchive"
 		WHERE %s
-		GROUP BY "with"
-		ORDER BY "sort_id" %s%s;
+		GROUP BY "with";
 		]];
 		local args = { host, user or "", store, };
 		local where = { "\"host\" = ?", "\"user\" = ?", "\"store\" = ?", };
@@ -557,8 +556,7 @@ function archive_store:summary(username, query)
 			args[#args+1] = query.limit;
 		end
 
-		sql_query = sql_query:format(t_concat(where, " AND "), query.reverse
-			and "DESC" or "ASC", query.limit and " LIMIT ?" or "");
+		sql_query = sql_query:format(t_concat(where, " AND "));
 		return engine:select(sql_query, unpack(args));
 	end);
 	if not ok then return ok, result end
