@@ -10,7 +10,7 @@ local modulemanager = require "core.modulemanager";
 local log = require "util.logger".init("usermanager");
 local type = type;
 local it = require "util.iterators";
-local jid_prep = require "util.jid".prep;
+local jid_prep, jid_split = require "util.jid".prep, require "util.jid".split;
 local config = require "core.configmanager";
 local sasl_new = require "util.sasl".new;
 local storagemanager = require "core.storagemanager";
@@ -196,12 +196,20 @@ end
 local function get_jid_role(jid, host)
 	host = host or "*";
 	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
+	local jid_node, jid_host = jid_split(jid);
+	if host == jid_host and jid_node then
+		return authz_provider.get_user_default_role(jid_node);
+	end
 	return authz_provider.get_jid_role(jid);
 end
 
 local function set_jid_role(jid, host, role_name)
 	host = host or "*";
 	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
+	local _, jid_host = jid_split(jid);
+	if host == jid_host then
+		return nil, "unexpected-local-jid";
+	end
 	return authz_provider.set_jid_role(jid, role_name)
 end
 
