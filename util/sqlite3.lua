@@ -164,6 +164,16 @@ function engine:execute(sql, ...)
 	if not success then return success, err; end
 	local prepared = self.prepared;
 
+	if select('#', ...) == 0 then
+		local ret = self.conn:exec(sql);
+		if ret ~= lsqlite3.OK then
+			local err = sqlite_errors.new(err);
+			err.text = self.conn:errmsg();
+			return err;
+		end
+		return true;
+	end
+
 	local stmt = prepared[sql];
 	if not stmt then
 		local err;
