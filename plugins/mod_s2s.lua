@@ -429,7 +429,8 @@ function stream_callbacks._streamopened(session, attr)
 	session.had_stream = true; -- Had a stream opened at least once
 
 	-- TODO: Rename session.secure to session.encrypted
-	if session.secure == false then
+	if session.secure == false then -- Set by mod_tls during STARTTLS handshake
+		session.starttls = "completed";
 		session_secure(session);
 	end
 
@@ -750,6 +751,7 @@ local function initialize_session(session)
 	local w = conn.write;
 
 	if conn:ssl() then
+		-- Direct TLS was used
 		session_secure(session);
 	end
 

@@ -128,6 +128,7 @@ end);
 -- Hook <starttls/>
 module:hook("stanza/urn:ietf:params:xml:ns:xmpp-tls:starttls", function(event)
 	local origin = event.origin;
+	origin.starttls = "requested";
 	if can_do_tls(origin) then
 		if origin.conn.block_reads then
 			-- we need to ensure that no data is read anymore, otherwise we could end up in a situation where
@@ -176,6 +177,7 @@ module:hook_tag("http://etherx.jabber.org/streams", "features", function (sessio
 			module:log("debug", "%s is not offering TLS", session.to_host);
 			return;
 		end
+		session.starttls = "initiated";
 		session.sends2s(starttls_initiate);
 		return true;
 	end
@@ -193,6 +195,7 @@ module:hook_tag(xmlns_starttls, "proceed", function (session, stanza) -- luachec
 	if session.type == "s2sout_unauthed" and can_do_tls(session) then
 		module:log("debug", "Proceeding with TLS on s2sout...");
 		session:reset_stream();
+		session.starttls = "proceeding"
 		session.conn:starttls(session.ssl_ctx, session.to_host);
 		session.secure = false;
 		return true;
