@@ -10,7 +10,7 @@ local resolver_mt = { __index = methods };
 
 -- FIXME RFC 6724
 
-local function do_dns_lookup(self, dns_resolver, record_type, name)
+local function do_dns_lookup(self, dns_resolver, record_type, name, allow_insecure)
 	return promise.new(function (resolve, reject)
 		local ipv = (record_type == "A" and "4") or (record_type == "AAAA" and "6") or nil;
 		if ipv and self.extra["use_ipv"..ipv] == false then
@@ -23,6 +23,8 @@ local function do_dns_lookup(self, dns_resolver, record_type, name)
 				return reject(err);
 			elseif answer.bogus then
 				return reject(("Validation error in %s lookup"):format(record_type));
+			elseif not (answer.secure or allow_insecure) then
+				return reject(("Insecure response in %s lookup"):format(record_type));
 			elseif answer.status and #answer == 0 then
 				return reject(("%s in %s lookup"):format(answer.status, record_type));
 			end
@@ -78,8 +80,8 @@ function methods:next(cb)
 	local dns_resolver = adns.resolver();
 
 	local dns_lookups = {
-		ipv4 = do_dns_lookup(self, dns_resolver, "A", self.hostname);
-		ipv6 = do_dns_lookup(self, dns_resolver, "AAAA", self.hostname);
+		ipv4 = do_dns_lookup(self, dns_resolver, "A", self.hostname, true);
+		ipv6 = do_dns_lookup(self, dns_resolver, "AAAA", self.hostname, true);
 		tlsa = do_dns_lookup(self, dns_resolver, "TLSA", ("_%d._%s.%s"):format(self.port, self.conn_type, self.hostname));
 	};
 
