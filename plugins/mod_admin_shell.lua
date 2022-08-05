@@ -575,14 +575,14 @@ function def_env.module:info(name, hosts)
 	return true;
 end
 
-function def_env.module:load(name, hosts, config)
+function def_env.module:load(name, hosts)
 	hosts = get_hosts_with_module(hosts);
 
 	-- Load the module for each host
 	local ok, err, count, mod = true, nil, 0;
 	for host in hosts do
 		if (not modulemanager.is_loaded(host, name)) then
-			mod, err = modulemanager.load(host, name, config);
+			mod, err = modulemanager.load(host, name);
 			if not mod then
 				ok = false;
 				if err == "global-module-already-loaded" then
