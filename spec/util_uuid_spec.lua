@@ -5,7 +5,7 @@ local uuid = require "util.uuid";
 describe("util.uuid", function()
 	describe("#generate()", function()
 		it("should work follow the UUID pattern", function()
-			-- https://tools.ietf.org/html/rfc4122#section-4.4
+			-- https://www.rfc-editor.org/rfc/rfc4122.html#section-4.4
 
 			local pattern = "^" .. table.concat({
 				string.rep("%x", 8),

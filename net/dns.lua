@@ -8,8 +8,8 @@
 -- todo: cache results of encodeName
 
 
--- reference: http://tools.ietf.org/html/rfc1035
--- reference: http://tools.ietf.org/html/rfc1876 (LOC)
+-- reference: https://www.rfc-editor.org/rfc/rfc1035.html
+-- reference: https://www.rfc-editor.org/rfc/rfc1876.html (LOC)
 
 
 local socket = require "socket";
