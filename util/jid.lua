@@ -111,6 +111,7 @@ local function resource(jid)
 	return (select(3, split(jid)));
 end
 
+-- TODO Forbid \20 at start and end of escaped output per XEP-0106 v1.1
 local function escape(s) return s and (s:gsub("\\%x%x", backslash_escapes):gsub("[\"&'/:<>@ ]", escapes)); end
 local function unescape(s) return s and (s:gsub("\\%x%x", unescapes)); end
 
