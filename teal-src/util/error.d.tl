@@ -38,7 +38,7 @@ local record protoerror
 	code : integer
 end
 
-local record error
+local record Error
 	type : error_type
 	condition : error_condition
 	text : string
@@ -55,10 +55,10 @@ local type context = { string : any }
 local record error_registry_wrapper
 	source : string
 	registry : registry
-	new : function (string, context) : error
-	coerce : function (any, string) : any, error
-	wrap : function (error) : error
-	wrap : function (string, context) : error
+	new : function (string, context) : Error
+	coerce : function (any, string) : any, Error
+	wrap : function (Error) : Error
+	wrap : function (string, context) : Error
 	is_error : function (any) : boolean
 end
 
@@ -66,12 +66,12 @@ local record lib
 	record configure_opt
 		auto_inject_traceback : boolean
 	end
-	new : function (protoerror, context, { string : protoerror }, string) : error
+	new : function (protoerror, context, { string : protoerror }, string) : Error
 	init : function (string, string, registry | compact_registry) : error_registry_wrapper
 	init : function (string, registry | compact_registry) : error_registry_wrapper
 	is_error : function (any) : boolean
-	coerce : function (any, string) : any, error
-	from_stanza : function (table, context, string) : error
+	coerce : function (any, string) : any, Error
+	from_stanza : function (table, context, string) : Error
 	configure : function
 end
 
