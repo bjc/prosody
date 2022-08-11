@@ -43,11 +43,6 @@ local global_admins = set.new(global_admins_config) / jid_prep;
 local admin_role = { ["prosody:admin"] = true };
 local global_authz_provider = {
 	get_user_roles = function (user) end; --luacheck: ignore 212/user
-	get_jid_roles = function (jid)
-		if global_admins:contains(jid) then
-			return admin_role;
-		end
-	end;
 	get_jids_with_role = function (role)
 		if role ~= "prosody:admin" then return {}; end
 		return it.to_array(global_admins);
