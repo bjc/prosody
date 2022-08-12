@@ -9,12 +9,10 @@
 local modulemanager = require "core.modulemanager";
 local log = require "util.logger".init("usermanager");
 local type = type;
-local it = require "util.iterators";
-local jid_prep, jid_split = require "util.jid".prep, require "util.jid".split;
+local jid_split = require "util.jid".split;
 local config = require "core.configmanager";
 local sasl_new = require "util.sasl".new;
 local storagemanager = require "core.storagemanager";
-local set = require "util.set";
 
 local prosody = _G.prosody;
 local hosts = prosody.hosts;
@@ -34,19 +32,9 @@ local function new_null_provider()
 	});
 end
 
-local global_admins_config = config.get("*", "admins");
-if type(global_admins_config) ~= "table" then
-	global_admins_config = nil; -- TODO: factor out moduleapi magic config handling and use it here
-end
-local global_admins = set.new(global_admins_config) / jid_prep;
-
-local admin_role = { ["prosody:admin"] = true };
-local global_authz_provider = {
+local fallback_authz_provider = {
 	get_user_roles = function (user) end; --luacheck: ignore 212/user
-	get_jids_with_role = function (role)
-		if role ~= "prosody:admin" then return {}; end
-		return it.to_array(global_admins);
-	end;
+	get_jids_with_role = function (role) end; --luacheck: ignore 212
 	set_user_roles = function (user, roles) end; -- luacheck: ignore 212
 	set_jid_roles = function (jid, roles) end; -- luacheck: ignore 212
 
@@ -66,7 +54,7 @@ local function initialize_host(host)
 	local authz_provider_name = config.get(host, "authorization") or "internal";
 
 	local authz_mod = modulemanager.load(host, "authz_"..authz_provider_name);
-	host_session.authz = authz_mod or global_authz_provider;
+	host_session.authz = authz_mod or fallback_authz_provider;
 
 	if host_session.type ~= "local" then return; end
 
@@ -155,20 +143,14 @@ local function get_user_roles(user, host)
 	if host and not hosts[host] then return false; end
 	if type(user) ~= "string" then return false; end
 
-	host = host or "*";
-
-	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
-	return authz_provider.get_user_roles(user);
+	return hosts[host].authz.get_user_roles(user);
 end
 
 local function get_user_default_role(user, host)
 	if host and not hosts[host] then return false; end
 	if type(user) ~= "string" then return false; end
 
-	host = host or "*";
-
-	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
-	return authz_provider.get_user_default_role(user);
+	return hosts[host].authz.get_user_default_role(user);
 end
 
 -- Accepts a set of role names which the user is allowed to assume
@@ -176,10 +158,7 @@ local function set_user_roles(user, host, roles)
 	if host and not hosts[host] then return false; end
 	if type(user) ~= "string" then return false; end
 
-	host = host or "*";
-
-	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
-	local ok, err = authz_provider.set_user_roles(user, roles);
+	local ok, err = hosts[host].authz.set_user_roles(user, roles);
 	if ok then
 		prosody.events.fire_event("user-roles-changed", {
 			username = user, host = host
@@ -189,50 +168,37 @@ local function set_user_roles(user, host, roles)
 end
 
 local function get_jid_role(jid, host)
-	host = host or "*";
-	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
 	local jid_node, jid_host = jid_split(jid);
 	if host == jid_host and jid_node then
-		return authz_provider.get_user_default_role(jid_node);
+		return hosts[host].authz.get_user_default_role(jid_node);
 	end
-	return authz_provider.get_jid_role(jid);
+	return hosts[host].authz.get_jid_role(jid);
 end
 
 local function set_jid_role(jid, host, role_name)
-	host = host or "*";
-	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
 	local _, jid_host = jid_split(jid);
 	if host == jid_host then
 		return nil, "unexpected-local-jid";
 	end
-	return authz_provider.set_jid_role(jid, role_name)
+	return hosts[host].authz.set_jid_role(jid, role_name)
 end
 
 local function get_users_with_role(role, host)
 	if not hosts[host] then return false; end
 	if type(role) ~= "string" then return false; end
-
 	return hosts[host].authz.get_users_with_role(role);
 end
 
 local function get_jids_with_role(role, host)
 	if host and not hosts[host] then return false; end
 	if type(role) ~= "string" then return false; end
-
-	host = host or "*";
-
-	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
-	return authz_provider.get_jids_with_role(role);
+	return hosts[host].authz.get_jids_with_role(role);
 end
 
 local function get_role_by_name(role_name, host)
 	if host and not hosts[host] then return false; end
 	if type(role_name) ~= "string" then return false; end
-
-	host = host or "*";
-
-	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
-	return authz_provider.get_role_by_name(role_name);
+	return hosts[host].authz.get_role_by_name(role_name);
 end
 
 return {
