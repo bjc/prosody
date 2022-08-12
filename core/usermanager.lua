@@ -55,7 +55,7 @@ local global_authz_provider = {
 	get_jid_role = function (jid) end; -- luacheck: ignore 212
 	set_jid_role = function (jid) end; -- luacheck: ignore 212
 	add_default_permission = function (role_name, action, policy) end; -- luacheck: ignore 212
-	get_role_info = function (role_name) end; -- luacheck: ignore 212
+	get_role_by_name = function (role_name) end; -- luacheck: ignore 212
 };
 
 local provider_mt = { __index = new_null_provider() };
