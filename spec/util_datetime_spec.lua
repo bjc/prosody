@@ -18,6 +18,9 @@ describe("util.datetime", function ()
 		it("should work", function ()
 			assert.equals("2006-01-02", date(1136239445));
 		end);
+		it("should ignore fractional parts", function ()
+			assert.equals("2006-01-02", date(1136239445.5));
+		end);
 	end);
 	describe("#time", function ()
 		local time = util_datetime.time;
@@ -34,6 +37,9 @@ describe("util.datetime", function ()
 		it("should work", function ()
 			assert.equals("22:04:05", time(1136239445));
 		end);
+		it("should handle precision", function ()
+			assert.equal("14:46:32.158200", time(1660488392.1582))
+		end)
 	end);
 	describe("#datetime", function ()
 		local datetime = util_datetime.datetime;
@@ -50,6 +56,9 @@ describe("util.datetime", function ()
 		it("should work", function ()
 			assert.equals("2006-01-02T22:04:05Z", datetime(1136239445));
 		end);
+		it("should handle precision", function ()
+			assert.equal("2022-08-14T14:46:32.158200Z", datetime(1660488392.1582))
+		end)
 	end);
 	describe("#legacy", function ()
 		local legacy = util_datetime.legacy;
@@ -72,5 +81,9 @@ describe("util.datetime", function ()
 			-- https://xmpp.org/extensions/xep-0082.html#example-2 and 3
 			assert.equals(parse("1969-07-21T02:56:15Z"), parse("1969-07-20T21:56:15-05:00"));
 		end);
+		it("should handle precision", function ()
+			-- floating point comparison is not an exact science
+			assert.truthy(math.abs(1660488392.1582 - parse("2022-08-14T14:46:32.158200Z")) < 0.001)
+		end)
 	end);
 end);
