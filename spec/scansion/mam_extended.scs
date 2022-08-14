@@ -45,8 +45,8 @@ Romeo sends:
 Romeo receives:
 	<iq type="result" id="mamextmeta">
 		<metadata xmlns="urn:xmpp:mam:2">
-			<start timestamp="2008-08-22T21:09:04Z" xmlns="urn:xmpp:mam:2" id="{scansion:any}"/>
-			<end timestamp="2008-08-22T21:09:04Z" xmlns="urn:xmpp:mam:2" id="{scansion:any}"/>
+			<start timestamp="2008-08-22T21:09:04.500000Z" xmlns="urn:xmpp:mam:2" id="{scansion:any}"/>
+			<end timestamp="2008-08-22T21:09:04.500000Z" xmlns="urn:xmpp:mam:2" id="{scansion:any}"/>
 		</metadata>
 	</iq>
 
@@ -59,7 +59,7 @@ Romeo receives:
 	<message to="${Romeo's full JID}">
 		<result xmlns="urn:xmpp:mam:2" queryid="q1" id="{scansion:any}">
 			<forwarded xmlns="urn:xmpp:forward:0">
-				<delay stamp="2008-08-22T21:09:04Z" xmlns="urn:xmpp:delay"/>
+				<delay stamp="2008-08-22T21:09:04.500000Z" xmlns="urn:xmpp:delay"/>
 				<message to="someone@localhost" xmlns="jabber:client" type="chat" xml:lang="en" id="chat01" from="${Romeo's full JID}">
 					<body>Hello</body>
 				</message>
@@ -71,7 +71,7 @@ Romeo receives:
 	<message to="${Romeo's full JID}">
 		<result xmlns="urn:xmpp:mam:2" queryid="q1" id="{scansion:any}">
 			<forwarded xmlns="urn:xmpp:forward:0">
-				<delay stamp="2008-08-22T21:09:04Z" xmlns="urn:xmpp:delay"/>
+				<delay stamp="2008-08-22T21:09:04.500000Z" xmlns="urn:xmpp:delay"/>
 				<message to="someone@localhost" xmlns="jabber:client" type="chat" xml:lang="en" id="chat02" from="${Romeo's full JID}">
 					<body>U there?</body>
 				</message>
@@ -98,7 +98,7 @@ Romeo receives:
 	<message to="${Romeo's full JID}">
 		<result xmlns="urn:xmpp:mam:2" queryid="q1" id="{scansion:any}">
 			<forwarded xmlns="urn:xmpp:forward:0">
-				<delay stamp="2008-08-22T21:09:04Z" xmlns="urn:xmpp:delay"/>
+				<delay stamp="2008-08-22T21:09:04.500000Z" xmlns="urn:xmpp:delay"/>
 				<message to="someone@localhost" xmlns="jabber:client" type="chat" xml:lang="en" id="chat02" from="${Romeo's full JID}">
 					<body>U there?</body>
 				</message>
@@ -110,7 +110,7 @@ Romeo receives:
 	<message to="${Romeo's full JID}">
 		<result xmlns="urn:xmpp:mam:2" queryid="q1" id="{scansion:any}">
 			<forwarded xmlns="urn:xmpp:forward:0">
-				<delay stamp="2008-08-22T21:09:04Z" xmlns="urn:xmpp:delay"/>
+				<delay stamp="2008-08-22T21:09:04.500000Z" xmlns="urn:xmpp:delay"/>
 				<message to="someone@localhost" xmlns="jabber:client" type="chat" xml:lang="en" id="chat01" from="${Romeo's full JID}">
 					<body>Hello</body>
 				</message>

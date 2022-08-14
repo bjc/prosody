@@ -34,9 +34,9 @@ local rm_load_roster = require "core.rostermanager".load_roster;
 
 local is_stanza = st.is_stanza;
 local tostring = tostring;
-local time_now = os.time;
+local time_now = require "util.time".now;
 local m_min = math.min;
-local timestamp, datestamp = import( "util.datetime", "datetime", "date");
+local timestamp, datestamp = import("util.datetime", "datetime", "date");
 local default_max_items, max_max_items = 20, module:get_option_number("max_archive_query_results", 50);
 local strip_tags = module:get_option_set("dont_archive_namespaces", { "http://jabber.org/protocol/chatstates" });
 
