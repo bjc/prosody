@@ -321,7 +321,8 @@ function archive_store:append(username, key, value, when, with)
 		end
 	end
 
-	when = when or os.time();
+	-- FIXME update the schema to allow precision timestamps
+	when = when and math.floor(when) or os.time();
 	with = with or "";
 	local ok, ret = engine:transaction(function()
 		local delete_sql = [[
