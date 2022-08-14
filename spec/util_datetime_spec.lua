@@ -16,7 +16,7 @@ describe("util.datetime", function ()
 			assert.truthy(string.find(date(), "^%d%d%d%d%-%d%d%-%d%d$"));
 		end);
 		it("should work", function ()
-			assert.equals(date(1136239445), "2006-01-02");
+			assert.equals("2006-01-02", date(1136239445));
 		end);
 	end);
 	describe("#time", function ()
@@ -32,7 +32,7 @@ describe("util.datetime", function ()
 			assert.truthy(string.find(time(), "^%d%d:%d%d:%d%d"));
 		end);
 		it("should work", function ()
-			assert.equals(time(1136239445), "22:04:05");
+			assert.equals("22:04:05", time(1136239445));
 		end);
 	end);
 	describe("#datetime", function ()
@@ -48,7 +48,7 @@ describe("util.datetime", function ()
 			assert.truthy(string.find(datetime(), "^%d%d%d%d%-%d%d%-%d%dT%d%d:%d%d:%d%d"));
 		end);
 		it("should work", function ()
-			assert.equals(datetime(1136239445), "2006-01-02T22:04:05Z");
+			assert.equals("2006-01-02T22:04:05Z", datetime(1136239445));
 		end);
 	end);
 	describe("#legacy", function ()
@@ -64,9 +64,9 @@ describe("util.datetime", function ()
 		end);
 		it("should work", function ()
 			-- Timestamp used by Go
-			assert.equals(parse("2017-11-19T17:58:13Z"),     1511114293);
-			assert.equals(parse("2017-11-19T18:58:50+0100"), 1511114330);
-			assert.equals(parse("2006-01-02T15:04:05-0700"), 1136239445);
+			assert.equals(1511114293, parse("2017-11-19T17:58:13Z"));
+			assert.equals(1511114330, parse("2017-11-19T18:58:50+0100"));
+			assert.equals(1136239445, parse("2006-01-02T15:04:05-0700"));
 		end);
 		it("should handle timezones", function ()
 			-- https://xmpp.org/extensions/xep-0082.html#example-2 and 3
