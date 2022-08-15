@@ -26,6 +26,7 @@ TRUNK
 ## Removed
 
 - Lua 5.1 support
+- XEP-0090 support removed from mod_time
 
 0.12.0
 ======

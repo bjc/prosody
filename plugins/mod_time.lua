@@ -9,7 +9,6 @@
 local st = require "util.stanza";
 local datetime = require "util.datetime".datetime;
 local now = require "util.time".now;
-local legacy = require "util.datetime".legacy;
 
 -- XEP-0202: Entity Time
 
@@ -26,16 +25,3 @@ end
 module:hook("iq-get/bare/urn:xmpp:time:time", time_handler);
 module:hook("iq-get/host/urn:xmpp:time:time", time_handler);
 
--- XEP-0090: Entity Time (deprecated)
-
-module:add_feature("jabber:iq:time");
-
-local function legacy_time_handler(event)
-	local origin, stanza = event.origin, event.stanza;
-	origin.send(st.reply(stanza):tag("query", {xmlns="jabber:iq:time"})
-		:tag("utc"):text(legacy()));
-	return true;
-end
-
-module:hook("iq-get/bare/jabber:iq:time:query", legacy_time_handler);
-module:hook("iq-get/host/jabber:iq:time:query", legacy_time_handler);
