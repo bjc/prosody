@@ -21,6 +21,8 @@ local setmetatable = setmetatable;
 
 local default_provider = "internal_hashed";
 
+local debug = debug;
+
 local _ENV = nil;
 -- luacheck: std none
 
@@ -183,6 +185,20 @@ local function set_jid_role(jid, host, role_name)
 	return hosts[host].authz.set_jid_role(jid, role_name)
 end
 
+local strict_deprecate_is_admin;
+local legacy_admin_roles = { ["prosody:admin"] = true, ["prosody:operator"] = true };
+local function is_admin(jid, host)
+	if strict_deprecate_is_admin == nil then
+		strict_deprecate_is_admin = (config.get("*", "strict_deprecate_is_admin") == true);
+	end
+	if strict_deprecate_is_admin then
+		log("error", "Attempt to use deprecated is_admin() API: %s", debug.traceback());
+		return false;
+	end
+	log("warn", "Usage of legacy is_admin() API, which will be disabled in a future build: %s", debug.traceback());
+	return legacy_admin_roles[get_jid_role(jid, host)] or false;
+end
+
 local function get_users_with_role(role, host)
 	if not hosts[host] then return false; end
 	if type(role) ~= "string" then return false; end
@@ -222,4 +238,7 @@ return {
 	set_jid_role = set_jid_role;
 	get_jids_with_role = get_jids_with_role;
 	get_role_by_name = get_role_by_name;
+
+	-- Deprecated
+	is_admin = is_admin;
 };
