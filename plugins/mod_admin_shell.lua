@@ -943,6 +943,15 @@ available_columns = {
 			end
 		end
 	};
+	role = {
+		title = "Role";
+		description = "Session role";
+		width = 20;
+		key = "role";
+		mapper = function(role)
+			return role.name;
+		end;
+	}
 };
 
 local function get_colspec(colspec, default)
@@ -963,7 +972,7 @@ end
 
 function def_env.c2s:show(match_jid, colspec)
 	local print = self.session.print;
-	local columns = get_colspec(colspec, { "id"; "jid"; "ipv"; "status"; "secure"; "smacks"; "csi" });
+	local columns = get_colspec(colspec, { "id"; "jid"; "role"; "ipv"; "status"; "secure"; "smacks"; "csi" });
 	local row = format_table(columns, self.session.width);
 
 	local function match(session)
