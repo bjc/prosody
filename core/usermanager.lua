@@ -37,13 +37,17 @@ end
 local fallback_authz_provider = {
 	get_user_roles = function (user) end; --luacheck: ignore 212/user
 	get_jids_with_role = function (role) end; --luacheck: ignore 212
-	set_user_roles = function (user, roles) end; -- luacheck: ignore 212
-	set_jid_roles = function (jid, roles) end; -- luacheck: ignore 212
 
-	get_user_default_role = function (user) end; -- luacheck: ignore 212
-	get_users_with_role = function (role_name) end; -- luacheck: ignore 212
+	get_user_role = function (user) end; -- luacheck: ignore 212
+	set_user_role = function (user, roles) end; -- luacheck: ignore 212
+
+	add_user_secondary_role = function (user, host, role_name) end; --luacheck: ignore 212
+	remove_user_secondary_role = function (user, host, role_name) end; --luacheck: ignore 212
+
 	get_jid_role = function (jid) end; -- luacheck: ignore 212
-	set_jid_role = function (jid) end; -- luacheck: ignore 212
+	set_jid_role = function (jid, role) end; -- luacheck: ignore 212
+
+	get_users_with_role = function (role_name) end; -- luacheck: ignore 212
 	add_default_permission = function (role_name, action, policy) end; -- luacheck: ignore 212
 	get_role_by_name = function (role_name) end; -- luacheck: ignore 212
 };
@@ -140,39 +144,63 @@ local function get_provider(host)
 	return hosts[host].users;
 end
 
--- Returns a map of { [role_name] = role, ... } that a user is allowed to assume
-local function get_user_roles(user, host)
+local function get_user_role(user, host)
 	if host and not hosts[host] then return false; end
 	if type(user) ~= "string" then return false; end
 
-	return hosts[host].authz.get_user_roles(user);
+	return hosts[host].authz.get_user_role(user);
 end
 
-local function get_user_default_role(user, host)
+local function set_user_role(user, host, role_name)
 	if host and not hosts[host] then return false; end
 	if type(user) ~= "string" then return false; end
 
-	return hosts[host].authz.get_user_default_role(user);
+	local role, err = hosts[host].authz.set_user_role(user, role_name);
+	if role then
+		prosody.events.fire_event("user-role-changed", {
+			username = user, host = host, role = role;
+		});
+	end
+	return role, err;
 end
 
--- Accepts a set of role names which the user is allowed to assume
-local function set_user_roles(user, host, roles)
+local function add_user_secondary_role(user, host, role_name)
 	if host and not hosts[host] then return false; end
 	if type(user) ~= "string" then return false; end
 
-	local ok, err = hosts[host].authz.set_user_roles(user, roles);
+	local role, err = hosts[host].authz.add_user_secondary_role(user, role_name);
+	if role then
+		prosody.events.fire_event("user-role-added", {
+			username = user, host = host, role = role;
+		});
+	end
+	return role, err;
+end
+
+local function remove_user_secondary_role(user, host, role_name)
+	if host and not hosts[host] then return false; end
+	if type(user) ~= "string" then return false; end
+
+	local ok, err = hosts[host].authz.remove_user_secondary_role(user, role_name);
 	if ok then
-		prosody.events.fire_event("user-roles-changed", {
-			username = user, host = host
+		prosody.events.fire_event("user-role-removed", {
+			username = user, host = host, role_name = role_name;
 		});
 	end
 	return ok, err;
 end
 
+local function get_user_secondary_roles(user, host)
+	if host and not hosts[host] then return false; end
+	if type(user) ~= "string" then return false; end
+
+	return hosts[host].authz.get_user_secondary_roles(user);
+end
+
 local function get_jid_role(jid, host)
 	local jid_node, jid_host = jid_split(jid);
 	if host == jid_host and jid_node then
-		return hosts[host].authz.get_user_default_role(jid_node);
+		return hosts[host].authz.get_user_role(jid_node);
 	end
 	return hosts[host].authz.get_jid_role(jid);
 end
@@ -230,9 +258,11 @@ return {
 	users = users;
 	get_sasl_handler = get_sasl_handler;
 	get_provider = get_provider;
-	get_user_default_role = get_user_default_role;
-	get_user_roles = get_user_roles;
-	set_user_roles = set_user_roles;
+	get_user_role = get_user_role;
+	set_user_role = set_user_role;
+	add_user_secondary_role = add_user_secondary_role;
+	remove_user_secondary_role = remove_user_secondary_role;
+	get_user_secondary_roles = get_user_secondary_roles;
 	get_users_with_role = get_users_with_role;
 	get_jid_role = get_jid_role;
 	set_jid_role = set_jid_role;

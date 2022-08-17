@@ -10,7 +10,7 @@ local function select_role(username, host, role)
 	if role then
 		return prosody.hosts[host].authz.get_role_by_name(role);
 	end
-	return usermanager.get_user_default_role(username, host);
+	return usermanager.get_user_role(username, host);
 end
 
 function create_jid_token(actor_jid, token_jid, token_role, token_ttl)

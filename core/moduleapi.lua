@@ -538,6 +538,7 @@ function api:load_resource(path, mode)
 end
 
 function api:open_store(name, store_type)
+	if self.host == "*" then return nil, "global-storage-not-supported"; end
 	return require"core.storagemanager".open(self.host, name or self.name, store_type);
 end
 
@@ -629,7 +630,7 @@ function api:may(action, context)
 		local role;
 		local node, host = jid_split(context);
 		if host == self.host then
-			role = hosts[host].authz.get_user_default_role(node);
+			role = hosts[host].authz.get_user_role(node);
 		else
 			role = hosts[self.host].authz.get_jid_role(context);
 		end
