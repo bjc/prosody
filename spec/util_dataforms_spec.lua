@@ -130,7 +130,7 @@ describe("util.dataforms", function ()
 		assert.truthy(st.is_stanza(xform));
 		assert.equal("x", xform.name);
 		assert.equal("jabber:x:data", xform.attr.xmlns);
-		assert.equal("FORM_TYPE", xform:find("field@var"));
+		assert.equal("FORM_TYPE", xform:get_child_attr("field", nil, "var"));
 		assert.equal("xmpp:prosody.im/spec/util.dataforms#1", xform:find("field/value#"));
 		local allowed_direct_children = {
 			title = true,
