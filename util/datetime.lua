@@ -46,8 +46,7 @@ end
 
 local function parse(s)
 	if s then
-		local year, month, day, hour, min, sec, tzd;
-		year, month, day, hour, min, sec, tzd = s:match("^(%d%d%d%d)%-?(%d%d)%-?(%d%d)T(%d%d):(%d%d):(%d%d%.?%d*)([Z+%-]?.*)$");
+		local year, month, day, hour, min, sec, tzd = s:match("^(%d%d%d%d)%-?(%d%d)%-?(%d%d)T(%d%d):(%d%d):(%d%d%.?%d*)([Z+%-]?.*)$");
 		if year then
 			local now = os_time();
 			local time_offset = os_difftime(os_time(os_date("*t", now)), os_time(os_date("!*t", now))); -- to deal with local timezone
