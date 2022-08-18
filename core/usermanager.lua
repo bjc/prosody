@@ -35,21 +35,22 @@ local function new_null_provider()
 end
 
 local fallback_authz_provider = {
-	get_user_roles = function (user) end; --luacheck: ignore 212/user
-	get_jids_with_role = function (role) end; --luacheck: ignore 212
+	-- luacheck: ignore 212
+	get_user_roles = function (user) end;
+	get_jids_with_role = function (role) end;
 
-	get_user_role = function (user) end; -- luacheck: ignore 212
-	set_user_role = function (user, roles) end; -- luacheck: ignore 212
+	get_user_role = function (user) end;
+	set_user_role = function (user, roles) end;
 
-	add_user_secondary_role = function (user, host, role_name) end; --luacheck: ignore 212
-	remove_user_secondary_role = function (user, host, role_name) end; --luacheck: ignore 212
+	add_user_secondary_role = function (user, host, role_name) end;
+	remove_user_secondary_role = function (user, host, role_name) end;
 
-	get_jid_role = function (jid) end; -- luacheck: ignore 212
-	set_jid_role = function (jid, role) end; -- luacheck: ignore 212
+	get_jid_role = function (jid) end;
+	set_jid_role = function (jid, role) end;
 
-	get_users_with_role = function (role_name) end; -- luacheck: ignore 212
-	add_default_permission = function (role_name, action, policy) end; -- luacheck: ignore 212
-	get_role_by_name = function (role_name) end; -- luacheck: ignore 212
+	get_users_with_role = function (role_name) end;
+	add_default_permission = function (role_name, action, policy) end;
+	get_role_by_name = function (role_name) end;
 };
 
 local provider_mt = { __index = new_null_provider() };
