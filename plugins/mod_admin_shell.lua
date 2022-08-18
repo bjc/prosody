@@ -271,20 +271,19 @@ function commands.help(session, data)
 		print [[user:create(jid, password, roles) - Create the specified user account]]
 		print [[user:password(jid, password) - Set the password for the specified user account]]
 		print [[user:roles(jid, host) - Show current roles for an user]]
-		print [[user:setroles(jid, host, roles) - Set roles for an user (see 'help roles')]]
+		print [[user:setrole(jid, host, role) - Set primary role of a user (see 'help roles')]]
+		print [[user:addrole(jid, host, role) - Add a secondary role to a user]]
+		print [[user:delrole(jid, host, role) - Remove a secondary role from a user]]
 		print [[user:delete(jid) - Permanently remove the specified user account]]
 		print [[user:list(hostname, pattern) - List users on the specified host, optionally filtering with a pattern]]
 	elseif section == "roles" then
 		print [[Roles may grant access or restrict users from certain operations]]
 		print [[Built-in roles are:]]
-		print [[  prosody:admin - Administrator]]
-		print [[  (empty set) - Normal user]]
+		print [[  prosody:user     - Normal user (default)]]
+		print [[  prosody:admin    - Host administrator]]
+		print [[  prosody:operator - Server administrator]]
 		print [[]]
-		print [[The canonical role format looks like: { ["example:role"] = true }]]
-		print [[For convenience, the following formats are also accepted:]]
-		print [["admin" - short for "prosody:admin", the normal admin status (like the admins config option)]]
-		print [["example:role" - short for {["example:role"]=true}]]
-		print [[{"example:role"} - short for {["example:role"]=true}]]
+		print [[Roles can be assigned using the user management commands (see 'help user').]]
 	elseif section == "muc" then
 		-- TODO `muc:room():foo()` commands
 		print [[muc:create(roomjid, { config }) - Create the specified MUC room with the given config]]
@@ -1383,15 +1382,8 @@ end
 
 local um = require"core.usermanager";
 
-local function coerce_roles(roles)
-	if roles == "admin" then roles = "prosody:admin"; end
-	if type(roles) == "string" then roles = { [roles] = true }; end
-	if roles[1] then for i, role in ipairs(roles) do roles[role], roles[i] = true, nil; end end
-	return roles;
-end
-
 def_env.user = {};
-function def_env.user:create(jid, password, roles)
+function def_env.user:create(jid, password, role)
 	local username, host = jid_split(jid);
 	if not prosody.hosts[host] then
 		return nil, "No such host: "..host;
@@ -1400,10 +1392,9 @@ function def_env.user:create(jid, password, roles)
 	end
 	local ok, err = um.create_user(username, password, host);
 	if ok then
-		if ok and roles then
-			roles = coerce_roles(roles);
-			local roles_ok, rerr = um.set_roles(jid, host, roles);
-			if not roles_ok then return nil, "User created, but could not set roles: " .. tostring(rerr); end
+		if ok and role then
+			local role_ok, rerr = um.set_user_role(jid, host, role);
+			if not role_ok then return nil, "User created, but could not set role: " .. tostring(rerr); end
 		end
 		return true, "User created";
 	else
@@ -1441,41 +1432,63 @@ function def_env.user:password(jid, password)
 	end
 end
 
-function def_env.user:roles(jid, host, new_roles)
-	if new_roles or type(host) == "table" then
-		return nil, "Use user:setroles(jid, host, roles) to change user roles";
-	end
+function def_env.user:role(jid, host)
 	local username, userhost = jid_split(jid);
 	if host == nil then host = userhost; end
-	if host ~= "*" and not prosody.hosts[host] then
+	if not prosody.hosts[host] then
 		return nil, "No such host: "..host;
 	elseif prosody.hosts[userhost] and not um.user_exists(username, userhost) then
 		return nil, "No such user";
 	end
-	local roles = um.get_roles(jid, host);
-	if not roles then return true, "No roles"; end
-	local count = 0;
-	local print = self.session.print;
-	for role in pairs(roles) do
+
+	local primary_role = um.get_user_role(username, host);
+	local secondary_roles = um.get_user_secondary_roles(username, host);
+
+	print(primary_role and primary_role.name or "<none>");
+
+	local count = primary_role and 1 or 0;
+	for role_name in pairs(secondary_roles or {}) do
 		count = count + 1;
-		print(role);
+		print(role_name.." (secondary)");
 	end
+
 	return true, count == 1 and "1 role" or count.." roles";
 end
-def_env.user.showroles = def_env.user.roles; -- COMPAT
+def_env.user.roles = def_env.user.role;
 
--- user:roles("someone@example.com", "example.com", {"prosody:admin"})
--- user:roles("someone@example.com", {"prosody:admin"})
-function def_env.user:setroles(jid, host, new_roles)
+-- user:setrole("someone@example.com", "example.com", "prosody:admin")
+-- user:setrole("someone@example.com", "prosody:admin")
+function def_env.user:setrole(jid, host, new_role)
 	local username, userhost = jid_split(jid);
-	if new_roles == nil then host, new_roles = userhost, host; end
-	if host ~= "*" and not prosody.hosts[host] then
+	if new_role == nil then host, new_role = userhost, host; end
+	if not prosody.hosts[host] then
 		return nil, "No such host: "..host;
 	elseif prosody.hosts[userhost] and not um.user_exists(username, userhost) then
 		return nil, "No such user";
 	end
-	if host == "*" then host = nil; end
-	return um.set_roles(jid, host, coerce_roles(new_roles));
+	return um.set_user_role(username, host, new_role);
+end
+
+function def_env.user:addrole(jid, host, new_role)
+	local username, userhost = jid_split(jid);
+	if new_role == nil then host, new_role = userhost, host; end
+	if not prosody.hosts[host] then
+		return nil, "No such host: "..host;
+	elseif prosody.hosts[userhost] and not um.user_exists(username, userhost) then
+		return nil, "No such user";
+	end
+	return um.add_user_secondary_role(username, host, new_role);
+end
+
+function def_env.user:delrole(jid, host, role_name)
+	local username, userhost = jid_split(jid);
+	if role_name == nil then host, role_name = userhost, host; end
+	if not prosody.hosts[host] then
+		return nil, "No such host: "..host;
+	elseif prosody.hosts[userhost] and not um.user_exists(username, userhost) then
+		return nil, "No such user";
+	end
+	return um.remove_user_secondary_role(username, host, role_name);
 end
 
 -- TODO switch to table view, include roles
