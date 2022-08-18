@@ -270,8 +270,8 @@ function commands.help(session, data)
 	elseif section == "user" then
 		print [[user:create(jid, password, roles) - Create the specified user account]]
 		print [[user:password(jid, password) - Set the password for the specified user account]]
-		print [[user:showroles(jid, host) - Show current roles for an user]]
-		print [[user:roles(jid, host, roles) - Set roles for an user (see 'help roles')]]
+		print [[user:roles(jid, host) - Show current roles for an user]]
+		print [[user:setroles(jid, host, roles) - Set roles for an user (see 'help roles')]]
 		print [[user:delete(jid) - Permanently remove the specified user account]]
 		print [[user:list(hostname, pattern) - List users on the specified host, optionally filtering with a pattern]]
 	elseif section == "roles" then
@@ -1432,7 +1432,10 @@ function def_env.user:password(jid, password)
 	end
 end
 
-function def_env.user:showroles(jid, host)
+function def_env.user:roles(jid, host, new_roles)
+	if new_roles or type(host) == "table" then
+		return nil, "Use user:setroles(jid, host, roles) to change user roles";
+	end
 	local username, userhost = jid_split(jid);
 	if host == nil then host = userhost; end
 	if host ~= "*" and not prosody.hosts[host] then
@@ -1450,10 +1453,11 @@ function def_env.user:showroles(jid, host)
 	end
 	return true, count == 1 and "1 role" or count.." roles";
 end
+def_env.user.showroles = def_env.user.roles; -- COMPAT
 
 -- user:roles("someone@example.com", "example.com", {"prosody:admin"})
 -- user:roles("someone@example.com", {"prosody:admin"})
-function def_env.user:roles(jid, host, new_roles)
+function def_env.user:setroles(jid, host, new_roles)
 	local username, userhost = jid_split(jid);
 	if new_roles == nil then host, new_roles = userhost, host; end
 	if host ~= "*" and not prosody.hosts[host] then
