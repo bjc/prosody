@@ -268,7 +268,7 @@ function commands.help(session, data)
 		print [[host:deactivate(hostname) - Disconnects all clients on this host and deactivates]]
 		print [[host:list() - List the currently-activated hosts]]
 	elseif section == "user" then
-		print [[user:create(jid, password, roles) - Create the specified user account]]
+		print [[user:create(jid, password, role) - Create the specified user account]]
 		print [[user:password(jid, password) - Set the password for the specified user account]]
 		print [[user:roles(jid, host) - Show current roles for an user]]
 		print [[user:setrole(jid, host, role) - Set primary role of a user (see 'help roles')]]
