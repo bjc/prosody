@@ -27,6 +27,7 @@ function provider.set_password(username, password)
 		return nil, "Password fails SASLprep.";
 	end
 	if account then
+		account.updated = os.time();
 		account.password = password;
 		return datamanager.store(username, host, "accounts", account);
 	end
@@ -38,7 +39,8 @@ function provider.user_exists(username)
 end
 
 function provider.create_user(username, password)
-	return datamanager.store(username, host, "accounts", {password = password});
+	local now = os.time();
+	return datamanager.store(username, host, "accounts", { created = now; updated = now; password = password });
 end
 
 function provider.delete_user(username)
