@@ -1390,16 +1390,24 @@ function def_env.user:create(jid, password, role)
 	elseif um.user_exists(username, host) then
 		return nil, "User exists";
 	end
-	local ok, err = um.create_user(username, password, host);
-	if ok then
-		if ok and role then
-			local role_ok, rerr = um.set_user_role(jid, host, role);
-			if not role_ok then return nil, "User created, but could not set role: " .. tostring(rerr); end
-		end
-		return true, "User created";
-	else
+	local ok, err = um.create_user(username, nil, host);
+	if not ok then
 		return nil, "Could not create user: "..err;
 	end
+
+	if role then
+		local role_ok, rerr = um.set_user_role(jid, host, role);
+		if not role_ok then
+			return nil, "Could not set role: " .. tostring(rerr);
+		end
+	end
+
+	local ok, err = um.set_password(username, password, host, nil);
+	if not ok then
+		return nil, "Could not set password for user: "..err;
+	end
+
+	return true, "User created";
 end
 
 function def_env.user:delete(jid)
