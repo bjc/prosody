@@ -181,6 +181,18 @@ function get_user_secondary_roles(user)
 	return stored_roles;
 end
 
+function user_can_assume_role(user, role_name)
+	local primary_role = get_user_role(user);
+	if primary_role and primary_role.role_name == role_name then
+		return true;
+	end
+	local secondary_roles = get_user_secondary_roles(user);
+	if secondary_roles and secondary_roles[role_name] then
+		return true;
+	end
+	return false;
+end
+
 -- This function is *expensive*
 function get_users_with_role(role_name)
 	local function role_filter(username, default_role) --luacheck: ignore 212/username

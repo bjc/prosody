@@ -164,6 +164,13 @@ local function set_user_role(user, host, role_name)
 	return role, err;
 end
 
+local function user_can_assume_role(user, host, role_name)
+	if host and not hosts[host] then return false; end
+	if type(user) ~= "string" then return false; end
+
+	return hosts[host].authz.user_can_assume_role(user, role_name);
+end
+
 local function add_user_secondary_role(user, host, role_name)
 	if host and not hosts[host] then return false; end
 	if type(user) ~= "string" then return false; end
@@ -260,6 +267,7 @@ return {
 	get_provider = get_provider;
 	get_user_role = get_user_role;
 	set_user_role = set_user_role;
+	user_can_assume_role = user_can_assume_role;
 	add_user_secondary_role = add_user_secondary_role;
 	remove_user_secondary_role = remove_user_secondary_role;
 	get_user_secondary_roles = get_user_secondary_roles;
