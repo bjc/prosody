@@ -36,7 +36,6 @@ end
 
 local fallback_authz_provider = {
 	-- luacheck: ignore 212
-	get_user_roles = function (user) end;
 	get_jids_with_role = function (role) end;
 
 	get_user_role = function (user) end;
