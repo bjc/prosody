@@ -115,8 +115,9 @@ function provider.users()
 end
 
 function provider.create_user(username, password)
+	local now = os.time();
 	if password == nil then
-		return accounts:set(username, {});
+		return accounts:set(username, { created = now; updated = now; disabled = true });
 	end
 	local salt = generate_uuid();
 	local valid, stored_key, server_key = get_auth_db(password, salt, default_iteration_count);
@@ -125,7 +126,6 @@ function provider.create_user(username, password)
 	end
 	local stored_key_hex = to_hex(stored_key);
 	local server_key_hex = to_hex(server_key);
-	local now = os.time();
 	return accounts:set(username, {
 		stored_key = stored_key_hex, server_key = server_key_hex,
 		salt = salt, iteration_count = default_iteration_count,
