@@ -42,8 +42,11 @@ local fallback_authz_provider = {
 	get_user_role = function (user) end;
 	set_user_role = function (user, roles) end;
 
+	get_user_secondary_roles = function (user) end;
 	add_user_secondary_role = function (user, host, role_name) end;
 	remove_user_secondary_role = function (user, host, role_name) end;
+
+	user_can_assume_role = function(user, role_name) end;
 
 	get_jid_role = function (jid) end;
 	set_jid_role = function (jid, role) end;
