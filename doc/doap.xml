@@ -60,6 +60,7 @@
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc7395"/>
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc7590"/>
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc7673"/>
+    <implements rdf:resource="https://www.rfc-editor.org/info/rfc8305"/>
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc9266"/>
     <implements rdf:resource="https://datatracker.ietf.org/doc/draft-cridland-xmpp-session/">
       <!-- since=0.6.0 note=Added in hg:0bbbc9042361 -->

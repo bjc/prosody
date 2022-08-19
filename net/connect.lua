@@ -3,7 +3,6 @@ local log = require "util.logger".init("net.connect");
 local new_id = require "util.id".short;
 local timer = require "util.timer";
 
--- TODO #1246 Happy Eyeballs
 -- FIXME RFC 6724
 -- FIXME Error propagation from resolvers doesn't work
 -- FIXME #1428 Reuse DNS resolver object between service and basic resolver
