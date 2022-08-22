@@ -48,9 +48,19 @@ function provider.set_password(username, password)
 	local account = accounts:get(username);
 	if account then
 		account.password = password;
+		account.updated = os.time();
 		return accounts:set(username, account);
 	end
 	return nil, "Account not available.";
+end
+
+function provider.get_account_info(username)
+	local account = accounts:get(username);
+	if not account then return nil, "Account not available"; end
+	return {
+		created = account.created;
+		password_updated = account.updated;
+	};
 end
 
 function provider.user_exists(username)
@@ -71,7 +81,11 @@ function provider.create_user(username, password)
 	if not password then
 		return nil, "Password fails SASLprep.";
 	end
-	return accounts:set(username, {password = password});
+	local now = os.time();
+	return accounts:set(username, {
+		password = password;
+		created = now, updated = now;
+	});
 end
 
 function provider.delete_user(username)

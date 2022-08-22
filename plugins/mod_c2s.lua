@@ -259,7 +259,7 @@ local function disconnect_user_sessions(reason, leave_resource)
 end
 
 module:hook_global("user-password-changed", disconnect_user_sessions({ condition = "reset", text = "Password changed" }, true), 200);
-module:hook_global("user-roles-changed", disconnect_user_sessions({ condition = "reset", text = "Roles changed" }), 200);
+module:hook_global("user-role-changed", disconnect_user_sessions({ condition = "reset", text = "Role changed" }), 200);
 module:hook_global("user-deleted", disconnect_user_sessions({ condition = "not-authorized", text = "Account deleted" }), 200);
 
 function runner_callbacks:ready()

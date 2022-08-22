@@ -9,14 +9,10 @@
 local modulemanager = require "core.modulemanager";
 local log = require "util.logger".init("usermanager");
 local type = type;
-local it = require "util.iterators";
-local jid_bare = require "util.jid".bare;
 local jid_split = require "util.jid".split;
-local jid_prep = require "util.jid".prep;
 local config = require "core.configmanager";
 local sasl_new = require "util.sasl".new;
 local storagemanager = require "core.storagemanager";
-local set = require "util.set";
 
 local prosody = _G.prosody;
 local hosts = prosody.hosts;
@@ -24,6 +20,8 @@ local hosts = prosody.hosts;
 local setmetatable = setmetatable;
 
 local default_provider = "internal_hashed";
+
+local debug = debug;
 
 local _ENV = nil;
 -- luacheck: std none
@@ -36,26 +34,25 @@ local function new_null_provider()
 	});
 end
 
-local global_admins_config = config.get("*", "admins");
-if type(global_admins_config) ~= "table" then
-	global_admins_config = nil; -- TODO: factor out moduleapi magic config handling and use it here
-end
-local global_admins = set.new(global_admins_config) / jid_prep;
+local fallback_authz_provider = {
+	-- luacheck: ignore 212
+	get_jids_with_role = function (role) end;
 
-local admin_role = { ["prosody:admin"] = true };
-local global_authz_provider = {
-	get_user_roles = function (user) end; --luacheck: ignore 212/user
-	get_jid_roles = function (jid)
-		if global_admins:contains(jid) then
-			return admin_role;
-		end
-	end;
-	get_jids_with_role = function (role)
-		if role ~= "prosody:admin" then return {}; end
-		return it.to_array(global_admins);
-	end;
-	set_user_roles = function (user, roles) end; -- luacheck: ignore 212
-	set_jid_roles = function (jid, roles) end; -- luacheck: ignore 212
+	get_user_role = function (user) end;
+	set_user_role = function (user, role_name) end;
+
+	get_user_secondary_roles = function (user) end;
+	add_user_secondary_role = function (user, host, role_name) end;
+	remove_user_secondary_role = function (user, host, role_name) end;
+
+	user_can_assume_role = function(user, role_name) end;
+
+	get_jid_role = function (jid) end;
+	set_jid_role = function (jid, role) end;
+
+	get_users_with_role = function (role_name) end;
+	add_default_permission = function (role_name, action, policy) end;
+	get_role_by_name = function (role_name) end;
 };
 
 local provider_mt = { __index = new_null_provider() };
@@ -66,7 +63,7 @@ local function initialize_host(host)
 	local authz_provider_name = config.get(host, "authorization") or "internal";
 
 	local authz_mod = modulemanager.load(host, "authz_"..authz_provider_name);
-	host_session.authz = authz_mod or global_authz_provider;
+	host_session.authz = authz_mod or fallback_authz_provider;
 
 	if host_session.type ~= "local" then return; end
 
@@ -116,6 +113,12 @@ local function set_password(username, password, host, resource)
 	return ok, err;
 end
 
+local function get_account_info(username, host)
+	local method = hosts[host].users.get_account_info;
+	if not method then return nil, "method-not-supported"; end
+	return method(username);
+end
+
 local function user_exists(username, host)
 	if hosts[host].sessions[username] then return true; end
 	return hosts[host].users.user_exists(username);
@@ -144,70 +147,112 @@ local function get_provider(host)
 	return hosts[host].users;
 end
 
-local function get_roles(jid, host)
+local function get_user_role(user, host)
 	if host and not hosts[host] then return false; end
-	if type(jid) ~= "string" then return false; end
+	if type(user) ~= "string" then return false; end
 
-	jid = jid_bare(jid);
-	host = host or "*";
-
-	local actor_user, actor_host = jid_split(jid);
-	local roles;
-
-	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
-
-	if actor_user and actor_host == host then -- Local user
-		roles = authz_provider.get_user_roles(actor_user);
-	else -- Remote user/JID
-		roles = authz_provider.get_jid_roles(jid);
-	end
-
-	return roles;
+	return hosts[host].authz.get_user_role(user);
 end
 
-local function set_roles(jid, host, roles)
+local function set_user_role(user, host, role_name)
 	if host and not hosts[host] then return false; end
-	if type(jid) ~= "string" then return false; end
+	if type(user) ~= "string" then return false; end
 
-	jid = jid_bare(jid);
-	host = host or "*";
-
-	local actor_user, actor_host = jid_split(jid);
-
-	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
-	if actor_user and actor_host == host then -- Local user
-		local ok, err = authz_provider.set_user_roles(actor_user, roles);
-		if ok then
-			prosody.events.fire_event("user-roles-changed", {
-				username = actor_user, host = actor_host
-			});
-		end
-		return ok, err;
-	else -- Remote entity
-		return authz_provider.set_jid_roles(jid, roles)
+	local role, err = hosts[host].authz.set_user_role(user, role_name);
+	if role then
+		prosody.events.fire_event("user-role-changed", {
+			username = user, host = host, role = role;
+		});
 	end
+	return role, err;
 end
 
+local function user_can_assume_role(user, host, role_name)
+	if host and not hosts[host] then return false; end
+	if type(user) ~= "string" then return false; end
+
+	return hosts[host].authz.user_can_assume_role(user, role_name);
+end
+
+local function add_user_secondary_role(user, host, role_name)
+	if host and not hosts[host] then return false; end
+	if type(user) ~= "string" then return false; end
+
+	local role, err = hosts[host].authz.add_user_secondary_role(user, role_name);
+	if role then
+		prosody.events.fire_event("user-role-added", {
+			username = user, host = host, role = role;
+		});
+	end
+	return role, err;
+end
+
+local function remove_user_secondary_role(user, host, role_name)
+	if host and not hosts[host] then return false; end
+	if type(user) ~= "string" then return false; end
+
+	local ok, err = hosts[host].authz.remove_user_secondary_role(user, role_name);
+	if ok then
+		prosody.events.fire_event("user-role-removed", {
+			username = user, host = host, role_name = role_name;
+		});
+	end
+	return ok, err;
+end
+
+local function get_user_secondary_roles(user, host)
+	if host and not hosts[host] then return false; end
+	if type(user) ~= "string" then return false; end
+
+	return hosts[host].authz.get_user_secondary_roles(user);
+end
+
+local function get_jid_role(jid, host)
+	local jid_node, jid_host = jid_split(jid);
+	if host == jid_host and jid_node then
+		return hosts[host].authz.get_user_role(jid_node);
+	end
+	return hosts[host].authz.get_jid_role(jid);
+end
+
+local function set_jid_role(jid, host, role_name)
+	local _, jid_host = jid_split(jid);
+	if host == jid_host then
+		return nil, "unexpected-local-jid";
+	end
+	return hosts[host].authz.set_jid_role(jid, role_name)
+end
+
+local strict_deprecate_is_admin;
+local legacy_admin_roles = { ["prosody:admin"] = true, ["prosody:operator"] = true };
 local function is_admin(jid, host)
-	local roles = get_roles(jid, host);
-	return roles and roles["prosody:admin"];
+	if strict_deprecate_is_admin == nil then
+		strict_deprecate_is_admin = (config.get("*", "strict_deprecate_is_admin") == true);
+	end
+	if strict_deprecate_is_admin then
+		log("error", "Attempt to use deprecated is_admin() API: %s", debug.traceback());
+		return false;
+	end
+	log("warn", "Usage of legacy is_admin() API, which will be disabled in a future build: %s", debug.traceback());
+	return legacy_admin_roles[get_jid_role(jid, host)] or false;
 end
 
 local function get_users_with_role(role, host)
 	if not hosts[host] then return false; end
 	if type(role) ~= "string" then return false; end
-
 	return hosts[host].authz.get_users_with_role(role);
 end
 
 local function get_jids_with_role(role, host)
 	if host and not hosts[host] then return false; end
 	if type(role) ~= "string" then return false; end
+	return hosts[host].authz.get_jids_with_role(role);
+end
 
-	host = host or "*";
-
-	local authz_provider = (host ~= "*" and hosts[host].authz) or global_authz_provider;
-	return authz_provider.get_jids_with_role(role);
+local function get_role_by_name(role_name, host)
+	if host and not hosts[host] then return false; end
+	if type(role_name) ~= "string" then return false; end
+	return hosts[host].authz.get_role_by_name(role_name);
 end
 
 return {
@@ -216,15 +261,25 @@ return {
 	test_password = test_password;
 	get_password = get_password;
 	set_password = set_password;
+	get_account_info = get_account_info;
 	user_exists = user_exists;
 	create_user = create_user;
 	delete_user = delete_user;
 	users = users;
 	get_sasl_handler = get_sasl_handler;
 	get_provider = get_provider;
-	get_roles = get_roles;
-	set_roles = set_roles;
-	is_admin = is_admin;
+	get_user_role = get_user_role;
+	set_user_role = set_user_role;
+	user_can_assume_role = user_can_assume_role;
+	add_user_secondary_role = add_user_secondary_role;
+	remove_user_secondary_role = remove_user_secondary_role;
+	get_user_secondary_roles = get_user_secondary_roles;
 	get_users_with_role = get_users_with_role;
+	get_jid_role = get_jid_role;
+	set_jid_role = set_jid_role;
 	get_jids_with_role = get_jids_with_role;
+	get_role_by_name = get_role_by_name;
+
+	-- Deprecated
+	is_admin = is_admin;
 };

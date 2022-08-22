@@ -123,15 +123,24 @@ local function destroy_session(session, err)
 	retire_session(session);
 end
 
-local function make_authenticated(session, username, scope)
+local function make_authenticated(session, username, role_name)
 	username = nodeprep(username);
 	if not username or #username == 0 then return nil, "Invalid username"; end
 	session.username = username;
 	if session.type == "c2s_unauthed" then
 		session.type = "c2s_unbound";
 	end
-	session.auth_scope = scope;
-	session.log("info", "Authenticated as %s@%s", username, session.host or "(unknown)");
+
+	local role;
+	if role_name then
+		role = hosts[session.host].authz.get_role_by_name(role_name);
+	else
+		role = hosts[session.host].authz.get_user_role(username);
+	end
+	if role then
+		sessionlib.set_role(session, role);
+	end
+	session.log("info", "Authenticated as %s@%s [%s]", username, session.host or "(unknown)", role and role.name or "no role");
 	return true;
 end
 

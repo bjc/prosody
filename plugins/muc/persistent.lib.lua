@@ -8,7 +8,10 @@
 --
 
 local restrict_persistent = not module:get_option_boolean("muc_room_allow_persistent", true);
-local um_is_admin = require "core.usermanager".is_admin;
+module:default_permission(
+	restrict_persistent and "prosody:admin" or "prosody:user",
+	":create-persistent-room"
+);
 
 local function get_persistent(room)
 	return room._data.persistent;
@@ -22,8 +25,8 @@ local function set_persistent(room, persistent)
 end
 
 module:hook("muc-config-form", function(event)
-	if restrict_persistent and not um_is_admin(event.actor, module.host) then
-		-- Don't show option if hidden rooms are restricted and user is not admin of this host
+	if not module:may(":create-persistent-room", event.actor) then
+		-- Hide config option if this user is not allowed to create persistent rooms
 		return;
 	end
 	table.insert(event.form, {
@@ -36,7 +39,7 @@ module:hook("muc-config-form", function(event)
 end, 100-5);
 
 module:hook("muc-config-submitted/muc#roomconfig_persistentroom", function(event)
-	if restrict_persistent and not um_is_admin(event.actor, module.host) then
+	if not module:may(":create-persistent-room", event.actor) then
 		return; -- Not allowed
 	end
 	if set_persistent(event.room, event.value) then

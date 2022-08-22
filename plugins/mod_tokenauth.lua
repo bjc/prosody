@@ -1,10 +1,19 @@
 local id = require "util.id";
 local jid = require "util.jid";
 local base64 = require "util.encodings".base64;
+local usermanager = require "core.usermanager";
+local generate_identifier = require "util.id".short;
 
 local token_store = module:open_store("auth_tokens", "map");
 
-function create_jid_token(actor_jid, token_jid, token_scope, token_ttl)
+local function select_role(username, host, role)
+	if role then
+		return prosody.hosts[host].authz.get_role_by_name(role);
+	end
+	return usermanager.get_user_role(username, host);
+end
+
+function create_jid_token(actor_jid, token_jid, token_role, token_ttl)
 	token_jid = jid.prep(token_jid);
 	if not actor_jid or token_jid ~= actor_jid and not jid.compare(token_jid, actor_jid) then
 		return nil, "not-authorized";
@@ -21,13 +30,9 @@ function create_jid_token(actor_jid, token_jid, token_scope, token_ttl)
 		created = os.time();
 		expires = token_ttl and (os.time() + token_ttl) or nil;
 		jid = token_jid;
-		session = {
-			username = token_username;
-			host = token_host;
-			resource = token_resource;
 
-			auth_scope = token_scope;
-		};
+		resource = token_resource;
+		role = token_role;
 	};
 
 	local token_id = id.long();
@@ -46,11 +51,7 @@ local function parse_token(encoded_token)
 	return token_id, token_user, token_host;
 end
 
-function get_token_info(token)
-	local token_id, token_user, token_host = parse_token(token);
-	if not token_id then
-		return nil, "invalid-token-format";
-	end
+local function _get_parsed_token_info(token_id, token_user, token_host)
 	if token_host ~= module.host then
 		return nil, "invalid-host";
 	end
@@ -69,6 +70,33 @@ function get_token_info(token)
 
 	return token_info
 end
+
+function get_token_info(token)
+	local token_id, token_user, token_host = parse_token(token);
+	if not token_id then
+		return nil, "invalid-token-format";
+	end
+	return _get_parsed_token_info(token_id, token_user, token_host);
+end
+
+function get_token_session(token, resource)
+	local token_id, token_user, token_host = parse_token(token);
+	if not token_id then
+		return nil, "invalid-token-format";
+	end
+
+	local token_info, err = _get_parsed_token_info(token_id, token_user, token_host);
+	if not token_info then return nil, err; end
+
+	return {
+		username = token_user;
+		host = token_host;
+		resource = token_info.resource or resource or generate_identifier();
+
+		role = select_role(token_user, token_host, token_info.role);
+	};
+end
+
 
 function revoke_token(token)
 	local token_id, token_user, token_host = parse_token(token);

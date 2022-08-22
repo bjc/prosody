@@ -52,7 +52,7 @@ local function handle_status(session, status, ret, err_msg)
 		module:fire_event("authentication-failure", { session = session, condition = ret, text = err_msg });
 		session.sasl_handler = session.sasl_handler:clean_clone();
 	elseif status == "success" then
-		local ok, err = sm_make_authenticated(session, session.sasl_handler.username, session.sasl_handler.scope);
+		local ok, err = sm_make_authenticated(session, session.sasl_handler.username, session.sasl_handler.role);
 		if ok then
 			module:fire_event("authentication-success", { session = session });
 			session.sasl_handler = nil;

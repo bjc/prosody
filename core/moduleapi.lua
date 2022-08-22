@@ -19,6 +19,7 @@ local promise = require "util.promise";
 local time_now = require "util.time".now;
 local format = require "util.format".format;
 local jid_node = require "util.jid".node;
+local jid_split = require "util.jid".split;
 local jid_resource = require "util.jid".resource;
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
@@ -537,6 +538,7 @@ function api:load_resource(path, mode)
 end
 
 function api:open_store(name, store_type)
+	if self.host == "*" then return nil, "global-storage-not-supported"; end
 	return require"core.storagemanager".open(self.host, name or self.name, store_type);
 end
 
@@ -599,6 +601,75 @@ end
 
 function api:get_status()
 	return self.status_type, self.status_message, self.status_time;
+end
+
+function api:default_permission(role_name, permission)
+	permission = permission:gsub("^:", self.name..":");
+	if self.host == "*" then
+		for _, host in pairs(hosts) do
+			if host.authz then
+				host.authz.add_default_permission(role_name, permission);
+			end
+		end
+		return
+	end
+	hosts[self.host].authz.add_default_permission(role_name, permission);
+end
+
+function api:default_permissions(role_name, permissions)
+	for _, permission in ipairs(permissions) do
+		self:default_permission(role_name, permission);
+	end
+end
+
+function api:may(action, context)
+	if action:byte(1) == 58 then -- action begins with ':'
+		action = self.name..action; -- prepend module name
+	end
+	if type(context) == "string" then -- check JID permissions
+		local role;
+		local node, host = jid_split(context);
+		if host == self.host then
+			role = hosts[host].authz.get_user_role(node);
+		else
+			role = hosts[self.host].authz.get_jid_role(context);
+		end
+		if not role then
+			self:log("debug", "Access denied: JID <%s> may not %s (no role found)", context, action);
+			return false;
+		end
+		local permit = role:may(action);
+		if not permit then
+			self:log("debug", "Access denied: JID <%s> may not %s (not permitted by role %s)", context, action, role.name);
+		end
+		return permit;
+	end
+
+	local session = context.origin or context.session;
+	if type(session) ~= "table" then
+		error("Unable to identify actor session from context");
+	end
+	if session.type == "s2sin" or (session.type == "c2s" and session.host ~= self.host) then
+		local actor_jid = context.stanza.attr.from;
+		local role = hosts[self.host].authz.get_jid_role(actor_jid);
+		if not role then
+			self:log("debug", "Access denied: JID <%s> may not %s (no role found)", actor_jid, action);
+			return false;
+		end
+		local permit = role:may(action, context);
+		if not permit then
+			self:log("debug", "Access denied: JID <%s> may not %s (not permitted by role %s)", actor_jid, action, role.name);
+		end
+		return permit;
+	elseif session.role then
+		local permit = session.role:may(action, context);
+		if not permit then
+			self:log("debug", "Access denied: session %s (%s) may not %s (not permitted by role %s)",
+				session.id, session.full_jid, action, session.role.name
+			);
+		end
+		return permit;
+	end
 end
 
 return api;

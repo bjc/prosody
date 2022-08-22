@@ -100,7 +100,6 @@ local jid_prep = require "util.jid".prep;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza";
 local cache = require "util.cache";
-local um_is_admin = require "core.usermanager".is_admin;
 
 module:require "muc/config_form_sections";
 
@@ -111,21 +110,23 @@ module:depends "muc_unique"
 module:require "muc/hats";
 module:require "muc/lock";
 
-local function is_admin(jid)
-	return um_is_admin(jid, module.host);
-end
+module:default_permissions("prosody:admin", {
+	":automatic-ownership";
+	":create-room";
+	":recreate-destroyed-room";
+});
 
 if module:get_option_boolean("component_admins_as_room_owners", true) then
 	-- Monkey patch to make server admins room owners
 	local _get_affiliation = room_mt.get_affiliation;
 	function room_mt:get_affiliation(jid)
-		if is_admin(jid) then return "owner"; end
+		if module:may(":automatic-ownership", jid) then return "owner"; end
 		return _get_affiliation(self, jid);
 	end
 
 	local _set_affiliation = room_mt.set_affiliation;
 	function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
-		if affiliation ~= "owner" and is_admin(jid) then return nil, "modify", "not-acceptable"; end
+		if affiliation ~= "owner" and module:may(":automatic-ownership", jid) then return nil, "modify", "not-acceptable"; end
 		return _set_affiliation(self, actor, jid, affiliation, reason, data);
 	end
 end
@@ -412,6 +413,8 @@ if module:get_option_boolean("muc_tombstones", true) then
 	end, -10);
 end
 
+module:default_permission("prosody:admin", ":create-room");
+
 do
 	local restrict_room_creation = module:get_option("restrict_room_creation");
 	if restrict_room_creation == true then
@@ -422,7 +425,7 @@ do
 		module:hook("muc-room-pre-create", function(event)
 			local origin, stanza = event.origin, event.stanza;
 			local user_jid = stanza.attr.from;
-			if not is_admin(user_jid) and not (
+			if not module:may(":create-room", event) and not (
 				restrict_room_creation == "local" and
 				select(2, jid_split(user_jid)) == host_suffix
 			) then
@@ -465,7 +468,7 @@ for event_name, method in pairs {
 
 		if room and room._data.destroyed then
 			if room._data.locked < os.time()
-			or (is_admin(stanza.attr.from) and stanza.name == "presence" and stanza.attr.type == nil) then
+			or (module:may(":recreate-destroyed-room", event) and stanza.name == "presence" and stanza.attr.type == nil) then
 				-- Allow the room to be recreated by admin or after time has passed
 				delete_room(room);
 				room = nil;
