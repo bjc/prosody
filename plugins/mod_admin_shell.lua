@@ -1265,18 +1265,18 @@ end
 function def_env.host:list()
 	local print = self.session.print;
 	local i = 0;
-	local type;
+	local host_type;
 	for host, host_session in iterators.sorted_pairs(prosody.hosts, _sort_hosts) do
 		i = i + 1;
-		type = host_session.type;
-		if type == "local" then
+		host_type = host_session.type;
+		if host_type == "local" then
 			print(host);
 		else
-			type = module:context(host):get_option_string("component_module", type);
-			if type ~= "component" then
-				type = type .. " component";
+			host_type = module:context(host):get_option_string("component_module", host_type);
+			if host_type ~= "component" then
+				host_type = host_type .. " component";
 			end
-			print(("%s (%s)"):format(host, type));
+			print(("%s (%s)"):format(host, host_type));
 		end
 	end
 	return true, i.." hosts";
