@@ -1441,6 +1441,7 @@ function def_env.user:password(jid, password)
 end
 
 function def_env.user:role(jid, host)
+	local print = self.session.print;
 	local username, userhost = jid_split(jid);
 	if host == nil then host = userhost; end
 	if not prosody.hosts[host] then
