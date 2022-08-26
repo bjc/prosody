@@ -262,6 +262,14 @@ module:hook_global("user-password-changed", disconnect_user_sessions({ condition
 module:hook_global("user-role-changed", disconnect_user_sessions({ condition = "reset", text = "Role changed" }), 200);
 module:hook_global("user-deleted", disconnect_user_sessions({ condition = "not-authorized", text = "Account deleted" }), 200);
 
+module:hook_global("c2s-session-updated", function (event)
+	sessions[event.session.conn] = event.session;
+	local replaced_conn = event.replaced_conn;
+	if replaced_conn then
+		sessions[replaced_conn] = nil;
+	end
+end);
+
 function runner_callbacks:ready()
 	if self.data.conn then
 		self.data.conn:resume();

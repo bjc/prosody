@@ -10,7 +10,7 @@
 local tostring, setmetatable = tostring, setmetatable;
 local pairs, next= pairs, next;
 
-local hosts = prosody.hosts;
+local prosody, hosts = prosody, prosody.hosts;
 local full_sessions = prosody.full_sessions;
 local bare_sessions = prosody.bare_sessions;
 
@@ -90,6 +90,49 @@ local function retire_session(session)
 	function session.data(data) log("debug", "Discarding data received from resting session: %s", data); end
 	session.thread = { run = function (_, data) return session.data(data) end };
 	return setmetatable(session, resting_session);
+end
+
+-- Update a session with a new one (transplanting connection, filters, etc.)
+-- new_session should be discarded after this call returns
+local function update_session(to_session, from_session)
+	to_session.log("debug", "Updating with parameters from session %s", from_session.id);
+	from_session.log("debug", "Session absorbed into %s", to_session.id);
+
+	local replaced_conn = to_session.conn;
+	if replaced_conn then
+		to_session.log("debug", "closing a replaced connection for this session");
+		replaced_conn:close();
+	end
+
+	to_session.ip = from_session.ip;
+	to_session.conn = from_session.conn;
+	to_session.rawsend = from_session.rawsend;
+	to_session.rawsend.session = to_session;
+	to_session.rawsend.conn = to_session.conn;
+	to_session.send = from_session.send;
+	to_session.send.session = to_session;
+	to_session.close = from_session.close;
+	to_session.filter = from_session.filter;
+	to_session.filter.session = to_session;
+	to_session.filters = from_session.filters;
+	to_session.send.filter = to_session.filter;
+	to_session.stream = from_session.stream;
+	to_session.secure = from_session.secure;
+	to_session.hibernating = nil;
+	to_session.resumption_counter = (to_session.resumption_counter or 0) + 1;
+	from_session.log = to_session.log;
+	from_session.type = to_session.type;
+	-- Inform xmppstream of the new session (passed to its callbacks)
+	to_session.stream:set_session(to_session);
+
+	-- Retire the session we've pulled from, to avoid two sessions on the same connection
+	retire_session(from_session);
+
+	prosody.events.fire_event("c2s-session-updated", {
+		session = to_session;
+		from_session = from_session;
+		replaced_conn = replaced_conn;
+	});
 end
 
 local function destroy_session(session, err)
@@ -267,6 +310,7 @@ end
 return {
 	new_session = new_session;
 	retire_session = retire_session;
+	update_session = update_session;
 	destroy_session = destroy_session;
 	make_authenticated = make_authenticated;
 	bind_resource = bind_resource;
