@@ -570,9 +570,6 @@ function handle_resume(session, stanza, xmlns_sm)
 
 		session.log("debug", "mod_smacks resuming existing session %s...", original_session.id);
 
-		-- Update original_session with the parameters (connection, etc.) from the new session
-		sessionmanager.update_session(original_session, session);
-
 		local queue = original_session.outgoing_stanza_queue;
 		local h = tonumber(stanza.attr.h);
 
@@ -583,13 +580,17 @@ function handle_resume(session, stanza, xmlns_sm)
 			err = ack_errors.new("overflow");
 		end
 
-		if err or not queue:resumable() then
-			original_session.send(st.stanza("failed",
+		if err then
+			session.send(st.stanza("failed",
 				{ xmlns = xmlns_sm; h = format_h(original_session.handled_stanza_count); previd = id }));
-			original_session:close(err);
-			return false;
+			session.log("debug", "Resumption failed: %s", err);
+			return true;
 		end
 
+		-- Update original_session with the parameters (connection, etc.) from the new session
+		sessionmanager.update_session(original_session, session);
+
+		-- Inform client of successful resumption
 		original_session.send(st.stanza("resumed", { xmlns = xmlns_sm,
 			h = format_h(original_session.handled_stanza_count), previd = id }));
 
