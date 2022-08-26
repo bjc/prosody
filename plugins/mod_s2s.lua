@@ -464,6 +464,7 @@ function stream_callbacks._streamopened(session, attr)
 		end
 		if session.type == "s2sin_unauthed" and to and not session.to_host then
 			session.to_host = to;
+			session.host = to;
 		elseif to ~= session.to_host then
 			session:close({ condition = "improper-addressing", text = "New stream 'to' attribute does not match original" });
 			return;
@@ -888,8 +889,7 @@ end
 function listener.onreadtimeout(conn)
 	local session = sessions[conn];
 	if session then
-		local host = session.host or session.to_host;
-		return (hosts[host] or prosody).events.fire_event("s2s-read-timeout", { session = session });
+		return (hosts[session.host] or prosody).events.fire_event("s2s-read-timeout", { session = session });
 	end
 end
 
