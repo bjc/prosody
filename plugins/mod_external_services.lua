@@ -16,7 +16,7 @@ local configured_services = module:get_option_array("external_services", {});
 
 local access = module:get_option_set("external_service_access", {});
 
--- https://tools.ietf.org/html/draft-uberti-behave-turn-rest-00
+-- https://datatracker.ietf.org/doc/html/draft-uberti-behave-turn-rest-00
 local function behave_turn_rest_credentials(srv, item, secret)
 	local ttl = default_ttl;
 	if type(item.ttl) == "number" then
