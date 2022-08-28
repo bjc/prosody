@@ -17,7 +17,7 @@ local logger = require "util.logger";
 local sha1 = require "util.hashes".sha1;
 local st = require "util.stanza";
 
-local jid_split = require "util.jid".split;
+local jid_host = require "util.jid".host;
 local new_xmpp_stream = require "util.xmppstream".new;
 local uuid_gen = require "util.uuid".generate;
 
@@ -222,22 +222,19 @@ function stream_callbacks.handlestanza(session, stanza)
 	end
 	if not stanza.attr.xmlns or stanza.attr.xmlns == "jabber:client" then
 		local from = stanza.attr.from;
-		if from then
-			if session.component_validate_from then
-				local _, domain = jid_split(stanza.attr.from);
-				if domain ~= session.host then
-					-- Return error
-					session.log("warn", "Component sent stanza with missing or invalid 'from' address");
-					session:close{
-						condition = "invalid-from";
-						text = "Component tried to send from address <"..tostring(from)
-							   .."> which is not in domain <"..tostring(session.host)..">";
-					};
-					return;
-				end
+		if session.component_validate_from then
+			if not from or (jid_host(from) ~= session.host) then
+				-- Return error
+				session.log("warn", "Component sent stanza with missing or invalid 'from' address");
+				session:close{
+					condition = "invalid-from";
+					text = "Component tried to send from address <"..(from or "< [missing 'from' attribute] >")
+						   .."> which is not in domain <"..tostring(session.host)..">";
+				};
+				return;
 			end
-		else
-			stanza.attr.from = session.host; -- COMPAT: Strictly we shouldn't allow this
+		elseif not from then
+			stanza.attr.from = session.host;
 		end
 		if not stanza.attr.to then
 			session.log("warn", "Rejecting stanza with no 'to' address");
