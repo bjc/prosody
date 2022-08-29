@@ -649,7 +649,15 @@ function api:may(action, context)
 	if type(session) ~= "table" then
 		error("Unable to identify actor session from context");
 	end
-	if session.type == "s2sin" or (session.type == "c2s" and session.host ~= self.host) then
+	if session.role and session.type == "c2s" and session.host == self.host then
+		local permit = session.role:may(action, context);
+		if not permit then
+			self:log("debug", "Access denied: session %s (%s) may not %s (not permitted by role %s)",
+				session.id, session.full_jid, action, session.role.name
+			);
+		end
+		return permit;
+	else
 		local actor_jid = context.stanza.attr.from;
 		local role = hosts[self.host].authz.get_jid_role(actor_jid);
 		if not role then
@@ -659,14 +667,6 @@ function api:may(action, context)
 		local permit = role:may(action, context);
 		if not permit then
 			self:log("debug", "Access denied: JID <%s> may not %s (not permitted by role %s)", actor_jid, action, role.name);
-		end
-		return permit;
-	elseif session.role then
-		local permit = session.role:may(action, context);
-		if not permit then
-			self:log("debug", "Access denied: session %s (%s) may not %s (not permitted by role %s)",
-				session.id, session.full_jid, action, session.role.name
-			);
 		end
 		return permit;
 	end
