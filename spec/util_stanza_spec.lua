@@ -314,6 +314,20 @@ describe("util.stanza", function()
 		end)
 	end)
 
+	describe("#add_error()", function ()
+		describe("basics", function ()
+			local s = st.stanza("custom", { xmlns = "urn:example:foo" });
+			local e = s:add_error("cancel", "not-acceptable", "UNACCEPTABLE!!!! ONE MILLION YEARS DUNGEON!")
+				:tag("dungeon", { xmlns = "urn:uuid:c9026187-5b05-4e70-b265-c3b6338a7d0f", period="1000000years"});
+			assert.equal(s, e);
+			local typ, cond, text, extra = e:get_error();
+			assert.equal("cancel", typ);
+			assert.equal("not-acceptable", cond);
+			assert.equal("UNACCEPTABLE!!!! ONE MILLION YEARS DUNGEON!", text);
+			assert.is_nil(extra);
+		end)
+	end)
+
 	describe("should reject #invalid", function ()
 		local invalid_names = {
 			["empty string"] = "", ["characters"] = "<>";
