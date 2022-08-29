@@ -57,7 +57,6 @@ local it = require"util.iterators";
 
 local sessionmanager = require "core.sessionmanager";
 
-local xmlns_errors = "urn:ietf:params:xml:ns:xmpp-stanzas";
 local xmlns_delay = "urn:xmpp:delay";
 local xmlns_mam2 = "urn:xmpp:mam:2";
 local xmlns_sm2 = "urn:xmpp:sm:2";
@@ -647,7 +646,7 @@ function handle_resume(session, stanza, xmlns_sm)
 	local resumed, err = do_resume(session, stanza);
 	if not resumed then
 		session.send(st.stanza("failed", { xmlns = xmlns_sm, h = format_h(err.context.h) })
-			:tag(err.condition, { xmlns = xmlns_errors }));
+			:add_error(err));
 		return true;
 	end
 
