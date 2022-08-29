@@ -349,8 +349,6 @@ function handle_enable(session, stanza, xmlns_sm)
 		return true;
 	end
 
-	session.smacks = xmlns_sm;
-
 	(session.sends2s or session.send)(st.stanza("enabled", {
 		xmlns = xmlns_sm;
 		id = enabled.id;
@@ -358,6 +356,7 @@ function handle_enable(session, stanza, xmlns_sm)
 		max = enabled.resume_max;
 	}));
 
+	session.smacks = xmlns_sm;
 	enabled.finish();
 
 	return true;
