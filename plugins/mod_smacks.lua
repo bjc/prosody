@@ -107,7 +107,11 @@ local ack_errors = require"util.error".init("mod_smacks", xmlns_sm3, {
 	overflow = { condition = "resource-constraint", text = "Too many unacked stanzas remaining, session can't be resumed" }
 });
 
-local resume_errors = require "util.error".init("mod_smacks", xmlns_sm3, {
+local enable_errors = require "util.error".init("mod_smacks", xmlns_sm3, {
+	already_enabled = { condition = "unexpected-request", text = "Stream management is already enabled" };
+	bind_required = { condition = "unexpected-request", text = "Client must bind a resource before enabling stream management" };
+	unavailable = { condition = "service-unavailable", text = "Stream management is not available for this stream" };
+	-- Resumption
 	expired = { condition = "item-not-found", text = "Session expired, and cannot be resumed" };
 	already_bound = { condition = "unexpected-request", text = "Cannot resume another session after a resource is bound" };
 	unknown_session = { condition = "item-not-found", text = "Unknown session" };
@@ -127,18 +131,18 @@ local function ack_delayed(session, stanza)
 end
 
 local function can_do_smacks(session, advertise_only)
-	if session.smacks then return false, "unexpected-request", "Stream management is already enabled"; end
+	if session.smacks then return false, enable_errors.new("already_enabled"); end
 
 	local session_type = session.type;
 	if session.username then
 		if not(advertise_only) and not(session.resource) then -- Fail unless we're only advertising sm
-			return false, "unexpected-request", "Client must bind a resource before enabling stream management";
+			return false, enable_errors.new("bind_required");
 		end
 		return true;
 	elseif s2s_smacks and (session_type == "s2sin" or session_type == "s2sout") then
 		return true;
 	end
-	return false, "service-unavailable", "Stream management is not available for this stream";
+	return false, enable_errors.new("unavailable");
 end
 
 module:hook("stream-features",
@@ -294,12 +298,11 @@ local function wrap_session(session, resume)
 	return session;
 end
 
-function handle_enable(session, stanza, xmlns_sm)
-	local ok, err, err_text = can_do_smacks(session);
+function do_enable(session, stanza)
+	local ok, err = can_do_smacks(session);
 	if not ok then
-		session.log("warn", "Failed to enable smacks: %s", err_text); -- TODO: XEP doesn't say we can send error text, should it?
-		(session.sends2s or session.send)(st.stanza("failed", { xmlns = xmlns_sm }):tag(err, { xmlns = xmlns_errors}));
-		return true;
+		session.log("warn", "Failed to enable smacks: %s", err.text); -- TODO: XEP doesn't say we can send error text, should it?
+		return nil, err;
 	end
 
 	if session.username then
@@ -320,20 +323,44 @@ function handle_enable(session, stanza, xmlns_sm)
 		end
 	end
 
-	session.log("debug", "Enabling stream management");
-	session.smacks = xmlns_sm;
-
-	wrap_session(session, false);
-
-	local resume_max;
 	local resume_token;
 	local resume = stanza.attr.resume;
 	if resume == "true" or resume == "1" then
 		resume_token = new_id();
-		track_session(session, resume_token);
-		resume_max = tostring(resume_timeout);
 	end
-	(session.sends2s or session.send)(st.stanza("enabled", { xmlns = xmlns_sm, id = resume_token, resume = resume, max = resume_max }));
+
+	return {
+		id = resume_token;
+		resume_max = resume_token and tostring(resume_timeout) or nil;
+		session = session;
+		finish = function ()
+			session.log("debug", "Enabling stream management");
+
+			track_session(session, resume_token);
+			wrap_session(session, false);
+
+		end;
+	};
+end
+
+function handle_enable(session, stanza, xmlns_sm)
+	local enabled, err = do_enable(session, stanza);
+	if not enabled then
+		(session.sends2s or session.send)(st.stanza("failed", { xmlns = xmlns_sm }):add_error(err));
+		return true;
+	end
+
+	session.smacks = xmlns_sm;
+
+	(session.sends2s or session.send)(st.stanza("enabled", {
+		xmlns = xmlns_sm;
+		id = enabled.id;
+		resume = enabled.id and "1" or nil;
+		max = enabled.resume_max;
+	}));
+
+	enabled.finish();
+
 	return true;
 end
 module:hook_tag(xmlns_sm2, "enable", function (session, stanza) return handle_enable(session, stanza, xmlns_sm2); end, 100);
@@ -536,7 +563,7 @@ module:hook("s2sin-destroyed", handle_s2s_destroyed);
 function do_resume(session, stanza)
 	if session.full_jid then
 		session.log("warn", "Tried to resume after resource binding");
-		return nil, resume_errors.new("already_bound");
+		return nil, enable_errors.new("already_bound");
 	end
 
 	local id = stanza.attr.previd;
@@ -547,10 +574,10 @@ function do_resume(session, stanza)
 			session.log("debug", "Tried to resume old expired session with id %s", id);
 			clear_old_session(session, id);
 			resumption_expired(1);
-			return nil, resume_errors.new("expired", { h = old_session.h });
+			return nil, enable_errors.new("expired", { h = old_session.h });
 		end
 		session.log("debug", "Tried to resume non-existent session with id %s", id);
-		return nil, resume_errors.new("unknown_session");
+		return nil, enable_errors.new("unknown_session");
 	end
 
 	if original_session.hibernating_watchdog then
