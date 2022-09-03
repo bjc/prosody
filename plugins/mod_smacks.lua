@@ -329,6 +329,7 @@ function do_enable(session, stanza)
 	end
 
 	return {
+		type = "enabled";
 		id = resume_token;
 		resume_max = resume_token and tostring(resume_timeout) or nil;
 		session = session;
@@ -337,7 +338,6 @@ function do_enable(session, stanza)
 
 			track_session(session, resume_token);
 			wrap_session(session, false);
-
 		end;
 	};
 end
@@ -613,6 +613,7 @@ function do_resume(session, stanza)
 	sessionmanager.update_session(original_session, session);
 
 	return {
+		type = "resumed";
 		session = original_session;
 		id = id;
 		-- Return function to complete the resumption and resync unacked stanzas
