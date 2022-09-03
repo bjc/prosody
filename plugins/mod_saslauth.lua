@@ -352,7 +352,7 @@ module:hook("stream-features", function(event)
 				authmod, available_disabled);
 		end
 
-	elseif not session.full_jid then
+	elseif not origin.full_jid then
 		features:tag("bind", bind_attr):tag("required"):up():up();
 		features:tag("session", xmpp_session_attr):tag("optional"):up():up();
 	end
