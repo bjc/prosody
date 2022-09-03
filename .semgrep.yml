@@ -22,3 +22,9 @@ rules:
   message: Non-string default from :get_option_string
   severity: ERROR
   languages: [lua]
+- id: stanza-empty-text-constructor
+  patterns:
+    - pattern: $A:text()
+  message: Use :get_text() to read text, or pass a value here to add text
+  severity: WARNING
+  languages: [lua]
