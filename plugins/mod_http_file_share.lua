@@ -264,11 +264,11 @@ function handle_upload(event, path) -- PUT /upload/:slot
 			module:log("debug", "Unauthorized or invalid token: %s, %q", authz, authed_upload_info);
 			return 401;
 		end
-		if not path or upload_info.slot ~= path:match("^[^/]+") then
-			module:log("debug", "Invalid upload slot: %q, path: %q", upload_info.slot, path);
+		if not path or authed_upload_info.slot ~= path:match("^[^/]+") then
+			module:log("debug", "Invalid upload slot: %q, path: %q", authed_upload_info.slot, path);
 			return 400;
 		end
-		if request.headers.content_length and tonumber(request.headers.content_length) ~= upload_info.filesize then
+		if request.headers.content_length and tonumber(request.headers.content_length) ~= authed_upload_info.filesize then
 			return 413;
 			-- Note: We don't know the size if the upload is streamed in chunked encoding,
 			-- so we also check the final file size on completion.
