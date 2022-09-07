@@ -355,12 +355,12 @@ end
 local function archive_where(query, args, where)
 	-- Time range, inclusive
 	if query.start then
-		args[#args+1] = query.start
+		args[#args+1] = math.floor(query.start);
 		where[#where+1] = "\"when\" >= ?"
 	end
 
 	if query["end"] then
-		args[#args+1] = query["end"];
+		args[#args+1] = math.floor(query["end"]);
 		if query.start then
 			where[#where] = "\"when\" BETWEEN ? AND ?" -- is this inclusive?
 		else
