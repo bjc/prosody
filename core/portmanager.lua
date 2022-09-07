@@ -219,6 +219,13 @@ function get_service_at(interface, port)
 	return data.service, data.server;
 end
 
+local function get_tls_config_at(interface, port)
+	local data = active_services:search(nil, interface, port);
+	if not data or not data[1] or not data[1][1] then return nil, "not-found"; end
+	data = data[1][1];
+	return data.tls_cfg;
+end
+
 local function get_service(service_name)
 	return (services[service_name] or {})[1];
 end
@@ -310,6 +317,7 @@ return {
 	unregister_service = unregister_service;
 	close = close;
 	get_service_at = get_service_at;
+	get_tls_config_at = get_tls_config_at;
 	get_service = get_service;
 	get_active_services = get_active_services;
 	get_registered_services = get_registered_services;
