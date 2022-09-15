@@ -164,6 +164,7 @@ function stanza_mt:get_child(name, xmlns)
 			return child;
 		end
 	end
+	return nil;
 end
 
 function stanza_mt:get_child_text(name, xmlns)
@@ -178,12 +179,14 @@ function stanza_mt:child_with_name(name)
 	for _, child in ipairs(self.tags) do
 		if child.name == name then return child; end
 	end
+	return nil;
 end
 
 function stanza_mt:child_with_ns(ns)
 	for _, child in ipairs(self.tags) do
 		if child.attr.xmlns == ns then return child; end
 	end
+	return nil;
 end
 
 function stanza_mt:get_child_with_attr(name, xmlns, attr_name, attr_value, normalize)
@@ -192,6 +195,7 @@ function stanza_mt:get_child_with_attr(name, xmlns, attr_name, attr_value, norma
 			return tag;
 		end
 	end
+	return nil;
 end
 
 function stanza_mt:children()
@@ -350,6 +354,7 @@ function stanza_mt.get_text(t)
 	if #t.tags == 0 then
 		return t_concat(t);
 	end
+	return nil;
 end
 
 function stanza_mt.get_error(stanza)
