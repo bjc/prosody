@@ -321,15 +321,15 @@ module:hook("stream-features", function(event)
 			for mechanism in usable_mechanisms do
 				mechanisms:tag("mechanism"):text(mechanism):up();
 			end
+			features:add_child(mechanisms);
 			if not channel_bindings:empty() then
 				-- XXX XEP-0440 is Experimental
-				mechanisms:tag("sasl-channel-binding", {xmlns='urn:xmpp:sasl-cb:0'})
+				features:tag("sasl-channel-binding", {xmlns='urn:xmpp:sasl-cb:0'})
 				for channel_binding in channel_bindings do
-					mechanisms:tag("channel-binding", {type=channel_binding}):up()
+					features:tag("channel-binding", {type=channel_binding}):up()
 				end
-				mechanisms:up();
+				features:up();
 			end
-			features:add_child(mechanisms);
 			return;
 		end
 
