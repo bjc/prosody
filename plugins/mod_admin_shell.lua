@@ -948,7 +948,7 @@ available_columns = {
 		width = 20;
 		key = "role";
 		mapper = function(role)
-			return role.name;
+			return role and role.name;
 		end;
 	}
 };
