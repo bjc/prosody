@@ -203,6 +203,37 @@ local map_shim_mt = {
 	};
 }
 
+local combined_store_mt = {
+	__index = {
+		-- keyval
+		get = function (self, name)
+			return self.keyval_store:get(name);
+		end;
+		set = function (self, name, data)
+			return self.keyval_store:set(name, data);
+		end;
+		items = function (self)
+			return self.keyval_store:users();
+		end;
+		-- map
+		get_key = function (self, name, key)
+			return self.map_store:get(name, key);
+		end;
+		set_key = function (self, name, key, value)
+			return self.map_store:set(name, key, value);
+		end;
+		set_keys = function (self, name, map)
+			return self.map_store:set_keys(name, map);
+		end;
+		get_key_from_all = function (self, key)
+			return self.map_store:get_all(key);
+		end;
+		delete_key_from_all = function (self, key)
+			return self.map_store:delete_all(key);
+		end;
+	};
+};
+
 local open; -- forward declaration
 
 local function create_map_shim(host, store)
@@ -213,7 +244,49 @@ local function create_map_shim(host, store)
 	}, map_shim_mt);
 end
 
+local function open_combined(host, store)
+	local driver, driver_name = get_driver(host, store);
+
+	-- Open keyval
+	local keyval_store, err = driver:open(store, "keyval");
+	if not keyval_store then
+		if err == "unsupported-store" then
+			log("debug", "Storage driver %s does not support store %s (keyval), falling back to null driver",
+				driver_name, store);
+			keyval_store, err = null_storage_driver, nil;
+		end
+	end
+
+	local map_store;
+	if keyval_store then
+		-- Open map
+		map_store, err = driver:open(store, "map");
+		if not map_store then
+			if err == "unsupported-store" then
+				log("debug", "Storage driver %s does not support store %s (map), falling back to shim",
+					driver_name, store);
+				map_store, err = setmetatable({ keyval_store = keyval_store }, map_shim_mt), nil;
+			end
+		end
+	end
+
+	if not(keyval_store and map_store) then
+		return nil, err;
+	end
+	local combined_store = setmetatable({
+		keyval_store = keyval_store;
+		map_store = map_store;
+		remove = map_store.remove;
+	}, combined_store_mt);
+	local event_data = { host = host, store_name = store, store_type = "keyval+", store = combined_store };
+	hosts[host].events.fire_event("store-opened", event_data);
+	return event_data.store, event_data.store_err;
+end
+
 function open(host, store, typ)
+	if typ == "keyval+" then -- TODO: default in some release?
+		return open_combined(host, store);
+	end
 	local driver, driver_name = get_driver(host, store);
 	local ret, err = driver:open(store, typ);
 	if not ret then

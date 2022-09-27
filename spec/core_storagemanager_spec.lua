@@ -196,6 +196,136 @@ describe("storagemanager", function ()
 				end);
 			end);
 
+			describe("keyval+ stores", function ()
+				-- These tests rely on being executed in order, disable any order
+				-- randomization for this block
+				randomize(false);
+
+				local store, kv_store, map_store;
+				it("may be opened", function ()
+					store = assert(sm.open(test_host, "test-kv+", "keyval+"));
+				end);
+
+				local simple_data = { foo = "bar" };
+
+				it("may set data for a user", function ()
+					assert(store:set("user9999", simple_data));
+				end);
+
+				it("may get data for a user", function ()
+					assert.same(simple_data, assert(store:get("user9999")));
+				end);
+
+				it("may be opened as a keyval store", function ()
+					kv_store = assert(sm.open(test_host, "test-kv+", "keyval"));
+					assert.same(simple_data, assert(kv_store:get("user9999")));
+				end);
+
+				it("may be opened as a map store", function ()
+					map_store = assert(sm.open(test_host, "test-kv+", "map"));
+					assert.same("bar", assert(map_store:get("user9999", "foo")));
+				end);
+
+				it("may remove data for a user", function ()
+					assert(store:set("user9999", nil));
+					local ret, err = store:get("user9999");
+					assert.is_nil(ret);
+					assert.is_nil(err);
+				end);
+
+
+				it("may set a specific key for a user", function ()
+					assert(store:set_key("user9999", "foo", "bar"));
+					assert.same(kv_store:get("user9999"), { foo = "bar" });
+				end);
+
+				it("may get a specific key for a user", function ()
+					assert.equal("bar", store:get_key("user9999", "foo"));
+				end);
+
+				it("may find all users with a specific key", function ()
+					assert.is_function(store.get_key_from_all);
+					assert(store:set_key("user9999b", "bar", "bar"));
+					assert(store:set_key("user9999c", "foo", "blah"));
+					local ret, err = store:get_key_from_all("foo");
+					assert.is_nil(err);
+					assert.same({ user9999 = "bar", user9999c = "blah" }, ret);
+				end);
+
+				it("rejects empty or non-string keys to get_all", function ()
+					assert.is_function(store.get_key_from_all);
+					do
+						local ret, err = store:get_key_from_all("");
+						assert.is_nil(ret);
+						assert.is_not_nil(err);
+					end
+					do
+						local ret, err = store:get_key_from_all(true);
+						assert.is_nil(ret);
+						assert.is_not_nil(err);
+					end
+				end);
+
+				it("rejects empty or non-string keys to delete_all", function ()
+					assert.is_function(store.delete_key_from_all);
+					do
+						local ret, err = store:delete_key_from_all("");
+						assert.is_nil(ret);
+						assert.is_not_nil(err);
+					end
+					do
+						local ret, err = store:delete_key_from_all(true);
+						assert.is_nil(ret);
+						assert.is_not_nil(err);
+					end
+				end);
+
+				it("may delete all instances of a specific key", function ()
+					assert.is_function(store.delete_key_from_all);
+					assert(store:set_key("user9999b", "foo", "hello"));
+
+					assert(store:delete_key_from_all("bar"));
+					-- Ensure key was deleted
+					do
+						local ret, err = store:get_key("user9999b", "bar");
+						assert.is_nil(ret);
+						assert.is_nil(err);
+					end
+					-- Ensure other users/keys are intact
+					do
+						local ret, err = store:get_key("user9999", "foo");
+						assert.equal("bar", ret);
+						assert.is_nil(err);
+					end
+					do
+						local ret, err = store:get_key("user9999b", "foo");
+						assert.equal("hello", ret);
+						assert.is_nil(err);
+					end
+					do
+						local ret, err = store:get_key("user9999c", "foo");
+						assert.equal("blah", ret);
+						assert.is_nil(err);
+					end
+				end);
+
+				it("may remove data for a specific key for a user", function ()
+					assert(store:set_key("user9999", "foo", nil));
+					do
+						local ret, err = store:get_key("user9999", "foo");
+						assert.is_nil(ret);
+						assert.is_nil(err);
+					end
+
+					assert(store:set_key("user9999b", "foo", nil));
+					do
+						local ret, err = store:get_key("user9999b", "foo");
+						assert.is_nil(ret);
+						assert.is_nil(err);
+					end
+				end);
+			end);
+
 			describe("archive stores", function ()
 				randomize(false);
 
