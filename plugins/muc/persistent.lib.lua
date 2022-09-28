@@ -8,10 +8,7 @@
 --
 
 local restrict_persistent = not module:get_option_boolean("muc_room_allow_persistent", true);
-module:default_permission(
-	restrict_persistent and "prosody:admin" or "prosody:user",
-	":create-persistent-room"
-);
+module:default_permission("prosody:admin", ":create-persistent-room"); -- Admins can always create, by default
 
 local function get_persistent(room)
 	return room._data.persistent;
@@ -25,7 +22,7 @@ local function set_persistent(room, persistent)
 end
 
 module:hook("muc-config-form", function(event)
-	if not module:may(":create-persistent-room", event.actor) then
+	if restrict_persistent and not module:may(":create-persistent-room", event.actor) then
 		-- Hide config option if this user is not allowed to create persistent rooms
 		return;
 	end
@@ -39,7 +36,7 @@ module:hook("muc-config-form", function(event)
 end, 100-5);
 
 module:hook("muc-config-submitted/muc#roomconfig_persistentroom", function(event)
-	if not module:may(":create-persistent-room", event.actor) then
+	if restrict_persistent and not module:may(":create-persistent-room", event.actor) then
 		return; -- Not allowed
 	end
 	if set_persistent(event.room, event.value) then
