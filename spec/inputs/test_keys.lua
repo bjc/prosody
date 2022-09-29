@@ -31,6 +31,49 @@ FbjsHyKAmEi8pQIIcsTtJ9qH/Co4vg/uAtc8TSpmSEGuLPJ3miCM15zGNQ==
 -----END PUBLIC KEY-----
 ]];
 
+	-- JWT reference keys for ES512
+
+	ecdsa_521_public_pem = [[
+-----BEGIN PUBLIC KEY-----
+MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQBgc4HZz+/fBbC7lmEww0AO3NK9wVZ
+PDZ0VEnsaUFLEYpTzb90nITtJUcPUbvOsdZIZ1Q8fnbquAYgxXL5UgHMoywAib47
+6MkyyYgPk0BXZq3mq4zImTRNuaU9slj9TVJ3ScT3L1bXwVuPJDzpr5GOFpaj+WwM
+Al8G7CqwoJOsW7Kddns=
+-----END PUBLIC KEY-----
+]];
+
+	ecdsa_521_private_pem = [[
+-----BEGIN PRIVATE KEY-----
+MIHuAgEAMBAGByqGSM49AgEGBSuBBAAjBIHWMIHTAgEBBEIBiyAa7aRHFDCh2qga
+9sTUGINE5jHAFnmM8xWeT/uni5I4tNqhV5Xx0pDrmCV9mbroFtfEa0XVfKuMAxxf
+Z6LM/yKhgYkDgYYABAGBzgdnP798FsLuWYTDDQA7c0r3BVk8NnRUSexpQUsRilPN
+v3SchO0lRw9Ru86x1khnVDx+duq4BiDFcvlSAcyjLACJvjvoyTLJiA+TQFdmrear
+jMiZNE25pT2yWP1NUndJxPcvVtfBW48kPOmvkY4WlqP5bAwCXwbsKrCgk6xbsp12
+ew==
+-----END PRIVATE KEY-----
+]];
+
+	-- Self-generated keys for ES512
+
+	alt_ecdsa_521_public_pem = [[
+-----BEGIN PUBLIC KEY-----
+MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQBIxV0ecG/+qFc/kVPKs8Z6tjJEuRe
+dzrEaqABY6THu7BhCjEoxPr6iRYdiFPzNruFORsCAKf/NFLSoCqyrw9S0YMA1xc+
+uW01145oxT7Sp8BOH1MyOh7xNh+LFLi6X4lV6j5GQrM1sKSa3O5m0+VJmLy5b7cy
+oxNCzXrnEByz+EO2nYI=
+-----END PUBLIC KEY-----
+]];
+
+	alt_ecdsa_521_private_pem = [[
+-----BEGIN EC PRIVATE KEY-----
+MIHcAgEBBEIAV2XJQ4/5Pa5m43/AJdL4XzrRV/l7eQ1JObqmI95YDs3zxM5Mfygz
+DivhvuPdZCZUR+TdZQEdYN4LpllCzrDwmTCgBwYFK4EEACOhgYkDgYYABAEjFXR5
+wb/6oVz+RU8qzxnq2MkS5F53OsRqoAFjpMe7sGEKMSjE+vqJFh2IU/M2u4U5GwIA
+p/80UtKgKrKvD1LRgwDXFz65bTXXjmjFPtKnwE4fUzI6HvE2H4sUuLpfiVXqPkZC
+szWwpJrc7mbT5UmYvLlvtzKjE0LNeucQHLP4Q7adgg==
+-----END EC PRIVATE KEY-----
+]];
+
 	-- Self-generated EdDSA (Ed25519) keypair
 	eddsa_private_pem = [[
 -----BEGIN PRIVATE KEY-----

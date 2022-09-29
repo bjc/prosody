@@ -89,6 +89,23 @@ describe("util.jwt", function ()
 			};
 		};
 		{
+			algorithm = "ES512";
+			keys = {
+				{ test_keys.ecdsa_521_private_pem, test_keys.ecdsa_521_public_pem };
+				{ test_keys.alt_ecdsa_521_private_pem, test_keys.alt_ecdsa_521_public_pem };
+			};
+			{
+				name = "jwt.io reference";
+				[[eyJhbGciOiJFUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.AbVUinMiT3J_03je8WTOIl-VdggzvoFgnOsdouAs-DLOtQzau9valrq-S6pETyi9Q18HH-EuwX49Q7m3KC0GuNBJAc9Tksulgsdq8GqwIqZqDKmG7hNmDzaQG1Dpdezn2qzv-otf3ZZe-qNOXUMRImGekfQFIuH_MjD2e8RZyww6lbZk]];
+				{     -- payload
+					sub = "1234567890";
+					name = "John Doe";
+					admin = true;
+					iat = 1516239022;
+				};
+			};
+		};
+		{
 			algorithm = "RS256";
 			keys = {
 				{ test_keys.rsa_private_pem, test_keys.rsa_public_pem };
@@ -197,10 +214,12 @@ describe("util.jwt", function ()
 		untested_algorithms:remove(algorithm);
 
 		describe(algorithm, function ()
-			it("can do basic sign and verify", function ()
-				for _, keypair in ipairs(keypairs) do
+			describe("can do basic sign and verify", function ()
+				for keypair_n, keypair in ipairs(keypairs) do
 					local signing_key, verifying_key = keypair[1], keypair[2];
-					do_sign_verify_test(algorithm, signing_key, verifying_key, true);
+					it(("(test key pair %d)"):format(keypair_n), function ()
+						do_sign_verify_test(algorithm, signing_key, verifying_key, true);
+					end);
 				end
 			end);
 
