@@ -1,13 +1,22 @@
 local array = require "util.array";
 local it = require "util.iterators";
 local set = require "util.set";
-local jid_split, jid_bare = require "util.jid".split, require "util.jid".bare;
+local jid_split, jid_bare, jid_host = import("util.jid", "split", "bare", "host");
 local normalize = require "util.jid".prep;
 local roles = require "util.roles";
 
 local config_global_admin_jids = module:context("*"):get_option_set("admins", {}) / normalize;
 local config_admin_jids = module:get_option_inherited_set("admins", {}) / normalize;
 local host = module.host;
+local host_suffix = host:gsub("^[^%.]+%.", "");
+
+local hosts = prosody.hosts;
+local is_component = hosts[host].type == "component";
+local host_user_role, server_user_role;
+if is_component then
+	host_user_role = module:get_option_string("host_user_role", "prosody:user");
+	server_user_role = module:get_option_string("server_user_role");
+end
 
 local role_store = module:open_store("account_roles");
 local role_map_store = module:open_store("account_roles", "map");
@@ -225,6 +234,13 @@ function get_jid_role(jid)
 		return role_registry["prosody:operator"];
 	elseif config_admin_jids:contains(bare_jid) then
 		return role_registry["prosody:admin"];
+	elseif is_component then
+		local user_host = jid_host(bare_jid);
+		if host_user_role and user_host == host_suffix then
+			return role_registry[host_user_role];
+		elseif server_user_role and hosts[user_host] then
+			return role_registry[server_user_role];
+		end
 	end
 	return nil;
 end
