@@ -16,6 +16,7 @@ local host_user_role, server_user_role;
 if is_component then
 	host_user_role = module:get_option_string("host_user_role", "prosody:user");
 	server_user_role = module:get_option_string("server_user_role");
+	public_user_role = module:get_option_string("public_user_role");
 end
 
 local role_store = module:open_store("account_roles");
@@ -240,6 +241,8 @@ function get_jid_role(jid)
 			return role_registry[host_user_role];
 		elseif server_user_role and hosts[user_host] then
 			return role_registry[server_user_role];
+		elseif public_user_role then
+			return role_registry[public_user_role];
 		end
 	end
 	return nil;
