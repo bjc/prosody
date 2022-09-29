@@ -33,6 +33,9 @@ typedef unsigned __int32 uint32_t;
 #define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
 #endif
 
+/* The max size of an encoded 'R' or 'S' value. P-521 = 521 bits = 66 bytes */
+#define MAX_ECDSA_SIG_INT_BYTES 66
+
 #include "managed_pointer.h"
 
 #define PKEY_MT_TAG "util.crypto key"
@@ -433,10 +436,15 @@ static int Lparse_ecdsa_signature(lua_State *L) {
 	ECDSA_SIG *sig;
 	size_t sig_der_len;
 	const unsigned char *sig_der = (unsigned char*)luaL_checklstring(L, 1, &sig_der_len);
+	const size_t sig_int_bytes = luaL_checkinteger(L, 2);
 	const BIGNUM *r, *s;
-	unsigned char rb[32];
-	unsigned char sb[32];
 	int rlen, slen;
+	unsigned char rb[MAX_ECDSA_SIG_INT_BYTES];
+	unsigned char sb[MAX_ECDSA_SIG_INT_BYTES];
+
+	if(sig_int_bytes > MAX_ECDSA_SIG_INT_BYTES) {
+		luaL_error(L, "requested signature size exceeds supported limit");
+	}
 
 	sig = d2i_ECDSA_SIG(NULL, &sig_der, sig_der_len);
 
@@ -447,16 +455,13 @@ static int Lparse_ecdsa_signature(lua_State *L) {
 
 	ECDSA_SIG_get0(sig, &r, &s);
 
-	rlen = BN_num_bytes(r);
-	slen = BN_num_bytes(s);
+	rlen = BN_bn2binpad(r, rb, sig_int_bytes);
+	slen = BN_bn2binpad(s, sb, sig_int_bytes);
 
-	if (rlen > 32 || slen > 32) {
+	if (rlen == -1 || slen == -1) {
 		ECDSA_SIG_free(sig);
-		luaL_error(L, "unexpectedly large signature integers");
+		luaL_error(L, "encoded integers exceed requested size");
 	}
-
-	BN_bn2bin(r, rb);
-	BN_bn2bin(s, sb);
 
 	ECDSA_SIG_free(sig);
 
@@ -485,7 +490,9 @@ static int Lbuild_ecdsa_signature(lua_State *L) {
 
 	luaL_buffinit(L, &sigbuf);
 
-	unsigned char *buffer = (unsigned char*)luaL_prepbuffsize(&sigbuf, rlen+slen+32);
+	/* DER structure of an ECDSA signature has 7 bytes plus the integers themselves,
+	   which may gain an extra byte once encoded */
+	unsigned char *buffer = (unsigned char*)luaL_prepbuffsize(&sigbuf, (rlen+1)+(slen+1)+7);
 	int len = i2d_ECDSA_SIG(sig, &buffer);
 	luaL_addsize(&sigbuf, len);
 	luaL_pushresult(&sigbuf);

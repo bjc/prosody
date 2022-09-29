@@ -135,21 +135,21 @@ local function new_rsa_algorithm(name)
 end
 
 -- ES***
-local function new_ecdsa_algorithm(name, c_sign, c_verify)
+local function new_ecdsa_algorithm(name, c_sign, c_verify, sig_bytes)
 	local function encode_ecdsa_sig(der_sig)
-		local r, s = crypto.parse_ecdsa_signature(der_sig);
+		local r, s = crypto.parse_ecdsa_signature(der_sig, sig_bytes);
 		return r..s;
 	end
 
 	local function decode_ecdsa_sig(jwk_sig)
-		return crypto.build_ecdsa_signature(jwk_sig:sub(1, 32), jwk_sig:sub(33, 64));
+		return crypto.build_ecdsa_signature(jwk_sig:sub(1, sig_bytes), jwk_sig:sub(sig_bytes+1, sig_bytes*2));
 	end
 	return new_crypto_algorithm(name, "id-ecPublicKey", c_sign, c_verify, encode_ecdsa_sig, decode_ecdsa_sig);
 end
 
 local algorithms = {
 	HS256 = new_hmac_algorithm("HS256"), HS384 = new_hmac_algorithm("HS384"), HS512 = new_hmac_algorithm("HS512");
-	ES256 = new_ecdsa_algorithm("ES256", crypto.ecdsa_sha256_sign, crypto.ecdsa_sha256_verify);
+	ES256 = new_ecdsa_algorithm("ES256", crypto.ecdsa_sha256_sign, crypto.ecdsa_sha256_verify, 32);
 	RS256 = new_rsa_algorithm("RS256"), RS384 = new_rsa_algorithm("RS384"), RS512 = new_rsa_algorithm("RS512");
 	PS256 = new_rsa_algorithm("PS256"), PS384 = new_rsa_algorithm("PS384"), PS512 = new_rsa_algorithm("PS512");
 };
