@@ -117,7 +117,7 @@ describe("util.crypto", function ()
 			6b0cd1043718ffc31c153b971d213a8e
 		]]):gsub("%s+", "")));
 		it("can be parsed", function ()
-			local r, s = crypto.parse_ecdsa_signature(sig);
+			local r, s = crypto.parse_ecdsa_signature(sig, 32);
 			assert.is_string(r);
 			assert.is_string(s);
 			assert.equal(32, #r);
@@ -134,13 +134,13 @@ describe("util.crypto", function ()
 				string.rep("\255", 3);
 			};
 			for _, invalid_sig in ipairs(invalid_sigs) do
-				local r, s = crypto.parse_ecdsa_signature(invalid_sig);
+				local r, s = crypto.parse_ecdsa_signature(invalid_sig, 32);
 				assert.is_nil(r);
 				assert.is_nil(s);
 			end
 		end);
 		it("can be built", function ()
-			local r, s = crypto.parse_ecdsa_signature(sig);
+			local r, s = crypto.parse_ecdsa_signature(sig, 32);
 			local rebuilt_sig = crypto.build_ecdsa_signature(r, s);
 			assert.equal(sig, rebuilt_sig);
 		end);
