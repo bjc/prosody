@@ -141,8 +141,12 @@ local function new_ecdsa_algorithm(name, c_sign, c_verify, sig_bytes)
 		return r..s;
 	end
 
+	local expected_sig_length = sig_bytes*2;
 	local function decode_ecdsa_sig(jwk_sig)
-		return crypto.build_ecdsa_signature(jwk_sig:sub(1, sig_bytes), jwk_sig:sub(sig_bytes+1, sig_bytes*2));
+		if #jwk_sig ~= expected_sig_length then
+			return nil;
+		end
+		return crypto.build_ecdsa_signature(jwk_sig:sub(1, sig_bytes), jwk_sig:sub(sig_bytes+1));
 	end
 	return new_crypto_algorithm(name, "id-ecPublicKey", c_sign, c_verify, encode_ecdsa_sig, decode_ecdsa_sig);
 end
