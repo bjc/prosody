@@ -12,7 +12,7 @@ local host_suffix = host:gsub("^[^%.]+%.", "");
 
 local hosts = prosody.hosts;
 local is_component = hosts[host].type == "component";
-local host_user_role, server_user_role;
+local host_user_role, server_user_role, public_user_role;
 if is_component then
 	host_user_role = module:get_option_string("host_user_role", "prosody:user");
 	server_user_role = module:get_option_string("server_user_role");
