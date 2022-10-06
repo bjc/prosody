@@ -240,7 +240,8 @@ function join_methods:prepend(f, s, var)
 end
 
 function it.join(f, s, var)
-	return setmetatable({ {f, s, var} }, join_mt);
+	local t = setmetatable({ {f, s, var} }, join_mt);
+	return t, { t, 1 };
 end
 
 return it;
