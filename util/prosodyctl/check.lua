@@ -155,7 +155,7 @@ local function check_turn_service(turn_service, ping_service)
 		result.error = "TURN server did not response to allocation request: "..err;
 		return result;
 	elseif alloc_response:is_err_resp() then
-		result.error = ("TURN allocation failed: %d (%s)"):format(alloc_response:get_error());
+		result.error = ("TURN server failed to create allocation: %d (%s)"):format(alloc_response:get_error());
 		return result;
 	elseif not alloc_response:is_success_resp() then
 		result.error = ("Unexpected TURN response: %d (%s)"):format(alloc_response:get_type());
