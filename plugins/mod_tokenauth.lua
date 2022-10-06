@@ -68,6 +68,12 @@ local function _get_parsed_token_info(token_id, token_user, token_host)
 		return nil, "not-authorized";
 	end
 
+	local account_info = usermanager.get_account_info(token_user, module.host);
+	local password_updated_at = account_info and account_info.password_updated;
+	if password_updated_at and password_updated_at > token_info.created then
+		return nil, "not-authorized";
+	end
+
 	return token_info
 end
 
