@@ -58,7 +58,6 @@ end
 
 local function new_resolve_functions(p)
 	local function _resolve(v)
-		resolved = true;
 		if is_promise(v) then
 			v:next(new_resolve_functions(p));
 		elseif promise_settle(p, "fulfilled", next_fulfilled, p._pending_on_fulfilled, v) then
