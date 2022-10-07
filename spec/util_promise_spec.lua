@@ -480,7 +480,7 @@ describe("util.promise", function ()
 			r1("this fails too");
 			assert.spy(cb).was_called(1);
 			assert.same({
-				{ status = "rejected", value = "this fails too" };
+				{ status = "rejected", reason = "this fails too" };
 				{ status = "rejected", reason = "this fails" };
 			}, result);
 		end);
