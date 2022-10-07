@@ -86,6 +86,16 @@ function role_methods:set_permission(permission_name, policy, overwrite)
 	return true;
 end
 
+function role_methods:policies()
+	local policy_iterator, s, v = it.join(pairs(self[permissions_key]));
+	if self.inherits then
+		for _, inherited_role in ipairs(self.inherits) do
+			policy_iterator:append(inherited_role:policies());
+		end
+	end
+	return policy_iterator, s, v;
+end
+
 function role_mt.__tostring(self)
 	return ("role<[%s] %s>"):format(self.id or "nil", self.name or "[no name]");
 end
