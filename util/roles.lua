@@ -30,7 +30,7 @@ local function _new_may(permissions, inherited_mays)
 				end
 			end
 		end
-		return false;
+		return nil;
 	end
 end
 
