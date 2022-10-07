@@ -30,6 +30,27 @@ describe("util.promise", function ()
 		r("foo");
 		assert.spy(cb).was_called(1);
 	end);
+	it("ignores resolve/reject of settled promises", function ()
+		local res, rej;
+		local p = promise.new(function (resolve, reject)
+			res, rej = resolve, reject;
+		end);
+		local cb = spy.new(function (v)
+			assert.equal("foo", v);
+		end);
+		p:next(cb, cb);
+		assert.spy(cb).was_called(0);
+		res("foo");
+		assert.spy(cb).was_called(1);
+		rej("bar");
+		assert.spy(cb).was_called(1);
+		rej(promise.resolve("bar"));
+		assert.spy(cb).was_called(1);
+		res(promise.reject("bar"));
+		assert.spy(cb).was_called(1);
+		res(promise.resolve("bar"));
+		assert.spy(cb).was_called(1);
+	end);
 	it("allows chaining :next() calls", function ()
 		local r;
 		local result;

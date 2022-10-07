@@ -57,9 +57,7 @@ local function promise_settle(promise, new_state, new_next, cbs, value)
 end
 
 local function new_resolve_functions(p)
-	local resolved = false;
 	local function _resolve(v)
-		if resolved then return; end
 		resolved = true;
 		if is_promise(v) then
 			v:next(new_resolve_functions(p));
@@ -69,8 +67,6 @@ local function new_resolve_functions(p)
 
 	end
 	local function _reject(e)
-		if resolved then return; end
-		resolved = true;
 		if promise_settle(p, "rejected", next_rejected, p._pending_on_rejected, e) then
 			p.reason = e;
 		end
