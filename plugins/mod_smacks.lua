@@ -354,7 +354,7 @@ function handle_enable(session, stanza, xmlns_sm)
 	(session.sends2s or session.send)(st.stanza("enabled", {
 		xmlns = xmlns_sm;
 		id = enabled.id;
-		resume = enabled.id and "1" or nil;
+		resume = enabled.id and "true" or nil; -- COMPAT w/ Conversations 2.10.10 requires 'true' not '1'
 		max = enabled.resume_max;
 	}));
 
