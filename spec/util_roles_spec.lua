@@ -11,6 +11,24 @@ describe("util.roles", function ()
 		assert.is_truthy(roles.is_role(test_role));
 	end);
 	describe("role object", function ()
+		it("can be initialized with permissions", function ()
+			local test_role_2 = roles.new({
+				permissions = {
+					perm1 = true;
+					perm2 = false;
+				};
+			});
+			assert.truthy(test_role_2:may("perm1"));
+			assert.falsy(test_role_2:may("perm2"));
+		end);
+		it("has a sensible tostring", function ()
+			local test_role_2 = roles.new({
+				id = "test-role-2";
+				name = "Test Role 2";
+			});
+			assert.truthy(tostring(test_role_2):find("test-role-2", 1, true));
+			assert.truthy(tostring(test_role_2):find("Test Role 2", 1, true));
+		end);
 		it("is restrictive by default", function ()
 			assert.falsy(test_role:may("my-permission"));
 		end);
