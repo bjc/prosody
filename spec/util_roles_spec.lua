@@ -26,7 +26,7 @@ describe("util.roles", function ()
 				id = "test-role-2";
 				name = "Test Role 2";
 			});
-			assert.truthy(tostring(test_role_2):find("test-role-2", 1, true));
+			assert.truthy(tostring(test_role_2):find(test_role_2.id, 1, true));
 			assert.truthy(tostring(test_role_2):find("Test Role 2", 1, true));
 		end);
 		it("is restrictive by default", function ()
