@@ -81,7 +81,7 @@ function complex_validate(schema, data, root)
 		if type(data) == "table" then
 
 			for i in pairs(data) do
-				if not (math.type(i) == "integer") then
+				if not (m_type(i) == "integer") then
 					return false
 				end
 			end
