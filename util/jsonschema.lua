@@ -1,7 +1,7 @@
 -- This file is generated from teal-src/util/jsonschema.lua
 
-local m_type = math.type or function (n)
-	return n % 1 == 0 and n <= 9007199254740992 and n >= -9007199254740992 and "integer" or "float";
+local m_type = function(n)
+	return type(n) == "number" and n % 1 == 0 and n <= 9007199254740992 and n >= -9007199254740992 and "integer" or "float";
 end;
 local json = require("util.json")
 local null = json.null;
@@ -81,7 +81,7 @@ function complex_validate(schema, data, root)
 		if type(data) == "table" then
 
 			for i in pairs(data) do
-				if not (math.type(i) == "integer") then
+				if not (m_type(i) == "integer") then
 					return false
 				end
 			end
