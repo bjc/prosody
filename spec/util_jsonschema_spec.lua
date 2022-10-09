@@ -50,6 +50,7 @@ local skip = {
 	["ref.json:27"] = "NYI",
 	["ref.json:28"] = "NYI",
 	["ref.json:3:2"] = "FIXME investigate, util.jsonpath issue?",
+	["required.json:4"] = "JavaScript specific and distinguishing objects from arrays",
 	["ref.json:6:1"] = "NYI",
 	["ref.json:20"] = "NYI",
 	["ref.json:25"] = "NYI",
