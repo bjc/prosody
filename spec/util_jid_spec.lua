@@ -83,6 +83,7 @@ describe("util.jid", function()
 		end);
 		it("should fail for JIDs that fail stringprep", function ()
 			test("node@invalid-\128-server", nil, nil, nil);
+			test("node@invalid-\194\128-server", nil, nil, nil);
 			test("<invalid node>@server", nil, nil, nil);
 			test("node@server/invalid-\000-resource", nil, nil, nil);
 		end);
