@@ -35,8 +35,7 @@ local function split(jid)
 	if jid == nil then return; end
 	local node, nodepos = match(jid, "^([^@/]+)@()");
 	local host, hostpos = match(jid, "^([^@/]+)()", nodepos);
-	if node ~= nil and host == nil then return nil, nil, nil; end
-	local resource = match(jid, "^/(.+)$", hostpos);
+	local resource = host and match(jid, "^/(.+)$", hostpos);
 	if (host == nil) or ((resource == nil) and #jid >= hostpos) then return nil, nil, nil; end
 	return node, host, resource;
 end
