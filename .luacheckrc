@@ -172,6 +172,7 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 		"tools/migration/migrator/prosody_sql.lua";
 		"tools/migration/prosody-migrator.lua";
 		"tools/openfire2prosody.lua";
+		"tools/test_mutants.sh.lua";
 		"tools/xep227toprosody.lua";
 	}
 	for _, file in ipairs(exclude_files) do
