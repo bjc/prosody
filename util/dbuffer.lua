@@ -96,13 +96,9 @@ function dbuffer_methods:discard(requested_bytes)
 	end
 
 	local chunk, read_bytes = self:read_chunk(requested_bytes);
-	if chunk then
-		requested_bytes = requested_bytes - read_bytes;
-		if requested_bytes == 0 then -- Already read everything we need
-			return true;
-		end
-	else
-		return nil;
+	requested_bytes = requested_bytes - read_bytes;
+	if requested_bytes == 0 then -- Already read everything we need
+		return true;
 	end
 
 	while chunk do
