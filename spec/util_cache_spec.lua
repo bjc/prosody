@@ -4,6 +4,20 @@ local cache = require "util.cache";
 describe("util.cache", function()
 	describe("#new()", function()
 		it("should work", function()
+			do
+				local c = cache.new(1);
+				assert.is_not_nil(c);
+
+				assert.has_error(function ()
+					cache.new(0);
+				end);
+				assert.has_error(function ()
+					cache.new(-1);
+				end);
+				assert.has_error(function ()
+					cache.new("foo");
+				end);
+			end
 
 			local c = cache.new(5);
 
@@ -335,6 +349,44 @@ describe("util.cache", function()
 				assert.spy(i).was_called_with("b", "2");
 				assert.spy(i).was_called_with("c", "3");
 				assert.spy(i).was_called_with("d", "4");
+		end);
+
+		local function vs(t)
+			local vs_ = {};
+			for v in t:values() do
+				vs_[#vs_+1] = v;
+			end
+			return vs_;
+		end
+
+		it(":values works", function ()
+			local t = cache.new(3);
+			t:set("k1", "v1");
+			t:set("k2", "v2");
+			assert.same({"v2", "v1"}, vs(t));
+			t:set("k3", "v3");
+			assert.same({"v3", "v2", "v1"}, vs(t));
+			t:set("k4", "v4");
+			assert.same({"v4", "v3", "v2"}, vs(t));
+		end);
+
+		it(":resize works", function ()
+			local c = cache.new(5);
+			for i = 1, 5 do
+				c:set(("k%d"):format(i), ("v%d"):format(i));
+			end
+			assert.same({"v5", "v4", "v3", "v2", "v1"}, vs(c));
+			assert.has_error(function ()
+				c:resize(-1);
+			end);
+			assert.has_error(function ()
+				c:resize(0);
+			end);
+			assert.has_error(function ()
+				c:resize("foo");
+			end);
+			c:resize(3);
+			assert.same({"v5", "v4", "v3"}, vs(c));
 		end);
 	end);
 end);
