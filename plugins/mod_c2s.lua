@@ -128,7 +128,7 @@ function stream_callbacks._streamopened(session, attr)
 	end
 
 	local features = st.stanza("stream:features");
-	hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
+	hosts[session.host].events.fire_event("stream-features", { origin = session, features = features, stream = attr });
 	if features.tags[1] or session.full_jid then
 		send(features);
 	else
