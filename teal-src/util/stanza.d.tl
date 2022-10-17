@@ -49,6 +49,7 @@ local record lib
 		tag : function ( stanza_t, string, { string : string } ) : stanza_t
 		text : function ( stanza_t, string ) : stanza_t
 		up : function ( stanza_t ) : stanza_t
+		at_top : function ( stanza_t ) : boolean
 		reset : function ( stanza_t ) : stanza_t
 		add_direct_child : function ( stanza_t, stanza_t )
 		add_child : function ( stanza_t, stanza_t )
@@ -57,6 +58,8 @@ local record lib
 		get_child : function ( stanza_t, string, string ) : stanza_t
 		get_text : function ( stanza_t ) : string
 		get_child_text : function ( stanza_t, string, string ) : string
+		get_child_attr : function ( stanza_t, string, string ) : string
+		get_child_with_attr : function ( stanza_t, string, string, string, function (string) : boolean ) : string
 		child_with_name : function ( stanza_t, string, string ) : stanza_t
 		child_with_ns : function ( stanza_t, string, string ) : stanza_t
 		children : function ( stanza_t ) : children_iter, stanza_t, integer
@@ -68,7 +71,9 @@ local record lib
 		pretty_print : function ( stanza_t ) : string
 		pretty_top_tag : function ( stanza_t ) : string
 
+		-- FIXME Represent util.error support
 		get_error : function ( stanza_t ) : stanza_error_type, stanza_error_condition, string, stanza_t
+		add_error : function ( stanza_t, stanza_error_type, stanza_error_condition, string, string )
 		indent : function ( stanza_t, integer, string ) : stanza_t
 	end
 
