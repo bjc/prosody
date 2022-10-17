@@ -33,6 +33,7 @@ TRUNK
 ## Changes
 
 - Support sub-second precision timestamps
+- mod_blocklist: New option 'migrate_legacy_blocking' to disable migration from mod_privacy
 
 ## Removed
 
