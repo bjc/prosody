@@ -133,10 +133,6 @@ local function unpack_propschema( propschema : schema_t, propname : string, curr
 		end
 	end
 
-	if current_ns == "urn:xmpp:reactions:0" and name == "reactions" then
-		assert(proptype=="array")
-	end
-
 	return proptype, value_where, name, namespace, prefix, single_attribute, enums
 end
 
