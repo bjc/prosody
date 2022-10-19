@@ -5,6 +5,9 @@ describe("util.smqueue", function()
 
 	describe("#new()", function()
 		it("should work", function()
+			assert.has_error(function () smqueue.new(-1) end);
+			assert.has_error(function () smqueue.new(0) end);
+			assert.not_has_error(function () smqueue.new(1) end);
 			local q = smqueue.new(10);
 			assert.truthy(q);
 		end)
