@@ -277,6 +277,20 @@ function startup.init_global_state()
 	startup.detect_platform();
 	startup.detect_installed();
 	_G.prosody = prosody;
+
+	-- COMPAT Lua < 5.3
+	if not math.type then
+		-- luacheck: ignore 122/math
+		function math.type(n)
+			if type(n) == "number" then
+				if n % 1 == 0 and (n + 1 ~= n and n - 1 ~= n) then
+					return "integer"
+				else
+					return "float"
+				end
+			end
+		end
+	end
 end
 
 function startup.setup_datadir()

@@ -11,9 +11,7 @@ local pack = table.pack;
 local valid_utf8 = require "util.encodings".utf8.valid;
 local type = type;
 local dump = require "util.serialization".new("debug");
-local num_type = math.type or function (n)
-	return n % 1 == 0 and n <= 9007199254740992 and n >= -9007199254740992 and "integer" or "float";
-end
+local num_type = math.type;
 
 -- In Lua 5.3+ these formats throw an error if given a float
 local expects_integer = { c = true, d = true, i = true, o = true, u = true, X = true, x = true, };
