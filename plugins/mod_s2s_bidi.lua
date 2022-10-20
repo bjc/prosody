@@ -25,7 +25,9 @@ module:hook_tag("http://etherx.jabber.org/streams", "features", function (sessio
 		if bidi then
 			session.incoming = true;
 			session.log("debug", "Requesting bidirectional stream");
-			session.sends2s(st.stanza("bidi", { xmlns = xmlns_bidi }));
+			local request_bidi = st.stanza("bidi", { xmlns = xmlns_bidi });
+			module:fire_event("s2sout-stream-features", { origin = session, features = request_bidi });
+			session.sends2s(request_bidi);
 		end
 	end
 end, 200);
