@@ -166,8 +166,7 @@ do -- Lua to shell calls.
 	setmetatable(_M, {
 		__index = function(_, command)
 			return function(opts)
-				local ret = os_execute(serialize(command, type(opts) == "table" and opts or {}));
-				return ret == true or ret == 0;
+				return os_execute(serialize(command, type(opts) == "table" and opts or {}));
 			end;
 		end;
 	});
