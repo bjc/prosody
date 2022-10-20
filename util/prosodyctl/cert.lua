@@ -179,7 +179,7 @@ local function copy(from, to, umask, owner, group)
 		os.execute(("chown -c --reference=%s %s"):format(sh_esc(cert_basedir), sh_esc(to)));
 	elseif owner and group then
 		local ok = os.execute(("chown %s:%s %s"):format(sh_esc(owner), sh_esc(group), sh_esc(to)));
-		assert(ok == true or ok == 0, "Failed to change ownership of "..to);
+		assert(ok, "Failed to change ownership of "..to);
 	end
 	if old_umask then pposix.umask(old_umask); end
 	return true;
