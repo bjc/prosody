@@ -8,7 +8,7 @@ end;
 local function getchar(n)
 	local stty_ret = os.execute("stty raw -echo 2>/dev/null");
 	local ok, char;
-	if stty_ret == true or stty_ret == 0 then
+	if stty_ret then
 		ok, char = pcall(io.read, n or 1);
 		os.execute("stty sane");
 	else
@@ -31,11 +31,11 @@ end
 
 local function getpass()
 	local stty_ret = os.execute("stty -echo 2>/dev/null");
-	if stty_ret ~= 0 then
+	if not stty_ret then
 		io.write("\027[08m"); -- ANSI 'hidden' text attribute
 	end
 	local ok, pass = pcall(io.read, "*l");
-	if stty_ret == 0 then
+	if stty_ret then
 		os.execute("stty sane");
 	else
 		io.write("\027[00m");
