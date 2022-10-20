@@ -132,6 +132,7 @@ end
 function startup.load_libraries()
 	-- Load socket framework
 	-- luacheck: ignore 111/server 111/socket
+	require "util.import"
 	socket = require "socket";
 	server = require "net.server"
 end
@@ -359,7 +360,6 @@ end
 
 function startup.load_secondary_libraries()
 	--- Load and initialise core modules
-	require "util.import"
 	require "util.xmppstream"
 	require "core.stanza_router"
 	require "core.statsmanager"
