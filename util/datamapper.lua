@@ -1,5 +1,9 @@
 -- This file is generated from teal-src/util/datamapper.lua
 
+if not math.type then
+	require("util.mathcompat")
+end
+
 local st = require("util.stanza");
 local pointer = require("util.jsonpointer");
 

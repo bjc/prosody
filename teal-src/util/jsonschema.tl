@@ -8,6 +8,8 @@
 -- https://json-schema.org/draft/2020-12/json-schema-validation.html
 --
 
+if not math.type then require "util.mathcompat" end
+
 local json = require"util.json"
 local null = json.null;
 

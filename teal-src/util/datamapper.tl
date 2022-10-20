@@ -19,6 +19,8 @@
 -- TODO s/number/integer/ once we have appropriate math.type() compat
 --
 
+if not math.type then require "util.mathcompat" end
+
 local st = require "util.stanza";
 local json = require"util.json"
 local pointer = require"util.jsonpointer";

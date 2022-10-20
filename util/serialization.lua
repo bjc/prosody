@@ -21,6 +21,10 @@ local to_hex = require "util.hex".to;
 local pcall = pcall;
 local envload = require"util.envload".envload;
 
+if not math.type then
+	require "util.mathcompat"
+end
+
 local pos_inf, neg_inf = math.huge, -math.huge;
 local m_type = math.type;
 
