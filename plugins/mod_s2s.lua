@@ -247,6 +247,12 @@ function module.add_host(module)
 	end
 	module:hook("route/remote", route_to_existing_session, -1);
 	module:hook("route/remote", route_to_new_session, -10);
+	module:hook("s2sout-stream-features", function (event)
+		if stanza_size_limit then
+			event.features:tag("limits", { xmlns = "urn:xmpp:stream-limits:0" })
+				:text_tag("max-size", string.format("%d", stanza_size_limit)):up();
+		end
+	end);
 	module:hook("s2s-authenticated", make_authenticated, -1);
 	module:hook("s2s-read-timeout", keepalive, -1);
 	module:hook_stanza("http://etherx.jabber.org/streams", "features", function (session, stanza) -- luacheck: ignore 212/stanza
