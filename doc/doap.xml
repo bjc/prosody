@@ -865,5 +865,9 @@
         <xmpp:status>complete</xmpp:status>
       </xmpp:SupportedXep>
     </implements>
+    <implements>
+      <xmpp:xep rdf:resources="https://xmpp.org/extensions/inbox/xep-sla.xml"/>
+      <xmpp:since>trunk</xmpp:since>
+    </implements>
   </Project>
 </rdf:RDF>

@@ -276,8 +276,7 @@ local function get_identities(cert) --> map of names to sets of services
 	return names.data;
 end
 
-local pat = "%-%-%-%-%-BEGIN ([A-Z ]+)%-%-%-%-%-\r?\n"..
-"([0-9A-Za-z+/=\r\n]*)\r?\n%-%-%-%-%-END %1%-%-%-%-%-";
+local pat = "%-%-%-%-%-BEGIN ([A-Z ]+)%-%-%-%-%-\r?\n([0-9A-Za-z+/=\r\n]*)\r?\n%-%-%-%-%-END %1%-%-%-%-%-";
 
 local function pem2der(pem)
 	local typ, data = pem:match(pat);

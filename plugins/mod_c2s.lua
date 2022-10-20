@@ -132,7 +132,8 @@ function stream_callbacks._streamopened(session, attr)
 	if features.tags[1] or session.full_jid then
 		if stanza_size_limit then
 			features:reset();
-			features:tag("stanza-size-limit", { xmlns = "xmpp:prosody.im/stream/limits", bytes = string.format("%d", stanza_size_limit) });
+			features:tag("limits", { xmlns = "urn:xmpp:stream-limits:0" })
+				:text_tag("max-size", string.format("%d", stanza_size_limit)):up();
 		end
 		send(features);
 	else

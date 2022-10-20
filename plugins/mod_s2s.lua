@@ -250,9 +250,9 @@ function module.add_host(module)
 	module:hook("s2s-authenticated", make_authenticated, -1);
 	module:hook("s2s-read-timeout", keepalive, -1);
 	module:hook_stanza("http://etherx.jabber.org/streams", "features", function (session, stanza) -- luacheck: ignore 212/stanza
-		local limits = stanza:get_child("stanza-size-limit", "xmpp:prosody.im/stream/limits");
+		local limits = stanza:get_child("limits", "urn:xmpp:stream-limits:0");
 		if limits then
-			session.outgoing_stanza_size_limit = tonumber(limits.attr.bytes);
+			session.outgoing_stanza_size_limit = tonumber(limits:get_child_text("max-size"));
 		end
 		if session.type == "s2sout" then
 			-- Stream is authenticated and we are seem to be done with feature negotiation,
@@ -524,7 +524,8 @@ function stream_callbacks._streamopened(session, attr)
 			if ( session.type == "s2sin" or session.type == "s2sout" ) or features.tags[1] then
 				if stanza_size_limit then
 					features:reset();
-					features:tag("stanza-size-limit", { xmlns = "xmpp:prosody.im/stream/limits", bytes = string.format("%d", stanza_size_limit) });
+					features:tag("limits", { xmlns = "urn:xmpp:stream-limits:0" })
+						:text_tag("max-size", string.format("%d", stanza_size_limit)):up();
 				end
 
 				log("debug", "Sending stream features: %s", features);
