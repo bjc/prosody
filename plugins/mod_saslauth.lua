@@ -264,20 +264,22 @@ local function tls_server_end_point(self)
 	local cert_hash = self.userdata["tls-server-end-point"];
 	if cert_hash then return hex.from(cert_hash); end
 
+	local conn = self.userdata["tls-server-end-point-conn"];
+	local cert = conn.getlocalcertificate and conn:getlocalcertificate();
+
+	if not cert then
+		-- We don't know that this is the right cert, it could have been replaced on
+		-- disk since we started.
+		local certfile = self.userdata["tls-server-end-point-cert"];
+		if not certfile then return end
+		local f = io.open(certfile);
+		if not f then return end
+		local certdata = f:read("*");
+		cert = ssl.loadcertificate(certdata);
+	end
+
 	-- Hash function selection, see RFC 5929 §4.1
-	local certfile = self.userdata["tls-server-end-point-cert"];
-	if not certfile then return end
-	local f = io.open(certfile);
-	if not f then return end
 	local hash = hashes.sha256;
-
-	-- FIXME TOCTOU
-	-- We don't know that this is the right cert, it could have been replaced on
-	-- disk since we started. Best would be if we could extract the cert used
-	-- from the SSL context.
-	local certdata = f:read("*");
-	local cert = ssl.loadcertificate(certdata);
-
 	if cert.getsignaturename then
 		local sigalg = cert:getsignaturename():lower():match("sha%d+");
 		if sigalg and sigalg ~= "sha1" and hashes[sigalg] then
@@ -337,6 +339,7 @@ module:hook("stream-features", function(event)
 					["tls-unique"] = origin.conn;
 					["tls-exporter"] = origin.conn;
 					["tls-server-end-point-cert"] = certfile;
+					["tls-server-end-point-conn"] = origin.conn;
 					["tls-server-end-point"] = tls_server_end_point_hash;
 				};
 			else
