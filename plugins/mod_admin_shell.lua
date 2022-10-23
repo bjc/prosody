@@ -816,7 +816,7 @@ available_columns = {
 		width = 30;
 		key = "conn";
 		mapper = function(conn)
-			local sock = conn:socket();
+			local sock = conn and conn:socket();
 			local info = sock and sock.info and sock:info();
 			if info then return info.cipher end
 		end;
