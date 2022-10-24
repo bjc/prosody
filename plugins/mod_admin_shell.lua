@@ -780,7 +780,11 @@ available_columns = {
 		width = 5;
 		align = "right";
 		key = "conn";
-		mapper = function(conn) return conn:serverport(); end;
+		mapper = function(conn)
+			if conn then
+				return conn:serverport();
+			end
+		end;
 	};
 	dir = {
 		title = "Dir";
