@@ -37,6 +37,7 @@ local opt_headers = module:get_option_set("access_control_allow_headers", { "Con
 local opt_origins = module:get_option_set("access_control_allow_origins");
 local opt_credentials = module:get_option_boolean("access_control_allow_credentials", false);
 local opt_max_age = module:get_option_number("access_control_max_age", 2 * 60 * 60);
+local opt_default_cors = module:get_option_boolean("http_default_cors_enabled", true);
 
 local function get_http_event(host, app_path, key)
 	local method, path = key:match("^(%S+)%s+(.+)$");
@@ -183,7 +184,11 @@ function module.add_host(module)
 						app_origins = set.new(cors.origins)._items;
 					end
 				end
+			elseif cors.enabled == false then
+				cors = nil;
 			end
+		else
+			cors = opt_default_cors;
 		end
 
 		local streaming = event.item.streaming_uploads;
@@ -228,12 +233,14 @@ function module.add_host(module)
 				if not app_handlers[event_name] then
 					app_handlers[event_name] = {
 						main = handler;
-						cors = cors_handler;
-						options = options_handler;
+						cors = cors and cors_handler;
+						options = cors and options_handler;
 					};
 					module:hook_object_event(server, event_name, handler);
-					module:hook_object_event(server, event_name, cors_handler, 1);
-					module:hook_object_event(server, options_event_name, options_handler, -1);
+					if cors then
+						module:hook_object_event(server, event_name, cors_handler, 1);
+						module:hook_object_event(server, options_event_name, options_handler, -1);
+					end
 				else
 					module:log("warn", "App %s added handler twice for '%s', ignoring", app_name, event_name);
 				end
