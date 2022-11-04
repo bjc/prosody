@@ -217,12 +217,19 @@ local function _readobject(json, index)
 end
 local function _readarray(json, index)
 	local a = {};
-	local oindex = index;
 	while true do
-		local val;
-		val, index = _readvalue(json, index + 1);
+		local val, terminated;
+		val, index, terminated = _readvalue(json, index + 1, 0x5d);
 		if val == nil then
-			if json:byte(oindex + 1) == 0x5d then return setmetatable(a, array_mt), oindex + 2; end -- "]"
+			if terminated then -- "]" found instead of value
+				if #a ~= 0 then
+					-- A non-empty array here means we processed a comma,
+					-- but it wasn't followed by a value. JSON doesn't allow
+					-- trailing commas.
+					return nil, "value expected";
+				end
+				val, index = setmetatable(a, array_mt), index+1;
+			end
 			return val, index;
 		end
 		t_insert(a, val);
@@ -294,7 +301,7 @@ local function _readfalse(json, index)
 	end
 	return nil, "false parse failed";
 end
-function _readvalue(json, index)
+function _readvalue(json, index, terminator)
 	index = _skip_whitespace(json, index);
 	local b = json:byte(index);
 	-- TODO try table lookup instead of if-else?
@@ -312,6 +319,8 @@ function _readvalue(json, index)
 		return _readtrue(json, index);
 	elseif b == 0x66 then -- "f"
 		return _readfalse(json, index);
+	elseif b == terminator then
+		return nil, index, true;
 	else
 		return nil, "value expected";
 	end
