@@ -253,6 +253,13 @@ function module.add_host(module)
 				:text_tag("max-size", string.format("%d", stanza_size_limit)):up();
 		end
 	end);
+	module:hook_tag("urn:xmpp:bidi", "bidi", function(session, stanza)
+		-- Advertising features on bidi connections where no <stream:features> is sent in the other direction
+		local limits = stanza:get_child("limits", "urn:xmpp:stream-limits:0");
+		if limits then
+			session.outgoing_stanza_size_limit = tonumber(limits:get_child_text("max-size"));
+		end
+	end, 100);
 	module:hook("s2s-authenticated", make_authenticated, -1);
 	module:hook("s2s-read-timeout", keepalive, -1);
 	module:hook_stanza("http://etherx.jabber.org/streams", "features", function (session, stanza) -- luacheck: ignore 212/stanza
