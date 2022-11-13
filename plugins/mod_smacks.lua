@@ -84,19 +84,23 @@ local all_old_sessions = module:open_store("smacks_h");
 local old_session_registry = module:open_store("smacks_h", "map");
 local session_registry = module:shared "/*/smacks/resumption-tokens"; -- > user@host/resumption-token --> resource
 
+local function registry_key(session, id)
+	return jid.join(session.username, session.host, id or session.resumption_token);
+end
+
 local function track_session(session, id)
-	session_registry[jid.join(session.username, session.host, id or session.resumption_token)] = session;
+	session_registry[registry_key(session, id)] = session;
 	session.resumption_token = id;
 end
 
 local function save_old_session(session)
-	session_registry[jid.join(session.username, session.host, session.resumption_token)] = nil;
+	session_registry[registry_key(session)] = nil;
 	return old_session_registry:set(session.username, session.resumption_token,
 		{ h = session.handled_stanza_count; t = os.time() })
 end
 
 local function clear_old_session(session, id)
-	session_registry[jid.join(session.username, session.host, id or session.resumption_token)] = nil;
+	session_registry[registry_key(session, id)] = nil;
 	return old_session_registry:set(session.username, id or session.resumption_token, nil)
 end
 
@@ -570,7 +574,7 @@ function do_resume(session, stanza)
 	end
 
 	local id = stanza.attr.previd;
-	local original_session = session_registry[jid.join(session.username, session.host, id)];
+	local original_session = session_registry[registry_key(session, id)];
 	if not original_session then
 		local old_session = old_session_registry:get(session.username, id);
 		if old_session then
