@@ -308,7 +308,8 @@ function handle_enable(session, stanza, xmlns_sm)
 	local resume_max;
 	local resume_token;
 	local resume = stanza.attr.resume;
-	if resume == "true" or resume == "1" then
+	if (resume == "true" or resume == "1") and session.username then
+		-- resumption on s2s is not currently supported
 		resume_token = new_id();
 		session_registry[jid.join(session.username, session.host, resume_token)] = session;
 		session.resumption_token = resume_token;
