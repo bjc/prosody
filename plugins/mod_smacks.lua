@@ -338,7 +338,9 @@ function do_enable(session, stanza)
 			session.log("debug", "Enabling stream management");
 
 			session.smacks = stanza.attr.xmlns;
-			track_session(session, resume_token);
+			if resume_token then
+				track_session(session, resume_token);
+			end
 			wrap_session(session, false);
 		end;
 	};
