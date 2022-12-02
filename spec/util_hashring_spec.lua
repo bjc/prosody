@@ -1,6 +1,7 @@
 local hashring = require "util.hashring";
 
 describe("util.hashring", function ()
+	randomize(false);
 
 	local sha256 = require "util.hashes".sha256;
 
