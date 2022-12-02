@@ -1,3 +1,5 @@
+local it = require "util.iterators";
+
 local function generate_ring(nodes, num_replicas, hash)
 	local new_ring = {};
 	for _, node_name in ipairs(nodes) do
@@ -28,18 +30,22 @@ local function new(num_replicas, hash_function)
 	return setmetatable({ nodes = {}, num_replicas = num_replicas, hash = hash_function }, hashring_mt);
 end;
 
-function hashring_methods:add_node(name)
+function hashring_methods:add_node(name, value)
 	self.ring = nil;
-	self.nodes[name] = true;
+	self.nodes[name] = value == nil and true or value;
 	table.insert(self.nodes, name);
 	return true;
 end
 
 function hashring_methods:add_nodes(nodes)
 	self.ring = nil;
-	for _, node_name in ipairs(nodes) do
-		if not self.nodes[node_name] then
-			self.nodes[node_name] = true;
+	local iter = pairs;
+	if nodes[1] then -- simple array?
+		iter = it.values;
+	end
+	for node_name, node_value in iter(nodes) do
+		if self.nodes[node_name] == nil then
+			self.nodes[node_name] = node_value == nil and true or node_value;
 			table.insert(self.nodes, node_name);
 		end
 	end
@@ -48,7 +54,7 @@ end
 
 function hashring_methods:remove_node(node_name)
 	self.ring = nil;
-	if self.nodes[node_name] then
+	if self.nodes[node_name] ~= nil then
 		for i, stored_node_name in ipairs(self.nodes) do
 			if node_name == stored_node_name then
 				self.nodes[node_name] = nil;
@@ -69,18 +75,26 @@ end
 
 function hashring_methods:clone()
 	local clone_hashring = new(self.num_replicas, self.hash);
-	clone_hashring:add_nodes(self.nodes);
+	for node_name, node_value in pairs(self.nodes) do
+		clone_hashring.nodes[node_name] = node_value;
+	end
+	clone_hashring.ring = nil;
 	return clone_hashring;
 end
 
 function hashring_methods:get_node(key)
+	local node;
 	local key_hash = self.hash(key);
 	for _, replica_hash in ipairs(self.ring) do
 		if key_hash < replica_hash then
-			return self.ring[replica_hash];
+			node = self.ring[replica_hash];
+			break;
 		end
 	end
-	return self.ring[self.ring[1]];
+	if not node then
+		node = self.ring[self.ring[1]];
+	end
+	return node, self.nodes[node];
 end
 
 return {
