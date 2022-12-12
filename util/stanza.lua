@@ -34,8 +34,12 @@ local _ENV = nil;
 local stanza_mt = { __name = "stanza" };
 stanza_mt.__index = stanza_mt;
 
+-- Basic check for valid XML character data.
+-- Disallow control characters.
+-- Tab U+09 and newline U+0A are allowed.
+-- For attributes, allow the \1 separator between namespace and name.
 local function valid_xml_cdata(str, attr)
-	return not s_find(str, attr and "[^\1\9\10\13\20-~\128-\247]" or "[^\9\10\13\20-~\128-\247]");
+	return not s_find(str, attr and "[^\1\9\10\13\20-\255]" or "[^\9\10\13\20-\255]");
 end
 
 local function check_name(name, name_type)
