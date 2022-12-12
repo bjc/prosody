@@ -45,7 +45,7 @@ Configure $APP_NAME prior to building.
                             Default is \$PREFIX/lib
 --datadir=DIR               Location where the server data should be stored.
                             Default is \$PREFIX/var/lib/$APP_DIRNAME
---lua-version=VERSION       Use specific Lua version: 5.1, 5.2, or 5.3
+--lua-version=VERSION       Use specific Lua version: 5.2, 5.3, or 5.4
                             Default is auto-detected.
 --lua-suffix=SUFFIX         Versioning suffix to use in Lua filenames.
                             Default is "$LUA_SUFFIX" (lua$LUA_SUFFIX...)
@@ -173,7 +173,8 @@ do
    --lua-version|--with-lua-version)
       [ -n "$value" ] || die "Missing value in flag $key."
       LUA_VERSION="$value"
-      [ "$LUA_VERSION" = "5.1" ] || [ "$LUA_VERSION" = "5.2" ] || [ "$LUA_VERSION" = "5.3" ] || [ "$LUA_VERSION" = "5.4" ] || die "Invalid Lua version in flag $key."
+      [ "$LUA_VERSION" != "5.1" ] || die "Lua 5.1 is no longer supported"
+      [ "$LUA_VERSION" = "5.2" ] || [ "$LUA_VERSION" = "5.3" ] || [ "$LUA_VERSION" = "5.4" ] || die "Invalid Lua version in flag $key."
       LUA_VERSION_SET=yes
       ;;
    --with-lua)
@@ -275,11 +276,11 @@ if [ "$OSPRESET_SET" = "yes" ]; then
       CFLAGS="$CFLAGS -ggdb"
    fi
    if [ "$OSPRESET" = "freebsd" ] || [ "$OSPRESET" = "openbsd" ]; then
-      LUA_INCDIR="/usr/local/include/lua51"
+      LUA_INCDIR="/usr/local/include/lua52"
       LUA_INCDIR_SET=yes
       CFLAGS="-Wall -fPIC -I/usr/local/include"
       LDFLAGS="-I/usr/local/include -L/usr/local/lib -shared"
-      LUA_SUFFIX="51"
+      LUA_SUFFIX="52"
       LUA_SUFFIX_SET=yes
       LUA_DIR=/usr/local
       LUA_DIR_SET=yes
@@ -291,16 +292,16 @@ if [ "$OSPRESET_SET" = "yes" ]; then
       LUA_INCDIR_SET="yes"
    fi
    if [ "$OSPRESET" = "netbsd" ]; then
-      LUA_INCDIR="/usr/pkg/include/lua-5.1"
+      LUA_INCDIR="/usr/pkg/include/lua-5.2"
       LUA_INCDIR_SET=yes
-      LUA_LIBDIR="/usr/pkg/lib/lua/5.1"
+      LUA_LIBDIR="/usr/pkg/lib/lua/5.2"
       LUA_LIBDIR_SET=yes
       CFLAGS="-Wall -fPIC -I/usr/pkg/include"
       LDFLAGS="-L/usr/pkg/lib -Wl,-rpath,/usr/pkg/lib -shared"
    fi
    if [ "$OSPRESET" = "pkg-config" ]; then
       if [ "$LUA_SUFFIX_SET" != "yes" ]; then
-         LUA_SUFFIX="5.1";
+         LUA_SUFFIX="5.4";
          LUA_SUFFIX_SET=yes
       fi
       LUA_CF="$(pkg-config --cflags-only-I lua$LUA_SUFFIX)"
@@ -335,7 +336,7 @@ then
 fi
 
 detect_lua_version() {
-   detected_lua=$("$1" -e 'print(_VERSION:match(" (5%.[1234])$"))' 2> /dev/null)
+   detected_lua=$("$1" -e 'print(_VERSION:match(" (5%.[234])$"))' 2> /dev/null)
    if [ "$detected_lua" != "nil" ]
    then
       if [ "$LUA_VERSION_SET" != "yes" ]
@@ -389,10 +390,7 @@ search_interpreter() {
 lua_interp_found=no
 if [ "$LUA_SUFFIX_SET" != "yes" ]
 then
-   if [ "$LUA_VERSION_SET" = "yes" ] && [ "$LUA_VERSION" = "5.1" ]
-   then
-      suffixes="5.1 51 -5.1 -51"
-   elif [ "$LUA_VERSION_SET" = "yes" ] && [ "$LUA_VERSION" = "5.2" ]
+   if [ "$LUA_VERSION_SET" = "yes" ] && [ "$LUA_VERSION" = "5.2" ]
    then
       suffixes="5.2 52 -5.2 -52"
    elif [ "$LUA_VERSION_SET" = "yes" ] && [ "$LUA_VERSION" = "5.3" ]
@@ -402,8 +400,7 @@ then
    then
       suffixes="5.4 54 -5.4 -54"
    else
-      suffixes="5.1 51 -5.1 -51"
-      suffixes="$suffixes 5.2 52 -5.2 -52"
+      suffixes="5.2 52 -5.2 -52"
       suffixes="$suffixes 5.3 53 -5.3 -53"
       suffixes="$suffixes 5.4 54 -5.4 -54"
    fi

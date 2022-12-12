@@ -6,8 +6,8 @@ function _G.os.time()
 end
 package.preload["util.time"] = function ()
 	return {
-		now = function () return 1219439344.1; end;
-		monotonic = function () return 0.1; end;
+		now = function () return 1219439344.5; end;
+		monotonic = function () return 0.5; end;
 	}
 end
 

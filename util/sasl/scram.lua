@@ -240,7 +240,7 @@ local function init(registerMechanism)
 		-- register channel binding equivalent
 		registerMechanism("SCRAM-"..hash_name.."-PLUS",
 			{"plain", "scram_"..(hashprep(hash_name))},
-			scram_gen(hash_name:lower(), hash, hmac_hash, get_auth_db, true), {"tls-unique"});
+			scram_gen(hash_name:lower(), hash, hmac_hash, get_auth_db, true), {"tls-unique", "tls-exporter"});
 	end
 
 	registerSCRAMMechanism("SHA-1", hashes.sha1, hashes.hmac_sha1, hashes.pbkdf2_hmac_sha1);

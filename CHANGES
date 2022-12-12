@@ -1,3 +1,45 @@
+TRUNK
+=====
+
+## New
+
+### Administration
+
+- Add 'watch log' command to follow live debug logs at runtime (even if disabled)
+
+### Networking
+
+- Honour 'weight' parameter during SRV record selection
+- Support for RFC 8305 "Happy Eyeballs" to improve IPv4/IPv6 connectivity
+- Support for TCP Fast Open in server_epoll (pending LuaSocket support)
+- Support for deferred accept in server_epoll (pending LuaSocket support)
+
+### MUC
+
+- Permissions updates:
+  - Room creation restricted to local users (of the parent host) by default
+    - restrict_room_creation = true restricts to admins, false disables all restrictions
+  - Persistent rooms can only be created by local users (parent host) by default
+    - muc_room_allow_persistent = false restricts to admins
+  - Public rooms can only be created by local users (parent host) by default
+    - muc_room_allow_public = false restricts to admins
+
+### Security and authentication
+
+- Advertise supported SASL Channel-Binding types (XEP-0440)
+- Implement RFC 9266 'tls-exporter' channel binding with TLS 1.3
+- New role and permissions framework and API
+
+## Changes
+
+- Support sub-second precision timestamps
+- mod_blocklist: New option 'migrate_legacy_blocking' to disable migration from mod_privacy
+
+## Removed
+
+- Lua 5.1 support
+- XEP-0090 support removed from mod_time
+
 0.12.0
 ======
 

@@ -10,6 +10,14 @@ describe("util.iterators", function ()
 			end
 			assert.same(output, expect);
 		end);
+		it("should work with only a single iterator", function ()
+			local expect = { "a", "b", "c" };
+			local output = {};
+			for x in iter.join(iter.values({"a", "b", "c"})) do
+				table.insert(output, x);
+			end
+			assert.same(output, expect);
+		end);
 	end);
 
 	describe("sorted_pairs", function ()

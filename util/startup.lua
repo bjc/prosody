@@ -277,6 +277,11 @@ function startup.init_global_state()
 	startup.detect_platform();
 	startup.detect_installed();
 	_G.prosody = prosody;
+
+	-- COMPAT Lua < 5.3
+	if not math.type then
+		require "util.mathcompat"
+	end
 end
 
 function startup.setup_datadir()

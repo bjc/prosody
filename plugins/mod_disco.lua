@@ -8,7 +8,6 @@
 
 local get_children = require "core.hostmanager".get_children;
 local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed;
-local um_is_admin = require "core.usermanager".is_admin;
 local jid_split = require "util.jid".split;
 local jid_bare = require "util.jid".bare;
 local st = require "util.stanza"
@@ -162,14 +161,16 @@ module:hook("s2s-stream-features", function (event)
 	end
 end);
 
+module:default_permission("prosody:admin", ":be-discovered-admin");
+
 -- Handle disco requests to user accounts
 if module:get_host_type() ~= "local" then	return end -- skip for components
 module:hook("iq-get/bare/http://jabber.org/protocol/disco#info:query", function(event)
 	local origin, stanza = event.origin, event.stanza;
 	local node = stanza.tags[1].attr.node;
 	local username = jid_split(stanza.attr.to) or origin.username;
-	local is_admin = um_is_admin(stanza.attr.to or origin.full_jid, module.host)
-	if not stanza.attr.to or (expose_admins and is_admin) or is_contact_subscribed(username, module.host, jid_bare(stanza.attr.from)) then
+	local target_is_admin = module:may(":be-discovered-admin", stanza.attr.to or origin.full_jid);
+	if not stanza.attr.to or (expose_admins and target_is_admin) or is_contact_subscribed(username, module.host, jid_bare(stanza.attr.from)) then
 		if node and node ~= "" then
 			local reply = st.reply(stanza):tag('query', {xmlns='http://jabber.org/protocol/disco#info', node=node});
 			if not reply.attr.from then reply.attr.from = origin.username.."@"..origin.host; end -- COMPAT To satisfy Psi when querying own account
@@ -185,7 +186,7 @@ module:hook("iq-get/bare/http://jabber.org/protocol/disco#info:query", function(
 		end
 		local reply = st.reply(stanza):tag('query', {xmlns='http://jabber.org/protocol/disco#info'});
 		if not reply.attr.from then reply.attr.from = origin.username.."@"..origin.host; end -- COMPAT To satisfy Psi when querying own account
-		if is_admin then
+		if target_is_admin then
 			reply:tag('identity', {category='account', type='admin'}):up();
 		elseif prosody.hosts[module.host].users.name == "anonymous" then
 			reply:tag('identity', {category='account', type='anonymous'}):up();

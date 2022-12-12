@@ -8,6 +8,7 @@
 
 local t_insert, t_sort, t_remove, t_concat
     = table.insert, table.sort, table.remove, table.concat;
+local t_move = require "util.table".move;
 
 local setmetatable = setmetatable;
 local getmetatable = getmetatable;
@@ -137,13 +138,11 @@ function array_base.slice(outa, ina, i, j)
 		return outa;
 	end
 
-	for idx = 1, 1+j-i do
-		outa[idx] = ina[i+(idx-1)];
-	end
+
+	t_move(ina, i, j, 1, outa);
 	if ina == outa then
-		for idx = 2+j-i, #outa do
-			outa[idx] = nil;
-		end
+		-- Clear (nil) remainder of range
+		t_move(ina, #outa+1, #outa*2, 2+j-i, ina);
 	end
 	return outa;
 end
@@ -209,10 +208,7 @@ function array_methods:shuffle()
 end
 
 function array_methods:append(ina)
-	local len, len2 = #self, #ina;
-	for i = 1, len2 do
-		self[len+i] = ina[i];
-	end
+	t_move(ina, 1, #ina, #self+1, self);
 	return self;
 end
 

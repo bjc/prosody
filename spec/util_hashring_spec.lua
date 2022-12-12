@@ -1,6 +1,7 @@
 local hashring = require "util.hashring";
 
 describe("util.hashring", function ()
+	randomize(false);
 
 	local sha256 = require "util.hashes".sha256;
 
@@ -82,4 +83,11 @@ describe("util.hashring", function ()
 		end
 	end);
 
+	it("should support values associated with nodes", function ()
+		local r = hashring.new(128, sha256);
+		r:add_node("node1", { a = 1 });
+		local node, value = r:get_node("foo");
+		assert.is_equal("node1", node);
+		assert.same({ a = 1 }, value);
+	end);
 end);

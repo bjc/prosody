@@ -54,6 +54,7 @@ local function set_blocklist(username, blocklist)
 end
 
 -- Migrates from the old mod_privacy storage
+-- TODO mod_privacy was removed in 0.10.0, this should be phased out
 local function migrate_privacy_list(username)
 	local legacy_data = module:open_store("privacy"):get(username);
 	if not legacy_data or not legacy_data.lists or not legacy_data.default then return; end
@@ -75,6 +76,13 @@ local function migrate_privacy_list(username)
 	end
 	set_blocklist(username, migrated_data);
 	return migrated_data;
+end
+
+if not module:get_option_boolean("migrate_legacy_blocking", true) then
+	migrate_privacy_list = function (username)
+		module:log("debug", "Migrating from mod_privacy disabled, user '%s' will start with a fresh blocklist", username);
+		return nil;
+	end
 end
 
 local function get_blocklist(username)

@@ -1,6 +1,4 @@
-local m_type = math.type or function (n)
-	return n % 1 == 0 and n <= 9007199254740992 and n >= -9007199254740992 and "integer" or "float";
-end;
+local m_type = math.type;
 
 local function unescape_token(escaped_token)
 	local unescaped = escaped_token:gsub("~1", "/"):gsub("~0", "~")

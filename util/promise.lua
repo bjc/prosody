@@ -2,7 +2,7 @@ local promise_methods = {};
 local promise_mt = { __name = "promise", __index = promise_methods };
 
 local xpcall = require "util.xpcall".xpcall;
-local unpack = table.unpack or unpack; --luacheck: ignore 113
+local unpack = table.unpack;
 
 function promise_mt:__tostring()
 	return  "promise (" .. (self._state or "invalid") .. ")";
@@ -57,10 +57,7 @@ local function promise_settle(promise, new_state, new_next, cbs, value)
 end
 
 local function new_resolve_functions(p)
-	local resolved = false;
 	local function _resolve(v)
-		if resolved then return; end
-		resolved = true;
 		if is_promise(v) then
 			v:next(new_resolve_functions(p));
 		elseif promise_settle(p, "fulfilled", next_fulfilled, p._pending_on_fulfilled, v) then
@@ -69,8 +66,6 @@ local function new_resolve_functions(p)
 
 	end
 	local function _reject(e)
-		if resolved then return; end
-		resolved = true;
 		if promise_settle(p, "rejected", next_rejected, p._pending_on_rejected, e) then
 			p.reason = e;
 		end

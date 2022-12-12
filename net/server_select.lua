@@ -47,15 +47,15 @@ local coroutine_yield = coroutine.yield
 
 --// extern libs //--
 
-local has_luasec, luasec = pcall ( require , "ssl" )
 local luasocket = use "socket" or require "socket"
 local luasocket_gettime = luasocket.gettime
 local inet = require "util.net";
 local inet_pton = inet.pton;
+local sslconfig = require "util.sslconfig";
+local has_luasec, tls_impl = pcall(require, "net.tls_luasec");
 
 --// extern lib methods //--
 
-local ssl_wrap = ( has_luasec and luasec.wrap )
 local socket_bind = luasocket.bind
 local socket_select = luasocket.select
 
@@ -359,6 +359,21 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 	handler.sslctx = function ( )
 		return sslctx
 	end
+	handler.ssl_info = function( )
+		return socket.info and socket:info()
+	end
+	handler.ssl_peercertificate = function( )
+		if not socket.getpeercertificate then return nil, "not-implemented"; end
+		return socket:getpeercertificate()
+	end
+	handler.ssl_peerverification = function( )
+		if not socket.getpeerverification then return nil, { { "Chain verification not supported" } }; end
+		return socket:getpeerverification();
+	end
+	handler.ssl_peerfinished = function( )
+		if not socket.getpeerfinished then return nil, "not-implemented"; end
+		return socket:getpeerfinished();
+	end
 	handler.send = function( _, data, i, j )
 		return send( socket, data, i, j )
 	end
@@ -652,7 +667,7 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			end
 			out_put( "server.lua: attempting to start tls on " .. tostring( socket ) )
 			local oldsocket, err = socket
-			socket, err = ssl_wrap( socket, sslctx )	-- wrap socket
+			socket, err = sslctx:wrap(socket)	-- wrap socket
 
 			if not socket then
 				out_put( "server.lua: error while starting tls on client: ", tostring(err or "unknown error") )
@@ -662,8 +677,8 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
 			if socket.sni then
 				if self.servername then
 					socket:sni(self.servername);
-				elseif self._server and type(self._server.hosts) == "table" and next(self._server.hosts) ~= nil then
-					socket:sni(self.server().hosts, true);
+				elseif next(sslctx._sni_contexts) ~= nil then
+					socket:sni(sslctx._sni_contexts, true);
 				end
 			end
 
@@ -1169,4 +1184,8 @@ return {
 	removeserver = removeserver,
 	get_backend = get_backend,
 	changesettings = changesettings,
+
+	tls_builder = function(basedir)
+		return sslconfig._new(tls_impl.new_context, basedir)
+	end,
 }

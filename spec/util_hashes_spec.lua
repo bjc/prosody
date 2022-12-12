@@ -53,3 +53,18 @@ describe("PBKDF2-HMAC-SHA256", function ()
 end);
 
 
+describe("SHA-3", function ()
+	describe("256", function ()
+		it("works", function ()
+			local expected = "a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a"
+			assert.equal(expected, hashes.sha3_256("", true));
+		end);
+	end);
+	describe("512", function ()
+		it("works", function ()
+			local expected = "a69f73cca23a9ac5c8b567dc185a756e97c982164fe25859e0d1dcc1475c80a615b2123af1f5f94c11e3e9402c3ac558f500199d95b6d3e301758586281dcd26"
+			assert.equal(expected, hashes.sha3_512("", true));
+		end);
+	end);
+end);
+

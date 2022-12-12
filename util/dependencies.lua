@@ -32,10 +32,10 @@ local function missingdep(name, sources, msg, err) -- luacheck: ignore err
 end
 
 local function check_dependencies()
-	if _VERSION < "Lua 5.1" then
+	if _VERSION < "Lua 5.2" then
 		print "***********************************"
 		print("Unsupported Lua version: ".._VERSION);
-		print("At least Lua 5.1 is required.");
+		print("At least Lua 5.2 is required.");
 		print "***********************************"
 		return false;
 	end
@@ -155,7 +155,7 @@ local function log_warnings()
 	if _VERSION > "Lua 5.4" then
 		prosody.log("warn", "Support for %s is experimental, please report any issues", _VERSION);
 	elseif _VERSION < "Lua 5.2" then
-		prosody.log("warn", "%s has several issues and support is being phased out, consider upgrading", _VERSION);
+		prosody.log("warn", "%s support is deprecated, upgrade as soon as possible", _VERSION);
 	end
 	local ssl = softreq"ssl";
 	if ssl then

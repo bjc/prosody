@@ -314,9 +314,7 @@ static int rb_new(lua_State *L) {
 }
 
 int luaopen_util_ringbuffer(lua_State *L) {
-#if (LUA_VERSION_NUM > 501)
 	luaL_checkversion(L);
-#endif
 
 	if(luaL_newmetatable(L, "ringbuffer_mt")) {
 		lua_pushcfunction(L, rb_tostring);

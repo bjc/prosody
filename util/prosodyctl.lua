@@ -224,8 +224,7 @@ local function call_luarocks(operation, mod, server)
 	local ok, _, code = os.execute(render_cli("luarocks --lua-version={luav} {op} --tree={dir} {server&--server={server}} {mod?}", {
 				dir = dir; op = operation; mod = mod; server = server; luav = _VERSION:match("5%.%d");
 		}));
-	if type(ok) == "number" then code = ok; end
-	return code;
+	return ok and code;
 end
 
 return {

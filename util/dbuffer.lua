@@ -91,18 +91,18 @@ function dbuffer_methods:read_until(char)
 end
 
 function dbuffer_methods:discard(requested_bytes)
-	if requested_bytes > self._length then
-		return nil;
+	if self._length == 0 then return true; end
+	if not requested_bytes or requested_bytes >= self._length then
+		self.front_consumed = 0;
+		self._length = 0;
+		for _ in self.items:consume() do end
+		return true;
 	end
 
 	local chunk, read_bytes = self:read_chunk(requested_bytes);
-	if chunk then
-		requested_bytes = requested_bytes - read_bytes;
-		if requested_bytes == 0 then -- Already read everything we need
-			return true;
-		end
-	else
-		return nil;
+	requested_bytes = requested_bytes - read_bytes;
+	if requested_bytes == 0 then -- Already read everything we need
+		return true;
 	end
 
 	while chunk do

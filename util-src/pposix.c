@@ -58,9 +58,6 @@
 #include "lualib.h"
 #include "lauxlib.h"
 
-#if (LUA_VERSION_NUM == 501)
-#define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
-#endif
 #if (LUA_VERSION_NUM < 503)
 #define lua_isinteger(L, n) lua_isnumber(L, n)
 #endif
@@ -829,9 +826,7 @@ static int lc_isatty(lua_State *L) {
 /* Register functions */
 
 int luaopen_util_pposix(lua_State *L) {
-#if (LUA_VERSION_NUM > 501)
 	luaL_checkversion(L);
-#endif
 	luaL_Reg exports[] = {
 		{ "abort", lc_abort },
 

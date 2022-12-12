@@ -10,7 +10,7 @@
 local tostring, setmetatable = tostring, setmetatable;
 local pairs, next= pairs, next;
 
-local hosts = prosody.hosts;
+local prosody, hosts = prosody, prosody.hosts;
 local full_sessions = prosody.full_sessions;
 local bare_sessions = prosody.bare_sessions;
 
@@ -92,6 +92,49 @@ local function retire_session(session)
 	return setmetatable(session, resting_session);
 end
 
+-- Update a session with a new one (transplanting connection, filters, etc.)
+-- new_session should be discarded after this call returns
+local function update_session(to_session, from_session)
+	to_session.log("debug", "Updating with parameters from session %s", from_session.id);
+	from_session.log("debug", "Session absorbed into %s", to_session.id);
+
+	local replaced_conn = to_session.conn;
+	if replaced_conn then
+		to_session.log("debug", "closing a replaced connection for this session");
+		replaced_conn:close();
+	end
+
+	to_session.ip = from_session.ip;
+	to_session.conn = from_session.conn;
+	to_session.rawsend = from_session.rawsend;
+	to_session.rawsend.session = to_session;
+	to_session.rawsend.conn = to_session.conn;
+	to_session.send = from_session.send;
+	to_session.send.session = to_session;
+	to_session.close = from_session.close;
+	to_session.filter = from_session.filter;
+	to_session.filter.session = to_session;
+	to_session.filters = from_session.filters;
+	to_session.send.filter = to_session.filter;
+	to_session.stream = from_session.stream;
+	to_session.secure = from_session.secure;
+	to_session.hibernating = nil;
+	to_session.resumption_counter = (to_session.resumption_counter or 0) + 1;
+	from_session.log = to_session.log;
+	from_session.type = to_session.type;
+	-- Inform xmppstream of the new session (passed to its callbacks)
+	to_session.stream:set_session(to_session);
+
+	-- Retire the session we've pulled from, to avoid two sessions on the same connection
+	retire_session(from_session);
+
+	prosody.events.fire_event("c2s-session-updated", {
+		session = to_session;
+		from_session = from_session;
+		replaced_conn = replaced_conn;
+	});
+end
+
 local function destroy_session(session, err)
 	(session.log or log)("debug", "Destroying session for %s (%s@%s)%s",
 		session.full_jid or "(unknown)", session.username or "(unknown)",
@@ -123,15 +166,24 @@ local function destroy_session(session, err)
 	retire_session(session);
 end
 
-local function make_authenticated(session, username, scope)
+local function make_authenticated(session, username, role_name)
 	username = nodeprep(username);
 	if not username or #username == 0 then return nil, "Invalid username"; end
 	session.username = username;
 	if session.type == "c2s_unauthed" then
 		session.type = "c2s_unbound";
 	end
-	session.auth_scope = scope;
-	session.log("info", "Authenticated as %s@%s", username, session.host or "(unknown)");
+
+	local role;
+	if role_name then
+		role = hosts[session.host].authz.get_role_by_name(role_name);
+	else
+		role = hosts[session.host].authz.get_user_role(username);
+	end
+	if role then
+		sessionlib.set_role(session, role);
+	end
+	session.log("info", "Authenticated as %s@%s [%s]", username, session.host or "(unknown)", role and role.name or "no role");
 	return true;
 end
 
@@ -258,6 +310,7 @@ end
 return {
 	new_session = new_session;
 	retire_session = retire_session;
+	update_session = update_session;
 	destroy_session = destroy_session;
 	make_authenticated = make_authenticated;
 	bind_resource = bind_resource;

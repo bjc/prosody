@@ -127,7 +127,7 @@ function core_process_stanza(origin, stanza)
 		end
 		core_post_stanza(origin, stanza, origin.full_jid);
 	else
-		local h = hosts[stanza.attr.to or origin.host or origin.to_host];
+		local h = hosts[stanza.attr.to or origin.host];
 		if h then
 			local event;
 			if xmlns == nil then
@@ -143,7 +143,7 @@ function core_process_stanza(origin, stanza)
 			if h.events.fire_event(event, {origin = origin, stanza = stanza}) then return; end
 		end
 		if host and not hosts[host] then host = nil; end -- COMPAT: workaround for a Pidgin bug which sets 'to' to the SRV result
-		handle_unhandled_stanza(host or origin.host or origin.to_host, origin, stanza);
+		handle_unhandled_stanza(host or origin.host, origin, stanza);
 	end
 end
 

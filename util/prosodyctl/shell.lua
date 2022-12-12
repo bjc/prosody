@@ -4,6 +4,8 @@ local st = require "util.stanza";
 local path = require "util.paths";
 local parse_args = require "util.argparse".parse;
 local unpack = table.unpack or _G.unpack;
+local tc = require "util.termcolours";
+local isatty = require "util.pposix".isatty;
 
 local have_readline, readline = pcall(require, "readline");
 
@@ -27,7 +29,7 @@ local function read_line(prompt_string)
 end
 
 local function send_line(client, line)
-	client.send(st.stanza("repl-input"):text(line));
+	client.send(st.stanza("repl-input", { width = os.getenv "COLUMNS" }):text(line));
 end
 
 local function repl(client)
@@ -64,6 +66,7 @@ end
 local function start(arg) --luacheck: ignore 212/arg
 	local client = adminstream.client();
 	local opts, err, where = parse_args(arg);
+	local ttyout = isatty(io.stdout);
 
 	if not opts then
 		if err == "param-not-found" then
@@ -77,8 +80,7 @@ local function start(arg) --luacheck: ignore 212/arg
 	if arg[1] then
 		if arg[2] then
 			-- prosodyctl shell module reload foo bar.com --> module:reload("foo", "bar.com")
-			-- COMPAT Lua 5.1 doesn't have the separator argument to string.rep
-			arg[1] = string.format("%s:%s("..string.rep("%q, ", #arg-2):sub(1, -3)..")", unpack(arg));
+			arg[1] = string.format("%s:%s("..string.rep("%q", #arg-2,", ")..")", unpack(arg));
 		end
 
 		client.events.add_handler("connected", function()
@@ -89,11 +91,15 @@ local function start(arg) --luacheck: ignore 212/arg
 		local errors = 0; -- TODO This is weird, but works for now.
 		client.events.add_handler("received", function(stanza)
 			if stanza.name == "repl-output" or stanza.name == "repl-result" then
+				local dest = io.stdout;
 				if stanza.attr.type == "error" then
 					errors = errors + 1;
-					io.stderr:write(stanza:get_text(), "\n");
+					dest = io.stderr;
+				end
+				if stanza.attr.eol == "0" then
+					dest:write(stanza:get_text());
 				else
-					print(stanza:get_text());
+					dest:write(stanza:get_text(), "\n");
 				end
 			end
 			if stanza.name == "repl-result" then
@@ -118,7 +124,11 @@ local function start(arg) --luacheck: ignore 212/arg
 	client.events.add_handler("received", function (stanza)
 		if stanza.name == "repl-output" or stanza.name == "repl-result" then
 			local result_prefix = stanza.attr.type == "error" and "!" or "|";
-			print(result_prefix.." "..stanza:get_text());
+			local out = result_prefix.." "..stanza:get_text();
+			if ttyout and stanza.attr.type == "error" then
+				out = tc.getstring(tc.getstyle("red"), out);
+			end
+			print(out);
 		end
 		if stanza.name == "repl-result" then
 			repl(client);

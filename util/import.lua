@@ -8,7 +8,7 @@
 
 
 
-local unpack = table.unpack or unpack; --luacheck: ignore 113
+local unpack = table.unpack;
 local t_insert = table.insert;
 function _G.import(module, ...)
 	local m = package.loaded[module] or require(module);

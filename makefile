@@ -73,12 +73,13 @@ install-util: util/encodings.so util/encodings.so util/pposix.so util/signal.so
 
 install-plugins:
 	$(MKDIR) $(MODULES)
-	$(MKDIR) $(MODULES)/mod_pubsub $(MODULES)/adhoc $(MODULES)/muc $(MODULES)/mod_mam
+	$(MKDIR) $(MODULES)/mod_pubsub $(MODULES)/adhoc $(MODULES)/muc $(MODULES)/mod_mam $(MODULES)/mod_debug_stanzas
 	$(INSTALL_DATA) plugins/*.lua $(MODULES)
 	$(INSTALL_DATA) plugins/mod_pubsub/*.lua $(MODULES)/mod_pubsub
 	$(INSTALL_DATA) plugins/adhoc/*.lua $(MODULES)/adhoc
 	$(INSTALL_DATA) plugins/muc/*.lua $(MODULES)/muc
 	$(INSTALL_DATA) plugins/mod_mam/*.lua $(MODULES)/mod_mam
+	$(INSTALL_DATA) plugins/mod_debug_stanzas/*.lua $(MODULES)/mod_debug_stanzas
 
 install-man:
 	$(MKDIR) $(MAN)/man1

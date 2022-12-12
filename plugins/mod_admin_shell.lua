@@ -22,7 +22,7 @@ local _G = _G;
 
 local prosody = _G.prosody;
 
-local unpack = table.unpack or unpack; -- luacheck: ignore 113
+local unpack = table.unpack;
 local iterators = require "util.iterators";
 local keys, values = iterators.keys, iterators.values;
 local jid_bare, jid_split, jid_join = import("util.jid", "bare", "prepped_split", "join");
@@ -36,6 +36,7 @@ local serialization = require "util.serialization";
 local serialize_config = serialization.new ({ fatal = false, unquoted = true});
 local time = require "util.time";
 local promise = require "util.promise";
+local logger = require "util.logger";
 
 local t_insert = table.insert;
 local t_concat = table.concat;
@@ -83,8 +84,8 @@ function runner_callbacks:error(err)
 	self.data.print("Error: "..tostring(err));
 end
 
-local function send_repl_output(session, line)
-	return session.send(st.stanza("repl-output"):text(tostring(line)));
+local function send_repl_output(session, line, attr)
+	return session.send(st.stanza("repl-output", attr):text(tostring(line)));
 end
 
 function console:new_session(admin_session)
@@ -99,8 +100,14 @@ function console:new_session(admin_session)
 			end
 			return send_repl_output(admin_session, table.concat(t, "\t"));
 		end;
+		write = function (t)
+			return send_repl_output(admin_session, t, { eol = "0" });
+		end;
 		serialize = tostring;
 		disconnect = function () admin_session:close(); end;
+		is_connected = function ()
+			return not not admin_session.conn;
+		end
 	};
 	session.env = setmetatable({}, default_env_mt);
 
@@ -126,6 +133,11 @@ local function handle_line(event)
 		session = console:new_session(event.origin);
 		event.origin.shell_session = session;
 	end
+
+	local default_width = 132; -- The common default of 80 is a bit too narrow for e.g. s2s:show(), 132 was another common width for hardware terminals
+	local margin = 2; -- To account for '| ' when lines are printed
+	session.width = (tonumber(event.stanza.attr.width) or default_width)-margin;
+
 	local line = event.stanza:get_text();
 	local useglobalenv;
 
@@ -212,7 +224,7 @@ function commands.help(session, data)
 		print [[Commands are divided into multiple sections. For help on a particular section, ]]
 		print [[type: help SECTION (for example, 'help c2s'). Sections are: ]]
 		print [[]]
-		local row = format_table({ { title = "Section"; width = 7 }; { title = "Description"; width = "100%" } })
+		local row = format_table({ { title = "Section", width = 7 }, { title = "Description", width = "100%" } }, session.width)
 		print(row())
 		print(row { "c2s"; "Commands to manage local client-to-server sessions" })
 		print(row { "s2s"; "Commands to manage sessions between this server and others" })
@@ -228,6 +240,7 @@ function commands.help(session, data)
 		print(row { "dns"; "Commands to manage and inspect the internal DNS resolver" })
 		print(row { "xmpp"; "Commands for sending XMPP stanzas" })
 		print(row { "debug"; "Commands for debugging the server" })
+		print(row { "watch"; "Commands for watching live logs from the server" })
 		print(row { "config"; "Reloading the configuration, etc." })
 		print(row { "columns"; "Information about customizing session listings" })
 		print(row { "console"; "Help regarding the console itself" })
@@ -255,23 +268,22 @@ function commands.help(session, data)
 		print [[host:deactivate(hostname) - Disconnects all clients on this host and deactivates]]
 		print [[host:list() - List the currently-activated hosts]]
 	elseif section == "user" then
-		print [[user:create(jid, password, roles) - Create the specified user account]]
+		print [[user:create(jid, password, role) - Create the specified user account]]
 		print [[user:password(jid, password) - Set the password for the specified user account]]
 		print [[user:roles(jid, host) - Show current roles for an user]]
-		print [[user:setroles(jid, host, roles) - Set roles for an user (see 'help roles')]]
+		print [[user:setrole(jid, host, role) - Set primary role of a user (see 'help roles')]]
+		print [[user:addrole(jid, host, role) - Add a secondary role to a user]]
+		print [[user:delrole(jid, host, role) - Remove a secondary role from a user]]
 		print [[user:delete(jid) - Permanently remove the specified user account]]
 		print [[user:list(hostname, pattern) - List users on the specified host, optionally filtering with a pattern]]
 	elseif section == "roles" then
 		print [[Roles may grant access or restrict users from certain operations]]
 		print [[Built-in roles are:]]
-		print [[  prosody:admin - Administrator]]
-		print [[  (empty set) - Normal user]]
+		print [[  prosody:user     - Normal user (default)]]
+		print [[  prosody:admin    - Host administrator]]
+		print [[  prosody:operator - Server administrator]]
 		print [[]]
-		print [[The canonical role format looks like: { ["example:role"] = true }]]
-		print [[For convenience, the following formats are also accepted:]]
-		print [["admin" - short for "prosody:admin", the normal admin status (like the admins config option)]]
-		print [["example:role" - short for {["example:role"]=true}]]
-		print [[{"example:role"} - short for {["example:role"]=true}]]
+		print [[Roles can be assigned using the user management commands (see 'help user').]]
 	elseif section == "muc" then
 		-- TODO `muc:room():foo()` commands
 		print [[muc:create(roomjid, { config }) - Create the specified MUC room with the given config]]
@@ -304,6 +316,9 @@ function commands.help(session, data)
 		print [[debug:logevents(host) - Enable logging of fired events on host]]
 		print [[debug:events(host, event) - Show registered event handlers]]
 		print [[debug:timers() - Show information about scheduled timers]]
+	elseif section == "watch" then
+		print [[watch:log() - Follow debug logs]]
+		print [[watch:stanzas(target, filter) - Watch live stanzas matching the specified target and filter]]
 	elseif section == "console" then
 		print [[Hey! Welcome to Prosody's admin console.]]
 		print [[First thing, if you're ever wondering how to get out, simply type 'quit'.]]
@@ -334,7 +349,7 @@ function commands.help(session, data)
 			meta_columns[2].width = math.max(meta_columns[2].width or 0, #(spec.title or ""));
 			meta_columns[3].width = math.max(meta_columns[3].width or 0, #(spec.description or ""));
 		end
-		local row = format_table(meta_columns, 120)
+		local row = format_table(meta_columns, session.width)
 		print(row());
 		for column, spec in iterators.sorted_pairs(available_columns) do
 			print(row({ column, spec.title, spec.description }));
@@ -480,6 +495,16 @@ function def_env.module:info(name, hosts)
 
 	local function item_name(item) return item.name; end
 
+	local function task_timefmt(t)
+		if not t then
+			return "no last run time"
+		elseif os.difftime(os.time(), t) < 86400 then
+			return os.date("last run today at %H:%M", t);
+		else
+			return os.date("last run %A at %H:%M", t);
+		end
+	end
+
 	local friendly_descriptions = {
 		["adhoc-provider"] = "Ad-hoc commands",
 		["auth-provider"] = "Authentication provider",
@@ -497,12 +522,22 @@ function def_env.module:info(name, hosts)
 		["auth-provider"] = item_name,
 		["storage-provider"] = item_name,
 		["http-provider"] = function(item, mod) return mod:http_url(item.name, item.default_path); end,
-		["net-provider"] = item_name,
+		["net-provider"] = function(item)
+			local service_name = item.name;
+			local ports_list = {};
+			for _, interface, port in portmanager.get_active_services():iter(service_name, nil, nil) do
+				table.insert(ports_list, "["..interface.."]:"..port);
+			end
+			if not ports_list[1] then
+				return service_name..": not listening on any ports";
+			end
+			return service_name..": "..table.concat(ports_list, ", ");
+		end,
 		["measure"] = function(item) return item.name .. " (" .. suf(item.conf and item.conf.unit, " ") .. item.type .. ")"; end,
 		["metric"] = function(item)
 			return ("%s (%s%s)%s"):format(item.name, suf(item.mf.unit, " "), item.mf.type_, pre(": ", item.mf.description));
 		end,
-		["task"] = function (item) return string.format("%s (%s)", item.name or item.id, item.when); end
+		["task"] = function (item) return string.format("%s (%s, %s)", item.name or item.id, item.when, task_timefmt(item.last)); end
 	};
 
 	for host in hosts do
@@ -539,14 +574,14 @@ function def_env.module:info(name, hosts)
 	return true;
 end
 
-function def_env.module:load(name, hosts, config)
+function def_env.module:load(name, hosts)
 	hosts = get_hosts_with_module(hosts);
 
 	-- Load the module for each host
 	local ok, err, count, mod = true, nil, 0;
 	for host in hosts do
 		if (not modulemanager.is_loaded(host, name)) then
-			mod, err = modulemanager.load(host, name, config);
+			mod, err = modulemanager.load(host, name);
 			if not mod then
 				ok = false;
 				if err == "global-module-already-loaded" then
@@ -804,9 +839,7 @@ available_columns = {
 		mapper = function(conn, session)
 			if not session.secure then return "insecure"; end
 			if not conn or not conn:ssl() then return "secure" end
-			local sock = conn and conn:socket();
-			if not sock then return "secure"; end
-			local tls_info = sock.info and sock:info();
+			local tls_info = conn.ssl_info and conn:ssl_info();
 			return tls_info and tls_info.protocol or "secure";
 		end;
 	};
@@ -816,8 +849,7 @@ available_columns = {
 		width = 30;
 		key = "conn";
 		mapper = function(conn)
-			local sock = conn and conn:socket();
-			local info = sock and sock.info and sock:info();
+			local info = conn and conn.ssl_info and conn:ssl_info();
 			if info then return info.cipher end
 		end;
 	};
@@ -914,6 +946,15 @@ available_columns = {
 			end
 		end
 	};
+	role = {
+		title = "Role";
+		description = "Session role";
+		width = 20;
+		key = "role";
+		mapper = function(role)
+			return role and role.name;
+		end;
+	}
 };
 
 local function get_colspec(colspec, default)
@@ -934,8 +975,8 @@ end
 
 function def_env.c2s:show(match_jid, colspec)
 	local print = self.session.print;
-	local columns = get_colspec(colspec, { "id"; "jid"; "ipv"; "status"; "secure"; "smacks"; "csi" });
-	local row = format_table(columns, 120);
+	local columns = get_colspec(colspec, { "id"; "jid"; "role"; "ipv"; "status"; "secure"; "smacks"; "csi" });
+	local row = format_table(columns, self.session.width);
 
 	local function match(session)
 		local jid = get_jid(session)
@@ -1018,7 +1059,7 @@ end
 function def_env.s2s:show(match_jid, colspec)
 	local print = self.session.print;
 	local columns = get_colspec(colspec, { "id"; "host"; "dir"; "remote"; "ipv"; "secure"; "s2s_sasl"; "dialback" });
-	local row = format_table(columns, 132);
+	local row = format_table(columns, self.session.width);
 
 	local function match(session)
 		local host, remote = get_s2s_hosts(session);
@@ -1228,18 +1269,18 @@ end
 function def_env.host:list()
 	local print = self.session.print;
 	local i = 0;
-	local type;
+	local host_type;
 	for host, host_session in iterators.sorted_pairs(prosody.hosts, _sort_hosts) do
 		i = i + 1;
-		type = host_session.type;
-		if type == "local" then
+		host_type = host_session.type;
+		if host_type == "local" then
 			print(host);
 		else
-			type = module:context(host):get_option_string("component_module", type);
-			if type ~= "component" then
-				type = type .. " component";
+			host_type = module:context(host):get_option_string("component_module", host_type);
+			if host_type ~= "component" then
+				host_type = host_type .. " component";
 			end
-			print(("%s (%s)"):format(host, type));
+			print(("%s (%s)"):format(host, host_type));
 		end
 	end
 	return true, i.." hosts";
@@ -1345,32 +1386,32 @@ end
 
 local um = require"core.usermanager";
 
-local function coerce_roles(roles)
-	if roles == "admin" then roles = "prosody:admin"; end
-	if type(roles) == "string" then roles = { [roles] = true }; end
-	if roles[1] then for i, role in ipairs(roles) do roles[role], roles[i] = true, nil; end end
-	return roles;
-end
-
 def_env.user = {};
-function def_env.user:create(jid, password, roles)
+function def_env.user:create(jid, password, role)
 	local username, host = jid_split(jid);
 	if not prosody.hosts[host] then
 		return nil, "No such host: "..host;
 	elseif um.user_exists(username, host) then
 		return nil, "User exists";
 	end
-	local ok, err = um.create_user(username, password, host);
-	if ok then
-		if ok and roles then
-			roles = coerce_roles(roles);
-			local roles_ok, rerr = um.set_roles(jid, host, roles);
-			if not roles_ok then return nil, "User created, but could not set roles: " .. tostring(rerr); end
-		end
-		return true, "User created";
-	else
+	local ok, err = um.create_user(username, nil, host);
+	if not ok then
 		return nil, "Could not create user: "..err;
 	end
+
+	if role then
+		local role_ok, rerr = um.set_user_role(jid, host, role);
+		if not role_ok then
+			return nil, "Could not set role: " .. tostring(rerr);
+		end
+	end
+
+	local ok, err = um.set_password(username, password, host, nil);
+	if not ok then
+		return nil, "Could not set password for user: "..err;
+	end
+
+	return true, "User created";
 end
 
 function def_env.user:delete(jid)
@@ -1403,41 +1444,64 @@ function def_env.user:password(jid, password)
 	end
 end
 
-function def_env.user:roles(jid, host, new_roles)
-	if new_roles or type(host) == "table" then
-		return nil, "Use user:setroles(jid, host, roles) to change user roles";
-	end
+function def_env.user:role(jid, host)
+	local print = self.session.print;
 	local username, userhost = jid_split(jid);
 	if host == nil then host = userhost; end
-	if host ~= "*" and not prosody.hosts[host] then
+	if not prosody.hosts[host] then
 		return nil, "No such host: "..host;
 	elseif prosody.hosts[userhost] and not um.user_exists(username, userhost) then
 		return nil, "No such user";
 	end
-	local roles = um.get_roles(jid, host);
-	if not roles then return true, "No roles"; end
-	local count = 0;
-	local print = self.session.print;
-	for role in pairs(roles) do
+
+	local primary_role = um.get_user_role(username, host);
+	local secondary_roles = um.get_user_secondary_roles(username, host);
+
+	print(primary_role and primary_role.name or "<none>");
+
+	local count = primary_role and 1 or 0;
+	for role_name in pairs(secondary_roles or {}) do
 		count = count + 1;
-		print(role);
+		print(role_name.." (secondary)");
 	end
+
 	return true, count == 1 and "1 role" or count.." roles";
 end
-def_env.user.showroles = def_env.user.roles; -- COMPAT
+def_env.user.roles = def_env.user.role;
 
--- user:roles("someone@example.com", "example.com", {"prosody:admin"})
--- user:roles("someone@example.com", {"prosody:admin"})
-function def_env.user:setroles(jid, host, new_roles)
+-- user:setrole("someone@example.com", "example.com", "prosody:admin")
+-- user:setrole("someone@example.com", "prosody:admin")
+function def_env.user:setrole(jid, host, new_role)
 	local username, userhost = jid_split(jid);
-	if new_roles == nil then host, new_roles = userhost, host; end
-	if host ~= "*" and not prosody.hosts[host] then
+	if new_role == nil then host, new_role = userhost, host; end
+	if not prosody.hosts[host] then
 		return nil, "No such host: "..host;
 	elseif prosody.hosts[userhost] and not um.user_exists(username, userhost) then
 		return nil, "No such user";
 	end
-	if host == "*" then host = nil; end
-	return um.set_roles(jid, host, coerce_roles(new_roles));
+	return um.set_user_role(username, host, new_role);
+end
+
+function def_env.user:addrole(jid, host, new_role)
+	local username, userhost = jid_split(jid);
+	if new_role == nil then host, new_role = userhost, host; end
+	if not prosody.hosts[host] then
+		return nil, "No such host: "..host;
+	elseif prosody.hosts[userhost] and not um.user_exists(username, userhost) then
+		return nil, "No such user";
+	end
+	return um.add_user_secondary_role(username, host, new_role);
+end
+
+function def_env.user:delrole(jid, host, role_name)
+	local username, userhost = jid_split(jid);
+	if role_name == nil then host, role_name = userhost, host; end
+	if not prosody.hosts[host] then
+		return nil, "No such host: "..host;
+	elseif prosody.hosts[userhost] and not um.user_exists(username, userhost) then
+		return nil, "No such user";
+	end
+	return um.remove_user_secondary_role(username, host, role_name);
 end
 
 -- TODO switch to table view, include roles
@@ -1508,7 +1572,7 @@ function def_env.xmpp:ping(localhost, remotehost, timeout)
 		module:unhook("s2sin-established", onestablished);
 		module:unhook("s2s-destroyed", ondestroyed);
 	end):next(function(pong)
-		return ("pong from %s in %gs"):format(pong.stanza.attr.from, time.now() - time_start);
+		return ("pong from %s on %s in %gs"):format(pong.stanza.attr.from, pong.origin.id, time.now() - time_start);
 	end);
 end
 
@@ -1560,7 +1624,7 @@ function def_env.http:list(hosts)
 	local output = format_table({
 			{ title = "Module", width = "20%" },
 			{ title = "URL", width = "80%" },
-		}, 132);
+		}, self.session.width);
 
 	for _, host in ipairs(hosts) do
 		local http_apps = modulemanager.get_items("http-provider", host);
@@ -1589,6 +1653,60 @@ function def_env.http:list(hosts)
 		print("HTTP requests to unknown hosts will be handled by "..default_host);
 	end
 	return true;
+end
+
+def_env.watch = {};
+
+function def_env.watch:log()
+	local writing = false;
+	local sink = logger.add_simple_sink(function (source, level, message)
+		if writing then return; end
+		writing = true;
+		self.session.print(source, level, message);
+		writing = false;
+	end);
+
+	while self.session.is_connected() do
+		async.sleep(3);
+	end
+	if not logger.remove_sink(sink) then
+		module:log("warn", "Unable to remove watch:log() sink");
+	end
+end
+
+local stanza_watchers = module:require("mod_debug_stanzas/watcher");
+function def_env.watch:stanzas(target_spec, filter_spec)
+	local function handler(event_type, stanza, session)
+		if stanza then
+			if event_type == "sent" then
+				self.session.print(("\n<!-- sent to %s -->"):format(session.id));
+			elseif event_type == "received" then
+				self.session.print(("\n<!-- received from %s -->"):format(session.id));
+			else
+				self.session.print(("\n<!-- %s (%s) -->"):format(event_type, session.id));
+			end
+			self.session.print(stanza);
+		elseif session then
+			self.session.print("\n<!-- session "..session.id.." "..event_type.." -->");
+		elseif event_type then
+			self.session.print("\n<!-- "..event_type.." -->");
+		end
+	end
+
+	stanza_watchers.add({
+		target_spec = {
+			jid = target_spec;
+		};
+		filter_spec = filter_spec and {
+			with_jid = filter_spec;
+		};
+	}, handler);
+
+	while self.session.is_connected() do
+		async.sleep(3);
+	end
+
+	stanza_watchers.remove(handler);
 end
 
 def_env.debug = {};
@@ -1933,6 +2051,10 @@ function def_env.stats:show(name_filter)
 	return displayed_stats;
 end
 
+
+function module.unload()
+	stanza_watchers.cleanup();
+end
 
 
 -------------

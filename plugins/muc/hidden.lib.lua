@@ -8,7 +8,7 @@
 --
 
 local restrict_public = not module:get_option_boolean("muc_room_allow_public", true);
-local um_is_admin = require "core.usermanager".is_admin;
+module:default_permission(restrict_public and "prosody:admin" or "prosody:user", ":create-public-room");
 
 local function get_hidden(room)
 	return room._data.hidden;
@@ -22,8 +22,8 @@ local function set_hidden(room, hidden)
 end
 
 module:hook("muc-config-form", function(event)
-	if restrict_public and not um_is_admin(event.actor, module.host) then
-		-- Don't show option if public rooms are restricted and user is not admin of this host
+	if not module:may(":create-public-room", event.actor) then
+		-- Hide config option if this user is not allowed to create public rooms
 		return;
 	end
 	table.insert(event.form, {
@@ -36,7 +36,7 @@ module:hook("muc-config-form", function(event)
 end, 100-9);
 
 module:hook("muc-config-submitted/muc#roomconfig_publicroom", function(event)
-	if restrict_public and not um_is_admin(event.actor, module.host) then
+	if not module:may(":create-public-room", event.actor) then
 		return; -- Not allowed
 	end
 	if set_hidden(event.room, not event.value) then

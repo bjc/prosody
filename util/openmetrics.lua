@@ -26,7 +26,7 @@ local log = require "util.logger".init("util.openmetrics");
 local new_multitable = require "util.multitable".new;
 local iter_multitable = require "util.multitable".iter;
 local t_concat, t_insert = table.concat, table.insert;
-local t_pack, t_unpack = require "util.table".pack, table.unpack or unpack; --luacheck: ignore 113/unpack
+local t_pack, t_unpack = table.pack, table.unpack;
 
 -- BEGIN of Utility: "metric proxy"
 -- This allows to wrap a MetricFamily in a proxy which only provides the
@@ -35,6 +35,7 @@ local t_pack, t_unpack = require "util.table".pack, table.unpack or unpack; --lu
 -- `with_partial_label` by the moduleapi in order to pre-set the `host` label
 -- on metrics created in non-global modules.
 local metric_proxy_mt = {}
+metric_proxy_mt.__name = "metric_proxy"
 metric_proxy_mt.__index = metric_proxy_mt
 
 local function new_metric_proxy(metric_family, with_labels_proxy_fun)
@@ -128,6 +129,7 @@ end
 -- BEGIN of generic MetricFamily implementation
 
 local metric_family_mt = {}
+metric_family_mt.__name = "metric_family"
 metric_family_mt.__index = metric_family_mt
 
 local function histogram_metric_ctor(orig_ctor, buckets)
@@ -278,6 +280,7 @@ local function compose_name(name, unit)
 end
 
 local metric_registry_mt = {}
+metric_registry_mt.__name = "metric_registry"
 metric_registry_mt.__index = metric_registry_mt
 
 local function new_metric_registry(backend)

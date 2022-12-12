@@ -8,13 +8,10 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#if (LUA_VERSION_NUM == 501)
-#define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
-#endif
 
 /* TODO Deduplicate code somehow */
 
-int strop_and(lua_State *L) {
+static int strop_and(lua_State *L) {
 	luaL_Buffer buf;
 	size_t a, b, i;
 	const char *str_a = luaL_checklstring(L, 1, &a);
@@ -35,7 +32,7 @@ int strop_and(lua_State *L) {
 	return 1;
 }
 
-int strop_or(lua_State *L) {
+static int strop_or(lua_State *L) {
 	luaL_Buffer buf;
 	size_t a, b, i;
 	const char *str_a = luaL_checklstring(L, 1, &a);
@@ -56,7 +53,7 @@ int strop_or(lua_State *L) {
 	return 1;
 }
 
-int strop_xor(lua_State *L) {
+static int strop_xor(lua_State *L) {
 	luaL_Buffer buf;
 	size_t a, b, i;
 	const char *str_a = luaL_checklstring(L, 1, &a);

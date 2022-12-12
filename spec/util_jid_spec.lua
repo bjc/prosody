@@ -48,6 +48,47 @@ describe("util.jid", function()
 		end)
 	end);
 
+	describe("#prepped_split()", function()
+		local function test(input_jid, expected_node, expected_server, expected_resource)
+			local rnode, rserver, rresource = jid.prepped_split(input_jid);
+			assert.are.equal(expected_node, rnode, "split("..tostring(input_jid)..") failed");
+			assert.are.equal(expected_server, rserver, "split("..tostring(input_jid)..") failed");
+			assert.are.equal(expected_resource, rresource, "split("..tostring(input_jid)..") failed");
+		end
+
+		it("should work", function()
+			-- Valid JIDs
+			test("node@server", 		"node", "server", nil		);
+			test("node@server/resource", 	"node", "server", "resource"        );
+			test("server", 			nil, 	"server", nil               );
+			test("server/resource", 	nil, 	"server", "resource"        );
+			test("server/resource@foo", 	nil, 	"server", "resource@foo"    );
+			test("server/resource@foo/bar",	nil, 	"server", "resource@foo/bar");
+
+			-- Always invalid JIDs
+			test(nil,                nil, nil, nil);
+			test("node@/server",     nil, nil, nil);
+			test("@server",          nil, nil, nil);
+			test("@server/resource", nil, nil, nil);
+			test("@/resource", nil, nil, nil);
+			test("@server/", nil, nil, nil);
+			test("server/", nil, nil, nil);
+			test("/resource", nil, nil, nil);
+		end);
+		it("should reject invalid arguments", function ()
+			assert.has_error(function () jid.prepped_split(false) end)
+		end)
+		it("should strip empty root label", function ()
+			test("node@server.", "node", "server", nil);
+		end);
+		it("should fail for JIDs that fail stringprep", function ()
+			test("node@invalid-\128-server", nil, nil, nil);
+			test("node@invalid-\194\128-server", nil, nil, nil);
+			test("<invalid node>@server", nil, nil, nil);
+			test("node@server/invalid-\000-resource", nil, nil, nil);
+		end);
+	end);
+
 
 	describe("#bare()", function()
 		it("should work", function()

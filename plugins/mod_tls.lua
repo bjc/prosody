@@ -80,6 +80,9 @@ end
 module:hook_global("config-reloaded", module.load);
 
 local function can_do_tls(session)
+	if session.secure then
+		return false;
+	end
 	if session.conn and not session.conn.starttls then
 		if not session.secure then
 			session.log("debug", "Underlying connection does not support STARTTLS");
@@ -125,7 +128,15 @@ end);
 -- Hook <starttls/>
 module:hook("stanza/urn:ietf:params:xml:ns:xmpp-tls:starttls", function(event)
 	local origin = event.origin;
+	origin.starttls = "requested";
 	if can_do_tls(origin) then
+		if origin.conn.block_reads then
+			-- we need to ensure that no data is read anymore, otherwise we could end up in a situation where
+			-- <proceed/> is sent and the socket receives the TLS handshake (and passes the data to lua) before
+			-- it is asked to initiate TLS
+			-- (not with the classical single-threaded server backends)
+			origin.conn:block_reads()
+		end
 		(origin.sends2s or origin.send)(starttls_proceed);
 		if origin.destroyed then return end
 		origin:reset_stream();
@@ -166,6 +177,7 @@ module:hook_tag("http://etherx.jabber.org/streams", "features", function (sessio
 			module:log("debug", "%s is not offering TLS", session.to_host);
 			return;
 		end
+		session.starttls = "initiated";
 		session.sends2s(starttls_initiate);
 		return true;
 	end
@@ -183,7 +195,8 @@ module:hook_tag(xmlns_starttls, "proceed", function (session, stanza) -- luachec
 	if session.type == "s2sout_unauthed" and can_do_tls(session) then
 		module:log("debug", "Proceeding with TLS on s2sout...");
 		session:reset_stream();
-		session.conn:starttls(session.ssl_ctx);
+		session.starttls = "proceeding"
+		session.conn:starttls(session.ssl_ctx, session.to_host);
 		session.secure = false;
 		return true;
 	end

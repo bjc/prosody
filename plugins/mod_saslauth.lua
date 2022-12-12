@@ -52,7 +52,7 @@ local function handle_status(session, status, ret, err_msg)
 		module:fire_event("authentication-failure", { session = session, condition = ret, text = err_msg });
 		session.sasl_handler = session.sasl_handler:clean_clone();
 	elseif status == "success" then
-		local ok, err = sm_make_authenticated(session, session.sasl_handler.username, session.sasl_handler.scope);
+		local ok, err = sm_make_authenticated(session, session.sasl_handler.username, session.sasl_handler.role);
 		if ok then
 			module:fire_event("authentication-success", { session = session });
 			session.sasl_handler = nil;
@@ -242,7 +242,16 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:abort", function(event)
 end);
 
 local function tls_unique(self)
-	return self.userdata["tls-unique"]:getpeerfinished();
+	return self.userdata["tls-unique"]:ssl_peerfinished();
+end
+
+local function tls_exporter(conn)
+	if not conn.ssl_exportkeyingmaterial then return end
+	return conn:ssl_exportkeyingmaterial("EXPORTER-Channel-Binding", 32, "");
+end
+
+local function sasl_tls_exporter(self)
+	return tls_exporter(self.userdata["tls-exporter"]);
 end
 
 local mechanisms_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-sasl' };
@@ -258,22 +267,29 @@ module:hook("stream-features", function(event)
 		end
 		local sasl_handler = usermanager_get_sasl_handler(module.host, origin)
 		origin.sasl_handler = sasl_handler;
+		local channel_bindings = set.new()
 		if origin.encrypted then
 			-- check whether LuaSec has the nifty binding to the function needed for tls-unique
 			-- FIXME: would be nice to have this check only once and not for every socket
 			if sasl_handler.add_cb_handler then
-				local socket = origin.conn:socket();
-				local info = socket.info and socket:info();
-				if info.protocol == "TLSv1.3" then
+				local info = origin.conn:ssl_info();
+				if info and info.protocol == "TLSv1.3" then
 					log("debug", "Channel binding 'tls-unique' undefined in context of TLS 1.3");
-				elseif socket.getpeerfinished and socket:getpeerfinished() then
+					if tls_exporter(origin.conn) then
+						log("debug", "Channel binding 'tls-exporter' supported");
+						sasl_handler:add_cb_handler("tls-exporter", sasl_tls_exporter);
+						channel_bindings:add("tls-exporter");
+					end
+				elseif origin.conn.ssl_peerfinished and origin.conn:ssl_peerfinished() then
 					log("debug", "Channel binding 'tls-unique' supported");
 					sasl_handler:add_cb_handler("tls-unique", tls_unique);
+					channel_bindings:add("tls-unique");
 				else
 					log("debug", "Channel binding 'tls-unique' not supported (by LuaSec?)");
 				end
 				sasl_handler["userdata"] = {
-					["tls-unique"] = socket;
+					["tls-unique"] = origin.conn;
+					["tls-exporter"] = origin.conn;
 				};
 			else
 				log("debug", "Channel binding not supported by SASL handler");
@@ -306,6 +322,14 @@ module:hook("stream-features", function(event)
 				mechanisms:tag("mechanism"):text(mechanism):up();
 			end
 			features:add_child(mechanisms);
+			if not channel_bindings:empty() then
+				-- XXX XEP-0440 is Experimental
+				features:tag("sasl-channel-binding", {xmlns='urn:xmpp:sasl-cb:0'})
+				for channel_binding in channel_bindings do
+					features:tag("channel-binding", {type=channel_binding}):up()
+				end
+				features:up();
+			end
 			return;
 		end
 
@@ -328,7 +352,7 @@ module:hook("stream-features", function(event)
 				authmod, available_disabled);
 		end
 
-	else
+	elseif not origin.full_jid then
 		features:tag("bind", bind_attr):tag("required"):up():up();
 		features:tag("session", xmpp_session_attr):tag("optional"):up():up();
 	end

@@ -9,9 +9,8 @@
 local ssl = require "ssl";
 local configmanager = require "core.configmanager";
 local log = require "util.logger".init("certmanager");
-local ssl_context = ssl.context or require "ssl.context";
 local ssl_newcontext = ssl.newcontext;
-local new_config = require"util.sslconfig".new;
+local new_config = require"net.server".tls_builder;
 local stat = require "lfs".attributes;
 
 local x509 = require "util.x509";
@@ -313,10 +312,6 @@ else
 	core_defaults.curveslist = nil;
 end
 
-local path_options = { -- These we pass through resolve_path()
-	key = true, certificate = true, cafile = true, capath = true, dhparam = true
-}
-
 local function create_context(host, mode, ...)
 	local cfg = new_config();
 	cfg:apply(core_defaults);
@@ -352,34 +347,7 @@ local function create_context(host, mode, ...)
 		if user_ssl_config.certificate and not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
 	end
 
-	for option in pairs(path_options) do
-		if type(user_ssl_config[option]) == "string" then
-			user_ssl_config[option] = resolve_path(config_path, user_ssl_config[option]);
-		else
-			user_ssl_config[option] = nil;
-		end
-	end
-
-	-- LuaSec expects dhparam to be a callback that takes two arguments.
-	-- We ignore those because it is mostly used for having a separate
-	-- set of params for EXPORT ciphers, which we don't have by default.
-	if type(user_ssl_config.dhparam) == "string" then
-		local f, err = io_open(user_ssl_config.dhparam);
-		if not f then return nil, "Could not open DH parameters: "..err end
-		local dhparam = f:read("*a");
-		f:close();
-		user_ssl_config.dhparam = function() return dhparam; end
-	end
-
-	local ctx, err = ssl_newcontext(user_ssl_config);
-
-	-- COMPAT Older LuaSec ignores the cipher list from the config, so we have to take care
-	-- of it ourselves (W/A for #x)
-	if ctx and user_ssl_config.ciphers then
-		local success;
-		success, err = ssl_context.setcipher(ctx, user_ssl_config.ciphers);
-		if not success then ctx = nil; end
-	end
+	local ctx, err = cfg:build();
 
 	if not ctx then
 		err = err or "invalid ssl config"

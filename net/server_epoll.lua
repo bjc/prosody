@@ -18,7 +18,6 @@ local traceback = debug.traceback;
 local logger = require "util.logger";
 local log = logger.init("server_epoll");
 local socket = require "socket";
-local luasec = require "ssl";
 local realtime = require "util.time".now;
 local monotonic = require "util.time".monotonic;
 local indexedbheap = require "util.indexedbheap";
@@ -28,6 +27,8 @@ local inet_pton = inet.pton;
 local _SOCKETINVALID = socket._SOCKETINVALID or -1;
 local new_id = require "util.id".short;
 local xpcall = require "util.xpcall".xpcall;
+local sslconfig = require "util.sslconfig";
+local tls_impl = require "net.tls_luasec";
 
 local poller = require "util.poll"
 local EEXIST = poller.EEXIST;
@@ -91,6 +92,12 @@ local default_config = { __index = {
 
 	--- How long to wait after getting the shutdown signal before forcefully tearing down every socket
 	shutdown_deadline = 5;
+
+	-- TCP Fast Open
+	tcp_fastopen = false;
+
+	-- Defer accept until incoming data is available
+	tcp_defer_accept = false;
 }};
 local cfg = default_config.__index;
 
@@ -614,6 +621,42 @@ function interface:set_sslctx(sslctx)
 	self._sslctx = sslctx;
 end
 
+function interface:sslctx()
+	return self.tls_ctx
+end
+
+function interface:ssl_info()
+	local sock = self.conn;
+	if not sock.info then return nil, "not-implemented"; end
+	return sock:info();
+end
+
+function interface:ssl_peercertificate()
+	local sock = self.conn;
+	if not sock.getpeercertificate then return nil, "not-implemented"; end
+	return sock:getpeercertificate();
+end
+
+function interface:ssl_peerverification()
+	local sock = self.conn;
+	if not sock.getpeerverification then return nil, { { "Chain verification not supported" } }; end
+	return sock:getpeerverification();
+end
+
+function interface:ssl_peerfinished()
+	local sock = self.conn;
+	if not sock.getpeerfinished then return nil, "not-implemented"; end
+	return sock:getpeerfinished();
+end
+
+function interface:ssl_exportkeyingmaterial(label, len, context)
+	local sock = self.conn;
+	if sock.exportkeyingmaterial then
+		return sock:exportkeyingmaterial(label, len, context);
+	end
+end
+
+
 function interface:starttls(tls_ctx)
 	if tls_ctx then self.tls_ctx = tls_ctx; end
 	self.starttls = false;
@@ -641,11 +684,7 @@ function interface:inittls(tls_ctx, now)
 	self.starttls = false;
 	self:debug("Starting TLS now");
 	self:updatenames(); -- Can't getpeer/sockname after wrap()
-	local ok, conn, err = pcall(luasec.wrap, self.conn, self.tls_ctx);
-	if not ok then
-		conn, err = ok, conn;
-		self:debug("Failed to initialize TLS: %s", err);
-	end
+	local conn, err = self.tls_ctx:wrap(self.conn);
 	if not conn then
 		self:on("disconnect", err);
 		self:destroy();
@@ -656,8 +695,8 @@ function interface:inittls(tls_ctx, now)
 	if conn.sni then
 		if self.servername then
 			conn:sni(self.servername);
-		elseif self._server and type(self._server.hosts) == "table" and next(self._server.hosts) ~= nil then
-			conn:sni(self._server.hosts, true);
+		elseif next(self.tls_ctx._sni_contexts) ~= nil then
+			conn:sni(self.tls_ctx._sni_contexts, true);
 		end
 	end
 	if self.extra and self.extra.tlsa and conn.settlsa then
@@ -741,7 +780,6 @@ local function wrapsocket(client, server, read_size, listeners, tls_ctx, extra) 
 		end
 	end
 
-	conn:updatenames();
 	return conn;
 end
 
@@ -767,6 +805,7 @@ function interface:onacceptable()
 		return;
 	end
 	local client = wrapsocket(conn, self, nil, self.listeners);
+	client:updatenames();
 	client:debug("New connection %s on server %s", client, self);
 	client:defaultoptions();
 	client._writable = cfg.opportunistic_writes;
@@ -885,6 +924,12 @@ local function wrapserver(conn, addr, port, listeners, config)
 		log = logger.init(("serv%s"):format(new_id()));
 	}, interface_mt);
 	server:debug("Server %s created", server);
+	if cfg.tcp_fastopen then
+		server:setoption("tcp-fastopen", cfg.tcp_fastopen);
+	end
+	if type(cfg.tcp_defer_accept) == "number" then
+		server:setoption("tcp-defer-accept", cfg.tcp_defer_accept);
+	end
 	server:add(true, false);
 	return server;
 end
@@ -908,6 +953,7 @@ end
 -- COMPAT
 local function wrapclient(conn, addr, port, listeners, read_size, tls_ctx, extra)
 	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx, extra);
+	client:updatenames();
 	if not client.peername then
 		client.peername, client.peerport = addr, port;
 	end
@@ -941,9 +987,13 @@ local function addclient(addr, port, listeners, read_size, tls_ctx, typ, extra)
 	if not conn then return conn, err; end
 	local ok, err = conn:settimeout(0);
 	if not ok then return ok, err; end
+	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx, extra)
+	if cfg.tcp_fastopen then
+		client:setoption("tcp-fastopen-connect", 1);
+	end
 	local ok, err = conn:setpeername(addr, port);
 	if not ok and err ~= "timeout" then return ok, err; end
-	local client = wrapsocket(conn, nil, read_size, listeners, tls_ctx, extra)
+	client:updatenames();
 	local ok, err = client:init();
 	if not client.peername then
 		-- otherwise not set until connected
@@ -1084,6 +1134,10 @@ return {
 	set_config = function (newconfig)
 		cfg = setmetatable(newconfig, default_config);
 	end;
+
+	tls_builder = function(basedir)
+		return sslconfig._new(tls_impl.new_context, basedir)
+	end,
 
 	-- libevent emulation
 	event = { EV_READ = "r", EV_WRITE = "w", EV_READWRITE = "rw", EV_LEAVE = -1 };

@@ -2,7 +2,7 @@ cache = true
 codes = true
 ignore = { "411/err", "421/err", "411/ok", "421/ok", "211/_ENV", "431/log", "214", "581" }
 
-std = "lua53c"
+std = "lua54c"
 max_line_length = 150
 
 read_globals = {
@@ -62,6 +62,8 @@ files["plugins/"] = {
 		"module.broadcast",
 		"module.context",
 		"module.depends",
+		"module.default_permission",
+		"module.default_permissions",
 		"module.fire_event",
 		"module.get_directory",
 		"module.get_host",
@@ -86,6 +88,7 @@ files["plugins/"] = {
 		"module.load_resource",
 		"module.log",
 		"module.log_status",
+		"module.may",
 		"module.measure",
 		"module.metric",
 		"module.open_store",
@@ -149,8 +152,6 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 		"net/dns.lua";
 		"net/server_select.lua";
 
-		"util/vcard.lua";
-
 		"plugins/mod_storage_sql1.lua";
 
 		"spec/core_moduleapi_spec.lua";
@@ -171,6 +172,7 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 		"tools/migration/migrator/prosody_sql.lua";
 		"tools/migration/prosody-migrator.lua";
 		"tools/openfire2prosody.lua";
+		"tools/test_mutants.sh.lua";
 		"tools/xep227toprosody.lua";
 	}
 	for _, file in ipairs(exclude_files) do

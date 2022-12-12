@@ -21,9 +21,11 @@ describe("util.jsonpointer", function()
 		 }]])
 		end)
 		it("works", function()
+			assert.is_nil(jp.resolve("string", "/string"))
 			assert.same(example, jp.resolve(example, ""));
 			assert.same({ "bar", "baz" }, jp.resolve(example, "/foo"));
 			assert.same("bar", jp.resolve(example, "/foo/0"));
+			assert.same(nil, jp.resolve(example, "/foo/-"));
 			assert.same(0, jp.resolve(example, "/"));
 			assert.same(1, jp.resolve(example, "/a~1b"));
 			assert.same(2, jp.resolve(example, "/c%d"));

@@ -1,5 +1,5 @@
 local record lib
-	enum signal
+	enum Signal
 		"SIGABRT"
 		"SIGALRM"
 		"SIGBUS"
@@ -33,9 +33,9 @@ local record lib
 		"SIGXCPU"
 		"SIGXFSZ"
 	end
-	signal : function (integer | signal, function, boolean) : boolean
-	raise : function (integer | signal)
-	kill : function (integer, integer | signal)
+	signal : function (integer | Signal, function, boolean) : boolean
+	raise : function (integer | Signal)
+	kill : function (integer, integer | Signal)
 	-- enum : integer
 end
 return lib

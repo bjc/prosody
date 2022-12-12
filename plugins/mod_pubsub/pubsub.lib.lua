@@ -1,4 +1,4 @@
-local t_unpack = table.unpack or unpack; -- luacheck: ignore 113
+local t_unpack = table.unpack;
 local time_now = os.time;
 
 local jid_prep = require "util.jid".prep;
@@ -678,8 +678,7 @@ end
 function handlers.set_retract(origin, stanza, retract, service)
 	local node, notify = retract.attr.node, retract.attr.notify;
 	notify = (notify == "1") or (notify == "true");
-	local item = retract:get_child("item");
-	local id = item and item.attr.id
+	local id = retract:get_child_attr("item", nil, "id");
 	if not (node and id) then
 		origin.send(pubsub_error_reply(stanza, node and "item-not-found" or "nodeid-required"));
 		return true;

@@ -46,7 +46,7 @@ subjectAltName = @subject_alternative_name
 
 [ subject_alternative_name ]
 
-# See http://tools.ietf.org/html/rfc6120#section-13.7.1.2 for more info.
+# See https://www.rfc-editor.org/rfc/rfc6120.html#section-13.7.1.2 for more info.
 
 DNS.0       =                                           example.com
 otherName.0 =                 xmppAddr;FORMAT:UTF8,UTF8:example.com

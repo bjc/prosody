@@ -8,9 +8,9 @@
 --   local dbuffer = require "tools.modtrace".trace("util.dbuffer");
 --
 
-local t_pack = require "util.table".pack;
+local t_pack = table.pack;
 local serialize = require "util.serialization".serialize;
-local unpack = table.unpack or unpack; --luacheck: ignore 113
+local unpack = table.unpack;
 local set = require "util.set";
 
 local serialize_cfg = {

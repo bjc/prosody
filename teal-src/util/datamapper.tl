@@ -19,6 +19,8 @@
 -- TODO s/number/integer/ once we have appropriate math.type() compat
 --
 
+if not math.type then require "util.mathcompat" end
+
 local st = require "util.stanza";
 local json = require"util.json"
 local pointer = require"util.jsonpointer";
@@ -131,10 +133,6 @@ local function unpack_propschema( propschema : schema_t, propname : string, curr
 		elseif propschema["enum"] then
 			enums = propschema["enum"]
 		end
-	end
-
-	if current_ns == "urn:xmpp:reactions:0" and name == "reactions" then
-		assert(proptype=="array")
 	end
 
 	return proptype, value_where, name, namespace, prefix, single_attribute, enums

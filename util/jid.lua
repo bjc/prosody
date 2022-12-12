@@ -35,8 +35,7 @@ local function split(jid)
 	if jid == nil then return; end
 	local node, nodepos = match(jid, "^([^@/]+)@()");
 	local host, hostpos = match(jid, "^([^@/]+)()", nodepos);
-	if node ~= nil and host == nil then return nil, nil, nil; end
-	local resource = match(jid, "^/(.+)$", hostpos);
+	local resource = host and match(jid, "^/(.+)$", hostpos);
 	if (host == nil) or ((resource == nil) and #jid >= hostpos) then return nil, nil, nil; end
 	return node, host, resource;
 end
@@ -91,9 +90,9 @@ local function compare(jid, acl)
 	-- TODO compare to table of rules?
 	local jid_node, jid_host, jid_resource = split(jid);
 	local acl_node, acl_host, acl_resource = split(acl);
-	if ((acl_node ~= nil and acl_node == jid_node) or acl_node == nil) and
-		((acl_host ~= nil and acl_host == jid_host) or acl_host == nil) and
-		((acl_resource ~= nil and acl_resource == jid_resource) or acl_resource == nil) then
+	if (acl_node == nil or acl_node == jid_node) and
+		(acl_host == nil or acl_host == jid_host) and
+		(acl_resource == nil or acl_resource == jid_resource) then
 		return true
 	end
 	return false
@@ -111,6 +110,7 @@ local function resource(jid)
 	return (select(3, split(jid)));
 end
 
+-- TODO Forbid \20 at start and end of escaped output per XEP-0106 v1.1
 local function escape(s) return s and (s:gsub("\\%x%x", backslash_escapes):gsub("[\"&'/:<>@ ]", escapes)); end
 local function unescape(s) return s and (s:gsub("\\%x%x", unescapes)); end
 

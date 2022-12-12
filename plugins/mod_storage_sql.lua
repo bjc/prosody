@@ -13,7 +13,7 @@ local is_stanza = require"util.stanza".is_stanza;
 local t_concat = table.concat;
 
 local noop = function() end
-local unpack = table.unpack or unpack; -- luacheck: ignore 113
+local unpack = table.unpack;
 local function iterator(result)
 	return function(result_)
 		local row = result_();
@@ -321,7 +321,8 @@ function archive_store:append(username, key, value, when, with)
 		end
 	end
 
-	when = when or os.time();
+	-- FIXME update the schema to allow precision timestamps
+	when = when and math.floor(when) or os.time();
 	with = with or "";
 	local ok, ret = engine:transaction(function()
 		local delete_sql = [[
@@ -354,12 +355,12 @@ end
 local function archive_where(query, args, where)
 	-- Time range, inclusive
 	if query.start then
-		args[#args+1] = query.start
+		args[#args+1] = math.floor(query.start);
 		where[#where+1] = "\"when\" >= ?"
 	end
 
 	if query["end"] then
-		args[#args+1] = query["end"];
+		args[#args+1] = math.floor(query["end"]);
 		if query.start then
 			where[#where] = "\"when\" BETWEEN ? AND ?" -- is this inclusive?
 		else
@@ -382,8 +383,7 @@ local function archive_where(query, args, where)
 	-- Set of ids
 	if query.ids then
 		local nids, nargs = #query.ids, #args;
-		-- COMPAT Lua 5.1: No separator argument to string.rep
-		where[#where + 1] = "\"key\" IN (" .. string.rep("?,", nids):sub(1,-2) .. ")";
+		where[#where + 1] = "\"key\" IN (" .. string.rep("?", nids, ",") .. ")";
 		for i, id in ipairs(query.ids) do
 			args[nargs+i] = id;
 		end

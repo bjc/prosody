@@ -118,6 +118,13 @@ if prosody and set_config then
 	prosody.events.add_handler("config-reloaded", load_config);
 end
 
+local tls_builder = server.tls_builder;
+-- resolving the basedir here avoids util.sslconfig depending on
+-- prosody.paths.config
+function server.tls_builder()
+	return tls_builder(prosody.paths.config or "")
+end
+
 -- require "net.server" shall now forever return this,
 -- ie. server_select or server_event as chosen above.
 return server;

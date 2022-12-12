@@ -12,8 +12,8 @@ local it = {};
 
 local t_insert = table.insert;
 local next = next;
-local unpack = table.unpack or unpack; --luacheck: ignore 113
-local pack = table.pack or require "util.table".pack;
+local unpack = table.unpack;
+local pack = table.pack;
 local type = type;
 local table, setmetatable = table, setmetatable;
 
@@ -240,7 +240,8 @@ function join_methods:prepend(f, s, var)
 end
 
 function it.join(f, s, var)
-	return setmetatable({ {f, s, var} }, join_mt);
+	local t = setmetatable({ {f, s, var} }, join_mt);
+	return t, { t, 1 };
 end
 
 return it;

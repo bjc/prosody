@@ -34,9 +34,9 @@ local rm_load_roster = require "core.rostermanager".load_roster;
 
 local is_stanza = st.is_stanza;
 local tostring = tostring;
-local time_now = os.time;
+local time_now = require "util.time".now;
 local m_min = math.min;
-local timestamp, datestamp = import( "util.datetime", "datetime", "date");
+local timestamp, datestamp = import("util.datetime", "datetime", "date");
 local default_max_items, max_max_items = 20, module:get_option_number("max_archive_query_results", 50);
 local strip_tags = module:get_option_set("dont_archive_namespaces", { "http://jabber.org/protocol/chatstates" });
 
@@ -53,8 +53,12 @@ if not archive.find then
 end
 local use_total = module:get_option_boolean("mam_include_total", true);
 
-function schedule_cleanup()
-	-- replaced later if cleanup is enabled
+function schedule_cleanup(_username, _date) -- luacheck: ignore 212
+	-- Called to make a note of which users have messages on which days, which in
+	-- turn is used to optimize the message expiry routine.
+	--
+	-- This noop is conditionally replaced later depending on retention settings
+	-- and storage backend capabilities.
 end
 
 -- Handle prefs.

@@ -62,7 +62,12 @@ global record moduleapi
 	send_iq : function (moduleapi, st.stanza_t, util_session, number)
 	broadcast : function (moduleapi, { string }, st.stanza_t, function)
 	type timer_callback = function (number, ... : any) : number
-	add_timer : function (moduleapi, number, timer_callback, ... : any)
+	record timer_wrapper
+		stop : function (timer_wrapper)
+		disarm : function (timer_wrapper)
+		reschedule : function (timer_wrapper, number)
+	end
+	add_timer : function (moduleapi, number, timer_callback, ... : any) : timer_wrapper
 	get_directory : function (moduleapi) : string
 	enum file_mode
 		"r" "w" "a" "r+" "w+" "a+"
@@ -120,6 +125,11 @@ global record moduleapi
 	environment : module_environment
 	path : string
 	resource_path : string
+
+	-- access control
+	may : function (moduleapi, string, table|string)
+	default_permission : function (string, string)
+	default_permissions : function (string, { string })
 
 	-- methods the module can add
 	load : function ()

@@ -12,7 +12,6 @@ local jid = require "util.jid";
 local st = require "util.stanza";
 local url = require "socket.url";
 local dm = require "core.storagemanager".olddm;
-local jwt = require "util.jwt";
 local errors = require "util.error";
 local dataform = require "util.dataforms".new;
 local urlencode = require "util.http".urlencode;
@@ -43,6 +42,8 @@ local safe_types = module:get_option_set(module.name .. "_safe_file_types", {"im
 local expiry = module:get_option_number(module.name .. "_expires_after", 7 * 86400);
 local daily_quota = module:get_option_number(module.name .. "_daily_quota", file_size_limit*10); -- 100 MB / day
 local total_storage_limit = module:get_option_number(module.name.."_global_quota", unlimited);
+
+local create_jwt, verify_jwt = require "util.jwt".init("HS256", secret);
 
 local access = module:get_option_set(module.name .. "_access", {});
 
@@ -169,16 +170,13 @@ function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
 end
 
 function get_authz(slot, uploader, filename, filesize, filetype)
-local now = os.time();
-	return jwt.sign(secret, {
+	return create_jwt({
 		-- token properties
 		sub = uploader;
-		iat = now;
-		exp = now+300;
 
 		-- slot properties
 		slot = slot;
-		expires = expiry >= 0 and (now+expiry) or nil;
+		expires = expiry >= 0 and (os.time()+expiry) or nil;
 		-- file properties
 		filename = filename;
 		filesize = filesize;
@@ -249,32 +247,34 @@ end
 
 function handle_upload(event, path) -- PUT /upload/:slot
 	local request = event.request;
-	local authz = request.headers.authorization;
-	if authz then
-		authz = authz:match("^Bearer (.*)")
-	end
-	if not authz then
-		module:log("debug", "Missing or malformed Authorization header");
-		event.response.headers.www_authenticate = "Bearer";
-		return 401;
-	end
-	local authed, upload_info = jwt.verify(secret, authz);
-	if not (authed and type(upload_info) == "table" and type(upload_info.exp) == "number") then
-		module:log("debug", "Unauthorized or invalid token: %s, %q", authed, upload_info);
-		return 401;
-	end
-	if not request.body_sink and upload_info.exp < os.time() then
-		module:log("debug", "Authorization token expired on %s", dt.datetime(upload_info.exp));
-		return 410;
-	end
-	if not path or upload_info.slot ~= path:match("^[^/]+") then
-		module:log("debug", "Invalid upload slot: %q, path: %q", upload_info.slot, path);
-		return 400;
-	end
-	if request.headers.content_length and tonumber(request.headers.content_length) ~= upload_info.filesize then
-		return 413;
-		-- Note: We don't know the size if the upload is streamed in chunked encoding,
-		-- so we also check the final file size on completion.
+	local upload_info = request.http_file_share_upload_info;
+
+	if not upload_info then -- Initial handling of request
+		local authz = request.headers.authorization;
+		if authz then
+			authz = authz:match("^Bearer (.*)")
+		end
+		if not authz then
+			module:log("debug", "Missing or malformed Authorization header");
+			event.response.headers.www_authenticate = "Bearer";
+			return 401;
+		end
+		local authed, authed_upload_info = verify_jwt(authz);
+		if not authed then
+			module:log("debug", "Unauthorized or invalid token: %s, %q", authz, authed_upload_info);
+			return 401;
+		end
+		if not path or authed_upload_info.slot ~= path:match("^[^/]+") then
+			module:log("debug", "Invalid upload slot: %q, path: %q", authed_upload_info.slot, path);
+			return 400;
+		end
+		if request.headers.content_length and tonumber(request.headers.content_length) ~= authed_upload_info.filesize then
+			return 413;
+			-- Note: We don't know the size if the upload is streamed in chunked encoding,
+			-- so we also check the final file size on completion.
+		end
+		upload_info = authed_upload_info;
+		request.http_file_share_upload_info = upload_info;
 	end
 
 	local filename = get_filename(upload_info.slot, true);

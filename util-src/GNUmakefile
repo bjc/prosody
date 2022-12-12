@@ -8,7 +8,7 @@ TARGET?=../util/
 
 ALL=encodings.so hashes.so net.so pposix.so signal.so table.so \
     ringbuffer.so time.so poll.so compat.so strbitop.so \
-    struct.so
+    struct.so crypto.so
 
 ifdef RANDOM
 ALL+=crand.so
@@ -28,7 +28,7 @@ clean:
 encodings.o: CFLAGS+=$(IDNA_FLAGS)
 encodings.so: LDLIBS+=$(IDNA_LIBS)
 
-hashes.so: LDLIBS+=$(OPENSSL_LIBS)
+crypto.so hashes.so: LDLIBS+=$(OPENSSL_LIBS)
 
 crand.o: CFLAGS+=-DWITH_$(RANDOM)
 crand.so: LDLIBS+=$(RANDOM_LIBS)

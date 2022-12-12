@@ -117,8 +117,7 @@ function stream_callbacks._streamopened(session, attr)
 		session.secure = true;
 		session.encrypted = true;
 
-		local sock = session.conn:socket();
-		local info = sock.info and sock:info();
+		local info = session.conn:ssl_info();
 		if type(info) == "table" then
 			(session.log or log)("info", "Stream encrypted (%s with %s)", info.protocol, info.cipher);
 			session.compressed = info.compression;
@@ -129,7 +128,7 @@ function stream_callbacks._streamopened(session, attr)
 	end
 
 	local features = st.stanza("stream:features");
-	hosts[session.host].events.fire_event("stream-features", { origin = session, features = features });
+	hosts[session.host].events.fire_event("stream-features", { origin = session, features = features, stream = attr });
 	if features.tags[1] or session.full_jid then
 		send(features);
 	else
@@ -260,8 +259,16 @@ local function disconnect_user_sessions(reason, leave_resource)
 end
 
 module:hook_global("user-password-changed", disconnect_user_sessions({ condition = "reset", text = "Password changed" }, true), 200);
-module:hook_global("user-roles-changed", disconnect_user_sessions({ condition = "reset", text = "Roles changed" }), 200);
+module:hook_global("user-role-changed", disconnect_user_sessions({ condition = "reset", text = "Role changed" }), 200);
 module:hook_global("user-deleted", disconnect_user_sessions({ condition = "not-authorized", text = "Account deleted" }), 200);
+
+module:hook_global("c2s-session-updated", function (event)
+	sessions[event.session.conn] = event.session;
+	local replaced_conn = event.replaced_conn;
+	if replaced_conn then
+		sessions[replaced_conn] = nil;
+	end
+end);
 
 function runner_callbacks:ready()
 	if self.data.conn then
@@ -295,8 +302,7 @@ function listener.onconnect(conn)
 		session.encrypted = true;
 
 		-- Check if TLS compression is used
-		local sock = conn:socket();
-		local info = sock.info and sock:info();
+		local info = conn:ssl_info();
 		if type(info) == "table" then
 			(session.log or log)("info", "Stream encrypted (%s with %s)", info.protocol, info.cipher);
 			session.compressed = info.compression;

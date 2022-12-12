@@ -11,12 +11,12 @@
 -- IDN libraries complicate that.
 
 
--- [TLS-CERTS] - http://tools.ietf.org/html/rfc6125
--- [XMPP-CORE] - http://tools.ietf.org/html/rfc6120
--- [SRV-ID]    - http://tools.ietf.org/html/rfc4985
--- [IDNA]      - http://tools.ietf.org/html/rfc5890
--- [LDAP]      - http://tools.ietf.org/html/rfc4519
--- [PKIX]      - http://tools.ietf.org/html/rfc5280
+-- [TLS-CERTS] - https://www.rfc-editor.org/rfc/rfc6125.html
+-- [XMPP-CORE] - https://www.rfc-editor.org/rfc/rfc6120.html
+-- [SRV-ID]    - https://www.rfc-editor.org/rfc/rfc4985.html
+-- [IDNA]      - https://www.rfc-editor.org/rfc/rfc5890.html
+-- [LDAP]      - https://www.rfc-editor.org/rfc/rfc4519.html
+-- [PKIX]      - https://www.rfc-editor.org/rfc/rfc5280.html
 
 local nameprep = require "util.encodings".stringprep.nameprep;
 local idna_to_ascii = require "util.encodings".idna.to_ascii;

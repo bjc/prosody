@@ -6,14 +6,12 @@
 -- Provides some protection from e.g. CAPEC-135, CWE-117, CWE-134, CWE-93
 
 local tostring = tostring;
-local unpack = table.unpack or unpack; -- luacheck: ignore 113/unpack
-local pack = require "util.table".pack; -- TODO table.pack in 5.2+
+local unpack = table.unpack;
+local pack = table.pack;
 local valid_utf8 = require "util.encodings".utf8.valid;
 local type = type;
 local dump = require "util.serialization".new("debug");
-local num_type = math.type or function (n)
-	return n % 1 == 0 and n <= 9007199254740992 and n >= -9007199254740992 and "integer" or "float";
-end
+local num_type = math.type;
 
 -- In Lua 5.3+ these formats throw an error if given a float
 local expects_integer = { c = true, d = true, i = true, o = true, u = true, X = true, x = true, };
@@ -35,7 +33,6 @@ local control_symbols = {
 	["\030"] = "\226\144\158", ["\031"] = "\226\144\159", ["\127"] = "\226\144\161",
 };
 local supports_p = pcall(string.format, "%p", ""); -- >= Lua 5.4
-local supports_a = pcall(string.format, "%a", 0.0); -- > Lua 5.1
 
 local function format(formatstring, ...)
 	local args = pack(...);
@@ -93,8 +90,6 @@ local function format(formatstring, ...)
 			elseif expects_positive[option] and arg < 0 then
 				args[i] = tostring(arg);
 				return "[%s]";
-			elseif (option == "a" or option == "A") and not supports_a then
-				return "%x";
 			else
 				return -- acceptable number
 			end

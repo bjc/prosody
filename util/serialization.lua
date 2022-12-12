@@ -21,10 +21,12 @@ local to_hex = require "util.hex".to;
 local pcall = pcall;
 local envload = require"util.envload".envload;
 
+if not math.type then
+	require "util.mathcompat"
+end
+
 local pos_inf, neg_inf = math.huge, -math.huge;
-local m_type = math.type or function (n)
-	return n % 1 == 0 and n <= 9007199254740992 and n >= -9007199254740992 and "integer" or "float";
-end;
+local m_type = math.type;
 
 local function rawpairs(t)
 	return next, t, nil;

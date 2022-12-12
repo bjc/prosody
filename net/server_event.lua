@@ -47,11 +47,13 @@ local s_sub = string.sub
 local coroutine_wrap = coroutine.wrap
 local coroutine_yield = coroutine.yield
 
-local has_luasec, ssl = pcall ( require , "ssl" )
+local has_luasec = pcall ( require , "ssl" )
 local socket = require "socket"
 local levent = require "luaevent.core"
 local inet = require "util.net";
 local inet_pton = inet.pton;
+local sslconfig = require "util.sslconfig";
+local tls_impl = require "net.tls_luasec";
 
 local socket_gettime = socket.gettime
 
@@ -153,7 +155,7 @@ function interface_mt:_start_ssl(call_onconnect) -- old socket will be destroyed
 	_ = self.eventwrite and self.eventwrite:close( )
 	self.eventread, self.eventwrite = nil, nil
 	local err
-	self.conn, err = ssl.wrap( self.conn, self._sslctx )
+	self.conn, err = self._sslctx:wrap(self.conn)
 	if err then
 		self.fatalerror = err
 		self.conn = nil  -- cannot be used anymore
@@ -168,8 +170,8 @@ function interface_mt:_start_ssl(call_onconnect) -- old socket will be destroyed
 	if self.conn.sni then
 		if self.servername then
 			self.conn:sni(self.servername);
-		elseif self._server and type(self._server.hosts) == "table" and next(self._server.hosts) ~= nil then
-			self.conn:sni(self._server.hosts, true);
+		elseif next(self._sslctx._sni_contexts) ~= nil then
+			self.conn:sni(self._sslctx._sni_contexts, true);
 		end
 	end
 
@@ -272,6 +274,34 @@ end
 
 function interface_mt:pause()
 	return self:_lock(self.nointerface, true, self.nowriting);
+end
+
+function interface_mt:sslctx()
+	return self._sslctx
+end
+
+function interface_mt:ssl_info()
+	local sock = self.conn;
+	if not sock.info then return nil, "not-implemented"; end
+	return sock:info();
+end
+
+function interface_mt:ssl_peercertificate()
+	local sock = self.conn;
+	if not sock.getpeercertificate then return nil, "not-implemented"; end
+	return sock:getpeercertificate();
+end
+
+function interface_mt:ssl_peerverification()
+	local sock = self.conn;
+	if not sock.getpeerverification then return nil, { { "Chain verification not supported" } }; end
+	return sock:getpeerverification();
+end
+
+function interface_mt:ssl_peerfinished()
+	local sock = self.conn;
+	if not sock.getpeerfinished then return nil, "not-implemented"; end
+	return sock:getpeerfinished();
 end
 
 function interface_mt:resume()
@@ -923,6 +953,10 @@ return {
 	hook_signal = hook_signal,
 	add_task = add_task,
 	watchfd = watchfd,
+
+	tls_builder = function(basedir)
+		return sslconfig._new(tls_impl.new_context, basedir)
+	end,
 
 	__NAME = SCRIPT_NAME,
 	__DATE = LAST_MODIFIED,

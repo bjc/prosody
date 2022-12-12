@@ -1,6 +1,5 @@
 -- mod_auth_ldap
 
-local jid_split = require "util.jid".split;
 local new_sasl = require "util.sasl".new;
 local lualdap = require "lualdap";
 
@@ -20,6 +19,13 @@ local ldap_mode = module:get_option_string("ldap_mode", "bind");
 local ldap_admins = module:get_option_string("ldap_admin_filter",
 	module:get_option_string("ldap_admins")); -- COMPAT with mistake in documentation
 local host = ldap_filter_escape(module:get_option_string("realm", module.host));
+
+if ldap_admins then
+	module:log("error", "The 'ldap_admin_filter' option has been deprecated, "..
+	           "and will be ignored. Equivalent functionality may be added in "..
+	           "the future if there is demand."
+	);
+end
 
 -- Initiate connection
 local ld = nil;
@@ -131,24 +137,6 @@ elseif ldap_mode == "bind" then
 	end
 else
 	module:log("error", "Unsupported ldap_mode %s", tostring(ldap_mode));
-end
-
-if ldap_admins then
-	function provider.is_admin(jid)
-		local username, user_host = jid_split(jid);
-		if user_host ~= module.host then
-			return false;
-		end
-		return ldap_do("search", 2, {
-			base = ldap_base;
-			scope = ldap_scope;
-			sizelimit = 1;
-			filter = ldap_admins:gsub("%$(%a+)", {
-				user = ldap_filter_escape(username);
-				host = host;
-			});
-		});
-	end
 end
 
 module:provides("auth", provider);

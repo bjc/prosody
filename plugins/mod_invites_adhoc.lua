@@ -2,7 +2,6 @@
 local dataforms = require "util.dataforms";
 local datetime = require "util.datetime";
 local split_jid = require "util.jid".split;
-local usermanager = require "core.usermanager";
 
 local new_adhoc = module:require("adhoc").new;
 
@@ -13,8 +12,7 @@ local allow_user_invites = module:get_option_boolean("allow_user_invites", false
 -- on the server, use the option above instead.
 local allow_contact_invites = module:get_option_boolean("allow_contact_invites", true);
 
-local allow_user_invite_roles = module:get_option_set("allow_user_invites_by_roles");
-local deny_user_invite_roles = module:get_option_set("deny_user_invites_by_roles");
+module:default_permission(allow_user_invites and "prosody:user" or "prosody:admin", ":invite-users");
 
 local invites;
 if prosody.shutdown then -- COMPAT hack to detect prosodyctl
@@ -42,36 +40,8 @@ local invite_result_form = dataforms.new({
 
 -- This is for checking if the specified JID may create invites
 -- that allow people to register accounts on this host.
-local function may_invite_new_users(jid)
-	if usermanager.get_roles then
-		local user_roles = usermanager.get_roles(jid, module.host);
-		if not user_roles then
-			-- User has no roles we can check, just return default
-			return allow_user_invites;
-		end
-
-		if user_roles["prosody:admin"] then
-			return true;
-		end
-		if allow_user_invite_roles then
-			for allowed_role in allow_user_invite_roles do
-				if user_roles[allowed_role] then
-					return true;
-				end
-			end
-		end
-		if deny_user_invite_roles then
-			for denied_role in deny_user_invite_roles do
-				if user_roles[denied_role] then
-					return false;
-				end
-			end
-		end
-	elseif usermanager.is_admin(jid, module.host) then -- COMPAT w/0.11
-		return true; -- Admins may always create invitations
-	end
-	-- No role matches, so whatever the default is
-	return allow_user_invites;
+local function may_invite_new_users(context)
+	return module:may(":invite-users", context);
 end
 
 module:depends("adhoc");
@@ -91,7 +61,7 @@ module:provides("adhoc", new_adhoc("Create new contact invite", "urn:xmpp:invite
 					};
 				};
 			end
-			local invite = invites.create_contact(username, may_invite_new_users(data.from), {
+			local invite = invites.create_contact(username, may_invite_new_users(data), {
 				source = data.from
 			});
 			--TODO: check errors

@@ -7,6 +7,11 @@ describe("util.promise", function ()
 			assert(promise.new());
 		end);
 	end);
+	it("supplies a sensible tostring()", function ()
+		local s = tostring(promise.new());
+		assert.truthy(s:find("promise", 1, true));
+		assert.truthy(s:find("pending", 1, true));
+	end);
 	it("notifies immediately for fulfilled promises", function ()
 		local p = promise.new(function (resolve)
 			resolve("foo");
@@ -28,6 +33,27 @@ describe("util.promise", function ()
 		p:next(cb);
 		assert.spy(cb).was_called(0);
 		r("foo");
+		assert.spy(cb).was_called(1);
+	end);
+	it("ignores resolve/reject of settled promises", function ()
+		local res, rej;
+		local p = promise.new(function (resolve, reject)
+			res, rej = resolve, reject;
+		end);
+		local cb = spy.new(function (v)
+			assert.equal("foo", v);
+		end);
+		p:next(cb, cb);
+		assert.spy(cb).was_called(0);
+		res("foo");
+		assert.spy(cb).was_called(1);
+		rej("bar");
+		assert.spy(cb).was_called(1);
+		rej(promise.resolve("bar"));
+		assert.spy(cb).was_called(1);
+		res(promise.reject("bar"));
+		assert.spy(cb).was_called(1);
+		res(promise.resolve("bar"));
 		assert.spy(cb).was_called(1);
 	end);
 	it("allows chaining :next() calls", function ()
@@ -435,6 +461,26 @@ describe("util.promise", function ()
 			assert.spy(cb).was_called(1);
 			assert.same({
 				{ status = "fulfilled", value = "this succeeds" };
+				{ status = "rejected", reason = "this fails" };
+			}, result);
+		end);
+		it("works when all promises reject", function ()
+			local r1, r2;
+			local p1, p2 = promise.new(function (_, reject) r1 = reject end), promise.new(function (_, reject) r2 = reject end);
+			local p = promise.all_settled({ p1, p2 });
+
+			local result;
+			local cb = spy.new(function (v)
+				result = v;
+			end);
+			p:next(cb);
+			assert.spy(cb).was_called(0);
+			r2("this fails");
+			assert.spy(cb).was_called(0);
+			r1("this fails too");
+			assert.spy(cb).was_called(1);
+			assert.same({
+				{ status = "rejected", reason = "this fails too" };
 				{ status = "rejected", reason = "this fails" };
 			}, result);
 		end);

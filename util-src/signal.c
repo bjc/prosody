@@ -36,9 +36,6 @@
 #include "lua.h"
 #include "lauxlib.h"
 
-#if (LUA_VERSION_NUM == 501)
-#define luaL_setfuncs(L, R, N) luaL_register(L, NULL, R)
-#endif
 #if (LUA_VERSION_NUM < 503)
 #define lua_isinteger(L, n) lua_isnumber(L, n)
 #endif
@@ -381,9 +378,7 @@ static const struct luaL_Reg lsignal_lib[] = {
 };
 
 int luaopen_util_signal(lua_State *L) {
-#if (LUA_VERSION_NUM > 501)
 	luaL_checkversion(L);
-#endif
 	int i = 0;
 
 	/* add the library */

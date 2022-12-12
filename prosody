@@ -44,6 +44,12 @@ if CFG_DATADIR then
 end
 
 
+-- Check before first require, to preempt the probable failure
+if _VERSION < "Lua 5.2" then
+	io.stderr:write("Prosody is no longer compatible with Lua 5.1\n")
+	io.stderr:write("See https://prosody.im/doc/depends#lua for more information\n")
+	return os.exit(1);
+end
 
 local startup = require "util.startup";
 local async = require "util.async";
