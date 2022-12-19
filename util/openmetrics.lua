@@ -1,7 +1,7 @@
 --[[
 This module implements a subset of the OpenMetrics Internet Draft version 00.
 
-URL: https://tools.ietf.org/html/draft-richih-opsawg-openmetrics-00
+URL: https://datatracker.ietf.org/doc/html/draft-richih-opsawg-openmetrics-00
 
 The following metric types are supported:
 
