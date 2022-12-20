@@ -15,22 +15,22 @@ describe("util.datamapper", function()
 	setup(function()
 
 		-- a convenience function for simple attributes, there's a few of them
-		local function attr() return {["$ref"]="#/$defs/attr"} end
+		local attr = {["$ref"]="#/$defs/attr"};
 		s = {
 			["$defs"] = { attr = { type = "string"; xml = { attribute = true } } };
 			type = "object";
 			xml = {name = "message"; namespace = "jabber:client"};
 			properties = {
-				to = attr();
-				from = attr();
-				type = attr();
-				id = attr();
+				to = attr;
+				from = attr;
+				type = attr;
+				id = attr;
 				body = true; -- should be assumed to be a string
 				lang = {type = "string"; xml = {attribute = true; prefix = "xml"}};
 				delay = {
 					type = "object";
 					xml = {namespace = "urn:xmpp:delay"; name = "delay"};
-					properties = {stamp = attr(); from = attr(); reason = {type = "string"; xml = {text = true}}};
+					properties = {stamp = attr; from = attr; reason = {type = "string"; xml = {text = true}}};
 				};
 				state = {
 					type = "string";
@@ -66,8 +66,8 @@ describe("util.datamapper", function()
 						xml = {name = "stanza-id"; namespace = "urn:xmpp:sid:0"};
 						type = "object";
 						properties = {
-							id = attr();
-							by = attr();
+							id = attr;
+							by = attr;
 						};
 					};
 				};
@@ -120,10 +120,10 @@ describe("util.datamapper", function()
 				namespace = "jabber:client"
 			};
 			properties = {
-				to = attr();
-				from = attr();
-				type = attr();
-				id = attr();
+				to = attr;
+				from = attr;
+				type = attr;
+				id = attr;
 				disco = {
 					type = "object";
 					xml = {
