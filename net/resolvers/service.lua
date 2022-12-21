@@ -121,6 +121,9 @@ function methods:next(cb)
 					self.extra.use_dane = false;
 				end
 			end
+			if self.extra then
+				self.extra.srv_secure = answer.secure;
+			end
 
 			if #answer == 0 then
 				if self.extra and self.extra.default_port then
