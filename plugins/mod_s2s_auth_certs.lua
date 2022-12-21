@@ -12,6 +12,8 @@ module:hook("s2s-check-certificate", function(event)
 	local conn = session.conn;
 	local log = session.log or log;
 
+	local secure_hostname = conn.extra and conn.extra.secure_hostname;
+
 	if not cert then
 		log("warn", "No certificate provided by %s", host or "unknown host");
 		return;
@@ -44,6 +46,14 @@ module:hook("s2s-check-certificate", function(event)
 				session.cert_identity_status = "invalid"
 			end
 			log("debug", "certificate identity validation result: %s", session.cert_identity_status);
+		end
+
+		-- Check for DNSSEC-signed SRV hostname
+		if secure_hostname and session.cert_identity_status ~= "valid" then
+			if cert_verify_identity(secure_hostname, "xmpp-server", cert) then
+				module:log("info", "Secure SRV name delegation %q -> %q", secure_hostname, host);
+				session.cert_identity_status = "valid"
+			end
 		end
 	end
 	measure_cert_statuses:with_labels(session.cert_chain_status or "unknown", session.cert_identity_status or "unknown"):add(1);
