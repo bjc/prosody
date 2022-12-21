@@ -108,6 +108,8 @@ function methods:next(cb)
 				self.extra.tlsa = nil;
 				self.extra.dane_hostname = nil;
 			end
+		elseif self.extra and self.extra.srv_secure then
+			self.extra.secure_hostname = self.hostname;
 		end
 
 		self:next(cb);
