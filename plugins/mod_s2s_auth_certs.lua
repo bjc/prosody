@@ -12,8 +12,6 @@ module:hook("s2s-check-certificate", function(event)
 	local conn = session.conn;
 	local log = session.log or log;
 
-	local secure_hostname = conn.extra and conn.extra.dane_hostname;
-
 	if not cert then
 		log("warn", "No certificate provided by %s", host or "unknown host");
 		return;
@@ -39,14 +37,6 @@ module:hook("s2s-check-certificate", function(event)
 
 		-- We'll go ahead and verify the asserted identity if the
 		-- connecting server specified one.
-		if secure_hostname then
-			if cert_verify_identity(secure_hostname, "xmpp-server", cert) then
-				module:log("info", "Secure SRV name delegation %q -> %q", secure_hostname, host);
-				session.cert_identity_status = "valid"
-			else
-				session.cert_identity_status = "invalid"
-			end
-		end
 		if host then
 			if cert_verify_identity(host, "xmpp-server", cert) then
 				session.cert_identity_status = "valid"
