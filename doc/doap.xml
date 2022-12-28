@@ -866,8 +866,10 @@
       </xmpp:SupportedXep>
     </implements>
     <implements>
-      <xmpp:xep rdf:resources="https://xmpp.org/extensions/inbox/xep-sla.xml"/>
-      <xmpp:since>trunk</xmpp:since>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resources="https://xmpp.org/extensions/inbox/xep-sla.xml"/>
+        <xmpp:since>trunk</xmpp:since>
+      </xmpp:SupportedXep>
     </implements>
   </Project>
 </rdf:RDF>
