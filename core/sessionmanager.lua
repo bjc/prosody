@@ -116,6 +116,7 @@ local function update_session(to_session, from_session)
 	to_session.filter.session = to_session;
 	to_session.filters = from_session.filters;
 	to_session.send.filter = to_session.filter;
+	to_session.sasl_handler = from_session.sasl_handler;
 	to_session.stream = from_session.stream;
 	to_session.secure = from_session.secure;
 	to_session.hibernating = nil;
