@@ -126,14 +126,15 @@ local function update_session(to_session, from_session)
 	-- Inform xmppstream of the new session (passed to its callbacks)
 	to_session.stream:set_session(to_session);
 
-	-- Retire the session we've pulled from, to avoid two sessions on the same connection
-	retire_session(from_session);
-
+	-- Notify modules, allowing them to copy further fields or update state
 	prosody.events.fire_event("c2s-session-updated", {
 		session = to_session;
 		from_session = from_session;
 		replaced_conn = replaced_conn;
 	});
+
+	-- Retire the session we've pulled from, to avoid two sessions on the same connection
+	retire_session(from_session);
 end
 
 local function destroy_session(session, err)
