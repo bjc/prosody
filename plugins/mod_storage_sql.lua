@@ -469,12 +469,8 @@ function archive_store:find(username, query)
 		local ok, err = archive_where_id_range(query, args, where);
 		if not ok then return ok, err; end
 
-		if query.limit then
-			args[#args+1] = query.limit;
-		end
-
 		sql_query = sql_query:format(t_concat(where, " AND "), query.reverse
-			and "DESC" or "ASC", query.limit and " LIMIT ?" or "");
+			and "DESC" or "ASC", query.limit and " LIMIT " .. query.limit or "");
 		return engine:select(sql_query, unpack(args));
 	end);
 	if not ok then return ok, result; end
@@ -592,6 +588,17 @@ function archive_store:delete(username, query)
 		if not ok then return ok, err; end
 		if query.truncate == nil then
 			sql_query = sql_query:format(t_concat(where, " AND "));
+		elseif engine.params.driver == "MySQL" then
+			sql_query = [[
+			DELETE result FROM prosodyarchive AS result JOIN (
+				SELECT sort_id FROM prosodyarchive
+				WHERE %s
+				ORDER BY "sort_id" %s
+				LIMIT 18446744073709551615 OFFSET %s
+			) AS limiter on result.sort_id = limiter.sort_id;]];
+
+			sql_query = string.format(sql_query, t_concat(where, " AND "),
+				query.reverse and "ASC" or "DESC", query.truncate);
 		else
 			args[#args+1] = query.truncate;
 			local unlimited = "ALL";
@@ -613,15 +620,6 @@ function archive_store:delete(username, query)
 					]];
 				end
 				unlimited = "-1";
-			elseif engine.params.driver == "MySQL" then
-				sql_query = [[
-				DELETE result FROM prosodyarchive AS result JOIN (
-					SELECT sort_id FROM prosodyarchive
-					WHERE %s
-					ORDER BY "sort_id" %s
-					LIMIT %s OFFSET ?
-				) AS limiter on result.sort_id = limiter.sort_id;]];
-				unlimited = "18446744073709551615";
 			end
 			sql_query = string.format(sql_query, t_concat(where, " AND "),
 				query.reverse and "ASC" or "DESC", unlimited);
