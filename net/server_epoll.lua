@@ -1109,10 +1109,11 @@ local function loop(once)
 		return loop_once();
 	end
 
-	repeat
-		local t = runtimers(cfg.max_wait, cfg.min_wait);
+	local t = 0;
+	while not quitting do
 		local fd, r, w = poll:wait(t);
-		while fd do
+		if fd then
+			t = 0;
 			local conn = fds[fd];
 			if conn then
 				if r then
@@ -1125,12 +1126,12 @@ local function loop(once)
 				log("debug", "Removing unknown fd %d", fd);
 				poll:del(fd);
 			end
-			fd, r, w = poll:wait(0);
-		end
-		if r ~= "timeout" and r ~= "signal" then
+		elseif r == "timeout" then
+			t = runtimers(cfg.max_wait, cfg.min_wait);
+		elseif r ~= "signal" then
 			log("debug", "epoll_wait error: %s[%d]", r, w);
 		end
-	until (quitting and next(fds) == nil);
+	end
 	return quitting;
 end
 
