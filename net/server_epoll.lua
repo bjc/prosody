@@ -1082,8 +1082,33 @@ local function setquitting(quit)
 	end
 end
 
+local function loop_once()
+	runtimers(); -- Ignore return value because we only do this once
+	local fd, r, w = poll:wait(0);
+	if fd then
+		local conn = fds[fd];
+		if conn then
+			if r then
+				conn:onreadable();
+			end
+			if w then
+				conn:onwritable();
+			end
+		else
+			log("debug", "Removing unknown fd %d", fd);
+			poll:del(fd);
+		end
+	else
+		return fd, r;
+	end
+end
+
 -- Main loop
 local function loop(once)
+	if once then
+		return loop_once();
+	end
+
 	repeat
 		local t = runtimers(cfg.max_wait, cfg.min_wait);
 		local fd, r, w = poll:wait(t);
@@ -1105,7 +1130,7 @@ local function loop(once)
 		if r ~= "timeout" and r ~= "signal" then
 			log("debug", "epoll_wait error: %s[%d]", r, w);
 		end
-	until once or (quitting and next(fds) == nil);
+	until (quitting and next(fds) == nil);
 	return quitting;
 end
 
