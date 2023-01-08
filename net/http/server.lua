@@ -377,12 +377,12 @@ function _M.send_file(response, f)
 			-- io.write("."); io.flush();
 			response.conn:write(chunk);
 		else
+			incomplete[response.conn] = nil;
 			if chunked then
 				response.conn:write("0\r\n\r\n");
 			end
 			-- io.write("\n");
 			if f.close then f:close(); end
-			incomplete[response.conn] = nil;
 			return response:done();
 		end
 	end
