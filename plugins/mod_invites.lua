@@ -217,7 +217,7 @@ do
 		if not mod_invites then return nil, err or "mod_invites not loaded on this host"; end
 		local invite, err = mod_invites.create_account(username);
 		if not invite then return nil, err; end
-		return true, invite.uri;
+		return true, invite.landing_page or invite.uri;
 	end
 
 	function console_env.invite:create_contact(user_jid, allow_registration)
@@ -226,7 +226,7 @@ do
 		if not mod_invites then return nil, err or "mod_invites not loaded on this host"; end
 		local invite, err = mod_invites.create_contact(username, allow_registration);
 		if not invite then return nil, err; end
-		return true, invite.uri;
+		return true, invite.landing_page or invite.uri;
 	end
 end
 
