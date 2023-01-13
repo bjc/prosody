@@ -4,28 +4,201 @@
 describe("util.paseto", function ()
 	local paseto = require "util.paseto";
 	local json = require "util.json";
+	local hex = require "util.hex";
 
-	local function parse_test_cases(json_test_cases)
-		local input_cases = json.decode(json_test_cases);
-		local output_cases = {};
-		for _, case in ipairs(input_cases) do
-			assert.is_string(case.name, "Bad test case: expected name");
-			assert.is_nil(output_cases[case.name], "Bad test case: duplicate name");
-			output_cases[case.name] = function ()
-				local verify_key = paseto.v4_public.import_public_key(case["public-key-pem"]);
-				local payload, err = paseto.v4_public.verify(case.token, verify_key, case.footer, case["implicit-assertion"]);
-				if case["expect-fail"] then
-					assert.is_nil(payload);
-				else
-					assert.is_nil(err);
-					assert.same(json.decode(case.payload), payload);
-				end
-			end;
+	describe("v3.local", function ()
+		local function parse_test_cases(json_test_cases)
+			local input_cases = json.decode(json_test_cases);
+			local output_cases = {};
+			for _, case in ipairs(input_cases) do
+				assert.is_string(case.name, "Bad test case: expected name");
+				assert.is_nil(output_cases[case.name], "Bad test case: duplicate name");
+				output_cases[case.name] = function ()
+					local key = hex.decode(case.key);
+					local payload, err = paseto.v3_local.decrypt(case.token, key, case.footer, case["implicit-assertion"]);
+					if case["expect-fail"] then
+						assert.is_nil(payload);
+					else
+						assert.is_nil(err);
+						assert.same(json.decode(case.payload), payload);
+					end
+				end;
+			end
+			return output_cases;
 		end
-		return output_cases;
-	end
+
+		local test_cases = parse_test_cases [=[[
+			    {
+			      "name": "3-E-1",
+			      "expect-fail": false,
+			      "key": "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+			      "nonce": "0000000000000000000000000000000000000000000000000000000000000000",
+			      "token": "v3.local.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADbfcIURX_0pVZVU1mAESUzrKZAsRm2EsD6yBoZYn6cpVZNzSJOhSDN-sRaWjfLU-yn9OJH1J_B8GKtOQ9gSQlb8yk9Iza7teRdkiR89ZFyvPPsVjjFiepFUVcMa-LP18zV77f_crJrVXWa5PDNRkCSeHfBBeg",
+			      "payload": "{\"data\":\"this is a secret message\",\"exp\":\"2022-01-01T00:00:00+00:00\"}",
+			      "footer": "",
+			      "implicit-assertion": ""
+			    },
+			    {
+			      "name": "3-E-2",
+			      "expect-fail": false,
+			      "key": "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+			      "nonce": "0000000000000000000000000000000000000000000000000000000000000000",
+			      "token": "v3.local.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADbfcIURX_0pVZVU1mAESUzrKZAqhWxBMDgyBoZYn6cpVZNzSJOhSDN-sRaWjfLU-yn9OJH1J_B8GKtOQ9gSQlb8yk9IzZfaZpReVpHlDSwfuygx1riVXYVs-UjcrG_apl9oz3jCVmmJbRuKn5ZfD8mHz2db0A",
+			      "payload": "{\"data\":\"this is a hidden message\",\"exp\":\"2022-01-01T00:00:00+00:00\"}",
+			      "footer": "",
+			      "implicit-assertion": ""
+			    },
+			    {
+			      "name": "3-E-3",
+			      "expect-fail": false,
+			      "nonce": "26f7553354482a1d91d4784627854b8da6b8042a7966523c2b404e8dbbe7f7f2",
+			      "key": "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+			      "token": "v3.local.JvdVM1RIKh2R1HhGJ4VLjaa4BCp5ZlI8K0BOjbvn9_LwY78vQnDait-Q-sjhF88dG2B0ROIIykcrGHn8wzPbTrqObHhyoKpjy3cwZQzLdiwRsdEK5SDvl02_HjWKJW2oqGMOQJlxnt5xyhQjFJomwnt7WW_7r2VT0G704ifult011-TgLCyQ2X8imQhniG_hAQ4BydM",
+			      "payload": "{\"data\":\"this is a secret message\",\"exp\":\"2022-01-01T00:00:00+00:00\"}",
+			      "footer": "",
+			      "implicit-assertion": ""
+			    },
+			    {
+			      "name": "3-E-4",
+			      "expect-fail": false,
+			      "nonce": "26f7553354482a1d91d4784627854b8da6b8042a7966523c2b404e8dbbe7f7f2",
+			      "key": "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+			      "token": "v3.local.JvdVM1RIKh2R1HhGJ4VLjaa4BCp5ZlI8K0BOjbvn9_LwY78vQnDait-Q-sjhF88dG2B0X-4P3EcxGHn8wzPbTrqObHhyoKpjy3cwZQzLdiwRsdEK5SDvl02_HjWKJW2oqGMOQJlBZa_gOpVj4gv0M9lV6Pwjp8JS_MmaZaTA1LLTULXybOBZ2S4xMbYqYmDRhh3IgEk",
+			      "payload": "{\"data\":\"this is a hidden message\",\"exp\":\"2022-01-01T00:00:00+00:00\"}",
+			      "footer": "",
+			      "implicit-assertion": ""
+			    },
+			    {
+			      "name": "3-E-5",
+			      "expect-fail": false,
+			      "nonce": "26f7553354482a1d91d4784627854b8da6b8042a7966523c2b404e8dbbe7f7f2",
+			      "key": "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+			      "token": "v3.local.JvdVM1RIKh2R1HhGJ4VLjaa4BCp5ZlI8K0BOjbvn9_LwY78vQnDait-Q-sjhF88dG2B0ROIIykcrGHn8wzPbTrqObHhyoKpjy3cwZQzLdiwRsdEK5SDvl02_HjWKJW2oqGMOQJlkYSIbXOgVuIQL65UMdW9WcjOpmqvjqD40NNzed-XPqn1T3w-bJvitYpUJL_rmihc.eyJraWQiOiJVYmtLOFk2aXY0R1poRnA2VHgzSVdMV0xmTlhTRXZKY2RUM3pkUjY1WVp4byJ9",
+			      "payload": "{\"data\":\"this is a secret message\",\"exp\":\"2022-01-01T00:00:00+00:00\"}",
+			      "footer": "{\"kid\":\"UbkK8Y6iv4GZhFp6Tx3IWLWLfNXSEvJcdT3zdR65YZxo\"}",
+			      "implicit-assertion": ""
+			    },
+			    {
+			      "name": "3-E-6",
+			      "expect-fail": false,
+			      "nonce": "26f7553354482a1d91d4784627854b8da6b8042a7966523c2b404e8dbbe7f7f2",
+			      "key": "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+			      "token": "v3.local.JvdVM1RIKh2R1HhGJ4VLjaa4BCp5ZlI8K0BOjbvn9_LwY78vQnDait-Q-sjhF88dG2B0X-4P3EcxGHn8wzPbTrqObHhyoKpjy3cwZQzLdiwRsdEK5SDvl02_HjWKJW2oqGMOQJmSeEMphEWHiwtDKJftg41O1F8Hat-8kQ82ZIAMFqkx9q5VkWlxZke9ZzMBbb3Znfo.eyJraWQiOiJVYmtLOFk2aXY0R1poRnA2VHgzSVdMV0xmTlhTRXZKY2RUM3pkUjY1WVp4byJ9",
+			      "payload": "{\"data\":\"this is a hidden message\",\"exp\":\"2022-01-01T00:00:00+00:00\"}",
+			      "footer": "{\"kid\":\"UbkK8Y6iv4GZhFp6Tx3IWLWLfNXSEvJcdT3zdR65YZxo\"}",
+			      "implicit-assertion": ""
+			    },
+			    {
+			      "name": "3-E-7",
+			      "expect-fail": false,
+			      "nonce": "26f7553354482a1d91d4784627854b8da6b8042a7966523c2b404e8dbbe7f7f2",
+			      "key": "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+			      "token": "v3.local.JvdVM1RIKh2R1HhGJ4VLjaa4BCp5ZlI8K0BOjbvn9_LwY78vQnDait-Q-sjhF88dG2B0ROIIykcrGHn8wzPbTrqObHhyoKpjy3cwZQzLdiwRsdEK5SDvl02_HjWKJW2oqGMOQJkzWACWAIoVa0bz7EWSBoTEnS8MvGBYHHo6t6mJunPrFR9JKXFCc0obwz5N-pxFLOc.eyJraWQiOiJVYmtLOFk2aXY0R1poRnA2VHgzSVdMV0xmTlhTRXZKY2RUM3pkUjY1WVp4byJ9",
+			      "payload": "{\"data\":\"this is a secret message\",\"exp\":\"2022-01-01T00:00:00+00:00\"}",
+			      "footer": "{\"kid\":\"UbkK8Y6iv4GZhFp6Tx3IWLWLfNXSEvJcdT3zdR65YZxo\"}",
+			      "implicit-assertion": "{\"test-vector\":\"3-E-7\"}"
+			    },
+			    {
+			      "name": "3-E-8",
+			      "expect-fail": false,
+			      "nonce": "26f7553354482a1d91d4784627854b8da6b8042a7966523c2b404e8dbbe7f7f2",
+			      "key": "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+			      "token": "v3.local.JvdVM1RIKh2R1HhGJ4VLjaa4BCp5ZlI8K0BOjbvn9_LwY78vQnDait-Q-sjhF88dG2B0X-4P3EcxGHn8wzPbTrqObHhyoKpjy3cwZQzLdiwRsdEK5SDvl02_HjWKJW2oqGMOQJmZHSSKYR6AnPYJV6gpHtx6dLakIG_AOPhu8vKexNyrv5_1qoom6_NaPGecoiz6fR8.eyJraWQiOiJVYmtLOFk2aXY0R1poRnA2VHgzSVdMV0xmTlhTRXZKY2RUM3pkUjY1WVp4byJ9",
+			      "payload": "{\"data\":\"this is a hidden message\",\"exp\":\"2022-01-01T00:00:00+00:00\"}",
+			      "footer": "{\"kid\":\"UbkK8Y6iv4GZhFp6Tx3IWLWLfNXSEvJcdT3zdR65YZxo\"}",
+			      "implicit-assertion": "{\"test-vector\":\"3-E-8\"}"
+			    },
+			    {
+			      "name": "3-E-9",
+			      "expect-fail": false,
+			      "nonce": "26f7553354482a1d91d4784627854b8da6b8042a7966523c2b404e8dbbe7f7f2",
+			      "key": "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+			      "token": "v3.local.JvdVM1RIKh2R1HhGJ4VLjaa4BCp5ZlI8K0BOjbvn9_LwY78vQnDait-Q-sjhF88dG2B0X-4P3EcxGHn8wzPbTrqObHhyoKpjy3cwZQzLdiwRsdEK5SDvl02_HjWKJW2oqGMOQJlk1nli0_wijTH_vCuRwckEDc82QWK8-lG2fT9wQF271sgbVRVPjm0LwMQZkvvamqU.YXJiaXRyYXJ5LXN0cmluZy10aGF0LWlzbid0LWpzb24",
+			      "payload": "{\"data\":\"this is a hidden message\",\"exp\":\"2022-01-01T00:00:00+00:00\"}",
+			      "footer": "arbitrary-string-that-isn't-json",
+			      "implicit-assertion": "{\"test-vector\":\"3-E-9\"}"
+			    },
+			    {
+			      "name": "3-F-3",
+			      "expect-fail": true,
+			      "nonce": "26f7553354482a1d91d4784627854b8da6b8042a7966523c2b404e8dbbe7f7f2",
+			      "key": "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+			      "token": "v4.local.1JgN1UG8TFAYS49qsx8rxlwh-9E4ONUm3slJXYi5EibmzxpF0Q-du6gakjuyKCBX8TvnSLOKqCPu8Yh3WSa5yJWigPy33z9XZTJF2HQ9wlLDPtVn_Mu1pPxkTU50ZaBKblJBufRA.YXJiaXRyYXJ5LXN0cmluZy10aGF0LWlzbid0LWpzb24",
+			      "payload": null,
+			      "footer": "arbitrary-string-that-isn't-json",
+			      "implicit-assertion": "{\"test-vector\":\"3-F-3\"}"
+			    },
+			    {
+			      "name": "3-F-4",
+			      "expect-fail": true,
+			      "key": "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+			      "nonce": "0000000000000000000000000000000000000000000000000000000000000000",
+			      "token": "v3.local.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADbfcIURX_0pVZVU1mAESUzrKZAsRm2EsD6yBoZYn6cpVZNzSJOhSDN-sRaWjfLU-yn9OJH1J_B8GKtOQ9gSQlb8yk9Iza7teRdkiR89ZFyvPPsVjjFiepFUVcMa-LP18zV77f_crJrVXWa5PDNRkCSeHfBBeh",
+			      "payload": null,
+			      "footer": "",
+			      "implicit-assertion": ""
+			    },
+			    {
+			      "name": "3-F-5",
+			      "expect-fail": true,
+			      "nonce": "26f7553354482a1d91d4784627854b8da6b8042a7966523c2b404e8dbbe7f7f2",
+			      "key": "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+			      "token": "v3.local.JvdVM1RIKh2R1HhGJ4VLjaa4BCp5ZlI8K0BOjbvn9_LwY78vQnDait-Q-sjhF88dG2B0ROIIykcrGHn8wzPbTrqObHhyoKpjy3cwZQzLdiwRsdEK5SDvl02_HjWKJW2oqGMOQJlkYSIbXOgVuIQL65UMdW9WcjOpmqvjqD40NNzed-XPqn1T3w-bJvitYpUJL_rmihc=.eyJraWQiOiJVYmtLOFk2aXY0R1poRnA2VHgzSVdMV0xmTlhTRXZKY2RUM3pkUjY1WVp4byJ9",
+			      "payload": null,
+			      "footer": "{\"kid\":\"UbkK8Y6iv4GZhFp6Tx3IWLWLfNXSEvJcdT3zdR65YZxo\"}",
+			      "implicit-assertion": ""
+			}
+			]]=];
+		for name, test in pairs(test_cases) do
+			it("test case "..name, test);
+		end
+
+		describe("basic sign/verify", function ()
+			local key = paseto.v3_local.new_key();
+			local sign, verify = paseto.v3_local.init(key);
+
+			local key2 = paseto.v3_local.new_key();
+			local sign2, verify2 = paseto.v3_local.init(key2);
+
+			it("works", function ()
+				local payload = { foo = "hello world", b = { 1, 2, 3 } };
+
+				local tok = sign(payload);
+				assert.same(payload, verify(tok));
+				assert.is_nil(verify2(tok));
+			end);
+
+			it("rejects tokens if implicit assertion fails", function ()
+				local payload = { foo = "hello world", b = { 1, 2, 3 } };
+				local tok = sign(payload, nil, "my-custom-assertion");
+				assert.is_nil(verify(tok, nil, "my-incorrect-assertion"));
+				assert.is_nil(verify(tok, nil, nil));
+				assert.same(payload, verify(tok, nil, "my-custom-assertion"));
+			end);
+		end);
+	end);
 
 	describe("v4.public", function ()
+		local function parse_test_cases(json_test_cases)
+			local input_cases = json.decode(json_test_cases);
+			local output_cases = {};
+			for _, case in ipairs(input_cases) do
+				assert.is_string(case.name, "Bad test case: expected name");
+				assert.is_nil(output_cases[case.name], "Bad test case: duplicate name");
+				output_cases[case.name] = function ()
+					local verify_key = paseto.v4_public.import_public_key(case["public-key-pem"]);
+					local payload, err = paseto.v4_public.verify(case.token, verify_key, case.footer, case["implicit-assertion"]);
+					if case["expect-fail"] then
+						assert.is_nil(payload);
+					else
+						assert.is_nil(err);
+						assert.same(json.decode(case.payload), payload);
+					end
+				end;
+			end
+			return output_cases;
+		end
+
 		local test_cases = parse_test_cases [=[[
 			{
 			"name": "4-S-1",

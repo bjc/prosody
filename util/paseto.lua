@@ -1,9 +1,12 @@
 local crypto = require "util.crypto";
 local json = require "util.json";
+local hashes = require "util.hashes";
 local base64_encode = require "util.encodings".base64.encode;
 local base64_decode = require "util.encodings".base64.decode;
 local secure_equals = require "util.hashes".equals;
 local bit = require "util.bitcompat";
+local hex = require "util.hex";
+local rand = require "util.random";
 local s_pack = require "util.struct".pack;
 
 local s_gsub = string.gsub;
@@ -114,7 +117,102 @@ function v4_public.new_verifier(public_key_pem, options)
 	return (select(2, v4_public.init(nil, public_key_pem, options)));
 end
 
+local v3_local = { _key_mt = {} };
+
+local function v3_local_derive_keys(k, n)
+	local tmp = hashes.hkdf_hmac_sha384(48, k, nil, "paseto-encryption-key"..n);
+	local Ek = tmp:sub(1, 32);
+	local n2 = tmp:sub(33);
+	local Ak = hashes.hkdf_hmac_sha384(48, k, nil, "paseto-auth-key-for-aead"..n);
+	return Ek, Ak, n2;
+end
+
+function v3_local.encrypt(m, k, f, i)
+	assert(#k == 32)
+	if type(m) ~= "table" then
+		return nil, "PASETO payloads must be a table";
+	end
+	m = json.encode(m);
+	local h = "v3.local.";
+	local n = rand.bytes(32);
+	local Ek, Ak, n2 = v3_local_derive_keys(k, n);
+
+	local c = crypto.aes_256_ctr_encrypt(Ek, n2, m);
+	local m2 = pae({ h, n, c, f or "", i or "" });
+	local t = hashes.hmac_sha384(Ak, m2);
+
+	if not f or f == "" then
+		return h..b64url(n..c..t);
+	else
+		return h..b64url(n..c..t).."."..b64url(f);
+	end
+end
+
+function v3_local.decrypt(tok, k, expected_f, i)
+	assert(#k == 32)
+
+	local h, sm, f = tok:match("^(v3%.local%.)([^%.]+)%.?(.*)$");
+	if not h then
+		return nil, "invalid-token-format";
+	end
+	f = f and unb64url(f) or nil;
+	if expected_f then
+		if not f or not secure_equals(expected_f, f) then
+			return nil, "invalid-footer";
+		end
+	end
+	local m = unb64url(sm);
+	if not m or #m <= 80 then
+		return nil, "invalid-token-format";
+	end
+	local n, c, t = m:sub(1, 32), m:sub(33, -49), m:sub(-48);
+	local Ek, Ak, n2 = v3_local_derive_keys(k, n);
+	local preAuth = pae({ h, n, c, f or "", i or "" });
+	local t2 = hashes.hmac_sha384(Ak, preAuth);
+	if not secure_equals(t, t2) then
+		return nil, "invalid-token";
+	end
+	local m2 = crypto.aes_256_ctr_decrypt(Ek, n2, c);
+	if not m2 then
+		return nil, "invalid-token";
+	end
+
+	local payload, err = json.decode(m2);
+	if err ~= nil or type(payload) ~= "table" then
+		return nil, "json-decode-error";
+	end
+	return payload;
+end
+
+function v3_local.new_key()
+	return "secret-token:paseto.v3.local:"..hex.encode(rand.bytes(32));
+end
+
+function v3_local.init(key, options)
+	local encoded_key = key:match("^secret%-token:paseto%.v3%.local:(%x+)$");
+	if not encoded_key or #encoded_key ~= 64 then
+		return error("invalid key for v3.local");
+	end
+	local raw_key = hex.decode(encoded_key);
+	local default_footer = options and options.default_footer;
+	local default_assertion = options and options.default_implicit_assertion;
+	return function (token, token_footer, token_assertion)
+		return v3_local.encrypt(token, raw_key, token_footer or default_footer, token_assertion or default_assertion);
+	end, function (token, token_footer, token_assertion)
+		return v3_local.decrypt(token, raw_key, token_footer or default_footer, token_assertion or default_assertion);
+	end;
+end
+
+function v3_local.new_signer(key, options)
+	return (v3_local.init(key, options));
+end
+
+function v3_local.new_verifier(key, options)
+	return (select(2, v3_local.init(key, options)));
+end
+
 return {
 	pae = pae;
+	v3_local = v3_local;
 	v4_public = v4_public;
 };
