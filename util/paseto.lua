@@ -111,7 +111,7 @@ function v4_public.new_signer(private_key_pem, options)
 end
 
 function v4_public.new_verifier(public_key_pem, options)
-	return (select(2, v4_public.init(public_key_pem, options)));
+	return (select(2, v4_public.init(nil, public_key_pem, options)));
 end
 
 return {
