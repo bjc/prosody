@@ -157,6 +157,7 @@ describe("util.paseto", function ()
 			local key = paseto.v3_local.new_key();
 			local sign, verify = paseto.v3_local.init(key);
 
+			--luacheck: ignore 211/sign2
 			local key2 = paseto.v3_local.new_key();
 			local sign2, verify2 = paseto.v3_local.init(key2);
 

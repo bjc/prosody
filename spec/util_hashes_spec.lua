@@ -4,6 +4,8 @@ local hex = require "util.hex";
 
 -- Also see spec for util.hmac where HMAC test cases reside
 
+--luacheck: ignore 631
+
 describe("PBKDF2-HMAC-SHA1", function ()
 	it("test vector 1", function ()
 		local P = "password"
