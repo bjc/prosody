@@ -28,8 +28,16 @@ typedef unsigned __int32 uint32_t;
 #include <openssl/md5.h>
 #include <openssl/hmac.h>
 #include <openssl/evp.h>
+#include <openssl/kdf.h>
 #include <openssl/err.h>
 
+
+/* Semi-arbitrary limit here. The actual theoretical limit
+*  is (255*(hash output octets)), but allocating 16KB on the
+*  stack when in practice we only ever request a few dozen
+*  bytes seems excessive.
+*/
+#define MAX_HKDF_OUTPUT 256
 
 static const char *hex_tab = "0123456789abcdef";
 static void toHex(const unsigned char *in, int length, unsigned char *out) {
@@ -214,6 +222,55 @@ static int Lpbkdf2_sha256(lua_State *L) {
 	return Levp_pbkdf2(L, EVP_sha256(), SHA256_DIGEST_LENGTH);
 }
 
+
+/* HKDF(length, input, salt, info) */
+static int Levp_hkdf(lua_State *L, const EVP_MD *evp) {
+	unsigned char out[MAX_HKDF_OUTPUT];
+
+	size_t input_len, salt_len, info_len;
+	size_t actual_out_len = luaL_checkinteger(L, 1);
+	const char *input = luaL_checklstring(L, 2, &input_len);
+	const unsigned char *salt = (unsigned char *)luaL_optlstring(L, 3, NULL, &salt_len);
+	const unsigned char *info = (unsigned char *)luaL_checklstring(L, 4, &info_len);
+
+	if(actual_out_len > MAX_HKDF_OUTPUT)
+		return luaL_error(L, "desired output length %ul exceeds internal limit %ul", actual_out_len, MAX_HKDF_OUTPUT);
+
+	EVP_PKEY_CTX *pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, NULL);
+
+	if (EVP_PKEY_derive_init(pctx) <= 0)
+		return luaL_error(L, ERR_error_string(ERR_get_error(), NULL));
+
+	if (EVP_PKEY_CTX_set_hkdf_md(pctx, evp) <= 0)
+		return luaL_error(L, ERR_error_string(ERR_get_error(), NULL));
+
+	if(salt != NULL) {
+		if (EVP_PKEY_CTX_set1_hkdf_salt(pctx, salt, salt_len) <= 0)
+			return luaL_error(L, ERR_error_string(ERR_get_error(), NULL));
+	}
+
+	if (EVP_PKEY_CTX_set1_hkdf_key(pctx, input, input_len) <= 0)
+		return luaL_error(L, ERR_error_string(ERR_get_error(), NULL));
+
+	if (EVP_PKEY_CTX_add1_hkdf_info(pctx, info, info_len) <= 0)
+		return luaL_error(L, ERR_error_string(ERR_get_error(), NULL));
+
+	if (EVP_PKEY_derive(pctx, out, &actual_out_len) <= 0)
+		return luaL_error(L, ERR_error_string(ERR_get_error(), NULL));
+
+	lua_pushlstring(L, (char *)out, actual_out_len);
+
+	return 1;
+}
+
+static int Lhkdf_sha256(lua_State *L) {
+	return Levp_hkdf(L, EVP_sha256());
+}
+
+static int Lhkdf_sha384(lua_State *L) {
+	return Levp_hkdf(L, EVP_sha384());
+}
+
 static int Lhash_equals(lua_State *L) {
 	size_t len1, len2;
 	const char *s1 = luaL_checklstring(L, 1, &len1);
@@ -250,6 +307,8 @@ static const luaL_Reg Reg[] = {
 	{ "scram_Hi_sha1",	Lpbkdf2_sha1	}, /* COMPAT */
 	{ "pbkdf2_hmac_sha1",	Lpbkdf2_sha1	},
 	{ "pbkdf2_hmac_sha256",	Lpbkdf2_sha256	},
+	{ "hkdf_hmac_sha256",   Lhkdf_sha256    },
+	{ "hkdf_hmac_sha384",   Lhkdf_sha384    },
 	{ "equals",             Lhash_equals    },
 	{ NULL,			NULL		}
 };
