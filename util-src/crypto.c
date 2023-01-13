@@ -285,8 +285,8 @@ static int Led25519_verify(lua_State *L) {
 	return base_evp_verify(L, NID_ED25519, NULL);
 }
 
-/* gcm_encrypt(key, iv, plaintext) */
-static int Laes_gcm_encrypt(lua_State *L, const EVP_CIPHER *cipher, const unsigned char expected_key_len) {
+/* encrypt(key, iv, plaintext) */
+static int Levp_encrypt(lua_State *L, const EVP_CIPHER *cipher, const unsigned char expected_key_len, const unsigned char expected_iv_len, const size_t tag_len) {
 	EVP_CIPHER_CTX *ctx;
 	luaL_Buffer ciphertext_buffer;
 
@@ -300,7 +300,9 @@ static int Laes_gcm_encrypt(lua_State *L, const EVP_CIPHER *cipher, const unsign
 	if(key_len != expected_key_len) {
 		return luaL_error(L, "key must be %d bytes", expected_key_len);
 	}
-	luaL_argcheck(L, iv_len == 12, 2, "iv must be 12 bytes");
+	if(iv_len != expected_iv_len) {
+		return luaL_error(L, "iv must be %d bytes", expected_iv_len);
+	}
 	if(lua_gettop(L) > 3) {
 		return luaL_error(L, "Expected 3 arguments, got %d", lua_gettop(L));
 	}
@@ -319,7 +321,7 @@ static int Laes_gcm_encrypt(lua_State *L, const EVP_CIPHER *cipher, const unsign
 	}
 
 	luaL_buffinit(L, &ciphertext_buffer);
-	unsigned char *ciphertext = (unsigned char*)luaL_prepbuffsize(&ciphertext_buffer, plaintext_len+16);
+	unsigned char *ciphertext = (unsigned char*)luaL_prepbuffsize(&ciphertext_buffer, plaintext_len+tag_len);
 
 	if(1 != EVP_EncryptUpdate(ctx, ciphertext, &ciphertext_len, plaintext, plaintext_len)) {
 		return luaL_error(L, "Error while encrypting data");
@@ -336,27 +338,35 @@ static int Laes_gcm_encrypt(lua_State *L, const EVP_CIPHER *cipher, const unsign
 		return luaL_error(L, "Non-zero final data");
 	}
 
-	/* Get the tag */
-	if(1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, 16, ciphertext + ciphertext_len)) {
-		return luaL_error(L, "Unable to read AEAD tag of encrypted data");
+	if(tag_len > 0) {
+		/* Get the tag */
+		if(1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, tag_len, ciphertext + ciphertext_len)) {
+			return luaL_error(L, "Unable to read AEAD tag of encrypted data");
+		}
+		/* Append tag */
+		luaL_addsize(&ciphertext_buffer, ciphertext_len + tag_len);
+	} else {
+		luaL_addsize(&ciphertext_buffer, ciphertext_len);
 	}
-
-	luaL_addsize(&ciphertext_buffer, ciphertext_len + 16);
 	luaL_pushresult(&ciphertext_buffer);
 
 	return 1;
 }
 
 static int Laes_128_gcm_encrypt(lua_State *L) {
-	return Laes_gcm_encrypt(L, EVP_aes_128_gcm(), 16);
+	return Levp_encrypt(L, EVP_aes_128_gcm(), 16, 12, 16);
 }
 
 static int Laes_256_gcm_encrypt(lua_State *L) {
-	return Laes_gcm_encrypt(L, EVP_aes_256_gcm(), 32);
+	return Levp_encrypt(L, EVP_aes_256_gcm(), 32, 12, 16);
 }
 
-/* gcm_decrypt(key, iv, ciphertext) */
-static int Laes_gcm_decrypt(lua_State *L, const EVP_CIPHER *cipher, const unsigned char expected_key_len) {
+static int Laes_256_ctr_encrypt(lua_State *L) {
+	return Levp_encrypt(L, EVP_aes_256_ctr(), 32, 16, 0);
+}
+
+/* decrypt(key, iv, ciphertext) */
+static int Levp_decrypt(lua_State *L, const EVP_CIPHER *cipher, const unsigned char expected_key_len, const unsigned char expected_iv_len, const size_t tag_len) {
 	EVP_CIPHER_CTX *ctx;
 	luaL_Buffer plaintext_buffer;
 
@@ -370,8 +380,12 @@ static int Laes_gcm_decrypt(lua_State *L, const EVP_CIPHER *cipher, const unsign
 	if(key_len != expected_key_len) {
 		return luaL_error(L, "key must be %d bytes", expected_key_len);
 	}
-	luaL_argcheck(L, iv_len == 12, 2, "iv must be 12 bytes");
-	luaL_argcheck(L, ciphertext_len > 16, 3, "ciphertext must be at least 16 bytes (including tag)");
+	if(iv_len != expected_iv_len) {
+		return luaL_error(L, "iv must be %d bytes", expected_iv_len);
+	}
+	if(ciphertext_len <= tag_len) {
+		return luaL_error(L, "ciphertext must be at least %d bytes (including tag)", tag_len);
+	}
 	if(lua_gettop(L) > 3) {
 		return luaL_error(L, "Expected 3 arguments, got %d", lua_gettop(L));
 	}
@@ -396,13 +410,15 @@ static int Laes_gcm_decrypt(lua_State *L, const EVP_CIPHER *cipher, const unsign
 	* Provide the message to be decrypted, and obtain the plaintext output.
 	* EVP_DecryptUpdate can be called multiple times if necessary
 	*/
-	if(!EVP_DecryptUpdate(ctx, plaintext, &plaintext_len, ciphertext, ciphertext_len-16)) {
+	if(!EVP_DecryptUpdate(ctx, plaintext, &plaintext_len, ciphertext, ciphertext_len-tag_len)) {
 		return luaL_error(L, "Error while decrypting data");
 	}
 
-	/* Set expected tag value. Works in OpenSSL 1.0.1d and later */
-	if(!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG, 16, (unsigned char*)ciphertext + (ciphertext_len-16))) {
-		return luaL_error(L, "Error while processing authentication tag");
+	if(tag_len > 0) {
+		/* Set expected tag value. Works in OpenSSL 1.0.1d and later */
+		if(!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG, tag_len, (unsigned char*)ciphertext + (ciphertext_len-tag_len))) {
+			return luaL_error(L, "Error while processing authentication tag");
+		}
 	}
 
 	/*
@@ -424,11 +440,15 @@ static int Laes_gcm_decrypt(lua_State *L, const EVP_CIPHER *cipher, const unsign
 }
 
 static int Laes_128_gcm_decrypt(lua_State *L) {
-	return Laes_gcm_decrypt(L, EVP_aes_128_gcm(), 16);
+	return Levp_decrypt(L, EVP_aes_128_gcm(), 16, 12, 16);
 }
 
 static int Laes_256_gcm_decrypt(lua_State *L) {
-	return Laes_gcm_decrypt(L, EVP_aes_256_gcm(), 32);
+	return Levp_decrypt(L, EVP_aes_256_gcm(), 32, 12, 16);
+}
+
+static int Laes_256_ctr_decrypt(lua_State *L) {
+	return Levp_decrypt(L, EVP_aes_256_ctr(), 32, 16, 0);
 }
 
 /* r, s = parse_ecdsa_sig(sig_der) */
@@ -546,6 +566,9 @@ static const luaL_Reg Reg[] = {
 	{ "aes_128_gcm_decrypt",         Laes_128_gcm_decrypt      },
 	{ "aes_256_gcm_encrypt",         Laes_256_gcm_encrypt      },
 	{ "aes_256_gcm_decrypt",         Laes_256_gcm_decrypt      },
+
+	{ "aes_256_ctr_encrypt",         Laes_256_ctr_encrypt      },
+	{ "aes_256_ctr_decrypt",         Laes_256_ctr_decrypt      },
 
 	{ "generate_ed25519_keypair",    Lgenerate_ed25519_keypair },
 

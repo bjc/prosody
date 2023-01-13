@@ -164,4 +164,21 @@ describe("util.crypto", function ()
 			end
 		end);
 	end);
+
+	describe("AES-CTR encryption", function ()
+		it("works", function ()
+			local message = "foo\0bar hello world";
+			local key_256_bit = random.bytes(32);
+			local test_cases = {
+				{ crypto.aes_256_ctr_decrypt, crypto.aes_256_ctr_decrypt, key = key_256_bit };
+			};
+			for _, params in pairs(test_cases) do
+				local iv = params.iv or random.bytes(16);
+				local encrypted = params[1](params.key, iv, message);
+				assert.not_equal(message, encrypted);
+				local decrypted = params[2](params.key, iv, encrypted);
+				assert.equal(message, decrypted);
+			end
+		end);
+	end);
 end);
