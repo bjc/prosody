@@ -14,7 +14,18 @@ local b64url_rep = { ["+"] = "-", ["/"] = "_", ["="] = "", ["-"] = "+", ["_"] = 
 local function b64url(data)
 	return (s_gsub(base64_encode(data), "[+/=]", b64url_rep));
 end
+
+local valid_tails = {
+	nil; -- Always invalid
+	"^.[AQgw]$"; -- b??????00
+	"^..[AQgwEUk0IYo4Mcs8]$"; -- b????0000
+}
+
 local function unb64url(data)
+	local rem = #data%4;
+	if data:sub(-1,-1) == "=" or rem == 1 or (rem > 1 and not data:sub(-rem):match(valid_tails[rem])) then
+		return nil;
+	end
 	return base64_decode(s_gsub(data, "[-_]", b64url_rep).."==");
 end
 
