@@ -809,6 +809,10 @@ local function check(arg)
 				modules:add(component_module);
 			end
 
+			-- TODO Refactor these DNS SRV checks since they are very similar
+			-- FIXME Suggest concrete actionable steps to correct issues so that
+			-- users don't have to copy-paste the message into the support chat and
+			-- ask what to do about it.
 			local is_component = not not host_options.component_module;
 			print("Checking DNS for "..(is_component and "component" or "host").." "..jid.."...");
 			if node then
@@ -838,7 +842,7 @@ local function check(arg)
 					end
 				end
 			end
-			if modules:contains("c2s") and c2s_tls_srv_required then
+			if modules:contains("c2s") then
 				local res = dns.lookup("_xmpps-client._tcp."..idna.to_ascii(host)..".", "SRV");
 				if res and #res > 0 then
 					for _, record in ipairs(res) do
@@ -852,7 +856,7 @@ local function check(arg)
 							print("    SRV target "..target.." contains unknown Direct TLS client port: "..record.srv.port);
 						end
 					end
-				else
+				elseif c2s_tls_srv_required then
 					print("    No _xmpps-client SRV record found for "..host..", but it looks like you need one.");
 					all_targets_ok = false;
 				end
@@ -880,7 +884,7 @@ local function check(arg)
 					end
 				end
 			end
-			if modules:contains("s2s") and s2s_tls_srv_required then
+			if modules:contains("s2s") then
 				local res = dns.lookup("_xmpps-server._tcp."..idna.to_ascii(host)..".", "SRV");
 				if res and #res > 0 then
 					for _, record in ipairs(res) do
@@ -894,7 +898,7 @@ local function check(arg)
 							print("    SRV target "..target.." contains unknown Direct TLS server port: "..record.srv.port);
 						end
 					end
-				else
+				elseif s2s_tls_srv_required then
 					print("    No _xmpps-server SRV record found for "..host..", but it looks like you need one.");
 					all_targets_ok = false;
 				end
