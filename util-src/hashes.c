@@ -229,7 +229,7 @@ static int Levp_hkdf(lua_State *L, const EVP_MD *evp) {
 
 	size_t input_len, salt_len, info_len;
 	size_t actual_out_len = luaL_checkinteger(L, 1);
-	const char *input = luaL_checklstring(L, 2, &input_len);
+	const unsigned char *input = (unsigned char *)luaL_checklstring(L, 2, &input_len);
 	const unsigned char *salt = (unsigned char *)luaL_optlstring(L, 3, NULL, &salt_len);
 	const unsigned char *info = (unsigned char *)luaL_checklstring(L, 4, &info_len);
 
