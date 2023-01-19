@@ -152,8 +152,6 @@ if os.getenv("PROSODY_STRICT_LINT") ~= "1" then
 		"net/dns.lua";
 		"net/server_select.lua";
 
-		"plugins/mod_storage_sql1.lua";
-
 		"spec/core_moduleapi_spec.lua";
 		"spec/util_http_spec.lua";
 		"spec/util_ip_spec.lua";
