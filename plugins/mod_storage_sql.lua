@@ -1,9 +1,11 @@
 
 -- luacheck: ignore 212/self
 
+local deps = require "util.dependencies";
 local cache = require "util.cache";
 local json = require "util.json";
-local sql = require "util.sql";
+local sqlite = deps.softreq "util.sqlite3";
+local dbisql = (sqlite and deps.softreq or require) "util.sql";
 local xml_parse = require "util.xml".parse;
 local uuid = require "util.uuid";
 local resolve_relative_path = require "util.paths".resolve_relative_path;
@@ -692,6 +694,7 @@ end
 
 
 local function create_table(engine) -- luacheck: ignore 431/engine
+	local sql = engine.params.driver == "SQLite3" and sqlite or dbisql;
 	local Table, Column, Index = sql.Table, sql.Column, sql.Index;
 
 	local ProsodyTable = Table {
@@ -732,6 +735,7 @@ end
 local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 431/engine
 	local changes = false;
 	if params.driver == "MySQL" then
+		local sql = dbisql;
 		local success,err = engine:transaction(function()
 			do
 				local result = assert(engine:execute("SHOW COLUMNS FROM \"prosody\" WHERE \"Field\"='value' and \"Type\"='text'"));
@@ -831,6 +835,7 @@ end
 function module.load()
 	local engines = module:shared("/*/sql/connections");
 	local params = normalize_params(module:get_option("sql", default_params));
+	local sql = params.driver == "SQLite3" and sqlite or dbisql;
 	local db_uri = sql.db2uri(params);
 	engine = engines[db_uri];
 	if not engine then
@@ -869,6 +874,7 @@ function module.command(arg)
 		local uris = {};
 		for host in pairs(prosody.hosts) do -- luacheck: ignore 431/host
 			local params = normalize_params(config.get(host, "sql") or default_params);
+			local sql = engine.params.driver == "SQLite3" and sqlite or dbisql;
 			uris[sql.db2uri(params)] = params;
 		end
 		print("We will check and upgrade the following databases:\n");
@@ -884,6 +890,7 @@ function module.command(arg)
 		-- Upgrade each one
 		for _, params in pairs(uris) do
 			print("Checking "..params.database.."...");
+			local sql = params.driver == "SQLite3" and sqlite or dbisql;
 			engine = sql:create_engine(params);
 			upgrade_table(engine, params, true);
 		end
