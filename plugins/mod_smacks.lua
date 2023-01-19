@@ -544,6 +544,7 @@ module:hook("pre-resource-unbind", function (event)
 		session.conn = nil;
 		conn:close();
 	end
+	session.log("debug", "Session going into hibernation (not being destroyed)")
 	module:fire_event("smacks-hibernation-start", { origin = session; queue = session.outgoing_stanza_queue:table() });
 	return true; -- Postpone destruction for now
 end);
