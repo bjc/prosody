@@ -106,6 +106,7 @@ local function destroy_session(session, err)
 		if host_session.events.fire_event("pre-resource-unbind", {session=session, error=err}) then
 			return;
 		end
+		session.destroyed = true; -- Past this point the session is DOOMED!
 
 		host_session.sessions[session.username].sessions[session.resource] = nil;
 		full_sessions[session.full_jid] = nil;
