@@ -145,7 +145,7 @@ local function new_connection(socket_path, listeners)
 		-- constructor was exported instead of a module table. Due to the lack of a
 		-- proper release of LuaSocket, distros have settled on shipping either the
 		-- last RC tag or some commit since then.
-		-- Here we accomodate both variants.
+		-- Here we accommodate both variants.
 		unix = { stream = unix };
 	end
 	if type(unix) ~= "table" then

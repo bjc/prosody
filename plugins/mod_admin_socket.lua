@@ -8,7 +8,7 @@ if have_unix and type(unix) == "function" then
 	-- constructor was exported instead of a module table. Due to the lack of a
 	-- proper release of LuaSocket, distros have settled on shipping either the
 	-- last RC tag or some commit since then.
-	-- Here we accomodate both variants.
+	-- Here we accommodate both variants.
 	unix = { stream = unix };
 end
 if not have_unix or type(unix) ~= "table" then
