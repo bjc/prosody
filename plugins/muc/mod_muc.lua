@@ -89,7 +89,7 @@ room_mt.handle_register_iq = register.handle_register_iq;
 local presence_broadcast = module:require "muc/presence_broadcast";
 room_mt.get_presence_broadcast = presence_broadcast.get;
 room_mt.set_presence_broadcast = presence_broadcast.set;
-room_mt.get_valid_broadcast_roles = presence_broadcast.get_valid_broadcast_roles;
+room_mt.get_valid_broadcast_roles = presence_broadcast.get_valid_broadcast_roles; -- FIXME doesn't exist in the library
 
 local occupant_id = module:require "muc/occupant_id";
 room_mt.get_salt = occupant_id.get_room_salt;
