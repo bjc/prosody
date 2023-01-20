@@ -22,7 +22,7 @@ for registry in registries:childtags("registry") do
 			local record_desc = record:get_child_text("description");
 			local record_code = tonumber(record:get_child_text("value"));
 
-			if tostring(record):lower():match("reserved") or tostring(record):lower():match("reserved") then
+			if tostring(record):lower():match("reserved") or tostring(record):lower():match("unassigned") then
 				record_code = nil;
 			end
 
