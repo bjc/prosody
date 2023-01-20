@@ -1,5 +1,5 @@
 -- Source: https://www.iana.org/assignments/dns-parameters/dns-parameters.xml
--- Generated on 2022-02-02
+-- Generated on 2023-01-20
 return {
 	classes = {
 		["IN"] = 1; [1] = "IN";
@@ -61,7 +61,6 @@ return {
 		["NSEC3PARAM"] = 51; [51] = "NSEC3PARAM";
 		["TLSA"] = 52; [52] = "TLSA";
 		["SMIMEA"] = 53; [53] = "SMIMEA";
-		["Unassigned"] = 54; [54] = "Unassigned";
 		["HIP"] = 55; [55] = "HIP";
 		["NINFO"] = 56; [56] = "NINFO";
 		["RKEY"] = 57; [57] = "RKEY";
