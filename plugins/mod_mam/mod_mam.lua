@@ -142,9 +142,14 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 	local qset = rsm.get(query);
 	local qmax = m_min(qset and qset.max or default_max_items, max_max_items);
 	local reverse = qset and qset.before or false;
+
 	local before, after = qset and qset.before or qbefore, qset and qset.after or qafter;
 	if type(before) ~= "string" then before = nil; end
 
+	-- A reverse query needs to be flipped
+	local flip = reverse;
+	-- A flip-page query needs to be the opposite of that.
+	if query:get_child("flip-page") then flip = not flip end
 
 	module:log("debug", "Archive query by %s id=%s with=%s when=%s...%s rsm=%q",
 		origin.username,
@@ -153,11 +158,6 @@ module:hook("iq-set/self/"..xmlns_mam..":query", function(event)
 		qstart and timestamp(qstart) or "",
 		qend and timestamp(qend) or "",
 		qset);
-
-	-- A reverse query needs to be flipped
-	local flip = reverse;
-	-- A flip-page query needs to be the opposite of that.
-	if query:get_child("flip-page") then flip = not flip end
 
 	-- Load all the data!
 	local data, err = archive:find(origin.username, {
