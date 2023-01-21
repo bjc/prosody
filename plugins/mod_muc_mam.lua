@@ -109,6 +109,16 @@ local query_form = dataform {
 	{ name = "end"; type = "text-single"; datatype = "xs:dateTime" };
 };
 
+if archive.caps and archive.caps.full_id_range then
+	table.insert(query_form, { name = "before-id"; type = "text-single"; });
+	table.insert(query_form, { name = "after-id"; type = "text-single"; });
+end
+
+if archive.caps and archive.caps.ids then
+	table.insert(query_form, { name = "ids"; type = "list-multi"; });
+end
+
+
 -- Serve form
 module:hook("iq-get/bare/"..xmlns_mam..":query", function(event)
 	local origin, stanza = event.origin, event.stanza;
