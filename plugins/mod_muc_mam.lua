@@ -112,7 +112,7 @@ local query_form = dataform {
 -- Serve form
 module:hook("iq-get/bare/"..xmlns_mam..":query", function(event)
 	local origin, stanza = event.origin, event.stanza;
-	origin.send(st.reply(stanza):tag("query", { xmlns = xmlns_mam }):add_child(query_form:form()));
+	origin.send(st.reply(stanza):query(xmlns_mam):add_child(query_form:form()));
 	return true;
 end);
 
@@ -172,6 +172,7 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 
 	local before, after = qset and qset.before or qbefore, qset and qset.after or qafter;
 	if type(before) ~= "string" then before = nil; end
+
 	-- A reverse query needs to be flipped
 	local flip = reverse;
 	-- A flip-page query needs to be the opposite of that.
@@ -187,11 +188,12 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 	-- Load all the data!
 	local data, err = archive:find(room_node, {
 		start = qstart; ["end"] = qend; -- Time range
+		with = "message<groupchat";
 		limit = qmax + 1;
 		before = before; after = after;
 		ids = qids;
 		reverse = reverse;
-		with = "message<groupchat";
+		total = qmax == 0;
 	});
 
 	if not data then
@@ -216,6 +218,8 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 	for id, item, when in data do
 		count = count + 1;
 		if count > qmax then
+			-- We requested qmax+1 items. If that many items are retrieved then
+			-- there are more results to page through, so:
 			complete = nil;
 			break;
 		end
@@ -258,7 +262,6 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 	if reverse then
 		first, last = last, first;
 	end
-
 
 	origin.send(st.reply(stanza)
 		:tag("fin", { xmlns = xmlns_mam, complete = complete })
