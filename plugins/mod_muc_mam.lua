@@ -29,7 +29,7 @@ local get_room_from_jid = mod_muc.get_room_from_jid;
 
 local is_stanza = st.is_stanza;
 local tostring = tostring;
-local time_now = os.time;
+local time_now = require "util.time".now;
 local m_min = math.min;
 local timestamp, datestamp = import("util.datetime", "datetime", "date");
 local default_max_items, max_max_items = 20, module:get_option_number("max_archive_query_results", 50);
