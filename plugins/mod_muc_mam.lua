@@ -67,6 +67,7 @@ if archive.name == "null" or not archive.find then
 	module:log("info", "See https://prosody.im/doc/storage and https://prosody.im/doc/archiving for more information");
 	return false;
 end
+local use_total = module:get_option_boolean("muc_log_include_total", true);
 
 local function archiving_enabled(room)
 	if log_all_rooms then
@@ -203,7 +204,7 @@ module:hook("iq-set/bare/"..xmlns_mam..":query", function(event)
 		before = before; after = after;
 		ids = qids;
 		reverse = reverse;
-		total = qmax == 0;
+		total = use_total or qmax == 0;
 	});
 
 	if not data then
@@ -564,4 +565,7 @@ if cleanup_after ~= "never" then
 
 else
 	module:log("debug", "Archive expiry disabled");
+	-- Don't ask the backend to count the potentially unbounded number of items,
+	-- it'll get slow.
+	use_total = module:get_option_boolean("mam_include_total", false);
 end
