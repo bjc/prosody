@@ -670,11 +670,11 @@ local command_runner = async.runner(function ()
 		local ok, ret = modulemanager.call_module_method(module, "command", arg);
 		if ok then
 			if type(ret) == "number" then
-				os.exit(ret);
+				os.exit(ret, true);
 			elseif type(ret) == "string" then
 				show_message(ret);
 			end
-			os.exit(0); -- :)
+			os.exit(0, true); -- :)
 		else
 			show_message("Failed to execute command: "..error_messages[ret]);
 			os.exit(1); -- :(
@@ -752,10 +752,10 @@ local command_runner = async.runner(function ()
 		end
 
 
-		os.exit(0);
+		os.exit(0, true);
 	end
 
-	os.exit(commands[command](arg));
+	os.exit(commands[command](arg), true);
 end, watchers);
 
 command_runner:run(true);

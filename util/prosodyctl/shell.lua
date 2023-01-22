@@ -41,7 +41,7 @@ local function repl(client)
 		if have_readline then
 			readline.save_history();
 		end
-		os.exit();
+		os.exit(0, true);
 	end
 	send_line(client, line);
 end
@@ -118,7 +118,7 @@ local function start(arg) --luacheck: ignore 212/arg
 
 	client.events.add_handler("disconnected", function ()
 		print("--- session closed ---");
-		os.exit();
+		os.exit(0, true);
 	end);
 
 	client.events.add_handler("received", function (stanza)
