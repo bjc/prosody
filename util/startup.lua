@@ -648,7 +648,7 @@ function startup.shutdown()
 end
 
 function startup.exit()
-	os.exit(prosody.shutdown_code);
+	os.exit(prosody.shutdown_code, true);
 end
 
 -- prosodyctl only
