@@ -1361,6 +1361,8 @@ local function get_muc(room_jid)
 	return room_obj;
 end
 
+local muc_util = module:require"muc/util";
+
 function def_env.muc:create(room_jid, config)
 	local room_name, host = check_muc(room_jid);
 	if not room_name then
@@ -1406,17 +1408,29 @@ function def_env.muc:occupants(room_jid, filter)
 		{ title = "JID"; width = "75%"; key = "bare_jid" };
 		{ title = "Nickname"; width = "25%"; key = "nick"; mapper = jid_resource };
 	}, self.session.width);
-	local total, displayed = 0, 0;
-	for nick_jid, occupant in room_obj:each_occupant() do
-		if total == 0 then
-			print(row());
+	local occupants = array.collect(iterators.select(2, room_obj:each_occupant()));
+	local total = #occupants;
+	if filter then
+		occupants:filter(function(occupant)
+			return occupant.role == filter or jid_resource(occupant.nick):find(filter, 1, true);
+		end);
+	end
+	local displayed = #occupants;
+	occupants:sort(function(a, b)
+		if a.role ~= b.role then
+			return muc_util.valid_roles[a.role] > muc_util.valid_roles[b.role];
+		else
+			return a.bare_jid < b.bare_jid;
 		end
-		local nick = jid_resource(nick_jid);
-		if filter == nil or occupant.role == filter or nick:find(filter, 1, true) then
-			print(row(occupant));
-			displayed = displayed + 1;
-		end
-		total = total + 1
+	end);
+
+	if displayed == 0 then
+		return true, ("%d out of %d occupant%s listed"):format(displayed, total, total ~= 1 and "s" or "")
+	end
+
+	print(row());
+	for _, occupant in ipairs(occupants) do
+		print(row(occupant));
 	end
 
 	if total == displayed then
@@ -1438,17 +1452,36 @@ function def_env.muc:affiliations(room_jid, filter)
 		{ title = "JID"; width = "75%" };
 		{ title = "Nickname"; width = "25%"; key = "reserved_nickname" };
 	}, self.session.width);
-	local total, displayed = 0, 0;
+	local affiliated = array();
 	for affiliated_jid, affiliation, affiliation_data in room_obj:each_affiliation() do
-		if total == 0 then
-			print(row());
-		end
-		if filter == nil or affiliation == filter or affiliated_jid:find(filter, 1, true) then
-			print(row(setmetatable({ affiliation; affiliated_jid }, { __index = affiliation_data })))
-			displayed = displayed + 1;
-		end
-		total = total + 1
+		affiliated:push(setmetatable({ affiliation; affiliated_jid }, { __index = affiliation_data }));
 	end
+
+	local total = #affiliated;
+	if filter then
+		affiliated:filter(function(affiliation)
+			return filter == affiliation[1] or filter == affiliation[2];
+		end);
+	end
+	local displayed = #affiliated;
+	local aff_ranking = muc_util.valid_affiliations;
+	affiliated:sort(function(a, b)
+		if a[1] ~= b[1] then
+			return aff_ranking[a[1]] > aff_ranking[b[1]];
+		else
+			return a[2] < b[2];
+		end
+	end);
+
+	if displayed == 0 then
+		return true, ("%d out of %d affiliations%s listed"):format(displayed, total, total ~= 1 and "s" or "")
+	end
+
+	print(row());
+	for _, affiliation in ipairs(affiliated) do
+		print(row(affiliation));
+	end
+
 
 	if total == displayed then
 		return true, ("%d affiliation%s listed"):format(total, total ~= 1 and "s" or "")
