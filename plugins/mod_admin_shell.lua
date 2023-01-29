@@ -1402,7 +1402,7 @@ function def_env.muc:occupants(room_jid, filter)
 
 	local print = self.session.print;
 	local row = format_table({
-		{ title = "Role"; width = #"participant"; key = "role" }; -- longest role name
+		{ title = "Role"; width = 12; key = "role" }; -- longest role name
 		{ title = "JID"; width = "75%"; key = "bare_jid" };
 		{ title = "Nickname"; width = "25%"; key = "nick"; mapper = jid_resource };
 	}, self.session.width);
@@ -1434,7 +1434,7 @@ function def_env.muc:affiliations(room_jid, filter)
 
 	local print = self.session.print;
 	local row = format_table({
-		{ title = "Affiliation"; width = #"outcast" }; -- longest affiliation name
+		{ title = "Affiliation"; width = 12 }; -- longest affiliation name
 		{ title = "JID"; width = "75%" };
 		{ title = "Nickname"; width = "25%"; key = "reserved_nickname" };
 	}, self.session.width);
