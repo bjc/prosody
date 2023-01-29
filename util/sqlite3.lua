@@ -159,6 +159,9 @@ end
 function engine:onconnect()
 	-- Override from create_engine()
 end
+function engine:ondisconnect() -- luacheck: ignore 212/self
+	-- Override from create_engine()
+end
 function engine:execute(sql, ...)
 	local success, err = self:connect();
 	if not success then return success, err; end
@@ -322,6 +325,7 @@ function engine:transaction(...)
 		local conn = self.conn;
 		if not conn or not conn:isopen() then
 			self.conn = nil;
+			self:ondisconnect();
 			ok, ret = self:_transaction(...);
 		end
 	end
@@ -389,9 +393,9 @@ local function db2uri(params)
 	};
 end
 
-local function create_engine(_, params, onconnect)
+local function create_engine(_, params, onconnect, ondisconnect)
 	assert(params.driver == "SQLite3", "Only SQLite3 is supported without LuaDBI");
-	return setmetatable({ url = db2uri(params), params = params, onconnect = onconnect }, engine_mt);
+	return setmetatable({ url = db2uri(params); params = params; onconnect = onconnect; ondisconnect = ondisconnect }, engine_mt);
 end
 
 return {

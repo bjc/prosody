@@ -99,6 +99,9 @@ end
 function engine:onconnect() -- luacheck: ignore 212/self
 	-- Override from create_engine()
 end
+function engine:ondisconnect() -- luacheck: ignore 212/self
+	-- Override from create_engine()
+end
 
 function engine:prepquery(sql)
 	if self.params.driver == "MySQL" then
@@ -224,6 +227,7 @@ function engine:transaction(...)
 		if not conn or not conn:ping() then
 			log("debug", "Database connection was closed. Will reconnect and retry.");
 			self.conn = nil;
+			self:ondisconnect();
 			log("debug", "Retrying SQL transaction [%s]", (...));
 			ok, ret, b, c = self:_transaction(...);
 			log("debug", "SQL transaction retry %s", ok and "succeeded" or "failed");
@@ -365,8 +369,8 @@ local function db2uri(params)
 	};
 end
 
-local function create_engine(_, params, onconnect)
-	return setmetatable({ url = db2uri(params), params = params, onconnect = onconnect }, engine_mt);
+local function create_engine(_, params, onconnect, ondisconnect)
+	return setmetatable({ url = db2uri(params); params = params; onconnect = onconnect; ondisconnect = ondisconnect }, engine_mt);
 end
 
 return {
