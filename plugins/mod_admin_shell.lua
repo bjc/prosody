@@ -25,7 +25,7 @@ local prosody = _G.prosody;
 local unpack = table.unpack;
 local iterators = require "util.iterators";
 local keys, values = iterators.keys, iterators.values;
-local jid_bare, jid_split, jid_join = import("util.jid", "bare", "prepped_split", "join");
+local jid_bare, jid_split, jid_join, jid_resource = import("util.jid", "bare", "prepped_split", "join", "resource");
 local set, array = require "util.set", require "util.array";
 local cert_verify_identity = require "util.x509".verify_identity;
 local envload = require "util.envload".envload;
@@ -289,6 +289,7 @@ function commands.help(session, data)
 		print [[muc:create(roomjid, { config }) - Create the specified MUC room with the given config]]
 		print [[muc:list(host) - List rooms on the specified MUC component]]
 		print [[muc:room(roomjid) - Reference the specified MUC room to access MUC API methods]]
+		print [[muc:occupants(roomjid, filter) - List room occupants, optionally filtered on substring or role]]
 	elseif section == "server" then
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
@@ -1382,6 +1383,34 @@ function def_env.muc:list(host)
 		c = c + 1;
 	end
 	return true, c.." rooms";
+end
+
+function def_env.muc:occupants(room_jid, filter)
+	local room_name, host = check_muc(room_jid);
+	if not room_name then
+		return room_name, host;
+	end
+	local room_obj = prosody.hosts[host].modules.muc.get_room_from_jid(room_jid);
+	if not room_obj then
+		return nil, "No such room: " .. room_jid;
+	end
+
+	local print = self.session.print;
+	local total, displayed = 0, 0;
+	for nick_jid, occupant in room_obj:each_occupant() do
+		local nick = jid_resource(nick_jid);
+		if filter == nil or occupant.role == filter or nick:find(filter, 1, true) then
+			print(occupant.role, nick);
+			displayed = displayed + 1;
+		end
+		total = total + 1
+	end
+
+	if total == displayed then
+		return true, ("%d occupant%s listed"):format(total, total ~= 1 and "s" or "")
+	else
+		return true, ("%d out of %d occupant%s listed"):format(displayed, total, total ~= 1 and "s" or "")
+	end
 end
 
 local um = require"core.usermanager";

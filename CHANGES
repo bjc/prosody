@@ -23,6 +23,7 @@ TRUNK
     - muc_room_allow_persistent = false restricts to admins
   - Public rooms can only be created by local users (parent host) by default
     - muc_room_allow_public = false restricts to admins
+- Commands to show occupants in the Shell
 
 ### Security and authentication
 
