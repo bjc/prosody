@@ -1401,11 +1401,19 @@ function def_env.muc:occupants(room_jid, filter)
 	end
 
 	local print = self.session.print;
+	local row = format_table({
+		{ title = "Role"; width = #"participant"; key = "role" }; -- longest role name
+		{ title = "JID"; width = "75%"; key = "bare_jid" };
+		{ title = "Nickname"; width = "25%"; key = "nick"; mapper = jid_resource };
+	}, self.session.width);
 	local total, displayed = 0, 0;
 	for nick_jid, occupant in room_obj:each_occupant() do
+		if total == 0 then
+			print(row());
+		end
 		local nick = jid_resource(nick_jid);
 		if filter == nil or occupant.role == filter or nick:find(filter, 1, true) then
-			print(occupant.role, nick);
+			print(row(occupant));
 			displayed = displayed + 1;
 		end
 		total = total + 1
@@ -1425,10 +1433,18 @@ function def_env.muc:affiliations(room_jid, filter)
 	end
 
 	local print = self.session.print;
+	local row = format_table({
+		{ title = "Affiliation"; width = #"outcast" }; -- longest affiliation name
+		{ title = "JID"; width = "75%" };
+		{ title = "Nickname"; width = "25%"; key = "reserved_nickname" };
+	}, self.session.width);
 	local total, displayed = 0, 0;
 	for affiliated_jid, affiliation, affiliation_data in room_obj:each_affiliation() do
+		if total == 0 then
+			print(row());
+		end
 		if filter == nil or affiliation == filter or affiliated_jid:find(filter, 1, true) then
-			print(affiliation, affiliated_jid, affiliation_data and affiliation_data.reserved_nickname or "")
+			print(row(setmetatable({ affiliation; affiliated_jid }, { __index = affiliation_data })))
 			displayed = displayed + 1;
 		end
 		total = total + 1
