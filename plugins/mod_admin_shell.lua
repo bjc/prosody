@@ -290,6 +290,7 @@ function commands.help(session, data)
 		print [[muc:list(host) - List rooms on the specified MUC component]]
 		print [[muc:room(roomjid) - Reference the specified MUC room to access MUC API methods]]
 		print [[muc:occupants(roomjid, filter) - List room occupants, optionally filtered on substring or role]]
+		print [[muc:affiliations(roomjid, filter) - List affiliated members of the room, optionally filtered on substring or affiliation]]
 	elseif section == "server" then
 		print [[server:version() - Show the server's version number]]
 		print [[server:uptime() - Show how long the server has been running]]
@@ -1410,6 +1411,33 @@ function def_env.muc:occupants(room_jid, filter)
 		return true, ("%d occupant%s listed"):format(total, total ~= 1 and "s" or "")
 	else
 		return true, ("%d out of %d occupant%s listed"):format(displayed, total, total ~= 1 and "s" or "")
+	end
+end
+
+function def_env.muc:affiliations(room_jid, filter)
+	local room_name, host = check_muc(room_jid);
+	if not room_name then
+		return room_name, host;
+	end
+	local room_obj = prosody.hosts[host].modules.muc.get_room_from_jid(room_jid);
+	if not room_obj then
+		return nil, "No such room: " .. room_jid;
+	end
+
+	local print = self.session.print;
+	local total, displayed = 0, 0;
+	for affiliated_jid, affiliation, affiliation_data in room_obj:each_affiliation() do
+		if filter == nil or affiliation == filter or affiliated_jid:find(filter, 1, true) then
+			print(affiliation, affiliated_jid, affiliation_data and affiliation_data.reserved_nickname or "")
+			displayed = displayed + 1;
+		end
+		total = total + 1
+	end
+
+	if total == displayed then
+		return true, ("%d affiliation%s listed"):format(total, total ~= 1 and "s" or "")
+	else
+		return true, ("%d out of %d affiliation%s listed"):format(displayed, total, total ~= 1 and "s" or "")
 	end
 end
 
