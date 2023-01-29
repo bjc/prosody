@@ -1349,6 +1349,18 @@ local function check_muc(jid)
 	return room_name, host;
 end
 
+local function get_muc(room_jid)
+	local room_name, host = check_muc(room_jid);
+	if not room_name then
+		return room_name, host;
+	end
+	local room_obj = prosody.hosts[host].modules.muc.get_room_from_jid(room_jid);
+	if not room_obj then
+		return nil, "No such room: "..room_jid;
+	end
+	return room_obj;
+end
+
 function def_env.muc:create(room_jid, config)
 	local room_name, host = check_muc(room_jid);
 	if not room_name then
@@ -1361,13 +1373,9 @@ function def_env.muc:create(room_jid, config)
 end
 
 function def_env.muc:room(room_jid)
-	local room_name, host = check_muc(room_jid);
-	if not room_name then
-		return room_name, host;
-	end
-	local room_obj = prosody.hosts[host].modules.muc.get_room_from_jid(room_jid);
+	local room_obj, err = get_muc(room_jid);
 	if not room_obj then
-		return nil, "No such room: "..room_jid;
+		return room_obj, err;
 	end
 	return setmetatable({ room = room_obj }, console_room_mt);
 end
@@ -1387,13 +1395,9 @@ function def_env.muc:list(host)
 end
 
 function def_env.muc:occupants(room_jid, filter)
-	local room_name, host = check_muc(room_jid);
-	if not room_name then
-		return room_name, host;
-	end
-	local room_obj = prosody.hosts[host].modules.muc.get_room_from_jid(room_jid);
+	local room_obj, err = get_muc(room_jid);
 	if not room_obj then
-		return nil, "No such room: " .. room_jid;
+		return room_obj, err;
 	end
 
 	local print = self.session.print;
@@ -1415,13 +1419,9 @@ function def_env.muc:occupants(room_jid, filter)
 end
 
 function def_env.muc:affiliations(room_jid, filter)
-	local room_name, host = check_muc(room_jid);
-	if not room_name then
-		return room_name, host;
-	end
-	local room_obj = prosody.hosts[host].modules.muc.get_room_from_jid(room_jid);
+	local room_obj, err = get_muc(room_jid);
 	if not room_obj then
-		return nil, "No such room: " .. room_jid;
+		return room_obj, err;
 	end
 
 	local print = self.session.print;
