@@ -860,7 +860,7 @@ function module.load()
 				end
 			end
 			module:set_status("info", "Connected to " .. engine.params.driver);
-		end, function (engine)
+		end, function (engine) -- luacheck: ignore 431/engine
 			module:set_status("error", "Disconnected from " .. engine.params.driver);
 		end);
 		engines[sql.db2uri(params)] = engine;
