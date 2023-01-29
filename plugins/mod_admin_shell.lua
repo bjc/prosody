@@ -1460,7 +1460,7 @@ function def_env.muc:affiliations(room_jid, filter)
 	local total = #affiliated;
 	if filter then
 		affiliated:filter(function(affiliation)
-			return filter == affiliation[1] or filter == affiliation[2];
+			return filter == affiliation[1] or affiliation[2]:find(filter, 1, true);
 		end);
 	end
 	local displayed = #affiliated;
