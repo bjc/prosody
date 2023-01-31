@@ -580,7 +580,7 @@ local status_priorities = { error = 3, warn = 2, info = 1, core = 0 };
 function api:set_status(status_type, status_message, override)
 	local priority = status_priorities[status_type];
 	if not priority then
-		self:log("error", "set_status: Invalid status type '%s', assuming 'info'");
+		self:log("error", "set_status: Invalid status type '%s', assuming 'info'", status_type);
 		status_type, priority = "info", status_priorities.info;
 	end
 	local current_priority = status_priorities[self.status_type] or 0;
