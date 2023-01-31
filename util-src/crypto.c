@@ -40,7 +40,7 @@ typedef unsigned __int32 uint32_t;
 
 #define PKEY_MT_TAG "util.crypto key"
 
-static BIO* new_memory_BIO() {
+static BIO* new_memory_BIO(void) {
 	return BIO_new(BIO_s_mem());
 }
 
