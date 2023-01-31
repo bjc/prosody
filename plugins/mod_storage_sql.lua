@@ -840,7 +840,6 @@ function module.load()
 	engine = engines[db_uri];
 	if not engine then
 		module:log("debug", "Creating new engine %s", db_uri);
-		module:log_status("debug", "Creating new engine for "..params.driver);
 		engine = sql:create_engine(params, function (engine) -- luacheck: ignore 431/engine
 			if module:get_option("sql_manage_tables", true) then
 				-- Automatically create table, ignore failure (table probably already exists)
