@@ -94,9 +94,6 @@ end
 
 local function destroy_session(session, err)
 	if session.destroyed then return; end
-	(session.log or log)("debug", "Destroying session for %s (%s@%s)%s",
-		session.full_jid or "(unknown)", session.username or "(unknown)",
-		session.host or "(unknown)", err and (": "..err) or "");
 
 	-- Remove session/resource from user's session list
 	if session.full_jid then
@@ -104,8 +101,14 @@ local function destroy_session(session, err)
 
 		-- Allow plugins to prevent session destruction
 		if host_session.events.fire_event("pre-resource-unbind", {session=session, error=err}) then
+			(session.log or log)("debug", "Resource unbind prevented by module");
 			return;
 		end
+
+		(session.log or log)("debug", "Unbinding resource for %s (%s@%s)%s",
+			session.full_jid or "(unknown)", session.username or "(unknown)",
+			session.host or "(unknown)", err and (": "..err) or "");
+
 		session.destroyed = true; -- Past this point the session is DOOMED!
 
 		host_session.sessions[session.username].sessions[session.resource] = nil;
@@ -118,6 +121,10 @@ local function destroy_session(session, err)
 		end
 
 		host_session.events.fire_event("resource-unbind", {session=session, error=err});
+	else
+		(session.log or log)("debug", "Destroying unbound session for <%s@%s>%s",
+			session.username or "(unknown)", session.host or "(unknown)",
+			err and (": "..err) or "");
 	end
 
 	retire_session(session);
