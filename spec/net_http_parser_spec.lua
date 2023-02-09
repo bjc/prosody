@@ -87,7 +87,7 @@ o
 
 ]],
 				{
-					body = "Hello", count = 2;
+					body = "Hello", count = 3;
 				}
 			);
 		end);
@@ -116,7 +116,7 @@ o
 
 ]],
 				{
-					body = "Hello", count = 3;
+					body = "Hello", count = 4;
 				}
 			);
 		end);
@@ -129,7 +129,7 @@ o
 		assert.equal("25930f021785ae14053a322c2dbc1897c3769720", sha1(data, true), "test data malformed");
 
 		test_stream(data, {
-			body = string.rep("~", 11085), count = 2;
+			body = string.rep("~", 11085), count = 3;
 		});
 	end);
 end);

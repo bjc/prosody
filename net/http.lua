@@ -94,7 +94,7 @@ local function request_reader(request, data, err)
 					r.body_length and ("%d bytes"):format(r.body_length) or "unknown length"
 				);
 				if request.streaming_handler then
-					log("debug", "Request '%s': Streaming via handler");
+					log("debug", "Request '%s': Streaming via handler", request.id);
 					r.body_sink, finalize_sink = request.streaming_handler(r);
 				end
 				return;
