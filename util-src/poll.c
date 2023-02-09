@@ -8,7 +8,6 @@
  *
  */
 
-#include <unistd.h>
 #include <string.h>
 #include <errno.h>
 
@@ -24,6 +23,7 @@
 #endif
 
 #ifdef USE_EPOLL
+#include <unistd.h>
 #include <sys/epoll.h>
 #ifndef MAX_EVENTS
 #define MAX_EVENTS 64
