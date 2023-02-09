@@ -130,10 +130,13 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							partial = true;
 						};
 					end
-					if len and len > bodylimit then
+					if not len or len > bodylimit then
 						-- Early notification, for redirection
 						success_cb(packet);
-						if not packet.body_sink then error = true; return error_cb("content-length-limit-exceeded"); end
+						if not packet.body_sink and (len and len > bodylimit) then
+							error = true;
+							return error_cb("content-length-limit-exceeded");
+						end
 					end
 					if chunked and not packet.body_sink then
 						success_cb(packet);
@@ -174,9 +177,11 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 						end
 					elseif packet.body_sink then
 						local chunk = buffer:read_chunk(len);
-						while chunk and len > 0 do
+						while chunk and (not len or len > 0) do
 							if packet.body_sink:write(chunk) then
-								len = len - #chunk;
+								if len then
+									len = len - #chunk;
+								end
 								chunk = buffer:read_chunk(len);
 							else
 								error = true;
@@ -188,9 +193,9 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							packet.partial = nil;
 							success_cb(packet);
 						end
-					elseif buffer:length() >= len then
+					elseif not len or buffer:length() >= len then -- or not len
 						assert(not chunked)
-						packet.body = buffer:read(len) or "";
+						packet.body = len and buffer:read(len) or buffer:read_chunk() or "";
 						state = nil;
 						packet.partial = nil;
 						success_cb(packet);
