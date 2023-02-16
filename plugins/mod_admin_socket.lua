@@ -19,6 +19,7 @@ end
 local server = require "net.server";
 
 local adminstream = require "util.adminstream";
+local st = require "util.stanza";
 
 local socket_path = module:get_option_path("admin_socket", "prosody.sock", "data");
 
@@ -35,7 +36,11 @@ local function fire_admin_event(session, stanza)
 		event_name = "admin/"..stanza.name;
 	end
 	module:log("debug", "Firing %s", event_name);
-	return module:fire_event(event_name, event_data);
+	local ret = module:fire_event(event_name, event_data);
+	if ret == nil then
+		session.send(st.stanza("repl-result", { type = "error" }):text("No module handled this query. Is mod_admin_shell enabled?"));
+	end
+	return ret;
 end
 
 module:hook("server-stopping", function ()

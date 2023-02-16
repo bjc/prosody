@@ -210,6 +210,7 @@ module:hook("admin/repl-input", function (event)
 	if not ok then
 		event.origin.send(st.stanza("repl-result", { type = "error" }):text(err));
 	end
+	return true;
 end);
 
 -- Console commands --
