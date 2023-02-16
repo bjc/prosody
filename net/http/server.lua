@@ -428,6 +428,10 @@ end
 function _M.set_option(name, value)
 	options[name] = value;
 end
+function _M.get_request_from_conn(conn)
+	local response = conn and conn._http_open_response;
+	return response and response.request or nil;
+end
 
 _M.listener = listener;
 _M.codes = codes;
