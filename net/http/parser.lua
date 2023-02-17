@@ -153,6 +153,7 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 						if not chunk_size then return; end
 						chunk_size = chunk_size and tonumber(chunk_size, 16);
 						if not chunk_size then error = true; return error_cb("invalid-chunk-size"); end
+
 						if chunk_size == 0 and chunk_header:find("\r\n\r\n", chunk_start-2, true) then
 							local body_buffer = packet.body_buffer;
 							if body_buffer then
@@ -168,8 +169,8 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 							state, chunked = nil, nil;
 							packet.partial = nil;
 							success_cb(packet);
-						elseif buffer:length() - chunk_start - 2 >= chunk_size then -- we have a chunk
-							buffer:discard(chunk_start - 1); -- TODO verify that it's not off-by-one
+						elseif buffer:length() - chunk_start - 1 >= chunk_size then -- we have a chunk
+							buffer:discard(chunk_start - 1);
 							(packet.body_sink or packet.body_buffer):write(buffer:read(chunk_size));
 							buffer:discard(2); -- CRLF
 						else -- Partial chunk remaining
