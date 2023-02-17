@@ -8,18 +8,48 @@ local function CRLF(s)
 end
 
 local function test_stream(stream, expect)
+	local chunks_processed = 0;
 	local success_cb = spy.new(function (packet)
 		assert.is_table(packet);
 		if packet.body ~= false then
 			assert.is_equal(expect.body, packet.body);
 		end
+		if expect.chunks then
+			if chunks_processed == 0 then
+				assert.is_true(packet.partial);
+				packet.body_sink = {
+					write = function (_, data)
+						chunks_processed = chunks_processed + 1;
+						assert.equal(expect.chunks[chunks_processed], data);
+						return true;
+					end;
+				};
+			end
+		end
 	end);
 
-	local parser = http_parser.new(success_cb, error, stream:sub(1,4) == "HTTP" and "client" or "server")
-	for chunk in stream:gmatch("."..string.rep(".?", parser_input_bytes-1)) do
-		parser:feed(chunk);
+	local function options_cb()
+		return {
+			-- Force streaming API mode
+			body_size_limit = expect.chunks and 0 or nil;
+			buffer_size_limit = 10*1024*2;
+		};
 	end
 
+	local parser = http_parser.new(success_cb, error, (stream[1] or stream):sub(1,4) == "HTTP" and "client" or "server", options_cb)
+	if type(stream) == "string" then
+		for chunk in stream:gmatch("."..string.rep(".?", parser_input_bytes-1)) do
+			parser:feed(chunk);
+		end
+	else
+		for _, chunk in ipairs(stream) do
+			parser:feed(chunk);
+		end
+	end
+
+	if expect.chunks then
+		assert.equal(chunks_processed, #expect.chunks);
+	end
 	assert.spy(success_cb).was_called(expect.count or 1);
 end
 
@@ -117,6 +147,23 @@ o
 ]],
 				{
 					body = "Hello", count = 4;
+				}
+			);
+		end);
+
+		it("should correctly find chunk boundaries", function ()
+			test_stream({
+
+CRLF[[
+HTTP/1.1 200 OK
+Transfer-Encoding: chunked
+
+]].."3\r\n:)\n\r\n"},
+				{
+					count = 1; -- Once (partial)
+					chunks = {
+						":)\n"
+					};
 				}
 			);
 		end);
