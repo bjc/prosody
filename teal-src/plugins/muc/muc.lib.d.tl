@@ -161,3 +161,12 @@ local record Room
 	save : function (Room, forced : boolean, savestate : boolean) : boolean
 	freeze : function (Room, live : boolean) : FrozenRoom, { string : StateEntry }
 end
+
+local record lib
+	new_room : function (jid : string, config : { string : any }) : Room
+	restore_room : function (Room.FrozenRoom, { string : Room.StateEntry }) : Room
+
+	room_mt : metatable
+end
+
+return lib
