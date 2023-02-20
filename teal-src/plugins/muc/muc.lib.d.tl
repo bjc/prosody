@@ -24,6 +24,12 @@ local record Room
 		sessions : { string : Stanza }
 		role : Role
 		jid : string
+
+		choose_new_primary : function (Occupant) : string
+		set_session : function (Occupant, string, Stanza, boolean)
+		remove_session : function (Occupant, string)
+		each_session : function (Occupant) -- TODO Iterator
+
 	end
 
 	-- Private properties
