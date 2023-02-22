@@ -110,6 +110,11 @@ function provider.user_exists(username)
 	return true;
 end
 
+function provider.is_enabled(username) -- luacheck: ignore 212
+	-- TODO look up somewhere and allow disabling
+	return true;
+end
+
 function provider.users()
 	return accounts:users();
 end
@@ -140,7 +145,7 @@ end
 function provider.get_sasl_handler()
 	local testpass_authentication_profile = {
 		plain_test = function(_, username, password, realm)
-			return usermanager.test_password(username, realm, password), true;
+			return usermanager.test_password(username, realm, password), provider.is_enabled(username);
 		end,
 		[scram_name] = function(_, username)
 			local credentials = accounts:get(username);
@@ -157,7 +162,7 @@ function provider.get_sasl_handler()
 			local iteration_count, salt = credentials.iteration_count, credentials.salt;
 			stored_key = stored_key and from_hex(stored_key);
 			server_key = server_key and from_hex(server_key);
-			return stored_key, server_key, iteration_count, salt, true;
+			return stored_key, server_key, iteration_count, salt, provider.is_enabled(username);
 		end
 	};
 	return new_sasl(host, testpass_authentication_profile);
