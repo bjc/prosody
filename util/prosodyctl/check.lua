@@ -341,8 +341,6 @@ local function check(arg)
 
 		local obsolete = set.new({ --> remove
 			"archive_cleanup_interval",
-			"cross_domain_bosh",
-			"cross_domain_websocket",
 			"dns_timeout",
 			"muc_log_cleanup_interval",
 			"s2s_dns_resolvers",
@@ -375,6 +373,8 @@ local function check(arg)
 			registration_whitelist = instead_use("option", "registration_allowlist");
 			registration_blacklist = instead_use("option", "registration_blocklist");
 			blacklist_on_registration_throttle_overload = instead_use("blocklist_on_registration_throttle_overload");
+			cross_domain_bosh = "instead, use 'http_cors_override', see https://prosody.im/doc/http#cross-domain-cors-support";
+			cross_domain_websocket = "instead, use 'http_cors_override', see https://prosody.im/doc/http#cross-domain-cors-support";
 		};
 		-- FIXME all the singular _port and _interface options are supposed to be deprecated too
 		local deprecated_ports = { bosh = "http", legacy_ssl = "c2s_direct_tls" };
