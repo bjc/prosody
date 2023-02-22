@@ -115,6 +115,14 @@ function provider.is_enabled(username) -- luacheck: ignore 212
 	return true;
 end
 
+function provider.enable(username) -- luacheck: ignore 212
+	error "NYI"
+end
+
+function provider.disable(username) -- luacheck: ignore 212
+	error "NYI"
+end
+
 function provider.users()
 	return accounts:users();
 end
