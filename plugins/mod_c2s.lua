@@ -266,6 +266,7 @@ end
 module:hook_global("user-password-changed", disconnect_user_sessions({ condition = "reset", text = "Password changed" }, true), 200);
 module:hook_global("user-role-changed", disconnect_user_sessions({ condition = "reset", text = "Role changed" }), 200);
 module:hook_global("user-deleted", disconnect_user_sessions({ condition = "not-authorized", text = "Account deleted" }), 200);
+module:hook_global("user-disabled", disconnect_user_sessions({ condition = "not-authorized", text = "Account disabled" }), 200);
 
 module:hook_global("c2s-session-updated", function (event)
 	sessions[event.session.conn] = event.session;
