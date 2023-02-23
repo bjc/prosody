@@ -30,6 +30,7 @@ TRUNK
 - Advertise supported SASL Channel-Binding types (XEP-0440)
 - Implement RFC 9266 'tls-exporter' channel binding with TLS 1.3
 - New role and permissions framework and API
+- Ability to disable and enable user accounts
 
 ## Changes
 
