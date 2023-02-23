@@ -18,6 +18,9 @@ local record usermanager
 	user_exists : function (username : string, host : string) : boolean
 	create_user : function (username : string, password : string, host : string) : boolean, string
 	delete_user : function (username : string, host : string) : boolean, string
+	user_is_enabled : function (username : string, host : string) : boolean, string
+	enable_user : function (username : string, host : string) : boolean, string
+	disable_user : function (username : string, host : string) : boolean, string
 	users : function (host : string) : function () : string
 
 	-- Roles

@@ -135,6 +135,35 @@ local function delete_user(username, host)
 	return storagemanager.purge(username, host);
 end
 
+local function user_is_enabled(username, host)
+	local method = hosts[host].users.is_enabled;
+	if method then return method(username); end
+
+	-- Fallback
+	local info, err = get_account_info(username, host);
+	if info and info.enabled ~= nil then
+		return info.enabled;
+	elseif err ~= "method-not-implemented" then
+		-- Storage issues etetc
+		return info, err;
+	end
+
+	-- API unsupported implies users are always enabled
+	return true;
+end
+
+local function enable_user(username, host)
+	local method = hosts[host].users.enable;
+	if not method then return nil, "method-not-supported"; end
+	return method(username);
+end
+
+local function disable_user(username, host)
+	local method = hosts[host].users.disable;
+	if not method then return nil, "method-not-supported"; end
+	return method(username);
+end
+
 local function users(host)
 	return hosts[host].users.users();
 end
@@ -266,6 +295,9 @@ return {
 	user_exists = user_exists;
 	create_user = create_user;
 	delete_user = delete_user;
+	user_is_enabled = user_is_enabled;
+	enable_user = enable_user;
+	disable_user = disable_user;
 	users = users;
 	get_sasl_handler = get_sasl_handler;
 	get_provider = get_provider;
