@@ -117,12 +117,17 @@ function provider.is_enabled(username) -- luacheck: ignore 212
 	return info.enabled;
 end
 
-function provider.enable(username) -- luacheck: ignore 212
-	error "NYI"
+function provider.enable(username)
+	-- TODO map store?
+	local account = accounts:get(username);
+	account.disabled = nil;
+	return accounts:set(username, account);
 end
 
-function provider.disable(username) -- luacheck: ignore 212
-	error "NYI"
+function provider.disable(username)
+	local account = accounts:get(username);
+	account.disabled = true;
+	return accounts:set(username, account);
 end
 
 function provider.users()
