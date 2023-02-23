@@ -275,6 +275,8 @@ function commands.help(session, data)
 		print [[user:setrole(jid, host, role) - Set primary role of a user (see 'help roles')]]
 		print [[user:addrole(jid, host, role) - Add a secondary role to a user]]
 		print [[user:delrole(jid, host, role) - Remove a secondary role from a user]]
+		print [[user:disable(jid) - Disable the specified user account, preventing login]]
+		print [[user:enable(jid) - Enable the specified user account, restoring login access]]
 		print [[user:delete(jid) - Permanently remove the specified user account]]
 		print [[user:list(hostname, pattern) - List users on the specified host, optionally filtering with a pattern]]
 	elseif section == "roles" then
@@ -1519,6 +1521,36 @@ function def_env.user:create(jid, password, role)
 	end
 
 	return true, "User created";
+end
+
+function def_env.user:disable(jid)
+	local username, host = jid_split(jid);
+	if not prosody.hosts[host] then
+		return nil, "No such host: "..host;
+	elseif not um.user_exists(username, host) then
+		return nil, "No such user";
+	end
+	local ok, err = um.disable_user(username, host);
+	if ok then
+		return true, "User disabled";
+	else
+		return nil, "Could not disable user: "..err;
+	end
+end
+
+function def_env.user:enable(jid)
+	local username, host = jid_split(jid);
+	if not prosody.hosts[host] then
+		return nil, "No such host: "..host;
+	elseif not um.user_exists(username, host) then
+		return nil, "No such user";
+	end
+	local ok, err = um.enable_user(username, host);
+	if ok then
+		return true, "User enabled";
+	else
+		return nil, "Could not enable user: "..err;
+	end
 end
 
 function def_env.user:delete(jid)
