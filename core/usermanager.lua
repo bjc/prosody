@@ -155,13 +155,21 @@ end
 local function enable_user(username, host)
 	local method = hosts[host].users.enable;
 	if not method then return nil, "method-not-supported"; end
-	return method(username);
+	local ret, err = method(username);
+	if ret then
+		prosody.events.fire_event("user-enabled", { username = username, host = host });
+	end
+	return ret, err;
 end
 
 local function disable_user(username, host)
 	local method = hosts[host].users.disable;
 	if not method then return nil, "method-not-supported"; end
-	return method(username);
+	local ret, err = method(username);
+	if ret then
+		prosody.events.fire_event("user-disabled", { username = username, host = host });
+	end
+	return ret, err;
 end
 
 local function users(host)
