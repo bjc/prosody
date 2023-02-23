@@ -98,6 +98,7 @@ function provider.get_account_info(username)
 	return {
 		created = account.created;
 		password_updated = account.updated;
+		enabled = not account.disabled;
 	};
 end
 
@@ -111,8 +112,9 @@ function provider.user_exists(username)
 end
 
 function provider.is_enabled(username) -- luacheck: ignore 212
-	-- TODO look up somewhere and allow disabling
-	return true;
+	local info, err = provider.get_account_info(username);
+	if not info then return nil, err; end
+	return info.enabled;
 end
 
 function provider.enable(username) -- luacheck: ignore 212
@@ -170,7 +172,7 @@ function provider.get_sasl_handler()
 			local iteration_count, salt = credentials.iteration_count, credentials.salt;
 			stored_key = stored_key and from_hex(stored_key);
 			server_key = server_key and from_hex(server_key);
-			return stored_key, server_key, iteration_count, salt, provider.is_enabled(username);
+			return stored_key, server_key, iteration_count, salt, not credentials.disabled;
 		end
 	};
 	return new_sasl(host, testpass_authentication_profile);
