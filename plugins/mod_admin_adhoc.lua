@@ -18,6 +18,8 @@ local keys = require "util.iterators".keys;
 local usermanager_user_exists = require "core.usermanager".user_exists;
 local usermanager_create_user = require "core.usermanager".create_user;
 local usermanager_delete_user = require "core.usermanager".delete_user;
+local usermanager_disable_user = require "core.usermanager".disable_user;
+local usermanager_enable_user = require "core.usermanager".enable_user;
 local usermanager_set_password = require "core.usermanager".set_password;
 local hostmanager_activate = require "core.hostmanager".activate;
 local hostmanager_deactivate = require "core.hostmanager".deactivate;
@@ -150,6 +152,66 @@ local delete_user_command_handler = adhoc_simple(delete_user_layout, function(fi
 			"The following accounts were successfully deleted:\n"..t_concat(succeeded, "\n").."\n" or "")..
 			(#failed ~= 0 and
 			"The following accounts could not be deleted:\n"..t_concat(failed, "\n") or "") };
+end);
+
+local disable_user_layout = dataforms_new{
+	title = "Disabling a User";
+	instructions = "Fill out this form to disable a user.";
+
+	{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/admin" };
+	{ name = "accountjids", type = "jid-multi", required = true, label = "The Jabber ID(s) to disable" };
+};
+
+local disable_user_command_handler = adhoc_simple(disable_user_layout, function(fields, err, data)
+	if err then
+		return generate_error_message(err);
+	end
+	local failed = {};
+	local succeeded = {};
+	for _, aJID in ipairs(fields.accountjids) do
+		local username, host = jid.split(aJID);
+		if (host == module_host) and  usermanager_user_exists(username, host) and usermanager_disable_user(username, host) then
+			module:log("info", "User %s has been disabled by %s", aJID, jid.bare(data.from));
+			succeeded[#succeeded+1] = aJID;
+		else
+			module:log("debug", "Tried to disable non-existent user %s", aJID);
+			failed[#failed+1] = aJID;
+		end
+	end
+	return {status = "completed", info = (#succeeded ~= 0 and
+			"The following accounts were successfully disabled:\n"..t_concat(succeeded, "\n").."\n" or "")..
+			(#failed ~= 0 and
+			"The following accounts could not be disabled:\n"..t_concat(failed, "\n") or "") };
+end);
+
+local enable_user_layout = dataforms_new{
+	title = "Re-Enable a User";
+	instructions = "Fill out this form to enable a user.";
+
+	{ name = "FORM_TYPE", type = "hidden", value = "http://jabber.org/protocol/admin" };
+	{ name = "accountjids", type = "jid-multi", required = true, label = "The Jabber ID(s) to re-enable" };
+};
+
+local enable_user_command_handler = adhoc_simple(enable_user_layout, function(fields, err, data)
+	if err then
+		return generate_error_message(err);
+	end
+	local failed = {};
+	local succeeded = {};
+	for _, aJID in ipairs(fields.accountjids) do
+		local username, host = jid.split(aJID);
+		if (host == module_host) and  usermanager_user_exists(username, host) and usermanager_enable_user(username, host) then
+			module:log("info", "User %s has been enabled by %s", aJID, jid.bare(data.from));
+			succeeded[#succeeded+1] = aJID;
+		else
+			module:log("debug", "Tried to enable non-existent user %s", aJID);
+			failed[#failed+1] = aJID;
+		end
+	end
+	return {status = "completed", info = (#succeeded ~= 0 and
+			"The following accounts were successfully enabled:\n"..t_concat(succeeded, "\n").."\n" or "")..
+			(#failed ~= 0 and
+			"The following accounts could not be enabled:\n"..t_concat(failed, "\n") or "") };
 end);
 
 -- Ending a user's session
@@ -804,6 +866,8 @@ local add_user_desc = adhoc_new("Add User", "http://jabber.org/protocol/admin#ad
 local change_user_password_desc = adhoc_new("Change User Password", "http://jabber.org/protocol/admin#change-user-password", change_user_password_command_handler, "admin");
 local config_reload_desc = adhoc_new("Reload configuration", "http://prosody.im/protocol/config#reload", config_reload_handler, "global_admin");
 local delete_user_desc = adhoc_new("Delete User", "http://jabber.org/protocol/admin#delete-user", delete_user_command_handler, "admin");
+local disable_user_desc = adhoc_new("Disable User", "http://jabber.org/protocol/admin#disable-user", disable_user_command_handler, "admin");
+local enable_user_desc = adhoc_new("Re-Enable User", "http://jabber.org/protocol/admin#reenable-user", enable_user_command_handler, "admin");
 local end_user_session_desc = adhoc_new("End User Session", "http://jabber.org/protocol/admin#end-user-session", end_user_session_handler, "admin");
 local get_user_roster_desc = adhoc_new("Get User Roster","http://jabber.org/protocol/admin#get-user-roster", get_user_roster_handler, "admin");
 local get_user_stats_desc = adhoc_new("Get User Statistics","http://jabber.org/protocol/admin#user-stats", get_user_stats_handler, "admin");
@@ -824,6 +888,8 @@ module:provides("adhoc", add_user_desc);
 module:provides("adhoc", change_user_password_desc);
 module:provides("adhoc", config_reload_desc);
 module:provides("adhoc", delete_user_desc);
+module:provides("adhoc", disable_user_desc);
+module:provides("adhoc", enable_user_desc);
 module:provides("adhoc", end_user_session_desc);
 module:provides("adhoc", get_user_roster_desc);
 module:provides("adhoc", get_user_stats_desc);
