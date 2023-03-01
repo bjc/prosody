@@ -13,7 +13,7 @@ local function select_role(username, host, role)
 	return usermanager.get_user_role(username, host);
 end
 
-function create_jid_token(actor_jid, token_jid, token_role, token_ttl, token_data)
+function create_jid_token(actor_jid, token_jid, token_role, token_ttl, token_data, token_purpose)
 	token_jid = jid.prep(token_jid);
 	if not actor_jid or token_jid ~= actor_jid and not jid.compare(token_jid, actor_jid) then
 		return nil, "not-authorized";
@@ -30,6 +30,7 @@ function create_jid_token(actor_jid, token_jid, token_role, token_ttl, token_dat
 		created = os.time();
 		expires = token_ttl and (os.time() + token_ttl) or nil;
 		jid = token_jid;
+		purpose = token_purpose;
 
 		resource = token_resource;
 		role = token_role;
