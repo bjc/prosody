@@ -49,6 +49,7 @@ function create_jid_token(actor_jid, token_jid, token_role, token_ttl, token_dat
 end
 
 local function parse_token(encoded_token)
+	if not encoded_token then return nil; end
 	local token = base64.decode(encoded_token);
 	if not token then return nil; end
 	local token_jid, token_id = token:match("^1;([^;]+);(.+)$");
