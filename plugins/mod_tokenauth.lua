@@ -25,6 +25,10 @@ function create_jid_token(actor_jid, token_jid, token_role, token_ttl, token_dat
 		return nil, "invalid-host";
 	end
 
+	if (token_data and type(token_data) ~= "table") or (token_purpose and type(token_purpose ~= "string")) then
+		return nil, "bad-request";
+	end
+
 	local token_info = {
 		owner = actor_jid;
 		created = os.time();
