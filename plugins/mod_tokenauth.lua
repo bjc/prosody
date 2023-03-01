@@ -122,3 +122,21 @@ function revoke_token(token)
 	end
 	return token_store:set(token_user, token_id, nil);
 end
+
+function sasl_handler(auth_provider, purpose, extra)
+	return function (_, username, token, realm)
+		local token_info, err = get_token_info(token);
+		if not token_info then
+			module:log("debug", "SASL handler failed to verify token: %s", err);
+			return nil, nil, extra;
+		end
+		local token_user, token_host = jid.split(token_info.jid);
+		if username ~= token_user or realm ~= token_host or (purpose and token_info.purpose ~= purpose) then
+			return nil, nil, extra;
+		end
+		if auth_provider.is_enabled and not auth_provider.is_enabled(username) then
+			return true, false, token_info;
+		end
+		return true, true, token_info;
+	end;
+end
