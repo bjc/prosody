@@ -30,6 +30,8 @@ local scram_name = "scram_"..hash_name:gsub("%-","_"):lower();
 -- Default; can be set per-user
 local default_iteration_count = module:get_option_number("default_iteration_count", 10000);
 
+local tokenauth = module:depends("tokenauth");
+
 -- define auth provider
 local provider = {};
 
@@ -178,7 +180,8 @@ function provider.get_sasl_handler()
 			stored_key = stored_key and from_hex(stored_key);
 			server_key = server_key and from_hex(server_key);
 			return stored_key, server_key, iteration_count, salt, not credentials.disabled;
-		end
+		end;
+		oauthbearer = tokenauth.sasl_handler(provider, "oauth2", module:shared("tokenauth/oauthbearer_config"));
 	};
 	return new_sasl(host, testpass_authentication_profile);
 end
