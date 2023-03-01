@@ -54,6 +54,7 @@ local function handle_status(session, status, ret, err_msg)
 	elseif status == "success" then
 		local ok, err = sm_make_authenticated(session, session.sasl_handler.username, session.sasl_handler.role);
 		if ok then
+			session.sasl_resource = session.sasl_handler.resource;
 			module:fire_event("authentication-success", { session = session });
 			session.sasl_handler = nil;
 			session:reset_stream();
@@ -374,14 +375,15 @@ end);
 
 module:hook("stanza/iq/urn:ietf:params:xml:ns:xmpp-bind:bind", function(event)
 	local origin, stanza = event.origin, event.stanza;
-	local resource;
-	if stanza.attr.type == "set" then
+	local resource = origin.sasl_resource;
+	if stanza.attr.type == "set" and not resource then
 		local bind = stanza.tags[1];
 		resource = bind:get_child("resource");
 		resource = resource and #resource.tags == 0 and resource[1] or nil;
 	end
 	local success, err_type, err, err_msg = sm_bind_resource(origin, resource);
 	if success then
+		origin.sasl_resource = nil;
 		origin.send(st.reply(stanza)
 			:tag("bind", { xmlns = xmlns_bind })
 			:tag("jid"):text(origin.full_jid));
