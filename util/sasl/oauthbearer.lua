@@ -34,6 +34,10 @@ local function oauthbearer(self, message)
 
 	local username = jid.prepped_split(gs2_authzid);
 
+	if not username or username == "" then
+		return "failure", "malformed-request", "Expected authorization identity in the username@hostname format";
+	end
+
 	-- SASLprep username
 	username = saslprep(username);
 
