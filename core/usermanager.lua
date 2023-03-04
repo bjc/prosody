@@ -53,6 +53,7 @@ local fallback_authz_provider = {
 	get_users_with_role = function (role_name) end;
 	add_default_permission = function (role_name, action, policy) end;
 	get_role_by_name = function (role_name) end;
+	get_all_roles = function () end;
 };
 
 local provider_mt = { __index = new_null_provider() };
@@ -293,6 +294,11 @@ local function get_role_by_name(role_name, host)
 	return hosts[host].authz.get_role_by_name(role_name);
 end
 
+local function get_all_roles(host)
+	if host and not hosts[host] then return false; end
+	return hosts[host].authz.get_all_roles();
+end
+
 return {
 	new_null_provider = new_null_provider;
 	initialize_host = initialize_host;
@@ -320,6 +326,7 @@ return {
 	set_jid_role = set_jid_role;
 	get_jids_with_role = get_jids_with_role;
 	get_role_by_name = get_role_by_name;
+	get_all_roles = get_all_roles;
 
 	-- Deprecated
 	is_admin = is_admin;

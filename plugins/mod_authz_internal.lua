@@ -280,6 +280,10 @@ function get_role_by_name(role_name)
 	return assert(role_registry[role_name], role_name);
 end
 
+function get_all_roles()
+	return role_registry;
+end
+
 -- COMPAT: Migrate from 0.12 role storage
 local function do_migration(migrate_host)
 	local old_role_store = assert(module:context(migrate_host):open_store("roles"));
