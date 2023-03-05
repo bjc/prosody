@@ -169,6 +169,10 @@ function api:depends(name)
 		end
 	end
 	self.dependencies[name] = true;
+	if not mod.module.reverse_dependencies then
+		mod.module.reverse_dependencies = {};
+	end
+	mod.module.reverse_dependencies[self.name] = true;
 	return mod;
 end
 
