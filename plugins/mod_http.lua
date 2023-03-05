@@ -261,7 +261,9 @@ function module.add_host(module)
 		apps[event.item.name] = nil;
 		for event_name, handlers in pairs(app_handlers) do
 			module:unhook_object_event(server, event_name, handlers.main);
-			module:unhook_object_event(server, event_name, handlers.cors);
+			if handlers.cors then
+				module:unhook_object_event(server, event_name, handlers.cors);
+			end
 
 			if event_name:sub(-2, -1) == "/*" then
 				module:unhook_object_event(server, event_name:sub(1, -3), redir_handler, -1);
@@ -269,8 +271,10 @@ function module.add_host(module)
 				module:unhook_object_event(server, event_name:sub(1, -2), redir_handler, -1);
 			end
 
-			local options_event_name = event_name:gsub("^%S+", "OPTIONS");
-			module:unhook_object_event(server, options_event_name, handlers.options);
+			if handlers.options then
+				local options_event_name = event_name:gsub("^%S+", "OPTIONS");
+				module:unhook_object_event(server, options_event_name, handlers.options);
+			end
 		end
 	end
 
