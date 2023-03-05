@@ -575,6 +575,12 @@ function def_env.module:info(name, hosts)
 				print("  - mod_" .. dep);
 			end
 		end
+		if mod.module.reverse_dependencies and next(mod.module.reverse_dependencies) ~= nil then
+			print("  reverse dependencies:");
+			for dep in pairs(mod.module.reverse_dependencies) do
+				print("  - mod_" .. dep);
+			end
+		end
 	end
 	return true;
 end
