@@ -193,7 +193,7 @@ end
 
 function user_can_assume_role(user, role_name)
 	local primary_role = get_user_role(user);
-	if primary_role and primary_role.role_name == role_name then
+	if primary_role and primary_role.name == role_name then
 		return true;
 	end
 	local secondary_roles = get_user_secondary_roles(user);
