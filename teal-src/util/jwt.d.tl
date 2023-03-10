@@ -1,3 +1,4 @@
+local crypto = require "util.crypto"
 local record jwtlib
 	enum algorithm
 		"HS256"
@@ -19,13 +20,10 @@ local record jwtlib
 		"rsaEncryption"
 		"id-ecPublicKey"
 	end
-	record key_t
-		get_type : function (key_t) : key_type
-	end
 	record algorithm_t
 		sign : signer_t
 		verify : verifier_t
-		load_key : function (key : string) : key_t
+		load_key : function (key : string) : crypto.key
 	end
 	init : function (algorithm, private_key : string, public_key : string, table) : signer_t, verifier_t
 	new_signer : function (algorithm, string, table) : signer_t
