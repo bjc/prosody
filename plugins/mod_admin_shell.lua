@@ -572,13 +572,20 @@ function def_env.module:info(name, hosts)
 		if mod.module.dependencies and next(mod.module.dependencies) ~= nil then
 			print("  dependencies:");
 			for dep in pairs(mod.module.dependencies) do
-				print("  - mod_" .. dep);
+				-- Dependencies are per module instance, not per host, so dependencies
+				-- of/on global modules may list modules not actually loaded on the
+				-- current host.
+				if modulemanager.is_loaded(host, dep) then
+					print("  - mod_" .. dep);
+				end
 			end
 		end
 		if mod.module.reverse_dependencies and next(mod.module.reverse_dependencies) ~= nil then
 			print("  reverse dependencies:");
 			for dep in pairs(mod.module.reverse_dependencies) do
-				print("  - mod_" .. dep);
+				if modulemanager.is_loaded(host, dep) then
+					print("  - mod_" .. dep);
+				end
 			end
 		end
 	end
