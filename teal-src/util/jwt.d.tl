@@ -34,7 +34,7 @@ local record jwtlib
 		algorithm : algorithm_t
 	}
 	-- Deprecated
-	sign : function (string : key, payload) : string
+	sign : function (private_key : string, payload) : string
 	verify : function (string) : payload
 end
 return jwtlib
