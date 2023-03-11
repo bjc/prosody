@@ -2,7 +2,7 @@ local js = require "util.jsonschema";
 local json = require "util.json";
 local lfs = require "lfs";
 
--- https://github.com/json-schema-org/JSON-Schema-Test-Suite.git 2.0.0-698-gf57d3e0
+-- https://github.com/json-schema-org/JSON-Schema-Test-Suite.git 2.0.0-724-g19947ea
 local test_suite_dir = "spec/JSON-Schema-Test-Suite/tests/draft2020-12"
 if lfs.attributes(test_suite_dir, "mode") ~= "directory" then return end
 
@@ -32,6 +32,7 @@ local skip = {
 	["minProperties.json"] = "NYI",
 	["multipleOf.json:1"] = "multiples of IEEE 754 fractions",
 	["multipleOf.json:2"] = "multiples of IEEE 754 fractions",
+	["multipleOf.json:4"] = "multiples of IEEE 754 fractions",
 	["pattern.json"] = "NYI",
 	["patternProperties.json"] = "NYI",
 	["properties.json:1:2"] = "NYI",
@@ -57,6 +58,8 @@ local skip = {
 	["ref.json:29"] = "NYI",
 	["ref.json:30"] = "NYI",
 	["ref.json:31"] = "NYI",
+	["ref.json:32"] = "NYI",
+	["not.json:6"] = "NYI",
 	["refRemote.json"] = "DEFINITELY NYI",
 	["required.json:0:2"] = "distinguishing objects from arrays",
 	["type.json:3:4"] = "distinguishing objects from arrays",
