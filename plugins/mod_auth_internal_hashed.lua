@@ -123,12 +123,14 @@ function provider.enable(username)
 	-- TODO map store?
 	local account = accounts:get(username);
 	account.disabled = nil;
+	account.updated = os.time();
 	return accounts:set(username, account);
 end
 
 function provider.disable(username)
 	local account = accounts:get(username);
 	account.disabled = true;
+	account.updated = os.time();
 	return accounts:set(username, account);
 end
 
