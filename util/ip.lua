@@ -245,10 +245,22 @@ local function is_ip(obj)
 	return getmetatable(obj) == ip_mt;
 end
 
+local function truncate(ip, n_bits)
+	if n_bits % 8 ~= 0 then
+		return error("ip.truncate() only supports multiples of 8 bits");
+	end
+	local n_octets = n_bits / 8;
+	if not is_ip(ip) then
+		ip = new_ip(ip);
+	end
+	return new_ip(net.ntop(ip.packed:sub(1, n_octets)..("\0"):rep(#ip.packed-n_octets)))
+end
+
 return {
 	new_ip = new_ip,
 	commonPrefixLength = commonPrefixLength,
 	parse_cidr = parse_cidr,
 	match = match,
 	is_ip = is_ip;
+	truncate = truncate;
 };
