@@ -241,9 +241,14 @@ function match(ipA, ipB, bits)
 	return ipA.bits:sub(1, bits) == ipB.bits:sub(1, bits);
 end
 
+local function is_ip(obj)
+	return getmetatable(obj) == ip_mt;
+end
+
 return {
 	new_ip = new_ip,
 	commonPrefixLength = commonPrefixLength,
 	parse_cidr = parse_cidr,
 	match = match,
+	is_ip = is_ip;
 };
