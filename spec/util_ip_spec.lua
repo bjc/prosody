@@ -100,4 +100,26 @@ describe("util.ip", function()
 			assert_cpl6("abcd::abcd", "abcd::abcd:abcd", 96);
 		end);
 	end);
+
+	describe("#truncate()", function ()
+		it("should work for IPv4", function ()
+			local ip1 = ip.new_ip("192.168.0.1");
+			local ip2 = ip.truncate(ip1, 16);
+			assert.truthy(ip.is_ip(ip2));
+			assert.equal("192.168.0.0", ip2.normal);
+			assert.equal("192.168.0.1", ip1.normal); -- original unmodified
+		end);
+
+		it("should work for IPv6", function ()
+			local ip1 = ip.new_ip("2001:db8::ff00:42:8329");
+			local ip2 = ip.truncate(ip1, 24);
+			assert.truthy(ip.is_ip(ip2));
+			assert.equal("2001:d00::", ip2.normal);
+			assert.equal("2001:db8::ff00:42:8329", ip1.normal); -- original unmodified
+		end);
+
+		it("accepts a string", function ()
+			assert.equal("127.0.0.0", ip.truncate("127.0.0.1", 8).normal);
+		end);
+	end);
 end);
