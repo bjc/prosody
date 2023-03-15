@@ -75,7 +75,7 @@ local function oauthbearer(self, message)
 
 	self.resource = token_info.resource;
 	self.role = token_info.role;
-	self.token_info token_info;
+	self.token_info = token_info;
 
 	return "success";
 end
