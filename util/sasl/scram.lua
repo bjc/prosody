@@ -112,8 +112,8 @@ local function scram_gen(hash_name, H_f, HMAC_f, get_auth_db, expect_cb)
 			if support_channel_binding and gs2_cbind_flag == "y" then
 				-- "y" -> client does support channel binding
 				--        but thinks the server does not.
-					return "failure", "malformed-request";
-				end
+				return "failure", "malformed-request";
+			end
 
 			if gs2_cbind_flag == "n" then
 				-- "n" -> client doesn't support channel binding.
