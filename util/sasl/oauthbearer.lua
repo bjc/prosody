@@ -11,10 +11,11 @@ local function oauthbearer(self, message)
 		return "failure", "not-authorized";
 	end
 
-	local gs2_authzid, kvpairs = message:match("n,a=([^,]+),(.+)$");
-	if not gs2_authzid then
+	local gs2_header, kvpairs = message:match("^(n,[^,]*,),(.+)$");
+	if not gs2_header then
 		return "failure", "malformed-request";
 	end
+	local gs2_authzid = gs2_header:match("^[^,]*,a=([^,]*),$");
 
 	local auth_header;
 	for k, v in kvpairs:gmatch("([a-zA-Z]+)=([\033-\126 \009\r\n]*)\001") do

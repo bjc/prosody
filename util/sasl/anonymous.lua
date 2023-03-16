@@ -33,8 +33,8 @@ local function anonymous(self, message) -- luacheck: ignore 212/message
 	local username;
 	repeat
 		username = generate_random_id():lower();
-	until self.profile.anonymous(self, username, self.realm);
-	self.username = username;
+		self.username = username;
+	until self.profile.anonymous(self, username, self.realm, message);
 	return "success"
 end
 
