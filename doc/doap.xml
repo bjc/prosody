@@ -844,18 +844,18 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
-        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0441.html"/>
-        <xmpp:version>0.2.0</xmpp:version>
-        <xmpp:status>complete</xmpp:status>
-        <xmpp:note>Broken out of XEP-0313</xmpp:note>
-      </xmpp:SupportedXep>
-    </implements>
-    <implements>
-      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0440.html"/>
         <xmpp:version>0.4.0</xmpp:version>
         <xmpp:since>trunk</xmpp:since>
         <xmpp:status>complete</xmpp:status>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0441.html"/>
+        <xmpp:version>0.2.0</xmpp:version>
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:note>Broken out of XEP-0313</xmpp:note>
       </xmpp:SupportedXep>
     </implements>
     <implements>
