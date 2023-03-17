@@ -13,13 +13,13 @@
 
 local s_match = string.match;
 local type = type
-local base64 = require "util.encodings".base64;
-local hashes = require "util.hashes";
-local generate_uuid = require "util.uuid".generate;
-local saslprep = require "util.encodings".stringprep.saslprep;
-local nodeprep = require "util.encodings".stringprep.nodeprep;
-local log = require "util.logger".init("sasl");
-local	binaryXOR = require "util.strbitop".sxor;
+local base64 = require "prosody.util.encodings".base64;
+local hashes = require "prosody.util.hashes";
+local generate_uuid = require "prosody.util.uuid".generate;
+local saslprep = require "prosody.util.encodings".stringprep.saslprep;
+local nodeprep = require "prosody.util.encodings".stringprep.nodeprep;
+local log = require "prosody.util.logger".init("sasl");
+local	binaryXOR = require "prosody.util.strbitop".sxor;
 
 local _ENV = nil;
 -- luacheck: std none

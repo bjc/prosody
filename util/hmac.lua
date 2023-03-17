@@ -8,7 +8,7 @@
 
 -- COMPAT: Only for external pre-0.9 modules
 
-local hashes = require "util.hashes"
+local hashes = require "prosody.util.hashes"
 
 return {
 	md5 = hashes.hmac_md5,

@@ -5,8 +5,8 @@
 -- COPYING file in the source package for more information.
 --
 
-local net = require "util.net";
-local hex = require "util.hex";
+local net = require "prosody.util.net";
+local hex = require "prosody.util.hex";
 
 local ip_methods = {};
 

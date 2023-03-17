@@ -1,6 +1,6 @@
-local array = require "util.array";
-local it = require "util.iterators";
-local new_short_id = require "util.id".short;
+local array = require "prosody.util.array";
+local it = require "prosody.util.iterators";
+local new_short_id = require "prosody.util.id".short;
 
 local role_methods = {};
 local role_mt = {

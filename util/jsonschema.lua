@@ -3,10 +3,10 @@
 local m_type = function(n)
 	return type(n) == "number" and n % 1 == 0 and n <= 9007199254740992 and n >= -9007199254740992 and "integer" or "float";
 end;
-local json = require("util.json")
+local json = require("prosody.util.json")
 local null = json.null;
 
-local pointer = require("util.jsonpointer")
+local pointer = require("prosody.util.jsonpointer")
 
 local json_type_name = json.json_type_name
 

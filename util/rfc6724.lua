@@ -9,7 +9,7 @@
 -- during S2S connections.
 -- We can't hand this off to getaddrinfo, since it blocks
 
-local ip_commonPrefixLength = require"util.ip".commonPrefixLength
+local ip_commonPrefixLength = require"prosody.util.ip".commonPrefixLength
 
 local function commonPrefixLength(ipA, ipB)
 	local len = ip_commonPrefixLength(ipA, ipB);

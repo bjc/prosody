@@ -6,14 +6,14 @@
 -- COPYING file in the source package for more information.
 --
 
-local indexedbheap = require "util.indexedbheap";
-local log = require "util.logger".init("timer");
-local server = require "net.server";
-local get_time = require "util.time".now
+local indexedbheap = require "prosody.util.indexedbheap";
+local log = require "prosody.util.logger".init("timer");
+local server = require "prosody.net.server";
+local get_time = require "prosody.util.time".now
 local type = type;
 local debug_traceback = debug.traceback;
 local tostring = tostring;
-local xpcall = require "util.xpcall".xpcall;
+local xpcall = require "prosody.util.xpcall".xpcall;
 local math_max = math.max;
 local pairs = pairs;
 

@@ -12,7 +12,7 @@ local setmetatable = setmetatable;
 local ipairs = ipairs;
 local char = string.char;
 local pcall = pcall;
-local log = require "util.logger".init("datamanager");
+local log = require "prosody.util.logger".init("datamanager");
 local io_open = io.open;
 local os_remove = os.remove;
 local os_rename = os.rename;
@@ -21,8 +21,8 @@ local next = next;
 local type = type;
 local t_insert = table.insert;
 local t_concat = table.concat;
-local envloadfile = require"util.envload".envloadfile;
-local serialize = require "util.serialization".serialize;
+local envloadfile = require"prosody.util.envload".envloadfile;
+local serialize = require "prosody.util.serialization".serialize;
 local lfs = require "lfs";
 -- Extract directory separator from package.config (an undocumented string that comes with lua)
 local path_separator = assert ( package.config:match ( "^([^\n]+)" ) , "package.config not in standard form" )
@@ -33,7 +33,7 @@ local raw_mkdir = lfs.mkdir;
 local atomic_append;
 local ENOENT = 2;
 pcall(function()
-	local pposix = require "util.pposix";
+	local pposix = require "prosody.util.pposix";
 	raw_mkdir = pposix.mkdir or raw_mkdir; -- Doesn't trample on umask
 	atomic_append = pposix.atomic_append;
 	ENOENT = pposix.ENOENT or ENOENT;

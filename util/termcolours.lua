@@ -21,7 +21,7 @@ local pairs = pairs;
 
 local windows;
 if os.getenv("WINDIR") then
-	windows = require "util.windows";
+	windows = require "prosody.util.windows";
 end
 local orig_color = windows and windows.get_consolecolor and windows.get_consolecolor();
 

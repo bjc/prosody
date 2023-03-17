@@ -1,4 +1,4 @@
-local timer = require "util.timer";
+local timer = require "prosody.util.timer";
 local setmetatable = setmetatable;
 
 local _ENV = nil;

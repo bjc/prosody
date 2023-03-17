@@ -1,5 +1,5 @@
-local array = require "util.array";
-local utf8 = rawget(_G, "utf8") or require"util.encodings".utf8;
+local array = require "prosody.util.array";
+local utf8 = rawget(_G, "utf8") or require"prosody.util.encodings".utf8;
 local len = utf8.len or function(s)
 	local _, count = s:gsub("[%z\001-\127\194-\253][\128-\191]*", "");
 	return count;

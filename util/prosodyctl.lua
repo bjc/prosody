@@ -7,14 +7,14 @@
 --
 
 
-local config = require "core.configmanager";
-local encodings = require "util.encodings";
+local config = require "prosody.core.configmanager";
+local encodings = require "prosody.util.encodings";
 local stringprep = encodings.stringprep;
-local storagemanager = require "core.storagemanager";
-local usermanager = require "core.usermanager";
-local interpolation = require "util.interpolation";
-local signal = require "util.signal";
-local set = require "util.set";
+local storagemanager = require "prosody.core.storagemanager";
+local usermanager = require "prosody.core.usermanager";
+local interpolation = require "prosody.util.interpolation";
+local signal = require "prosody.util.signal";
+local set = require "prosody.util.set";
 local lfs = require "lfs";
 local type = type;
 
@@ -42,7 +42,7 @@ local error_messages = setmetatable({
 		}, { __index = function (_,k) return "Error: "..(tostring(k):gsub("%-", " "):gsub("^.", string.upper)); end });
 
 -- UI helpers
-local show_message = require "util.human.io".printf;
+local show_message = require "prosody.util.human.io".printf;
 
 local function show_usage(usage, desc)
 	print("Usage: ".._G.arg[0].." "..usage);

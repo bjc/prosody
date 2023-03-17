@@ -1,10 +1,10 @@
 local s_gsub = string.gsub;
-local crypto = require "util.crypto";
-local json = require "util.json";
-local hashes = require "util.hashes";
-local base64_encode = require "util.encodings".base64.encode;
-local base64_decode = require "util.encodings".base64.decode;
-local secure_equals = require "util.hashes".equals;
+local crypto = require "prosody.util.crypto";
+local json = require "prosody.util.json";
+local hashes = require "prosody.util.hashes";
+local base64_encode = require "prosody.util.encodings".base64.encode;
+local base64_decode = require "prosody.util.encodings".base64.decode;
+local secure_equals = require "prosody.util.hashes".equals;
 
 local b64url_rep = { ["+"] = "-", ["/"] = "_", ["="] = "", ["-"] = "+", ["_"] = "/" };
 local function b64url(data)

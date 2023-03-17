@@ -18,12 +18,12 @@
 -- [LDAP]      - https://www.rfc-editor.org/rfc/rfc4519.html
 -- [PKIX]      - https://www.rfc-editor.org/rfc/rfc5280.html
 
-local nameprep = require "util.encodings".stringprep.nameprep;
-local idna_to_ascii = require "util.encodings".idna.to_ascii;
-local idna_to_unicode = require "util.encodings".idna.to_unicode;
-local base64 = require "util.encodings".base64;
-local log = require "util.logger".init("x509");
-local mt = require "util.multitable";
+local nameprep = require "prosody.util.encodings".stringprep.nameprep;
+local idna_to_ascii = require "prosody.util.encodings".idna.to_ascii;
+local idna_to_unicode = require "prosody.util.encodings".idna.to_unicode;
+local base64 = require "prosody.util.encodings".base64;
+local log = require "prosody.util.logger".init("x509");
+local mt = require "prosody.util.multitable";
 local s_format = string.format;
 local ipairs = ipairs;
 

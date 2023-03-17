@@ -1,4 +1,4 @@
-local json = require "util.json";
+local json = require "prosody.util.json";
 local _ENV = nil;
 
 

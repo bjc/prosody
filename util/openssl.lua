@@ -5,7 +5,7 @@ local s_format = string.format;
 local oid_xmppaddr = "1.3.6.1.5.5.7.8.5"; -- [XMPP-CORE]
 local oid_dnssrv   = "1.3.6.1.5.5.7.8.7"; -- [SRV-ID]
 
-local idna_to_ascii = require "util.encodings".idna.to_ascii;
+local idna_to_ascii = require "prosody.util.encodings".idna.to_ascii;
 
 local _M = {};
 local config = {};

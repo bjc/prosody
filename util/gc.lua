@@ -1,4 +1,4 @@
-local set = require "util.set";
+local set = require "prosody.util.set";
 
 local known_options = {
 	incremental = set.new { "mode", "threshold", "speed", "step_size" };

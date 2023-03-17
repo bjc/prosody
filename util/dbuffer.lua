@@ -1,4 +1,4 @@
-local queue = require "util.queue";
+local queue = require "prosody.util.queue";
 
 local s_byte, s_sub = string.byte, string.sub;
 local dbuffer_methods = {};

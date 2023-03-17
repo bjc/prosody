@@ -10,12 +10,12 @@ local type = type;
 local t_insert, t_concat, t_remove = table.insert, table.concat, table.remove;
 local s_char = string.char;
 local tostring, tonumber = tostring, tonumber;
-local pairs, ipairs, spairs = pairs, ipairs, require "util.iterators".sorted_pairs;
+local pairs, ipairs, spairs = pairs, ipairs, require "prosody.util.iterators".sorted_pairs;
 local next = next;
 local getmetatable, setmetatable = getmetatable, setmetatable;
 local print = print;
 
-local has_array, array = pcall(require, "util.array");
+local has_array, array = pcall(require, "prosody.util.array");
 local array_mt = has_array and getmetatable(array()) or {};
 
 --module("json")

@@ -6,7 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local ok, crand = pcall(require, "util.crand");
+local ok, crand = pcall(require, "prosody.util.crand");
 if ok and pcall(crand.bytes, 1) then return crand; end
 
 local urandom, urandom_err = io.open("/dev/urandom", "r");

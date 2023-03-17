@@ -1,15 +1,15 @@
-local config = require "core.configmanager";
-local server = require "net.server";
-local st = require "util.stanza";
-local path = require "util.paths";
-local parse_args = require "util.argparse".parse;
+local config = require "prosody.core.configmanager";
+local server = require "prosody.net.server";
+local st = require "prosody.util.stanza";
+local path = require "prosody.util.paths";
+local parse_args = require "prosody.util.argparse".parse;
 local unpack = table.unpack or _G.unpack;
-local tc = require "util.termcolours";
-local isatty = require "util.pposix".isatty;
+local tc = require "prosody.util.termcolours";
+local isatty = require "prosody.util.pposix".isatty;
 
 local have_readline, readline = pcall(require, "readline");
 
-local adminstream = require "util.adminstream";
+local adminstream = require "prosody.util.adminstream";
 
 if have_readline then
 	readline.set_readline_name("prosody");

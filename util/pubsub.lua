@@ -1,6 +1,6 @@
-local events = require "util.events";
-local cache = require "util.cache";
-local errors = require "util.error";
+local events = require "prosody.util.events";
+local cache = require "prosody.util.cache";
+local errors = require "prosody.util.error";
 
 local service_mt = {};
 

@@ -6,9 +6,9 @@
 -- COPYING file in the source package for more information.
 --
 
-local random = require "util.random";
+local random = require "prosody.util.random";
 local random_bytes = random.bytes;
-local hex = require "util.hex".encode;
+local hex = require "prosody.util.hex".encode;
 local m_ceil = math.ceil;
 
 local function get_nibbles(n)

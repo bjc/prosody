@@ -16,13 +16,13 @@ local s_char = string.char;
 local s_match = string.match;
 local t_concat = table.concat;
 
-local to_hex = require "util.hex".to;
+local to_hex = require "prosody.util.hex".to;
 
 local pcall = pcall;
-local envload = require"util.envload".envload;
+local envload = require"prosody.util.envload".envload;
 
 if not math.type then
-	require "util.mathcompat"
+	require "prosody.util.mathcompat"
 end
 
 local pos_inf, neg_inf = math.huge, -math.huge;

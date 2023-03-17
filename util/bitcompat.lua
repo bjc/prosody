@@ -9,7 +9,7 @@ end
 
 do
 	-- Lua 5.3 and 5.4 would be able to use native infix operators
-	local ok, bitop = pcall(require, "util.bit53")
+	local ok, bitop = pcall(require, "prosody.util.bit53")
 	if ok then
 		return bitop;
 	end

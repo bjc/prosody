@@ -72,7 +72,7 @@ local function add_level_sink(level, sink_function)
 end
 
 local function add_simple_sink(simple_sink_function, levels)
-	local format = require "util.format".format;
+	local format = require "prosody.util.format".format;
 	local function sink_function(name, level, msg, ...)
 		return simple_sink_function(name, level, format(msg, ...));
 	end

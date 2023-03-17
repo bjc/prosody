@@ -2,15 +2,15 @@
 -- luacheck: ignore 113/CFG_CONFIGDIR 113/CFG_SOURCEDIR 113/CFG_DATADIR 113/CFG_PLUGINDIR
 local startup = {};
 
-local prosody = { events = require "util.events".new() };
-local logger = require "util.logger";
+local prosody = { events = require "prosody.util.events".new() };
+local logger = require "prosody.util.logger";
 local log = logger.init("startup");
-local parse_args = require "util.argparse".parse;
+local parse_args = require "prosody.util.argparse".parse;
 
-local config = require "core.configmanager";
+local config = require "prosody.core.configmanager";
 local config_warnings;
 
-local dependencies = require "util.dependencies";
+local dependencies = require "prosody.util.dependencies";
 
 local original_logging_config;
 
@@ -132,14 +132,14 @@ end
 function startup.load_libraries()
 	-- Load socket framework
 	-- luacheck: ignore 111/server 111/socket
-	require "util.import"
+	require "prosody.util.import"
 	socket = require "socket";
-	server = require "net.server"
+	server = require "prosody.net.server"
 end
 
 function startup.init_logging()
 	-- Initialize logging
-	local loggingmanager = require "core.loggingmanager"
+	local loggingmanager = require "prosody.core.loggingmanager"
 	loggingmanager.reload_logging();
 	prosody.events.add_handler("config-reloaded", function ()
 		prosody.events.fire_event("reopen-log-files");
@@ -280,7 +280,7 @@ function startup.init_global_state()
 
 	-- COMPAT Lua < 5.3
 	if not math.type then
-		require "util.mathcompat"
+		require "prosody.util.mathcompat"
 	end
 end
 
@@ -303,7 +303,7 @@ function startup.setup_plugin_install_path()
 	local installer_plugin_path = config.get("*", "installer_plugin_path") or "custom_plugins";
 	local path_sep = package.config:sub(3,3);
 	installer_plugin_path = config.resolve_relative_path(CFG_DATADIR or "data", installer_plugin_path);
-	require"util.paths".complement_lua_path(installer_plugin_path);
+	require"prosody.util.paths".complement_lua_path(installer_plugin_path);
 	-- luacheck: ignore 111
 	CFG_PLUGINDIR = installer_plugin_path..path_sep..(CFG_PLUGINDIR or "plugins");
 	prosody.paths.installer = installer_plugin_path;
@@ -365,28 +365,28 @@ end
 
 function startup.load_secondary_libraries()
 	--- Load and initialise core modules
-	require "util.xmppstream"
-	require "core.stanza_router"
-	require "core.statsmanager"
-	require "core.hostmanager"
-	require "core.portmanager"
-	require "core.modulemanager"
-	require "core.usermanager"
-	require "core.rostermanager"
-	require "core.sessionmanager"
+	require "prosody.util.xmppstream"
+	require "prosody.core.stanza_router"
+	require "prosody.core.statsmanager"
+	require "prosody.core.hostmanager"
+	require "prosody.core.portmanager"
+	require "prosody.core.modulemanager"
+	require "prosody.core.usermanager"
+	require "prosody.core.rostermanager"
+	require "prosody.core.sessionmanager"
 	package.loaded['core.componentmanager'] = setmetatable({},{__index=function()
 		-- COMPAT which version?
 		log("warn", "componentmanager is deprecated: %s", debug.traceback():match("\n[^\n]*\n[ \t]*([^\n]*)"));
 		return function() end
 	end});
 
-	require "util.array"
-	require "util.datetime"
-	require "util.iterators"
-	require "util.timer"
-	require "util.helpers"
+	require "prosody.util.array"
+	require "prosody.util.datetime"
+	require "prosody.util.iterators"
+	require "prosody.util.timer"
+	require "prosody.util.helpers"
 
-	pcall(require, "util.signal") -- Not on Windows
+	pcall(require, "prosody.util.signal") -- Not on Windows
 
 	-- Commented to protect us from
 	-- the second kind of people
@@ -395,36 +395,36 @@ function startup.load_secondary_libraries()
 	if remdebug then remdebug.engine.start() end
 	]]
 
-	require "util.stanza"
-	require "util.jid"
+	require "prosody.util.stanza"
+	require "prosody.util.jid"
 end
 
 function startup.init_http_client()
-	local http = require "net.http"
+	local http = require "prosody.net.http"
 	local config_ssl = config.get("*", "ssl") or {}
 	local https_client = config.get("*", "client_https_ssl")
-	http.default.options.sslctx = require "core.certmanager".create_context("client_https port 0", "client",
+	http.default.options.sslctx = require "prosody.core.certmanager".create_context("client_https port 0", "client",
 		{ capath = config_ssl.capath, cafile = config_ssl.cafile, verify = "peer", }, https_client);
 	http.default.options.use_dane = config.get("*", "use_dane")
 end
 
 function startup.init_promise()
-	local promise = require "util.promise";
+	local promise = require "prosody.util.promise";
 
-	local timer = require "util.timer";
+	local timer = require "prosody.util.timer";
 	promise.set_nexttick(function(f) return timer.add_task(0, f); end);
 end
 
 function startup.init_async()
-	local async = require "util.async";
+	local async = require "prosody.util.async";
 
-	local timer = require "util.timer";
+	local timer = require "prosody.util.timer";
 	async.set_nexttick(function(f) return timer.add_task(0, f); end);
 	async.set_schedule_function(timer.add_task);
 end
 
 function startup.init_data_store()
-	require "core.storagemanager";
+	require "prosody.core.storagemanager";
 end
 
 function startup.prepare_to_start()
@@ -465,7 +465,7 @@ function startup.read_version()
 			prosody.version = "hg:"..prosody.version;
 		end
 	else
-		local hg = require"util.mercurial";
+		local hg = require"prosody.util.mercurial";
 		local hgid = hg.check_id(CFG_SOURCEDIR or ".");
 		if hgid then prosody.version = "hg:" .. hgid; end
 	end
@@ -503,7 +503,7 @@ function startup.switch_user()
 	-- it is already started as the appropriate user.
 
 	local want_pposix_version = "0.4.0";
-	local have_pposix, pposix = pcall(require, "util.pposix");
+	local have_pposix, pposix = pcall(require, "prosody.util.pposix");
 
 	if have_pposix and pposix then
 		if pposix._VERSION ~= want_pposix_version then
@@ -599,7 +599,7 @@ end
 
 function startup.init_gc()
 	-- Apply garbage collector settings from the config file
-	local gc = require "util.gc";
+	local gc = require "prosody.util.gc";
 	local gc_settings = config.get("*", "gc") or { mode = default_gc_params.mode };
 
 	local ok, err = gc.configure(gc_settings, default_gc_params);
@@ -611,7 +611,7 @@ function startup.init_gc()
 end
 
 function startup.init_errors()
-	require "util.error".configure(config.get("*", "error_library") or {});
+	require "prosody.util.error".configure(config.get("*", "error_library") or {});
 end
 
 function startup.make_host(hostname)
@@ -620,7 +620,7 @@ function startup.make_host(hostname)
 		events = prosody.events,
 		modules = {},
 		sessions = {},
-		users = require "core.usermanager".new_null_provider(hostname)
+		users = require "prosody.core.usermanager".new_null_provider(hostname)
 	};
 end
 

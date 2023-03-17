@@ -9,14 +9,14 @@ local type = type
 local t_concat = table.concat;
 local t_insert = table.insert;
 local s_char = string.char;
-local log = require "util.logger".init("sql");
+local log = require "prosody.util.logger".init("sql");
 
 local lsqlite3 = require "lsqlite3";
 local build_url = require "socket.url".build;
 local ROW, DONE = lsqlite3.ROW, lsqlite3.DONE;
 
 -- from sqlite3.h, no copyright claimed
-local sqlite_errors = require"util.error".init("util.sqlite3", {
+local sqlite_errors = require"prosody.util.error".init("util.sqlite3", {
 	-- FIXME xmpp error conditions?
 	[1] = { code = 1;     type = "modify";   condition = "ERROR";      text = "Generic error" };
 	[2] = { code = 2;     type = "cancel";   condition = "INTERNAL";   text = "Internal logic error in SQLite" };

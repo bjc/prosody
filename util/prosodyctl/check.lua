@@ -1,19 +1,19 @@
-local configmanager = require "core.configmanager";
-local show_usage = require "util.prosodyctl".show_usage;
-local show_warning = require "util.prosodyctl".show_warning;
-local is_prosody_running = require "util.prosodyctl".isrunning;
-local parse_args = require "util.argparse".parse;
-local dependencies = require "util.dependencies";
+local configmanager = require "prosody.core.configmanager";
+local show_usage = require "prosody.util.prosodyctl".show_usage;
+local show_warning = require "prosody.util.prosodyctl".show_warning;
+local is_prosody_running = require "prosody.util.prosodyctl".isrunning;
+local parse_args = require "prosody.util.argparse".parse;
+local dependencies = require "prosody.util.dependencies";
 local socket = require "socket";
 local socket_url = require "socket.url";
-local jid_split = require "util.jid".prepped_split;
-local modulemanager = require "core.modulemanager";
-local async = require "util.async";
-local httputil = require "util.http";
+local jid_split = require "prosody.util.jid".prepped_split;
+local modulemanager = require "prosody.core.modulemanager";
+local async = require "prosody.util.async";
+local httputil = require "prosody.util.http";
 
 local function check_ojn(check_type, target_host)
-	local http = require "net.http"; -- .new({});
-	local json = require "util.json";
+	local http = require "prosody.net.http"; -- .new({});
+	local json = require "prosody.util.json";
 
 	local response, err = async.wait_for(http.request(
 		("https://observe.jabber.network/api/v1/check/%s"):format(httputil.urlencode(check_type)),
@@ -41,7 +41,7 @@ local function check_ojn(check_type, target_host)
 end
 
 local function check_probe(base_url, probe_module, target)
-	local http = require "net.http"; -- .new({});
+	local http = require "prosody.net.http"; -- .new({});
 	local params = httputil.formencode({ module = probe_module; target = target })
 	local response, err = async.wait_for(http.request(base_url .. "?" .. params));
 
@@ -62,8 +62,8 @@ local function check_probe(base_url, probe_module, target)
 end
 
 local function check_turn_service(turn_service, ping_service)
-	local ip = require "util.ip";
-	local stun = require "net.stun";
+	local ip = require "prosody.util.ip";
+	local stun = require "prosody.net.stun";
 
 	-- Create UDP socket for communication with the server
 	local sock = assert(require "socket".udp());
@@ -304,9 +304,9 @@ local function check(arg)
 		print("Error: Unknown parameter: "..opts_info);
 		return 1;
 	end
-	local array = require "util.array";
-	local set = require "util.set";
-	local it = require "util.iterators";
+	local array = require "prosody.util.array";
+	local set = require "prosody.util.set";
+	local it = require "prosody.util.iterators";
 	local ok = true;
 	local function disabled_hosts(host, conf) return host ~= "*" and conf.enabled ~= false; end
 	local function enabled_hosts() return it.filter(disabled_hosts, pairs(configmanager.getconfig())); end
@@ -706,13 +706,13 @@ local function check(arg)
 		print("Done.\n");
 	end
 	if not what or what == "dns" then
-		local dns = require "net.dns";
+		local dns = require "prosody.net.dns";
 		pcall(function ()
-			local unbound = require"net.unbound";
+			local unbound = require"prosody.net.unbound";
 			dns = unbound.dns;
 		end)
-		local idna = require "util.encodings".idna;
-		local ip = require "util.ip";
+		local idna = require "prosody.util.encodings".idna;
+		local ip = require "prosody.util.ip";
 		local c2s_ports = set.new(configmanager.get("*", "c2s_ports") or {5222});
 		local s2s_ports = set.new(configmanager.get("*", "s2s_ports") or {5269});
 		local c2s_tls_ports = set.new(configmanager.get("*", "c2s_direct_tls_ports") or {});
@@ -769,7 +769,7 @@ local function check(arg)
 			end
 		end
 
-		local local_addresses = require"util.net".local_addresses() or {};
+		local local_addresses = require"prosody.util.net".local_addresses() or {};
 
 		for addr in it.values(local_addresses) do
 			if not ip.new_ip(addr).private then
@@ -1072,8 +1072,8 @@ local function check(arg)
 	if not what or what == "certs" then
 		local cert_ok;
 		print"Checking certificates..."
-		local x509_verify_identity = require"util.x509".verify_identity;
-		local create_context = require "core.certmanager".create_context;
+		local x509_verify_identity = require"prosody.util.x509".verify_identity;
+		local create_context = require "prosody.core.certmanager".create_context;
 		local ssl = dependencies.softreq"ssl";
 		-- local datetime_parse = require"util.datetime".parse_x509;
 		local load_cert = ssl and ssl.loadcertificate;

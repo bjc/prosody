@@ -10,9 +10,9 @@
 
 local select = select;
 local match, sub = string.match, string.sub;
-local nodeprep = require "util.encodings".stringprep.nodeprep;
-local nameprep = require "util.encodings".stringprep.nameprep;
-local resourceprep = require "util.encodings".stringprep.resourceprep;
+local nodeprep = require "prosody.util.encodings".stringprep.nodeprep;
+local nameprep = require "prosody.util.encodings".stringprep.nameprep;
+local resourceprep = require "prosody.util.encodings".stringprep.resourceprep;
 
 local escapes = {
 	[" "] = "\\20"; ['"'] = "\\22";

@@ -1,13 +1,13 @@
-local crypto = require "util.crypto";
-local json = require "util.json";
-local hashes = require "util.hashes";
-local base64_encode = require "util.encodings".base64.encode;
-local base64_decode = require "util.encodings".base64.decode;
-local secure_equals = require "util.hashes".equals;
-local bit = require "util.bitcompat";
-local hex = require "util.hex";
-local rand = require "util.random";
-local s_pack = require "util.struct".pack;
+local crypto = require "prosody.util.crypto";
+local json = require "prosody.util.json";
+local hashes = require "prosody.util.hashes";
+local base64_encode = require "prosody.util.encodings".base64.encode;
+local base64_decode = require "prosody.util.encodings".base64.decode;
+local secure_equals = require "prosody.util.hashes".equals;
+local bit = require "prosody.util.bitcompat";
+local hex = require "prosody.util.hex";
+local rand = require "prosody.util.random";
+local s_pack = require "prosody.util.struct".pack;
 
 local s_gsub = string.gsub;
 

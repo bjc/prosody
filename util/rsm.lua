@@ -9,7 +9,7 @@
 -- XEP-0313: Message Archive Management for Prosody
 --
 
-local stanza = require"util.stanza".stanza;
+local stanza = require"prosody.util.stanza".stanza;
 local tonumber = tonumber;
 local s_format = string.format;
 local type = type;

@@ -6,8 +6,8 @@
 -- COPYING file in the source package for more information.
 --
 
-local base64 = require "util.encodings".base64.encode;
-local sha1 = require "util.hashes".sha1;
+local base64 = require "prosody.util.encodings".base64.encode;
+local sha1 = require "prosody.util.hashes".sha1;
 
 local t_insert, t_sort, t_concat = table.insert, table.sort, table.concat;
 local ipairs = ipairs;

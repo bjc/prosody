@@ -1,7 +1,7 @@
 local promise_methods = {};
 local promise_mt = { __name = "promise", __index = promise_methods };
 
-local xpcall = require "util.xpcall".xpcall;
+local xpcall = require "prosody.util.xpcall".xpcall;
 local unpack = table.unpack;
 
 function promise_mt:__tostring()

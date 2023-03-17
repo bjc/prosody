@@ -3,7 +3,7 @@ local s_match = string.match;
 local s_sub = string.sub;
 local t_concat = table.concat;
 
-local st = require("util.stanza");
+local st = require("prosody.util.stanza");
 
 local function render(template, root, escape, filters)
 	escape = escape or st.xml_escape;

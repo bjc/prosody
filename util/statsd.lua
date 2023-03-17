@@ -1,10 +1,10 @@
 local socket = require "socket";
-local time = require "util.time".now;
-local array = require "util.array";
+local time = require "prosody.util.time".now;
+local array = require "prosody.util.array";
 local t_concat = table.concat;
 
-local new_metric_registry = require "util.openmetrics".new_metric_registry;
-local render_histogram_le = require "util.openmetrics".render_histogram_le;
+local new_metric_registry = require "prosody.util.openmetrics".new_metric_registry;
+local render_histogram_le = require "prosody.util.openmetrics".render_histogram_le;
 
 -- BEGIN of Metric implementations
 

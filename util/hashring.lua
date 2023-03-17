@@ -1,4 +1,4 @@
-local it = require "util.iterators";
+local it = require "prosody.util.iterators";
 
 local function generate_ring(nodes, num_replicas, hash)
 	local new_ring = {};

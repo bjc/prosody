@@ -1,5 +1,5 @@
-local initialize_filters = require "util.filters".initialize;
-local logger = require "util.logger";
+local initialize_filters = require "prosody.util.filters".initialize;
+local logger = require "prosody.util.logger";
 
 local function new_session(typ)
 	local session = {

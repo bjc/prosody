@@ -6,11 +6,11 @@
 -- COPYING file in the source package for more information.
 --
 
-local debug = require "util.debug";
+local debug = require "prosody.util.debug";
 
 -- Helper functions for debugging
 
-local log = require "util.logger".init("util.debug");
+local log = require "prosody.util.logger".init("util.debug");
 
 local function log_events(events, name, logger)
 	local f = events.fire_event;

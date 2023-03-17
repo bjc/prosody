@@ -1,4 +1,4 @@
-local id = require "util.id";
+local id = require "prosody.util.id";
 
 local util_debug; -- only imported on-demand
 
@@ -19,7 +19,7 @@ local function configure(opt)
 	if opt.auto_inject_traceback ~= nil then
 		auto_inject_traceback = opt.auto_inject_traceback;
 		if auto_inject_traceback then
-			util_debug = require "util.debug";
+			util_debug = require "prosody.util.debug";
 		end
 	end
 end

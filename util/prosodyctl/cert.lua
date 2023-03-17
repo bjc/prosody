@@ -1,8 +1,8 @@
 local lfs = require "lfs";
 
-local pctl = require "util.prosodyctl";
-local hi = require "util.human.io";
-local configmanager = require "core.configmanager";
+local pctl = require "prosody.util.prosodyctl";
+local hi = require "prosody.util.human.io";
+local configmanager = require "prosody.core.configmanager";
 
 local openssl;
 
@@ -24,7 +24,7 @@ local function use_existing(filename)
 	end
 end
 
-local have_pposix, pposix = pcall(require, "util.pposix");
+local have_pposix, pposix = pcall(require, "prosody.util.pposix");
 local cert_basedir = prosody.paths.data == "." and "./certs" or prosody.paths.data;
 if have_pposix and pposix.getuid() == 0 then
 	-- FIXME should be enough to check if this directory is writable
@@ -219,7 +219,7 @@ function cert_commands.import(arg)
 		owner = configmanager.get("*", "prosody_user") or "prosody";
 		group = configmanager.get("*", "prosody_group") or owner;
 	end
-	local cm = require "core.certmanager";
+	local cm = require "prosody.core.certmanager";
 	local files_by_name = {}
 	for _, dir in ipairs(arg) do
 		cm.index_certs(dir, files_by_name);
@@ -271,7 +271,7 @@ end
 
 local function cert(arg)
 	if #arg >= 1 and arg[1] ~= "--help" then
-		openssl = require "util.openssl";
+		openssl = require "prosody.util.openssl";
 		lfs = require "lfs";
 		local cert_dir_attrs = lfs.attributes(cert_basedir);
 		if not cert_dir_attrs then
@@ -303,7 +303,7 @@ local function cert(arg)
 			end
 			return cert_commands[subcmd](arg);
 		elseif subcmd == "check" then
-			return require "util.prosodyctl.check".check({"certs"});
+			return require "prosody.util.prosodyctl.check".check({"certs"});
 		end
 	end
 	pctl.show_usage("cert config|request|generate|key|import", "Helpers for generating X.509 certificates and keys.")

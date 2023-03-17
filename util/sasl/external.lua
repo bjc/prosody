@@ -1,4 +1,4 @@
-local saslprep = require "util.encodings".stringprep.saslprep;
+local saslprep = require "prosody.util.encodings".stringprep.saslprep;
 
 local _ENV = nil;
 -- luacheck: std none

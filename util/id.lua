@@ -8,8 +8,8 @@
 --
 
 local s_gsub = string.gsub;
-local random_bytes = require "util.random".bytes;
-local base64_encode = require "util.encodings".base64.encode;
+local random_bytes = require "prosody.util.random".bytes;
+local base64_encode = require "prosody.util.encodings".base64.encode;
 
 local b64url = { ["+"] = "-", ["/"] = "_", ["="] = "" };
 local function b64url_random(len)

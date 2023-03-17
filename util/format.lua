@@ -8,9 +8,9 @@
 local tostring = tostring;
 local unpack = table.unpack;
 local pack = table.pack;
-local valid_utf8 = require "util.encodings".utf8.valid;
+local valid_utf8 = require "prosody.util.encodings".utf8.valid;
 local type = type;
-local dump = require "util.serialization".new("debug");
+local dump = require "prosody.util.serialization".new("debug");
 local num_type = math.type;
 
 -- In Lua 5.3+ these formats throw an error if given a float

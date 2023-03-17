@@ -4,9 +4,9 @@ local ipairs = ipairs;
 local tostring = tostring;
 local type = type;
 local assert, pcall, debug_traceback = assert, pcall, debug.traceback;
-local xpcall = require "util.xpcall".xpcall;
+local xpcall = require "prosody.util.xpcall".xpcall;
 local t_concat = table.concat;
-local log = require "util.logger".init("sql");
+local log = require "prosody.util.logger".init("sql");
 
 local DBI = require "DBI";
 -- This loads all available drivers while globals are unlocked

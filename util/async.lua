@@ -1,7 +1,7 @@
-local logger = require "util.logger";
+local logger = require "prosody.util.logger";
 local log = logger.init("util.async");
-local new_id = require "util.id".short;
-local xpcall = require "util.xpcall".xpcall;
+local new_id = require "prosody.util.id".short;
+local xpcall = require "prosody.util.xpcall".xpcall;
 
 local function checkthread()
 	local thread, main = coroutine.running();

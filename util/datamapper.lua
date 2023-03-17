@@ -1,11 +1,11 @@
 -- This file is generated from teal-src/util/datamapper.lua
 
 if not math.type then
-	require("util.mathcompat")
+	require("prosody.util.mathcompat")
 end
 
-local st = require("util.stanza");
-local pointer = require("util.jsonpointer");
+local st = require("prosody.util.stanza");
+local pointer = require("prosody.util.jsonpointer");
 
 local schema_t = {}
 

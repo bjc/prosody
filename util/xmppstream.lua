@@ -7,7 +7,7 @@
 --
 
 local lxp = require "lxp";
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 local stanza_mt = st.stanza_mt;
 
 local error = error;

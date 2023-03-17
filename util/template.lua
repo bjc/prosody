@@ -1,13 +1,13 @@
 -- luacheck: ignore 213/i
-local stanza_mt = require "util.stanza".stanza_mt;
+local stanza_mt = require "prosody.util.stanza".stanza_mt;
 local setmetatable = setmetatable;
 local pairs = pairs;
 local ipairs = ipairs;
 local error = error;
-local envload = require "util.envload".envload;
+local envload = require "prosody.util.envload".envload;
 local debug = debug;
 local t_remove = table.remove;
-local parse_xml = require "util.xml".parse;
+local parse_xml = require "prosody.util.xml".parse;
 
 local _ENV = nil;
 -- luacheck: std none

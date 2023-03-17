@@ -19,12 +19,12 @@ defined in the I-D linked above.
 -- metric constructor interface:
 -- metric_ctor(..., family_name, labels, extra)
 
-local time = require "util.time".now;
+local time = require "prosody.util.time".now;
 local select = select;
-local array = require "util.array";
-local log = require "util.logger".init("util.openmetrics");
-local new_multitable = require "util.multitable".new;
-local iter_multitable = require "util.multitable".iter;
+local array = require "prosody.util.array";
+local log = require "prosody.util.logger".init("util.openmetrics");
+local new_multitable = require "prosody.util.multitable".new;
+local iter_multitable = require "prosody.util.multitable".iter;
 local t_concat, t_insert = table.concat, table.insert;
 local t_pack, t_unpack = table.pack, table.unpack;
 

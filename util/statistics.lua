@@ -1,6 +1,6 @@
-local time = require "util.time".now;
-local new_metric_registry = require "util.openmetrics".new_metric_registry;
-local render_histogram_le = require "util.openmetrics".render_histogram_le;
+local time = require "prosody.util.time".now;
+local new_metric_registry = require "prosody.util.openmetrics".new_metric_registry;
+local render_histogram_le = require "prosody.util.openmetrics".render_histogram_le;
 
 -- BEGIN of Metric implementations
 

@@ -7,7 +7,7 @@
 --
 
 local function softreq(...) local ok, lib =  pcall(require, ...); if ok then return lib; else return nil, lib; end end
-local platform_table = require "util.human.io".table({ { width = 15, align = "right" }, { width = "100%" } });
+local platform_table = require "prosody.util.human.io".table({ { width = 15, align = "right" }, { width = "100%" } });
 
 -- Required to be able to find packages installed with luarocks
 if not softreq "luarocks.loader" then -- LuaRocks 2.x
@@ -88,7 +88,7 @@ local function check_dependencies()
 			}, nil, err);
 	end
 
-	local bit, err = softreq"util.bitcompat";
+	local bit, err = softreq"prosody.util.bitcompat";
 
 	if not bit then
 		missingdep("lua-bitops", {
@@ -106,16 +106,16 @@ local function check_dependencies()
 				{ "Source", "https://www.zash.se/luaunbound.html" };
 			}, "Old DNS resolver library will be used", err);
 	else
-		package.preload["net.adns"] = function ()
-			local ub = require "net.unbound";
+		package.preload["prosody.net.adns"] = function ()
+			local ub = require "prosody.net.unbound";
 			return ub;
 		end
 	end
 
-	local encodings, err = softreq "util.encodings"
+	local encodings, err = softreq "prosody.util.encodings"
 	if not encodings then
 		if err:match("module '[^']*' not found") then
-			missingdep("util.encodings", {
+			missingdep("prosody.util.encodings", {
 				{ "Windows", "Make sure you have encodings.dll from the Prosody distribution in util/" };
 				{ "GNU/Linux", "Run './configure' and 'make' in the Prosody source directory to build util/encodings.so" };
 			});
@@ -130,10 +130,10 @@ local function check_dependencies()
 		fatal = true;
 	end
 
-	local hashes, err = softreq "util.hashes"
+	local hashes, err = softreq "prosody.util.hashes"
 	if not hashes then
 		if err:match("module '[^']*' not found") then
-			missingdep("util.hashes", {
+			missingdep("prosody.util.hashes", {
 				{ "Windows", "Make sure you have hashes.dll from the Prosody distribution in util/" };
 				{ "GNU/Linux", "Run './configure' and 'make' in the Prosody source directory to build util/hashes.so" };
 			});

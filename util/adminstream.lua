@@ -1,15 +1,15 @@
-local st = require "util.stanza";
-local new_xmpp_stream = require "util.xmppstream".new;
-local sessionlib = require "util.session";
-local gettime = require "util.time".now;
-local runner = require "util.async".runner;
-local add_task = require "util.timer".add_task;
-local events = require "util.events";
-local server = require "net.server";
+local st = require "prosody.util.stanza";
+local new_xmpp_stream = require "prosody.util.xmppstream".new;
+local sessionlib = require "prosody.util.session";
+local gettime = require "prosody.util.time".now;
+local runner = require "prosody.util.async".runner;
+local add_task = require "prosody.util.timer".add_task;
+local events = require "prosody.util.events";
+local server = require "prosody.net.server";
 
 local stream_close_timeout = 5;
 
-local log = require "util.logger".init("adminstream");
+local log = require "prosody.util.logger".init("adminstream");
 
 local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
 

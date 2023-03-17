@@ -1,5 +1,5 @@
 
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 local lxp = require "lxp";
 local t_insert = table.insert;
 local t_remove = table.remove;

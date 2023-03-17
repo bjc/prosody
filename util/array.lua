@@ -8,7 +8,7 @@
 
 local t_insert, t_sort, t_remove, t_concat
     = table.insert, table.sort, table.remove, table.concat;
-local t_move = require "util.table".move;
+local t_move = require "prosody.util.table".move;
 
 local setmetatable = setmetatable;
 local getmetatable = getmetatable;

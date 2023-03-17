@@ -21,12 +21,12 @@ local type          =          type;
 local s_gsub        =   string.gsub;
 local s_sub         =    string.sub;
 local s_find        =   string.find;
-local t_move        =    table.move or require "util.table".move;
-local t_create = require"util.table".create;
+local t_move        =    table.move or require "prosody.util.table".move;
+local t_create = require"prosody.util.table".create;
 
-local valid_utf8 = require "util.encodings".utf8.valid;
+local valid_utf8 = require "prosody.util.encodings".utf8.valid;
 
-local do_pretty_printing, termcolours = pcall(require, "util.termcolours");
+local do_pretty_printing, termcolours = pcall(require, "prosody.util.termcolours");
 
 local xmlns_stanzas = "urn:ietf:params:xml:ns:xmpp-stanzas";
 local xmpp_stanzas_attr = { xmlns = xmlns_stanzas };

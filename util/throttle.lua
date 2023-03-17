@@ -1,5 +1,5 @@
 
-local gettime = require "util.time".now
+local gettime = require "prosody.util.time".now
 local setmetatable = setmetatable;
 
 local _ENV = nil;

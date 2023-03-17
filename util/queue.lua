@@ -9,7 +9,7 @@
 -- Small ringbuffer library (i.e. an efficient FIFO queue with a size limit)
 -- (because unbounded dynamically-growing queues are a bad thing...)
 
-local have_utable, utable = pcall(require, "util.table"); -- For pre-allocation of table
+local have_utable, utable = pcall(require, "prosody.util.table"); -- For pre-allocation of table
 
 local function new(size, allow_wrapping)
 	-- Head is next insert, tail is next read

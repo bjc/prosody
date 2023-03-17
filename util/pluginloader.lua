@@ -17,7 +17,7 @@ for path in (CFG_PLUGINDIR or "./plugins/"):gsub("[/\\]", dir_sep):gmatch("[^"..
 end
 
 local io_open = io.open;
-local envload = require "util.envload".envload;
+local envload = require "prosody.util.envload".envload;
 
 local pluginloader_methods = {};
 local pluginloader_mt = { __index = pluginloader_methods };

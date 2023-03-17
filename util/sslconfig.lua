@@ -8,7 +8,7 @@ local error = error;
 local t_concat = table.concat;
 local t_insert = table.insert;
 local setmetatable = setmetatable;
-local resolve_path = require"util.paths".resolve_relative_path;
+local resolve_path = require"prosody.util.paths".resolve_relative_path;
 
 local _ENV = nil;
 -- luacheck: std none

@@ -12,9 +12,9 @@ local type, next = type, next;
 local tonumber = tonumber;
 local tostring = tostring;
 local t_concat = table.concat;
-local st = require "util.stanza";
-local jid_prep = require "util.jid".prep;
-local datetime = require "util.datetime";
+local st = require "prosody.util.stanza";
+local jid_prep = require "prosody.util.jid".prep;
+local datetime = require "prosody.util.datetime";
 
 local _ENV = nil;
 -- luacheck: std none

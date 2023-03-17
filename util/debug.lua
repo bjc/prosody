@@ -12,7 +12,7 @@ local censored_names = {
 };
 local optimal_line_length = 65;
 
-local termcolours = require "util.termcolours";
+local termcolours = require "prosody.util.termcolours";
 local getstring = termcolours.getstring;
 local styles;
 do
