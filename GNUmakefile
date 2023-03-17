@@ -42,6 +42,10 @@ install-bin: prosody.install prosodyctl.install
 	$(INSTALL_EXEC) ./prosody.install $(BIN)/prosody
 	$(INSTALL_EXEC) ./prosodyctl.install $(BIN)/prosodyctl
 
+install-loader:
+	$(MKDIR) $(SOURCE)
+	$(INSTALL_DATA) loader.lua $(SOURCE)
+
 install-core:
 	$(MKDIR) $(SOURCE)
 	$(MKDIR) $(SOURCE)/core
@@ -89,7 +93,7 @@ install-meta:
 install-data:
 	$(MKDIR_PRIVATE) $(DATA)
 
-install: install-util install-net install-core install-plugins install-bin install-etc install-man install-meta install-data
+install: install-util install-net install-core install-plugins install-bin install-etc install-man install-meta install-data install-loader
 
 clean:
 	rm -f prosody.install
