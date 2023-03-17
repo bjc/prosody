@@ -560,7 +560,7 @@ static int Lnew(lua_State *L) {
 /*
  * Open library
  */
-int luaopen_util_poll(lua_State *L) {
+int luaopen_prosody_util_poll(lua_State *L) {
 	luaL_checkversion(L);
 
 	luaL_newmetatable(L, STATE_MT);
@@ -612,5 +612,10 @@ int luaopen_util_poll(lua_State *L) {
 
 	}
 	return 1;
+}
+
+/* COMPAT */
+int luaopen_util_poll(lua_State *L) {
+	return luaopen_prosody_util_poll(L);
 }
 

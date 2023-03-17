@@ -592,7 +592,7 @@ static const luaL_Reg KeyMetatable[] = {
 	{ NULL,                 NULL            }
 };
 
-LUALIB_API int luaopen_util_crypto(lua_State *L) {
+LUALIB_API int luaopen_prosody_util_crypto(lua_State *L) {
 #if (LUA_VERSION_NUM > 501)
 	luaL_checkversion(L);
 #endif
@@ -615,4 +615,8 @@ LUALIB_API int luaopen_util_crypto(lua_State *L) {
 	lua_setfield(L, -2, "_LIBCRYPTO_VERSION");
 #endif
 	return 1;
+}
+
+LUALIB_API int luaopen_util_crypto(lua_State *L) {
+	return luaopen_prosody_util_crypto(L);
 }

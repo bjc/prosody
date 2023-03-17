@@ -612,7 +612,7 @@ static const luaL_Reg Reg_idna[] = {
 
 /***************** end *****************/
 
-LUALIB_API int luaopen_util_encodings(lua_State *L) {
+LUALIB_API int luaopen_prosody_util_encodings(lua_State *L) {
 	luaL_checkversion(L);
 #ifdef USE_STRINGPREP_ICU
 	init_icu();
@@ -645,4 +645,7 @@ LUALIB_API int luaopen_util_encodings(lua_State *L) {
 	lua_pushliteral(L, "-3.14");
 	lua_setfield(L, -2, "version");
 	return 1;
+}
+LUALIB_API int luaopen_util_encodings(lua_State *L) {
+	return luaopen_prosody_util_encodings(L);
 }

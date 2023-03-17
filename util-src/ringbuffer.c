@@ -313,7 +313,7 @@ static int rb_new(lua_State *L) {
 	return 1;
 }
 
-int luaopen_util_ringbuffer(lua_State *L) {
+int luaopen_prosody_util_ringbuffer(lua_State *L) {
 	luaL_checkversion(L);
 
 	if(luaL_newmetatable(L, "ringbuffer_mt")) {
@@ -352,4 +352,8 @@ int luaopen_util_ringbuffer(lua_State *L) {
 	lua_pushcfunction(L, rb_new);
 	lua_setfield(L, -2, "new");
 	return 1;
+}
+
+int luaopen_util_ringbuffer(lua_State *L) {
+	return luaopen_prosody_util_ringbuffer(L);
 }

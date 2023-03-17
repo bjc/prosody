@@ -825,7 +825,7 @@ static int lc_isatty(lua_State *L) {
 
 /* Register functions */
 
-int luaopen_util_pposix(lua_State *L) {
+int luaopen_prosody_util_pposix(lua_State *L) {
 	luaL_checkversion(L);
 	luaL_Reg exports[] = {
 		{ "abort", lc_abort },
@@ -882,4 +882,7 @@ int luaopen_util_pposix(lua_State *L) {
 	lua_setfield(L, -2, "_VERSION");
 
 	return 1;
+}
+int luaopen_util_pposix(lua_State *L) {
+	return luaopen_prosody_util_pposix(L);
 }

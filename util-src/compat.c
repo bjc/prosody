@@ -19,11 +19,15 @@ static int lc_xpcall (lua_State *L) {
   return lua_gettop(L);
 }
 
-int luaopen_util_compat(lua_State *L) {
+int luaopen_prosody_util_compat(lua_State *L) {
 	lua_createtable(L, 0, 2);
 	{
 		lua_pushcfunction(L, lc_xpcall);
 		lua_setfield(L, -2, "xpcall");
 	}
 	return 1;
+}
+
+int luaopen_util_compat(lua_State *L) {
+	return luaopen_prosody_util_compat(L);
 }

@@ -377,7 +377,7 @@ static const struct luaL_Reg lsignal_lib[] = {
 	{NULL, NULL}
 };
 
-int luaopen_util_signal(lua_State *L) {
+int luaopen_prosody_util_signal(lua_State *L) {
 	luaL_checkversion(L);
 	int i = 0;
 
@@ -407,4 +407,7 @@ int luaopen_util_signal(lua_State *L) {
 	lua_settable(L, LUA_REGISTRYINDEX);
 
 	return 1;
+}
+int luaopen_util_signal(lua_State *L) {
+	return luaopen_prosody_util_signal(L);
 }

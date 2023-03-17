@@ -189,7 +189,7 @@ static int lc_ntop(lua_State *L) {
 	return 1;
 }
 
-int luaopen_util_net(lua_State *L) {
+int luaopen_prosody_util_net(lua_State *L) {
 	luaL_checkversion(L);
 	luaL_Reg exports[] = {
 		{ "local_addresses", lc_local_addresses },
@@ -201,4 +201,7 @@ int luaopen_util_net(lua_State *L) {
 	lua_createtable(L, 0, 1);
 	luaL_setfuncs(L, exports, 0);
 	return 1;
+}
+int luaopen_util_net(lua_State *L) {
+	return luaopen_prosody_util_net(L);
 }

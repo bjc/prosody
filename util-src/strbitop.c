@@ -74,7 +74,7 @@ static int strop_xor(lua_State *L) {
 	return 1;
 }
 
-LUA_API int luaopen_util_strbitop(lua_State *L) {
+LUA_API int luaopen_prosody_util_strbitop(lua_State *L) {
 	luaL_Reg exports[] = {
 		{ "sand", strop_and },
 		{ "sor",  strop_or },
@@ -85,4 +85,8 @@ LUA_API int luaopen_util_strbitop(lua_State *L) {
 	lua_newtable(L);
 	luaL_setfuncs(L, exports, 0);
 	return 1;
+}
+
+LUA_API int luaopen_util_strbitop(lua_State *L) {
+	return luaopen_prosody_util_strbitop(L);
 }

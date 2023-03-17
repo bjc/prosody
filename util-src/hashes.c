@@ -313,7 +313,7 @@ static const luaL_Reg Reg[] = {
 	{ NULL,			NULL		}
 };
 
-LUALIB_API int luaopen_util_hashes(lua_State *L) {
+LUALIB_API int luaopen_prosody_util_hashes(lua_State *L) {
 	luaL_checkversion(L);
 	lua_newtable(L);
 	luaL_setfuncs(L, Reg, 0);
@@ -324,4 +324,7 @@ LUALIB_API int luaopen_util_hashes(lua_State *L) {
 	lua_setfield(L, -2, "_LIBCRYPTO_VERSION");
 #endif
 	return 1;
+}
+LUALIB_API int luaopen_util_hashes(lua_State *L) {
+	return luaopen_prosody_util_hashes(L);
 }

@@ -385,9 +385,13 @@ static const struct luaL_Reg thislib[] = {
 
 LUALIB_API int luaopen_util_struct (lua_State *L);
 
-LUALIB_API int luaopen_util_struct (lua_State *L) {
+LUALIB_API int luaopen_prosody_util_struct (lua_State *L) {
   luaL_newlib(L, thislib);
   return 1;
+}
+
+LUALIB_API int luaopen_util_struct (lua_State *L) {
+	return luaopen_prosody_util_struct(L);
 }
 
 

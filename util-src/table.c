@@ -60,7 +60,7 @@ static int Lmove (lua_State *L) {
 	return 1;
 }
 
-int luaopen_util_table(lua_State *L) {
+int luaopen_prosody_util_table(lua_State *L) {
 	luaL_checkversion(L);
 	lua_createtable(L, 0, 2);
 	lua_pushcfunction(L, Lcreate_table);
@@ -70,4 +70,8 @@ int luaopen_util_table(lua_State *L) {
 	lua_pushcfunction(L, Lmove);
 	lua_setfield(L, -2, "move");
 	return 1;
+}
+
+int luaopen_util_table(lua_State *L) {
+	return luaopen_prosody_util_table(L);
 }

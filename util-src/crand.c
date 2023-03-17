@@ -123,7 +123,7 @@ static int Lrandom(lua_State *L) {
 	return 1;
 }
 
-int luaopen_util_crand(lua_State *L) {
+int luaopen_prosody_util_crand(lua_State *L) {
 	luaL_checkversion(L);
 
 	lua_createtable(L, 0, 2);
@@ -142,3 +142,6 @@ int luaopen_util_crand(lua_State *L) {
 	return 1;
 }
 
+int luaopen_util_crand(lua_State *L) {
+	return luaopen_prosody_util_crand(L);
+}
