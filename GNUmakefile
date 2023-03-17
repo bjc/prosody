@@ -103,10 +103,10 @@ clean:
 	$(MAKE) clean -C util-src
 
 test:
-	$(BUSTED) --lua=$(RUNWITH)
+	$(BUSTED) --helper loader --lua=$(RUNWITH)
 
 test-%:
-	$(BUSTED) --lua=$(RUNWITH) -r $*
+	$(BUSTED) --helper loader --lua=$(RUNWITH) -r $*
 
 integration-test: all
 	$(MKDIR) data
