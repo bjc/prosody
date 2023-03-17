@@ -14,16 +14,16 @@ local prosody, hosts = prosody, prosody.hosts;
 local full_sessions = prosody.full_sessions;
 local bare_sessions = prosody.bare_sessions;
 
-local logger = require "util.logger";
+local logger = require "prosody.util.logger";
 local log = logger.init("sessionmanager");
-local rm_load_roster = require "core.rostermanager".load_roster;
-local config_get = require "core.configmanager".get;
-local resourceprep = require "util.encodings".stringprep.resourceprep;
-local nodeprep = require "util.encodings".stringprep.nodeprep;
-local generate_identifier = require "util.id".short;
-local sessionlib = require "util.session";
+local rm_load_roster = require "prosody.core.rostermanager".load_roster;
+local config_get = require "prosody.core.configmanager".get;
+local resourceprep = require "prosody.util.encodings".stringprep.resourceprep;
+local nodeprep = require "prosody.util.encodings".stringprep.nodeprep;
+local generate_identifier = require "prosody.util.id".short;
+local sessionlib = require "prosody.util.session";
 
-local initialize_filters = require "util.filters".initialize;
+local initialize_filters = require "prosody.util.filters".initialize;
 local gettime = require "socket".gettime;
 
 local _ENV = nil;

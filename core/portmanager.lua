@@ -1,11 +1,11 @@
-local config = require "core.configmanager";
-local certmanager = require "core.certmanager";
-local server = require "net.server";
+local config = require "prosody.core.configmanager";
+local certmanager = require "prosody.core.certmanager";
+local server = require "prosody.net.server";
 local socket = require "socket";
 
-local log = require "util.logger".init("portmanager");
-local multitable = require "util.multitable";
-local set = require "util.set";
+local log = require "prosody.util.logger".init("portmanager");
+local multitable = require "prosody.util.multitable";
+local set = require "prosody.util.set";
 
 local table = table;
 local setmetatable, rawset, rawget = setmetatable, rawset, rawget;

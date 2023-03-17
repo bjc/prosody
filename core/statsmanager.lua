@@ -1,10 +1,10 @@
 
-local config = require "core.configmanager";
-local log = require "util.logger".init("stats");
-local timer = require "util.timer";
+local config = require "prosody.core.configmanager";
+local log = require "prosody.util.logger".init("stats");
+local timer = require "prosody.util.timer";
 local fire_event = prosody.events.fire_event;
-local array = require "util.array";
-local timed = require "util.openmetrics".timed;
+local array = require "prosody.util.array";
+local timed = require "prosody.util.openmetrics".timed;
 
 local stats_interval_config = config.get("*", "statistics_interval");
 local stats_interval = tonumber(stats_interval_config);
@@ -26,8 +26,8 @@ if stats_interval_config == "manual" then
 end
 
 local builtin_providers = {
-	internal = "util.statistics";
-	statsd = "util.statsd";
+	internal = "prosody.util.statistics";
+	statsd = "prosody.util.statsd";
 };
 
 

@@ -3,12 +3,12 @@ local type, pairs = type, pairs;
 local setmetatable = setmetatable;
 local rawset = rawset;
 
-local config = require "core.configmanager";
-local datamanager = require "util.datamanager";
-local modulemanager = require "core.modulemanager";
-local multitable = require "util.multitable";
-local log = require "util.logger".init("storagemanager");
-local async = require "util.async";
+local config = require "prosody.core.configmanager";
+local datamanager = require "prosody.util.datamanager";
+local modulemanager = require "prosody.core.modulemanager";
+local multitable = require "prosody.util.multitable";
+local log = require "prosody.util.logger".init("storagemanager");
+local async = require "prosody.util.async";
 local debug = debug;
 
 local prosody = prosody;

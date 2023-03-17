@@ -9,10 +9,10 @@
 
 
 
-local log = require "util.logger".init("rostermanager");
+local log = require "prosody.util.logger".init("rostermanager");
 
-local new_id = require "util.id".short;
-local new_cache = require "util.cache".new;
+local new_id = require "prosody.util.id".short;
+local new_cache = require "prosody.util.cache".new;
 
 local pairs = pairs;
 local tostring = tostring;
@@ -21,9 +21,9 @@ local type = type;
 local hosts = prosody.hosts;
 local bare_sessions = prosody.bare_sessions;
 
-local um_user_exists = require "core.usermanager".user_exists;
-local st = require "util.stanza";
-local storagemanager = require "core.storagemanager";
+local um_user_exists = require "prosody.core.usermanager".user_exists;
+local st = require "prosody.util.stanza";
+local storagemanager = require "prosody.core.storagemanager";
 
 local _ENV = nil;
 -- luacheck: std none

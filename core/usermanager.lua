@@ -6,13 +6,13 @@
 -- COPYING file in the source package for more information.
 --
 
-local modulemanager = require "core.modulemanager";
-local log = require "util.logger".init("usermanager");
+local modulemanager = require "prosody.core.modulemanager";
+local log = require "prosody.util.logger".init("usermanager");
 local type = type;
-local jid_split = require "util.jid".split;
-local config = require "core.configmanager";
-local sasl_new = require "util.sasl".new;
-local storagemanager = require "core.storagemanager";
+local jid_split = require "prosody.util.jid".split;
+local config = require "prosody.core.configmanager";
+local sasl_new = require "prosody.util.sasl".new;
+local storagemanager = require "prosody.core.storagemanager";
 
 local prosody = _G.prosody;
 local hosts = prosody.hosts;

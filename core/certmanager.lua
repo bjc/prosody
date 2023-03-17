@@ -7,13 +7,13 @@
 --
 
 local ssl = require "ssl";
-local configmanager = require "core.configmanager";
-local log = require "util.logger".init("certmanager");
+local configmanager = require "prosody.core.configmanager";
+local log = require "prosody.util.logger".init("certmanager");
 local ssl_newcontext = ssl.newcontext;
-local new_config = require"net.server".tls_builder;
+local new_config = require"prosody.net.server".tls_builder;
 local stat = require "lfs".attributes;
 
-local x509 = require "util.x509";
+local x509 = require "prosody.util.x509";
 local lfs = require "lfs";
 
 local tonumber, tostring = tonumber, tostring;
@@ -27,7 +27,7 @@ local next = next;
 local pcall = pcall;
 
 local prosody = prosody;
-local pathutil = require"util.paths";
+local pathutil = require"prosody.util.paths";
 local resolve_path = pathutil.resolve_relative_path;
 local config_path = prosody.paths.config or ".";
 

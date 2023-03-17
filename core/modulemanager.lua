@@ -6,23 +6,23 @@
 -- COPYING file in the source package for more information.
 --
 
-local array = require "util.array";
-local logger = require "util.logger";
+local array = require "prosody.util.array";
+local logger = require "prosody.util.logger";
 local log = logger.init("modulemanager");
-local config = require "core.configmanager";
-local pluginloader = require "util.pluginloader";
-local envload = require "util.envload";
-local set = require "util.set";
+local config = require "prosody.core.configmanager";
+local pluginloader = require "prosody.util.pluginloader";
+local envload = require "prosody.util.envload";
+local set = require "prosody.util.set";
 
-local core_features = require "core.features".available;
+local core_features = require "prosody.core.features".available;
 
-local new_multitable = require "util.multitable".new;
-local api = require "core.moduleapi"; -- Module API container
+local new_multitable = require "prosody.util.multitable".new;
+local api = require "prosody.core.moduleapi"; -- Module API container
 
 local prosody = prosody;
 local hosts = prosody.hosts;
 
-local xpcall = require "util.xpcall".xpcall;
+local xpcall = require "prosody.util.xpcall".xpcall;
 local debug_traceback = debug.traceback;
 local setmetatable, rawget = setmetatable, rawget;
 local ipairs, pairs, type, t_insert = ipairs, pairs, type, table.insert;

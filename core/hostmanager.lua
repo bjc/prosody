@@ -6,18 +6,18 @@
 -- COPYING file in the source package for more information.
 --
 
-local configmanager = require "core.configmanager";
-local modulemanager = require "core.modulemanager";
-local events_new = require "util.events".new;
-local disco_items = require "util.multitable".new();
+local configmanager = require "prosody.core.configmanager";
+local modulemanager = require "prosody.core.modulemanager";
+local events_new = require "prosody.util.events".new;
+local disco_items = require "prosody.util.multitable".new();
 local NULL = {};
 
-local log = require "util.logger".init("hostmanager");
+local log = require "prosody.util.logger".init("hostmanager");
 
 local hosts = prosody.hosts;
 local prosody_events = prosody.events;
 if not _G.prosody.incoming_s2s then
-	require "core.s2smanager";
+	require "prosody.core.s2smanager";
 end
 local incoming_s2s = _G.prosody.incoming_s2s;
 local core_route_stanza = _G.prosody.core_route_stanza;

@@ -1,4 +1,4 @@
-local set = require "util.set";
+local set = require "prosody.util.set";
 
 return {
 	available = set.new{

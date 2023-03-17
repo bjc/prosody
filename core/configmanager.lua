@@ -11,14 +11,14 @@ local setmetatable, rawget, rawset, io, os, error, dofile, type, pairs, ipairs =
       setmetatable, rawget, rawset, io, os, error, dofile, type, pairs, ipairs;
 local format, math_max, t_insert = string.format, math.max, table.insert;
 
-local envload = require"util.envload".envload;
-local deps = require"util.dependencies";
-local resolve_relative_path = require"util.paths".resolve_relative_path;
-local glob_to_pattern = require"util.paths".glob_to_pattern;
+local envload = require"prosody.util.envload".envload;
+local deps = require"prosody.util.dependencies";
+local resolve_relative_path = require"prosody.util.paths".resolve_relative_path;
+local glob_to_pattern = require"prosody.util.paths".glob_to_pattern;
 local path_sep = package.config:sub(1,1);
-local get_traceback_table = require "util.debug".get_traceback_table;
+local get_traceback_table = require "prosody.util.debug".get_traceback_table;
 
-local encodings = deps.softreq"util.encodings";
+local encodings = deps.softreq"prosody.util.encodings";
 local nameprep = encodings and encodings.stringprep.nameprep or function (host) return host:lower(); end
 
 local _M = {};

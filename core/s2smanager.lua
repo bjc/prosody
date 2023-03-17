@@ -11,8 +11,8 @@
 local hosts = prosody.hosts;
 local pairs, setmetatable = pairs, setmetatable;
 
-local logger_init = require "util.logger".init;
-local sessionlib = require "util.session";
+local logger_init = require "prosody.util.logger".init;
+local sessionlib = require "prosody.util.session";
 
 local log = logger_init("s2smanager");
 

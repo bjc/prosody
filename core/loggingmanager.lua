@@ -6,20 +6,20 @@
 -- COPYING file in the source package for more information.
 --
 
-local format = require "util.format".format;
+local format = require "prosody.util.format".format;
 local setmetatable, rawset, pairs, ipairs, type =
 	setmetatable, rawset, pairs, ipairs, type;
 local stdout = io.stdout;
 local io_open = io.open;
 local math_max, rep = math.max, string.rep;
 local os_date = os.date;
-local getstyle, getstring = require "util.termcolours".getstyle, require "util.termcolours".getstring;
-local st = require "util.stanza";
+local getstyle, getstring = require "prosody.util.termcolours".getstyle, require "prosody.util.termcolours".getstring;
+local st = require "prosody.util.stanza";
 
-local config = require "core.configmanager";
-local logger = require "util.logger";
+local config = require "prosody.core.configmanager";
+local logger = require "prosody.util.logger";
 
-local have_pposix, pposix = pcall(require, "util.pposix");
+local have_pposix, pposix = pcall(require, "prosody.util.pposix");
 have_pposix = have_pposix and pposix._VERSION == "0.4.0";
 
 local _ENV = nil;

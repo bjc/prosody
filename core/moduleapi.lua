@@ -6,21 +6,21 @@
 -- COPYING file in the source package for more information.
 --
 
-local array = require "util.array";
-local set = require "util.set";
-local it = require "util.iterators";
-local logger = require "util.logger";
-local timer = require "util.timer";
-local resolve_relative_path = require"util.paths".resolve_relative_path;
-local st = require "util.stanza";
-local cache = require "util.cache";
-local errors = require "util.error";
-local promise = require "util.promise";
-local time_now = require "util.time".now;
-local format = require "util.format".format;
-local jid_node = require "util.jid".node;
-local jid_split = require "util.jid".split;
-local jid_resource = require "util.jid".resource;
+local array = require "prosody.util.array";
+local set = require "prosody.util.set";
+local it = require "prosody.util.iterators";
+local logger = require "prosody.util.logger";
+local timer = require "prosody.util.timer";
+local resolve_relative_path = require"prosody.util.paths".resolve_relative_path;
+local st = require "prosody.util.stanza";
+local cache = require "prosody.util.cache";
+local errors = require "prosody.util.error";
+local promise = require "prosody.util.promise";
+local time_now = require "prosody.util.time".now;
+local format = require "prosody.util.format".format;
+local jid_node = require "prosody.util.jid".node;
+local jid_split = require "prosody.util.jid".split;
+local jid_resource = require "prosody.util.jid".resource;
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local error, setmetatable, type = error, setmetatable, type;
@@ -129,14 +129,14 @@ function api:wrap_global(event, handler)
 end
 
 function api:require(lib)
-	local modulemanager = require"core.modulemanager";
+	local modulemanager = require"prosody.core.modulemanager";
 	local f, n = modulemanager.loader:load_code_ext(self.name, lib, "lib.lua", self.environment);
 	if not f then error("Failed to load plugin library '"..lib.."', error: "..n); end -- FIXME better error message
 	return f();
 end
 
 function api:depends(name)
-	local modulemanager = require"core.modulemanager";
+	local modulemanager = require"prosody.core.modulemanager";
 	if self:get_option_inherited_set("modules_disabled", {}):contains(name) then
 		error("Dependency on disabled module mod_"..name);
 	end
@@ -205,7 +205,7 @@ function api:shared(path)
 end
 
 function api:get_option(name, default_value)
-	local config = require "core.configmanager";
+	local config = require "prosody.core.configmanager";
 	local value = config.get(self.host, name);
 	if value == nil then
 		value = default_value;
@@ -333,7 +333,7 @@ function api:remove_item(key, value)
 end
 
 function api:get_host_items(key)
-	local modulemanager = require"core.modulemanager";
+	local modulemanager = require"prosody.core.modulemanager";
 	local result = modulemanager.get_items(key, self.host) or {};
 	return result;
 end
@@ -543,11 +543,11 @@ end
 
 function api:open_store(name, store_type)
 	if self.host == "*" then return nil, "global-storage-not-supported"; end
-	return require"core.storagemanager".open(self.host, name or self.name, store_type);
+	return require"prosody.core.storagemanager".open(self.host, name or self.name, store_type);
 end
 
 function api:measure(name, stat_type, conf)
-	local measure = require "core.statsmanager".measure;
+	local measure = require "prosody.core.statsmanager".measure;
 	local fixed_label_key, fixed_label_value
 	if self.host ~= "*" then
 		fixed_label_key = "host"
@@ -562,7 +562,7 @@ function api:measure(name, stat_type, conf)
 end
 
 function api:metric(type_, name, unit, description, label_keys, conf)
-	local metric = require "core.statsmanager".metric;
+	local metric = require "prosody.core.statsmanager".metric;
 	local is_scoped = self.host ~= "*"
 	if is_scoped then
 		-- prepend `host` label to label keys if this is not a global module
