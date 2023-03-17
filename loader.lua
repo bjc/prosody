@@ -19,3 +19,17 @@ else
 		end)
 	end
 end
+
+-- Look for already loaded module with or without prefix
+setmetatable(package.loaded, {
+	__index = function(loaded, module_name)
+		local suffix = module_name:match("^prosody%.(.*)$");
+		if suffix then
+			return rawget(loaded, suffix);
+		end
+		local prefixed = rawget(loaded, "prosody." .. module_name);
+		if prefixed ~= nil then
+			return prefixed;
+		end
+	end;
+})
