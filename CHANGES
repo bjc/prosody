@@ -41,6 +41,7 @@ TRUNK
 - Support sub-second precision timestamps
 - mod_blocklist: New option 'migrate_legacy_blocking' to disable migration from mod_privacy
 - Ability to use SQLite3 storage using LuaSQLite3 instead of LuaDBI
+- Moved all modules into the Lua namespace `prosody.`
 
 ## Removed
 
