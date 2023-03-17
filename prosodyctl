@@ -51,6 +51,10 @@ if _VERSION < "Lua 5.2" then
 	return os.exit(1);
 end
 
+if not pcall(require, "prosody.loader") then
+	pcall(require, "loader");
+end
+
 local startup = require "util.startup";
 startup.prosodyctl();
 
