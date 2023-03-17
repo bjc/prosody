@@ -7,9 +7,9 @@
 -- This module allows you to use cqueues with a net.server mainloop
 --
 
-local server = require "net.server";
+local server = require "prosody.net.server";
 local cqueues = require "cqueues";
-local timer = require "util.timer";
+local timer = require "prosody.util.timer";
 assert(cqueues.VERSION >= 20150113, "cqueues newer than 20150113 required")
 
 -- Create a single top level cqueue

@@ -1,7 +1,7 @@
-local server = require "net.server";
-local log = require "util.logger".init("net.connect");
-local new_id = require "util.id".short;
-local timer = require "util.timer";
+local server = require "prosody.net.server";
+local log = require "prosody.util.logger".init("net.connect");
+local new_id = require "prosody.util.id".short;
+local timer = require "prosody.util.timer";
 
 -- FIXME RFC 6724
 -- FIXME Error propagation from resolvers doesn't work

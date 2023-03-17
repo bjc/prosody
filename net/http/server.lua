@@ -1,19 +1,19 @@
 
 local t_insert, t_concat = table.insert, table.concat;
-local parser_new = require "net.http.parser".new;
-local events = require "util.events".new();
-local addserver = require "net.server".addserver;
-local log = require "util.logger".init("http.server");
+local parser_new = require "prosody.net.http.parser".new;
+local events = require "prosody.util.events".new();
+local addserver = require "prosody.net.server".addserver;
+local log = require "prosody.util.logger".init("http.server");
 local os_date = os.date;
 local pairs = pairs;
 local s_upper = string.upper;
 local setmetatable = setmetatable;
-local cache = require "util.cache";
-local codes = require "net.http.codes";
-local promise = require "util.promise";
-local errors = require "util.error";
+local cache = require "prosody.util.cache";
+local codes = require "prosody.net.http.codes";
+local promise = require "prosody.util.promise";
+local errors = require "prosody.util.error";
 local blocksize = 2^16;
-local async = require "util.async";
+local async = require "prosody.util.async";
 
 local _M = {};
 

@@ -11,7 +11,7 @@ local use = function( what )
 	return _G[ what ]
 end
 
-local log, table_concat = require ("util.logger").init("socket"), table.concat;
+local log, table_concat = require ("prosody.util.logger").init("socket"), table.concat;
 local out_put = function (...) return log("debug", table_concat{...}); end
 local out_error = function (...) return log("warn", table_concat{...}); end
 
@@ -49,10 +49,10 @@ local coroutine_yield = coroutine.yield
 
 local luasocket = use "socket" or require "socket"
 local luasocket_gettime = luasocket.gettime
-local inet = require "util.net";
+local inet = require "prosody.util.net";
 local inet_pton = inet.pton;
-local sslconfig = require "util.sslconfig";
-local has_luasec, tls_impl = pcall(require, "net.tls_luasec");
+local sslconfig = require "prosody.util.sslconfig";
+local has_luasec, tls_impl = pcall(require, "prosody.net.tls_luasec");
 
 --// extern lib methods //--
 

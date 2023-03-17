@@ -1,5 +1,5 @@
 -- COMPAT w/pre-0.9
-local log = require "util.logger".init("net.httpserver");
+local log = require "prosody.util.logger".init("net.httpserver");
 local traceback = debug.traceback;
 
 local _ENV = nil;

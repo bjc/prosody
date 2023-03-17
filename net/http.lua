@@ -6,17 +6,17 @@
 -- COPYING file in the source package for more information.
 --
 
-local b64 = require "util.encodings".base64.encode;
+local b64 = require "prosody.util.encodings".base64.encode;
 local url = require "socket.url"
-local httpstream_new = require "net.http.parser".new;
-local util_http = require "util.http";
-local events = require "util.events";
-local verify_identity = require"util.x509".verify_identity;
-local promise = require "util.promise";
-local http_errors = require "net.http.errors";
+local httpstream_new = require "prosody.net.http.parser".new;
+local util_http = require "prosody.util.http";
+local events = require "prosody.util.events";
+local verify_identity = require"prosody.util.x509".verify_identity;
+local promise = require "prosody.util.promise";
+local http_errors = require "prosody.net.http.errors";
 
-local basic_resolver = require "net.resolvers.basic";
-local connect = require "net.connect".connect;
+local basic_resolver = require "prosody.net.resolvers.basic";
+local connect = require "prosody.net.connect".connect;
 
 local ssl_available = pcall(require, "ssl");
 
@@ -25,10 +25,10 @@ local pairs = pairs;
 local tonumber, tostring, traceback =
       tonumber, tostring, debug.traceback;
 local os_time = os.time;
-local xpcall = require "util.xpcall".xpcall;
+local xpcall = require "prosody.util.xpcall".xpcall;
 local error = error
 
-local log = require "util.logger".init("http");
+local log = require "prosody.util.logger".init("http");
 
 local _ENV = nil;
 -- luacheck: std none

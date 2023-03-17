@@ -50,14 +50,14 @@ local coroutine_yield = coroutine.yield
 local has_luasec = pcall ( require , "ssl" )
 local socket = require "socket"
 local levent = require "luaevent.core"
-local inet = require "util.net";
+local inet = require "prosody.util.net";
 local inet_pton = inet.pton;
-local sslconfig = require "util.sslconfig";
-local tls_impl = require "net.tls_luasec";
+local sslconfig = require "prosody.util.sslconfig";
+local tls_impl = require "prosody.net.tls_luasec";
 
 local socket_gettime = socket.gettime
 
-local log = require ("util.logger").init("socket")
+local log = require ("prosody.util.logger").init("socket")
 
 local function debug(...)
 	return log("debug", ("%s "):rep(select('#', ...)), ...)

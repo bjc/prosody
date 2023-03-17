@@ -13,13 +13,13 @@
 
 
 local socket = require "socket";
-local have_timer, timer = pcall(require, "util.timer");
-local new_ip = require "util.ip".new_ip;
-local have_util_net, util_net = pcall(require, "util.net");
+local have_timer, timer = pcall(require, "prosody.util.timer");
+local new_ip = require "prosody.util.ip".new_ip;
+local have_util_net, util_net = pcall(require, "prosody.util.net");
 
-local log = require "util.logger".init("dns");
+local log = require "prosody.util.logger".init("dns");
 
-local _, windows = pcall(require, "util.windows");
+local _, windows = pcall(require, "prosody.util.windows");
 local is_windows = (_ and windows) or os.getenv("WINDIR");
 
 local coroutine, io, math, string, table =

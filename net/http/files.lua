@@ -6,10 +6,10 @@
 -- COPYING file in the source package for more information.
 --
 
-local server = require"net.http.server";
+local server = require"prosody.net.http.server";
 local lfs = require "lfs";
-local new_cache = require "util.cache".new;
-local log = require "util.logger".init("net.http.files");
+local new_cache = require "prosody.util.cache".new;
+local log = require "prosody.util.logger".init("net.http.files");
 
 local os_date = os.date;
 local open = io.open;
@@ -23,7 +23,7 @@ if package.config:sub(1,1) == "\\" then
 	forbidden_chars_pattern = "[/%z\001-\031\127\"*:<>?|]"
 end
 
-local urldecode = require "util.http".urldecode;
+local urldecode = require "prosody.util.http".urldecode;
 local function sanitize_path(path) --> util.paths or util.http?
 	if not path then return end
 	local out = {};

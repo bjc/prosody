@@ -8,13 +8,13 @@
 
 local t_concat = table.concat;
 
-local http = require "net.http";
-local frames = require "net.websocket.frames";
-local base64 = require "util.encodings".base64;
-local sha1 = require "util.hashes".sha1;
-local random_bytes = require "util.random".bytes;
-local timer = require "util.timer";
-local log = require "util.logger".init "websocket";
+local http = require "prosody.net.http";
+local frames = require "prosody.net.websocket.frames";
+local base64 = require "prosody.util.encodings".base64;
+local sha1 = require "prosody.util.hashes".sha1;
+local random_bytes = require "prosody.util.random".bytes;
+local timer = require "prosody.util.timer";
+local log = require "prosody.util.logger".init "websocket";
 
 local close_timeout = 3; -- Seconds to wait after sending close frame until closing connection.
 

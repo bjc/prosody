@@ -1,7 +1,7 @@
-local adns = require "net.adns";
-local basic = require "net.resolvers.basic";
-local inet_pton = require "util.net".pton;
-local idna_to_ascii = require "util.encodings".idna.to_ascii;
+local adns = require "prosody.net.adns";
+local basic = require "prosody.net.resolvers.basic";
+local inet_pton = require "prosody.util.net".pton;
+local idna_to_ascii = require "prosody.util.encodings".idna.to_ascii;
 
 local methods = {};
 local resolver_mt = { __index = methods };

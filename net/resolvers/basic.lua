@@ -1,9 +1,9 @@
-local adns = require "net.adns";
-local inet_pton = require "util.net".pton;
-local inet_ntop = require "util.net".ntop;
-local idna_to_ascii = require "util.encodings".idna.to_ascii;
-local promise = require "util.promise";
-local t_move = require "util.table".move;
+local adns = require "prosody.net.adns";
+local inet_pton = require "prosody.util.net".pton;
+local inet_ntop = require "prosody.util.net".ntop;
+local idna_to_ascii = require "prosody.util.encodings".idna.to_ascii;
+local promise = require "prosody.util.promise";
+local t_move = require "prosody.util.table".move;
 
 local methods = {};
 local resolver_mt = { __index = methods };

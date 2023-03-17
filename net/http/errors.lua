@@ -2,8 +2,8 @@
 -- and a function to return a util.error object given callback 'code' and 'body'
 -- parameters.
 
-local codes = require "net.http.codes";
-local util_error = require "util.error";
+local codes = require "prosody.net.http.codes";
+local util_error = require "prosody.util.error";
 
 local error_templates = {
 	-- This code is used by us to report a client-side or connection error.

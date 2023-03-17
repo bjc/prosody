@@ -1,8 +1,8 @@
 local tonumber = tonumber;
 local assert = assert;
 local url_parse = require "socket.url".parse;
-local urldecode = require "util.http".urldecode;
-local dbuffer = require "util.dbuffer";
+local urldecode = require "prosody.util.http".urldecode;
+local dbuffer = require "prosody.util.dbuffer";
 
 local function preprocess_path(path)
 	path = urldecode((path:gsub("//+", "/")));

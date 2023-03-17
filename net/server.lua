@@ -12,13 +12,13 @@ if not (prosody and prosody.config_loaded) then
 	error(debug.traceback("Loading outside Prosody or Prosody not yet initialized"), 0);
 end
 
-local log = require "util.logger".init("net.server");
+local log = require "prosody.util.logger".init("net.server");
 
 local default_backend = "epoll";
 
-local server_type = require "core.configmanager".get("*", "network_backend") or default_backend;
+local server_type = require "prosody.core.configmanager".get("*", "network_backend") or default_backend;
 
-if require "core.configmanager".get("*", "use_libevent") then
+if require "prosody.core.configmanager".get("*", "use_libevent") then
 	server_type = "event";
 end
 
@@ -32,7 +32,7 @@ end
 local server;
 local set_config;
 if server_type == "event" then
-	server = require "net.server_event";
+	server = require "prosody.net.server_event";
 
 	local defaults = {};
 	for k,v in pairs(server.cfg) do
@@ -61,7 +61,7 @@ if server_type == "event" then
 elseif server_type == "select" then
 	-- TODO Remove completely.
 	log("warn", "select is deprecated, the new default is epoll. For more info see https://prosody.im/doc/network_backend");
-	server = require "net.server_select";
+	server = require "prosody.net.server_select";
 
 	local defaults = {};
 	for k,v in pairs(server.getsettings()) do
@@ -75,7 +75,7 @@ elseif server_type == "select" then
 		server.changesettings(select_settings);
 	end
 else
-	server = require("net.server_"..server_type);
+	server = require("prosody.net.server_"..server_type);
 	set_config = server.set_config;
 	if not server.get_backend then
 		function server.get_backend()
@@ -85,7 +85,7 @@ else
 end
 
 -- If server.hook_signal exists, replace signal.signal()
-local has_signal, signal = pcall(require, "util.signal");
+local has_signal, signal = pcall(require, "prosody.util.signal");
 if has_signal then
 	if server.hook_signal then
 		function signal.signal(signal_id, handler)
@@ -109,7 +109,7 @@ else
 end
 
 if prosody and set_config then
-	local config_get = require "core.configmanager".get;
+	local config_get = require "prosody.core.configmanager".get;
 	local function load_config()
 		local settings = config_get("*", "network_settings") or {};
 		return set_config(settings);
@@ -125,6 +125,6 @@ function server.tls_builder()
 	return tls_builder(prosody.paths.config or "")
 end
 
--- require "net.server" shall now forever return this,
+-- require "prosody.net.server" shall now forever return this,
 -- ie. server_select or server_event as chosen above.
 return server;

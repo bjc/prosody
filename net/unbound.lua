@@ -13,15 +13,15 @@ local s_lower = string.lower;
 local s_upper = string.upper;
 local noop = function() end;
 
-local logger = require "util.logger";
+local logger = require "prosody.util.logger";
 local log = logger.init("unbound");
-local net_server = require "net.server";
+local net_server = require "prosody.net.server";
 local libunbound = require"lunbound";
-local promise = require"util.promise";
-local new_id = require "util.id".short;
+local promise = require"prosody.util.promise";
+local new_id = require "prosody.util.id".short;
 
 local gettime = require"socket".gettime;
-local dns_utils = require"util.dns";
+local dns_utils = require"prosody.util.dns";
 local classes, types, errors = dns_utils.classes, dns_utils.types, dns_utils.errors;
 local parsers = dns_utils.parsers;
 
@@ -44,7 +44,7 @@ end
 
 local unbound_config;
 if prosody then
-	local config = require"core.configmanager";
+	local config = require"prosody.core.configmanager";
 	unbound_config = add_defaults(config.get("*", "unbound"));
 	prosody.events.add_handler("config-reloaded", function()
 		unbound_config = add_defaults(config.get("*", "unbound"));

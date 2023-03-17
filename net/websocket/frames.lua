@@ -6,17 +6,17 @@
 -- COPYING file in the source package for more information.
 --
 
-local random_bytes = require "util.random".bytes;
+local random_bytes = require "prosody.util.random".bytes;
 
-local bit = require "util.bitcompat";
+local bit = require "prosody.util.bitcompat";
 local band = bit.band;
 local bor = bit.bor;
-local sbit = require "util.strbitop";
+local sbit = require "prosody.util.strbitop";
 local sxor = sbit.sxor;
 
 local s_char = string.char;
-local s_pack = require"util.struct".pack;
-local s_unpack = require"util.struct".unpack;
+local s_pack = require"prosody.util.struct".pack;
+local s_unpack = require"prosody.util.struct".unpack;
 
 local function pack_uint16be(x)
 	return s_pack(">I2", x);

@@ -6,11 +6,11 @@
 -- COPYING file in the source package for more information.
 --
 
-local server = require "net.server";
-local new_resolver = require "net.dns".resolver;
-local promise = require "util.promise";
+local server = require "prosody.net.server";
+local new_resolver = require "prosody.net.dns".resolver;
+local promise = require "prosody.util.promise";
 
-local log = require "util.logger".init("adns");
+local log = require "prosody.util.logger".init("adns");
 
 log("debug", "Using legacy DNS API (missing lua-unbound?)"); -- TODO write docs about luaunbound
 -- TODO Raise log level once packages are available

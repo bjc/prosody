@@ -1,11 +1,11 @@
-local base64 = require "util.encodings".base64;
-local hashes = require "util.hashes";
-local net = require "util.net";
-local random = require "util.random";
-local struct = require "util.struct";
-local bit32 = require"util.bitcompat";
-local sxor = require"util.strbitop".sxor;
-local new_ip = require "util.ip".new_ip;
+local base64 = require "prosody.util.encodings".base64;
+local hashes = require "prosody.util.hashes";
+local net = require "prosody.util.net";
+local random = require "prosody.util.random";
+local struct = require "prosody.util.struct";
+local bit32 = require"prosody.util.bitcompat";
+local sxor = require"prosody.util.strbitop".sxor;
+local new_ip = require "prosody.util.ip".new_ip;
 
 --- Public helpers
 
