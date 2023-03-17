@@ -55,22 +55,22 @@ if not pcall(require, "prosody.loader") then
 	pcall(require, "loader");
 end
 
-local startup = require "util.startup";
+local startup = require "prosody.util.startup";
 startup.prosodyctl();
 
 -----------
 
-local configmanager = require "core.configmanager";
-local modulemanager = require "core.modulemanager"
-local prosodyctl = require "util.prosodyctl"
+local configmanager = require "prosody.core.configmanager";
+local modulemanager = require "prosody.core.modulemanager"
+local prosodyctl = require "prosody.util.prosodyctl"
 local socket = require "socket"
-local dependencies = require "util.dependencies";
+local dependencies = require "prosody.util.dependencies";
 local lfs = dependencies.softreq "lfs";
 
 -----------------------
 
-local parse_args = require "util.argparse".parse;
-local human_io = require "util.human.io";
+local parse_args = require "prosody.util.argparse".parse;
+local human_io = require "prosody.util.human.io";
 
 local show_message, show_warning = prosodyctl.show_message, prosodyctl.show_warning;
 local show_usage = prosodyctl.show_usage;
@@ -78,7 +78,7 @@ local read_password = human_io.read_password;
 local call_luarocks = prosodyctl.call_luarocks;
 local error_messages = prosodyctl.error_messages;
 
-local jid_split = require "util.jid".prepped_split;
+local jid_split = require "prosody.util.jid".prepped_split;
 
 local prosodyctl_timeout = (configmanager.get("*", "prosodyctl_timeout") or 5) * 2;
 -----------------------
@@ -438,8 +438,8 @@ function commands.about(arg)
 	end
 
 	local pwd = ".";
-	local sorted_pairs = require "util.iterators".sorted_pairs;
-	local hg = require"util.mercurial";
+	local sorted_pairs = require "prosody.util.iterators".sorted_pairs;
+	local hg = require"prosody.util.mercurial";
 	local relpath = configmanager.resolve_relative_path;
 
 	print("Prosody "..(prosody.version or "(unknown version)"));
@@ -461,7 +461,7 @@ function commands.about(arg)
 				.."\n  ";
 		end)));
 	print("");
-	local have_pposix, pposix = pcall(require, "util.pposix");
+	local have_pposix, pposix = pcall(require, "prosody.util.pposix");
 	if have_pposix and pposix.uname then
 		print("# Operating system");
 		local uname, err = pposix.uname();
@@ -494,7 +494,7 @@ function commands.about(arg)
 	print("");
 	print("# Network");
 	print("");
-	print("Backend: "..require "net.server".get_backend());
+	print("Backend: "..require "prosody.net.server".get_backend());
 	print("");
 	print("# Lua module versions");
 	local module_versions, longest_name = {}, 8;
@@ -516,7 +516,7 @@ function commands.about(arg)
 	}
 	local lunbound = dependencies.softreq"lunbound";
 	local lxp = dependencies.softreq"lxp";
-	local hashes = dependencies.softreq"util.hashes";
+	local hashes = dependencies.softreq"prosody.util.hashes";
 	for name, module in pairs(package.loaded) do
 		local version_field = alternate_version_fields[name] or "_VERSION";
 		if type(module) == "table" and rawget(module, version_field)
@@ -549,7 +549,7 @@ function commands.about(arg)
 	end
 	print("");
 	print("# library versions");
-	if require "net.server".event_base then
+	if require "prosody.net.server".event_base then
 		library_versions["libevent"] = require"luaevent".core.libevent_version();
 	end
 	for name, version in sorted_pairs(library_versions) do
@@ -639,8 +639,8 @@ end
 
 ---------------------
 
-local async = require "util.async";
-local server = require "net.server";
+local async = require "prosody.util.async";
+local server = require "prosody.net.server";
 local watchers = {
 	error = function (_, err)
 		error(err);
@@ -686,7 +686,7 @@ local command_runner = async.runner(function ()
 	end
 
 	if command and not commands[command] then
-		local ok, command_module = pcall(require, "util.prosodyctl."..command);
+		local ok, command_module = pcall(require, "prosody.util.prosodyctl."..command);
 		if ok and command_module[command] then
 			commands[command] = command_module[command];
 		end
@@ -703,7 +703,7 @@ local command_runner = async.runner(function ()
 		print("");
 		print("Where COMMAND may be one of:");
 
-		local hidden_commands = require "util.set".new{ "register", "unregister" };
+		local hidden_commands = require "prosody.util.set".new{ "register", "unregister" };
 		local commands_order = {
 			"Process management:",
 				"start"; "stop"; "restart"; "reload"; "status";

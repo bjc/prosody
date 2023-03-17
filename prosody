@@ -55,8 +55,8 @@ if not pcall(require, "prosody.loader") then
 	pcall(require, "loader");
 end
 
-local startup = require "util.startup";
-local async = require "util.async";
+local startup = require "prosody.util.startup";
+local async = require "prosody.util.async";
 
 -- Note: it's important that this thread is not GC'd, as some C libraries
 -- that are initialized here store a pointer to it ( :/ ).
@@ -83,7 +83,7 @@ local function loop()
 	end
 
 	local sleep = require"socket".sleep;
-	local server = require "net.server";
+	local server = require "prosody.net.server";
 
 	while select(2, xpcall(server.loop, catch_uncaught_error)) ~= "quitting" do
 		sleep(0.2);
