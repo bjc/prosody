@@ -10,7 +10,6 @@
 local max = math.max;
 
 local scram_hashers = require "util.sasl.scram".hashers;
-local usermanager = require "core.usermanager";
 local generate_uuid = require "util.uuid".generate;
 local new_sasl = require "util.sasl".new;
 local hex = require"util.hex";
@@ -163,8 +162,8 @@ end
 
 function provider.get_sasl_handler()
 	local testpass_authentication_profile = {
-		plain_test = function(_, username, password, realm)
-			return usermanager.test_password(username, realm, password), provider.is_enabled(username);
+		plain_test = function(_, username, password)
+			return provider.test_password(username, password), provider.is_enabled(username);
 		end,
 		[scram_name] = function(_, username)
 			local credentials = accounts:get(username);
