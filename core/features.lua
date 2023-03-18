@@ -6,5 +6,7 @@ return {
 		"mod_bookmarks";
 		-- Roles, module.may and per-session authz
 		"permissions";
+		-- prosody.* namespace
+		"loader";
 	};
 };
