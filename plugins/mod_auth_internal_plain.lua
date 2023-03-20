@@ -77,11 +77,14 @@ function provider.users()
 end
 
 function provider.create_user(username, password)
+	local now = os.time();
+	if password == nil then
+		return accounts:set(username, { created = now, updated = now, disabled = true });
+	end
 	password = saslprep(password);
 	if not password then
 		return nil, "Password fails SASLprep.";
 	end
-	local now = os.time();
 	return accounts:set(username, {
 		password = password;
 		created = now, updated = now;
