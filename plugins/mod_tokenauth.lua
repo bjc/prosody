@@ -89,6 +89,7 @@ end
 function get_token_info(token)
 	local token_id, token_user, token_host = parse_token(token);
 	if not token_id then
+		module:log("warn", "Failed to verify access token: %s", token_user);
 		return nil, "invalid-token-format";
 	end
 	return _get_parsed_token_info(token_id, token_user, token_host);
@@ -97,6 +98,7 @@ end
 function get_token_session(token, resource)
 	local token_id, token_user, token_host = parse_token(token);
 	if not token_id then
+		module:log("warn", "Failed to verify access token: %s", token_user);
 		return nil, "invalid-token-format";
 	end
 
@@ -116,6 +118,7 @@ end
 function revoke_token(token)
 	local token_id, token_user, token_host = parse_token(token);
 	if not token_id then
+		module:log("warn", "Failed to verify access token: %s", token_user);
 		return nil, "invalid-token-format";
 	end
 	if token_host ~= module.host then
