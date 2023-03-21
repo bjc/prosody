@@ -32,6 +32,10 @@ TRUNK
 - New role and permissions framework and API
 - Ability to disable and enable user accounts
 
+### Storage
+
+- New 'keyval+' combined keyval/map store type
+
 ## Changes
 
 - Support sub-second precision timestamps
