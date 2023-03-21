@@ -8,5 +8,7 @@ return {
 		"permissions";
 		-- prosody.* namespace
 		"loader";
+		-- "keyval+" store
+		"keyval+";
 	};
 };
