@@ -1,6 +1,8 @@
+local base64 = require "util.encodings".base64;
+local hashes = require "util.hashes";
 local id = require "util.id";
 local jid = require "util.jid";
-local base64 = require "util.encodings".base64;
+local random = require "util.random";
 local usermanager = require "core.usermanager";
 local generate_identifier = require "util.id".short;
 
@@ -29,7 +31,11 @@ function create_jid_token(actor_jid, token_jid, token_role, token_ttl, token_dat
 		return nil, "bad-request";
 	end
 
+	local token_id = id.short();
+
 	local token_info = {
+		id = token_id;
+
 		owner = actor_jid;
 		created = os.time();
 		expires = token_ttl and (os.time() + token_ttl) or nil;
@@ -41,35 +47,50 @@ function create_jid_token(actor_jid, token_jid, token_role, token_ttl, token_dat
 		data = token_data;
 	};
 
-	local token_id = id.long();
-	local token = base64.encode("1;"..jid.join(token_username, token_host)..";"..token_id);
-	token_store:set(token_username, token_id, token_info);
+	local token_secret = random.bytes(18);
+	local token = "secret-token:"..base64.encode("2;"..token_id..";"..token_secret..";"..jid.join(token_username, token_host));
+	token_store:set(token_username, token_id, {
+		secret_sha256 = hashes.sha256(token_secret, true);
+		token_info = token_info
+	});
 
 	return token, token_info;
 end
 
 local function parse_token(encoded_token)
 	if not encoded_token then return nil; end
-	local token = base64.decode(encoded_token);
+	local encoded_data = encoded_token:match("^secret%-token:(.+)$");
+	if not encoded_data then return nil; end
+	local token = base64.decode(encoded_data);
 	if not token then return nil; end
-	local token_jid, token_id = token:match("^1;([^;]+);(.+)$");
-	if not token_jid then return nil; end
+	local token_id, token_secret, token_jid = token:match("^2;([^;]+);([^;]+);(.+)$");
+	if not token_id then return nil; end
 	local token_user, token_host = jid.split(token_jid);
-	return token_id, token_user, token_host;
+	return token_id, token_user, token_host, token_secret;
 end
 
-local function _get_parsed_token_info(token_id, token_user, token_host)
+local function _get_validated_token_info(token_id, token_user, token_host, token_secret)
 	if token_host ~= module.host then
 		return nil, "invalid-host";
 	end
 
-	local token_info, err = token_store:get(token_user, token_id);
-	if not token_info then
+	local token, err = token_store:get(token_user, token_id);
+	if not token then
 		if err then
 			return nil, "internal-error";
 		end
 		return nil, "not-authorized";
+	elseif not token.secret_sha256 then -- older token format
+		token_store:set(token_user, token_id, nil);
+		return nil, "not-authorized";
 	end
+
+	-- Check provided secret
+	if not hashes.equals(hashes.sha256(token_secret, true), token.secret_sha256) then
+		return nil, "not-authorized";
+	end
+
+	local token_info = token.token_info;
 
 	if token_info.expires and token_info.expires < os.time() then
 		token_store:set(token_user, token_id, nil);
@@ -87,12 +108,12 @@ local function _get_parsed_token_info(token_id, token_user, token_host)
 end
 
 function get_token_info(token)
-	local token_id, token_user, token_host = parse_token(token);
+	local token_id, token_user, token_host, token_secret = parse_token(token);
 	if not token_id then
 		module:log("warn", "Failed to verify access token: %s", token_user);
 		return nil, "invalid-token-format";
 	end
-	return _get_parsed_token_info(token_id, token_user, token_host);
+	return _get_validated_token_info(token_id, token_user, token_host, token_secret);
 end
 
 function get_token_session(token, resource)
@@ -102,7 +123,7 @@ function get_token_session(token, resource)
 		return nil, "invalid-token-format";
 	end
 
-	local token_info, err = _get_parsed_token_info(token_id, token_user, token_host);
+	local token_info, err = _get_validated_token_info(token_id, token_user, token_host);
 	if not token_info then return nil, err; end
 
 	return {
