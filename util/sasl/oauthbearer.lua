@@ -11,7 +11,7 @@ local function oauthbearer(self, message)
 		return "failure", "not-authorized";
 	end
 
-	local gs2_header, kvpairs = message:match("^(n,[^,]*,),(.+)$");
+	local gs2_header, kvpairs = message:match("^(n,[^,]*,)(.+)$");
 	if not gs2_header then
 		return "failure", "malformed-request";
 	end
