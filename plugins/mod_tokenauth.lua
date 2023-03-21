@@ -117,13 +117,13 @@ function get_token_info(token)
 end
 
 function get_token_session(token, resource)
-	local token_id, token_user, token_host = parse_token(token);
+	local token_id, token_user, token_host, token_secret = parse_token(token);
 	if not token_id then
 		module:log("warn", "Failed to verify access token: %s", token_user);
 		return nil, "invalid-token-format";
 	end
 
-	local token_info, err = _get_validated_token_info(token_id, token_user, token_host);
+	local token_info, err = _get_validated_token_info(token_id, token_user, token_host, token_secret);
 	if not token_info then return nil, err; end
 
 	return {
