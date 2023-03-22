@@ -182,7 +182,7 @@ Juliet sends:
 	<iq type='result' id='fixme'/>
 
 Juliet sends:
-	<iq type='set' id='7'><pubsub xmlns='http://jabber.org/protocol/pubsub'><publish node='http://jabber.org/protocol/tune'><item id='current' publisher="${Juliet's JID}"><tune xmlns='http://jabber.org/protocol/tune'><title>Beautiful Cedars</title><artist>The Spinners</artist><source>Not Quite Folk</source><track>4</track></tune></item></publish></pubsub></iq>
+	<iq type='set' id='7'><pubsub xmlns='http://jabber.org/protocol/pubsub'><publish node='http://jabber.org/protocol/tune'><item id='current'><tune xmlns='http://jabber.org/protocol/tune'><title>Beautiful Cedars</title><artist>The Spinners</artist><source>Not Quite Folk</source><track>4</track></tune></item></publish></pubsub></iq>
 
 Juliet receives:
 	<iq type='result' id='7' ><pubsub xmlns='http://jabber.org/protocol/pubsub'><publish node='http://jabber.org/protocol/tune'><item id='current'/></publish></pubsub></iq>
@@ -197,13 +197,13 @@ Juliet sends:
 	<iq type='result' id='{scansion:any}'/>
 
 Romeo receives:
-	<message type='headline' from='pep-test-tqvqu_pv@localhost'><event xmlns='http://jabber.org/protocol/pubsub#event'><items node='http://jabber.org/protocol/tune'><item id='current' publisher="${Juliet's JID}"><tune xmlns='http://jabber.org/protocol/tune'><title>Beautiful Cedars</title><artist>The Spinners</artist><source>Not Quite Folk</source><track>4</track></tune></item></items></event></message>
+	<message type='headline' from='pep-test-tqvqu_pv@localhost'><event xmlns='http://jabber.org/protocol/pubsub#event'><items node='http://jabber.org/protocol/tune'><item id='current'><tune xmlns='http://jabber.org/protocol/tune'><title>Beautiful Cedars</title><artist>The Spinners</artist><source>Not Quite Folk</source><track>4</track></tune></item></items></event></message>
 
 Romeo sends:
 	<iq type='result' id='disco' to='pep-test-tqvqu_pv@localhost'><query xmlns='http://jabber.org/protocol/disco#info' node='http://code.matthewwild.co.uk/verse/#IfQwbaaDB4LEP5tkGArEaB/3Y+s='><identity type='pc' name='Verse' category='client'/><feature var='http://jabber.org/protocol/tune+notify'/><feature var='http://jabber.org/protocol/disco#info'/><feature var='http://jabber.org/protocol/disco#items'/><feature var='http://jabber.org/protocol/caps'/><feature var='http://jabber.org/protocol/mood+notify'/></query></iq>
 
 Romeo receives:
-	<message type='headline' from='pep-test-tqvqu_pv@localhost'><event xmlns='http://jabber.org/protocol/pubsub#event'><items node='http://jabber.org/protocol/tune'><item id='current' publisher="${Juliet's JID}"><tune xmlns='http://jabber.org/protocol/tune'><title>Beautiful Cedars</title><artist>The Spinners</artist><source>Not Quite Folk</source><track>4</track></tune></item></items></event></message>
+	<message type='headline' from='pep-test-tqvqu_pv@localhost'><event xmlns='http://jabber.org/protocol/pubsub#event'><items node='http://jabber.org/protocol/tune'><item id='current'><tune xmlns='http://jabber.org/protocol/tune'><title>Beautiful Cedars</title><artist>The Spinners</artist><source>Not Quite Folk</source><track>4</track></tune></item></items></event></message>
 
 Juliet disconnects
 
