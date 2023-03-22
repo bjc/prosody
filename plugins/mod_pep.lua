@@ -313,7 +313,7 @@ local function resend_last_item(jid, node, service)
 	if ok and config.send_last_published_item ~= "on_sub_and_presence" then return end
 	local ok, id, item = service:get_last_item(node, jid);
 	if not (ok and id) then return; end
-	service.config.broadcaster("items", node, { [jid] = true }, item);
+	service.config.broadcaster("items", node, { [jid] = true }, item, true, service.nodes[node], service);
 end
 
 local function update_subscriptions(recipient, service_name, nodes)
