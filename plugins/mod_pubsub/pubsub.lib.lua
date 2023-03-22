@@ -167,8 +167,8 @@ local node_config_form = dataform {
 	{
 		type = "list-single";
 		label = "Specify whose JID to include as the publisher of items";
-		name = "pubsub#itemreply";
-		var = "itemreply";
+		name = "itemreply";
+		var = "pubsub#itemreply";
 		options = {
 			{ label = "Include the node owner's JID", value = "owner" };
 			{ label = "Include the item publisher's JID", value = "publisher" };
