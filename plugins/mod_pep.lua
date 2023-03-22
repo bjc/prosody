@@ -136,9 +136,13 @@ end
 local function get_broadcaster(username)
 	local user_bare = jid_join(username, host);
 	local function simple_broadcast(kind, node, jids, item, _, node_obj)
+		local expose_publisher;
 		if node_obj then
 			if node_obj.config["notify_"..kind] == false then
 				return;
+			end
+			if node_obj.config.itemreply == "publisher" then
+				expose_publisher = true;
 			end
 		end
 		if kind == "retract" then
@@ -150,6 +154,9 @@ local function get_broadcaster(username)
 			if kind == "items" then
 				if node_obj and node_obj.config.include_payload == false then
 					item:maptags(function () return nil; end);
+				end
+				if not expose_publisher then
+					item.attr.publisher = nil;
 				end
 			end
 		end

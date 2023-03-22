@@ -164,6 +164,17 @@ local node_config_form = dataform {
 		var = "pubsub#notify_retract";
 		value = true;
 	};
+	{
+		type = "list-single";
+		label = "Specify whose JID to include as the publisher of items";
+		name = "pubsub#itemreply";
+		var = "itemreply";
+		options = {
+			{ label = "Include the node owner's JID", value = "owner" };
+			{ label = "Include the item publisher's JID", value = "publisher" };
+			{ label = "Don't include any JID with items", value = "none", default = true };
+		};
+	};
 };
 _M.node_config_form = node_config_form;
 
@@ -347,6 +358,13 @@ function handlers.get_items(origin, stanza, items, service)
 		origin.send(pubsub_error_reply(stanza, "nodeid-required"));
 		return true;
 	end
+
+	local node_obj = service.nodes[node];
+	if not node_obj then
+		origin.send(pubsub_error_reply(stanza, "item-not-found"));
+		return true;
+	end
+
 	local resultspec; -- TODO rsm.get()
 	if items.attr.max_items then
 		resultspec = { max = tonumber(items.attr.max_items) };
@@ -358,6 +376,9 @@ function handlers.get_items(origin, stanza, items, service)
 	end
 
 	local expose_publisher = service.config.expose_publisher;
+	if expose_publisher == nil and node_obj.config.itemreply == "publisher" then
+		expose_publisher = true;
+	end
 
 	local data = st.stanza("items", { node = node });
 	local iter, v, i = ipairs(results);

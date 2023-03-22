@@ -12,7 +12,7 @@ local xmlns_pubsub_owner = "http://jabber.org/protocol/pubsub#owner";
 local autocreate_on_publish = module:get_option_boolean("autocreate_on_publish", false);
 local autocreate_on_subscribe = module:get_option_boolean("autocreate_on_subscribe", false);
 local pubsub_disco_name = module:get_option_string("name", "Prosody PubSub Service");
-local expose_publisher = module:get_option_boolean("expose_publisher", false)
+local service_expose_publisher = module:get_option_boolean("expose_publisher")
 
 local service;
 
@@ -81,7 +81,11 @@ function simple_broadcast(kind, node, jids, item, actor, node_obj, service) --lu
 			if node_obj and node_obj.config.include_payload == false then
 				item:maptags(function () return nil; end);
 			end
-			if not expose_publisher then
+			local node_expose_publisher = service_expose_publisher;
+			if node_expose_publisher == nil and node_obj and node_obj.config.itemreply == "publisher" then
+				node_expose_publisher = true;
+			end
+			if not node_expose_publisher then
 				item.attr.publisher = nil;
 			elseif not item.attr.publisher and actor ~= true then
 				item.attr.publisher = service.config.normalize_jid(actor);
@@ -192,7 +196,7 @@ function set_service(new_service)
 	service = new_service;
 	service.config.autocreate_on_publish = autocreate_on_publish;
 	service.config.autocreate_on_subscribe = autocreate_on_subscribe;
-	service.config.expose_publisher = expose_publisher;
+	service.config.expose_publisher = service_expose_publisher;
 
 	service.config.nodestore = node_store;
 	service.config.itemstore = create_simple_itemstore;
@@ -219,7 +223,7 @@ function module.load()
 	set_service(pubsub.new({
 		autocreate_on_publish = autocreate_on_publish;
 		autocreate_on_subscribe = autocreate_on_subscribe;
-		expose_publisher = expose_publisher;
+		expose_publisher = service_expose_publisher;
 
 		node_defaults = {
 			["persist_items"] = true;
