@@ -118,6 +118,18 @@ Romeo receives:
 					<field var="pubsub#notify_retract" label="Whether to notify subscribers when items are removed from the node" type="boolean">
 						<value>1</value>
 					</field>
+					<field label="Specify whose JID to include as the publisher of items" var="pubsub#itemreply" type="list-single">
+						<option label="Include the node owner's JID">
+							<value>owner</value>
+						</option>
+						<option label="Include the item publisher's JID">
+							<value>publisher</value>
+						</option>
+						<option label="Don't include any JID with items">
+							<value>none</value>
+						</option>
+						<value>none</value>
+					</field>
 				</x>
 			</configure>
 		</pubsub>
@@ -198,6 +210,9 @@ Romeo sends:
 					</field>
 					<field var="pubsub#notify_retract" type="boolean" label="Whether to notify subscribers when items are removed from the node">
 						<value>1</value>
+					</field>
+					<field var="pubsub#itemreply" type="boolean">
+						<value>none</value>
 					</field>
 				</x>
 			</configure>
