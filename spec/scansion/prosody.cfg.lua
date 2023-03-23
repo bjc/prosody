@@ -66,6 +66,9 @@ modules_enabled = {
 		"tombstones";
 		"user_account_management";
 
+	-- Required for integration testing
+		"debug_reset";
+
 	-- Useful for testing
 		--"scansion_record"; -- Records things that happen in scansion test case format
 }
