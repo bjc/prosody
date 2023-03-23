@@ -1,4 +1,4 @@
-local Stanza = require "util.stanza".stanza_t
+local Stanza = require "prosody.util.stanza".stanza_t
 
 local record Room
 	jid : string

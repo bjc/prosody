@@ -1,4 +1,4 @@
-local stanza_t = require "util.stanza".stanza_t
+local stanza_t = require "prosody.util.stanza".stanza_t
 
 local record lib
 	record dataform

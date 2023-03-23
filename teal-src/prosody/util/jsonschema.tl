@@ -8,12 +8,12 @@
 -- https://json-schema.org/draft/2020-12/json-schema-validation.html
 --
 
-if not math.type then require "util.mathcompat" end
+if not math.type then require "prosody.util.mathcompat" end
 
-local json = require"util.json"
+local json = require "prosody.util.json"
 local null = json.null;
 
-local pointer = require "util.jsonpointer"
+local pointer = require "prosody.util.jsonpointer"
 
 local type json_type_name = json.json_type_name
 

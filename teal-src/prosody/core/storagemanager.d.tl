@@ -4,7 +4,7 @@
 
 -- Key-Value stores (the default)
 
-local stanza = require"util.stanza".stanza_t
+local stanza = require"prosody.util.stanza".stanza_t
 
 local record keyval_store
 	get : function ( keyval_store, string ) : any , string

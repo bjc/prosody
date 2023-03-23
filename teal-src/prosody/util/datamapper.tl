@@ -19,14 +19,14 @@
 -- TODO s/number/integer/ once we have appropriate math.type() compat
 --
 
-if not math.type then require "util.mathcompat" end
+if not math.type then require "prosody.util.mathcompat" end
 
-local st = require "util.stanza";
-local json = require"util.json"
-local pointer = require"util.jsonpointer";
+local st = require "prosody.util.stanza";
+local json = require "prosody.util.json"
+local pointer = require "prosody.util.jsonpointer";
 
 local json_type_name = json.json_type_name;
-local json_schema_object = require "util.jsonschema"
+local json_schema_object = require "prosody.util.jsonschema"
 local type schema_t = boolean | json_schema_object
 
 local function toboolean ( s : string ) : boolean

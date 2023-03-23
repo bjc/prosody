@@ -1,4 +1,4 @@
-local st = require"util.stanza"
+local st = require "prosody.util.stanza"
 
 global record moduleapi
 	get_name : function (moduleapi) : string

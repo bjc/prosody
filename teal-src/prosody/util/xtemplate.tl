@@ -14,7 +14,7 @@ local s_match = string.match;
 local s_sub = string.sub;
 local t_concat = table.concat;
 
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 
 local type escape_t = function (string) : string
 local type filter_t = function (string, string | st.stanza_t, string) : string | st.stanza_t, boolean

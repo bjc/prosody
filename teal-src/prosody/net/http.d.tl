@@ -1,4 +1,4 @@
-local Promise = require "util.promise".Promise;
+local Promise = require "prosody.util.promise".Promise;
 
 local record sslctx -- from LuaSec
 end

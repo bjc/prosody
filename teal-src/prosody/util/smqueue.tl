@@ -1,4 +1,4 @@
-local queue = require "util.queue";
+local queue = require "prosody.util.queue";
 
 local record lib
 	-- T would typically be util.stanza

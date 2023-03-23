@@ -1,4 +1,4 @@
-local crypto = require "util.crypto"
+local crypto = require "prosody.util.crypto"
 local record jwtlib
 	enum algorithm
 		"HS256"

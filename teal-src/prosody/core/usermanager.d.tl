@@ -1,4 +1,4 @@
-local Role = require "util.roles".Role;
+local Role = require "prosody.util.roles".Role;
 
 local record usermanager
 	record AuthProvider

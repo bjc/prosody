@@ -135,7 +135,7 @@ lint:
 	@echo $$(sed -n '/^\tlocal exclude_files/,/^}/p;' .luacheckrc | sed '1d;$d' | wc -l) files ignored
 	shellcheck configure
 
-vpath %.tl teal-src/
+vpath %.tl teal-src/prosody
 %.lua: %.tl
 	tl -I teal-src/ --gen-compat off --gen-target 5.1 gen $^ -o $@
 	-lua-format -i $@
