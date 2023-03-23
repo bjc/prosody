@@ -6,7 +6,6 @@
 module:set_global();
 
 local hostmanager = require "core.hostmanager";
-local modulemanager = require "core.modulemanager";
 
 local timer = require "util.timer";
 
