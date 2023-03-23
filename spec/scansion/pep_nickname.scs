@@ -58,7 +58,7 @@ Romeo receives:
 	<message type="headline" from="romeo@localhost">
 	  <event xmlns="http://jabber.org/protocol/pubsub#event">
 	    <items node="http://jabber.org/protocol/nick">
-	      <item id="current" publisher="${Romeo's JID}">
+	      <item id="current">
 	        <nickname xmlns="http://jabber.org/protocol/nick"/>
 	      </item>
 	    </items>
