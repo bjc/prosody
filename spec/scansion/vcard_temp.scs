@@ -51,8 +51,6 @@ Romeo receives:
 		</vCard>
 	</iq>
 
-Romeo disconnects
-
 Juliet connects
 
 Juliet sends:
@@ -76,5 +74,7 @@ Juliet receives:
 	</iq>
 
 Juliet disconnects
+
+Romeo disconnects
 
 # recording ended on 2018-10-20T15:02:14Z
