@@ -6,13 +6,13 @@
 -- COPYING file in the source package for more information.
 --
 
-local encodings = require "util.encodings";
+local encodings = require "prosody.util.encodings";
 assert(encodings.confusable, "This module requires that Prosody be built with ICU");
 local skeleton = encodings.confusable.skeleton;
 
-local usage = require "util.prosodyctl".show_usage;
-local usermanager = require "core.usermanager";
-local storagemanager = require "core.storagemanager";
+local usage = require "prosody.util.prosodyctl".show_usage;
+local usermanager = require "prosody.core.usermanager";
+local storagemanager = require "prosody.core.storagemanager";
 
 local skeletons
 function module.load()

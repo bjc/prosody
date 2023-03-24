@@ -8,8 +8,8 @@
 --
 
 local gettime = os.time;
-local datetime = require "util.datetime";
-local st = require "util.stanza";
+local datetime = require "prosody.util.datetime";
+local st = require "prosody.util.stanza";
 
 local default_history_length = 20;
 local max_history_length = module:get_option_number("max_history_messages", math.huge);

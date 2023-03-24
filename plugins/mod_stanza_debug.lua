@@ -1,6 +1,6 @@
 module:set_global();
 
-local filters = require "util.filters";
+local filters = require "prosody.util.filters";
 
 local function log_send(t, session)
 	if t and t ~= "" and t ~= " " then

@@ -1,10 +1,10 @@
 module:set_global();
 
-local array = require "util.array";
+local array = require "prosody.util.array";
 local max_buffer_len = module:get_option_number("multiplex_buffer_size", 1024);
 local default_mode = module:get_option_number("network_default_read_size", 4096);
 
-local portmanager = require "core.portmanager";
+local portmanager = require "prosody.core.portmanager";
 
 local available_services = {};
 local service_by_protocol = {};

@@ -8,8 +8,8 @@
 
 module:set_global();
 
-local statsman = require "core.statsmanager";
-local ip = require "util.ip";
+local statsman = require "prosody.core.statsmanager";
+local ip = require "prosody.util.ip";
 
 local get_metric_registry = statsman.get_metric_registry;
 local collect = statsman.collect;

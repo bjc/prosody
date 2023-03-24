@@ -12,18 +12,18 @@ local pairs = pairs;
 local next = next;
 local setmetatable = setmetatable;
 
-local dataform = require "util.dataforms";
-local iterators = require "util.iterators";
-local jid_split = require "util.jid".split;
-local jid_bare = require "util.jid".bare;
-local jid_prep = require "util.jid".prep;
-local jid_join = require "util.jid".join;
-local jid_resource = require "util.jid".resource;
-local resourceprep = require "util.encodings".stringprep.resourceprep;
-local st = require "util.stanza";
-local base64 = require "util.encodings".base64;
-local hmac_sha256 = require "util.hashes".hmac_sha256;
-local new_id = require "util.id".medium;
+local dataform = require "prosody.util.dataforms";
+local iterators = require "prosody.util.iterators";
+local jid_split = require "prosody.util.jid".split;
+local jid_bare = require "prosody.util.jid".bare;
+local jid_prep = require "prosody.util.jid".prep;
+local jid_join = require "prosody.util.jid".join;
+local jid_resource = require "prosody.util.jid".resource;
+local resourceprep = require "prosody.util.encodings".stringprep.resourceprep;
+local st = require "prosody.util.stanza";
+local base64 = require "prosody.util.encodings".base64;
+local hmac_sha256 = require "prosody.util.hashes".hmac_sha256;
+local new_id = require "prosody.util.id".medium;
 
 local log = module._log;
 

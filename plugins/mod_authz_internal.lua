@@ -1,9 +1,9 @@
-local array = require "util.array";
-local it = require "util.iterators";
-local set = require "util.set";
-local jid_split, jid_bare, jid_host = import("util.jid", "split", "bare", "host");
-local normalize = require "util.jid".prep;
-local roles = require "util.roles";
+local array = require "prosody.util.array";
+local it = require "prosody.util.iterators";
+local set = require "prosody.util.set";
+local jid_split, jid_bare, jid_host = import("prosody.util.jid", "split", "bare", "host");
+local normalize = require "prosody.util.jid".prep;
+local roles = require "prosody.util.roles";
 
 local config_global_admin_jids = module:context("*"):get_option_set("admins", {}) / normalize;
 local config_admin_jids = module:get_option_inherited_set("admins", {}) / normalize;
@@ -321,7 +321,7 @@ function module.command(arg)
 		end
 
 		-- Initialize storage layer
-		require "core.storagemanager".initialize_host(migrate_host);
+		require "prosody.core.storagemanager".initialize_host(migrate_host);
 
 		print("II: Migrating roles...");
 		local migrated, failed, skipped = do_migration(migrate_host);

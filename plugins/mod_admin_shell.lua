@@ -10,39 +10,39 @@
 module:set_global();
 module:depends("admin_socket");
 
-local hostmanager = require "core.hostmanager";
-local modulemanager = require "core.modulemanager";
-local s2smanager = require "core.s2smanager";
-local portmanager = require "core.portmanager";
-local helpers = require "util.helpers";
-local server = require "net.server";
-local st = require "util.stanza";
+local hostmanager = require "prosody.core.hostmanager";
+local modulemanager = require "prosody.core.modulemanager";
+local s2smanager = require "prosody.core.s2smanager";
+local portmanager = require "prosody.core.portmanager";
+local helpers = require "prosody.util.helpers";
+local server = require "prosody.net.server";
+local st = require "prosody.util.stanza";
 
 local _G = _G;
 
 local prosody = _G.prosody;
 
 local unpack = table.unpack;
-local iterators = require "util.iterators";
+local iterators = require "prosody.util.iterators";
 local keys, values = iterators.keys, iterators.values;
-local jid_bare, jid_split, jid_join, jid_resource = import("util.jid", "bare", "prepped_split", "join", "resource");
-local set, array = require "util.set", require "util.array";
-local cert_verify_identity = require "util.x509".verify_identity;
-local envload = require "util.envload".envload;
-local envloadfile = require "util.envload".envloadfile;
-local has_pposix, pposix = pcall(require, "util.pposix");
-local async = require "util.async";
-local serialization = require "util.serialization";
+local jid_bare, jid_split, jid_join, jid_resource = import("prosody.util.jid", "bare", "prepped_split", "join", "resource");
+local set, array = require "prosody.util.set", require "prosody.util.array";
+local cert_verify_identity = require "prosody.util.x509".verify_identity;
+local envload = require "prosody.util.envload".envload;
+local envloadfile = require "prosody.util.envload".envloadfile;
+local has_pposix, pposix = pcall(require, "prosody.util.pposix");
+local async = require "prosody.util.async";
+local serialization = require "prosody.util.serialization";
 local serialize_config = serialization.new ({ fatal = false, unquoted = true});
-local time = require "util.time";
-local promise = require "util.promise";
-local logger = require "util.logger";
+local time = require "prosody.util.time";
+local promise = require "prosody.util.promise";
+local logger = require "prosody.util.logger";
 
 local t_insert = table.insert;
 local t_concat = table.concat;
 
-local format_number = require "util.human.units".format;
-local format_table = require "util.human.io".table;
+local format_number = require "prosody.util.human.units".format;
+local format_table = require "prosody.util.human.io".table;
 
 local function capitalize(s)
 	if not s then return end
@@ -696,7 +696,7 @@ end
 
 def_env.config = {};
 function def_env.config:load(filename, format)
-	local config_load = require "core.configmanager".load;
+	local config_load = require "prosody.core.configmanager".load;
 	local ok, err = config_load(filename, format);
 	if not ok then
 		return false, err or "Unknown error loading config";
@@ -708,7 +708,7 @@ function def_env.config:get(host, key)
 	if key == nil then
 		host, key = "*", host;
 	end
-	local config_get = require "core.configmanager".get
+	local config_get = require "prosody.core.configmanager".get
 	return true, serialize_config(config_get(host, key));
 end
 
@@ -1506,7 +1506,7 @@ function def_env.muc:affiliations(room_jid, filter)
 	end
 end
 
-local um = require"core.usermanager";
+local um = require"prosody.core.usermanager";
 
 def_env.user = {};
 function def_env.user:create(jid, password, role)
@@ -1677,7 +1677,7 @@ end
 
 def_env.xmpp = {};
 
-local new_id = require "util.id".medium;
+local new_id = require "prosody.util.id".medium;
 function def_env.xmpp:ping(localhost, remotehost, timeout)
 	localhost = select(2, jid_split(localhost));
 	remotehost = select(2, jid_split(remotehost));
@@ -1729,7 +1729,7 @@ function def_env.xmpp:ping(localhost, remotehost, timeout)
 end
 
 def_env.dns = {};
-local adns = require"net.adns";
+local adns = require"prosody.net.adns";
 
 local function get_resolver(session)
 	local resolver = session.dns_resolver;
@@ -1872,7 +1872,7 @@ function def_env.debug:events(host, event)
 	local events_obj;
 	if host and host ~= "*" then
 		if host == "http" then
-			events_obj = require "net.http.server"._events;
+			events_obj = require "prosody.net.http.server"._events;
 		elseif not prosody.hosts[host] then
 			return false, "Unknown host: "..host;
 		else
@@ -1886,7 +1886,7 @@ end
 
 function def_env.debug:timers()
 	local print = self.session.print;
-	local add_task = require"util.timer".add_task;
+	local add_task = require"prosody.util.timer".add_task;
 	local h, params = add_task.h, add_task.params;
 	local function normalize_time(t)
 		return t;
@@ -2183,7 +2183,7 @@ local function new_stats_context(self)
 end
 
 function def_env.stats:show(name_filter)
-	local statsman = require "core.statsmanager"
+	local statsman = require "prosody.core.statsmanager"
 	local collect = statsman.collect
 	if collect then
 		-- force collection if in manual mode

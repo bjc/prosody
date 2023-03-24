@@ -1,8 +1,8 @@
-local id = require "util.id";
-local it = require "util.iterators";
+local id = require "prosody.util.id";
+local it = require "prosody.util.iterators";
 local url = require "socket.url";
-local jid_node = require "util.jid".node;
-local jid_split = require "util.jid".split;
+local jid_node = require "prosody.util.jid".node;
+local jid_split = require "prosody.util.jid".split;
 
 local default_ttl = module:get_option_number("invite_expiry", 86400 * 7);
 
@@ -205,7 +205,7 @@ do
 	-- Since the console is global this overwrites the command for
 	-- each host it's loaded on, but this should be fine.
 
-	local get_module = require "core.modulemanager".get_module;
+	local get_module = require "prosody.core.modulemanager".get_module;
 
 	local console_env = module:shared("/*/admin_shell/env");
 
@@ -238,8 +238,8 @@ function module.command(arg)
 	end
 	table.remove(arg, 1); -- pop command
 
-	local sm = require "core.storagemanager";
-	local mm = require "core.modulemanager";
+	local sm = require "prosody.core.storagemanager";
+	local mm = require "prosody.core.modulemanager";
 
 	local host = arg[1];
 	assert(prosody.hosts[host], "Host "..tostring(host).." does not exist");
@@ -288,7 +288,7 @@ function module.command(arg)
 			print("--reset and the other options cannot be mixed.")
 			return 2
 		elseif value == "--reset" then
-			local nodeprep = require "util.encodings".stringprep.nodeprep;
+			local nodeprep = require "prosody.util.encodings".stringprep.nodeprep;
 			local username = nodeprep(arg[1])
 			table.remove(arg, 1);
 			if not username then

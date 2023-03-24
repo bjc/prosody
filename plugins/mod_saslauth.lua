@@ -8,14 +8,14 @@
 -- luacheck: ignore 431/log
 
 
-local st = require "util.stanza";
-local sm_bind_resource = require "core.sessionmanager".bind_resource;
-local sm_make_authenticated = require "core.sessionmanager".make_authenticated;
-local base64 = require "util.encodings".base64;
-local set = require "util.set";
-local errors = require "util.error";
+local st = require "prosody.util.stanza";
+local sm_bind_resource = require "prosody.core.sessionmanager".bind_resource;
+local sm_make_authenticated = require "prosody.core.sessionmanager".make_authenticated;
+local base64 = require "prosody.util.encodings".base64;
+local set = require "prosody.util.set";
+local errors = require "prosody.util.error";
 
-local usermanager_get_sasl_handler = require "core.usermanager".get_sasl_handler;
+local usermanager_get_sasl_handler = require "prosody.core.usermanager".get_sasl_handler;
 
 local secure_auth_only = module:get_option_boolean("c2s_require_encryption", module:get_option_boolean("require_encryption", true));
 local allow_unencrypted_plain_auth = module:get_option_boolean("allow_unencrypted_plain_auth", false)

@@ -7,13 +7,13 @@
 --
 
 
-local create_throttle = require "util.throttle".create;
-local new_cache = require "util.cache".new;
-local ip_util = require "util.ip";
+local create_throttle = require "prosody.util.throttle".create;
+local new_cache = require "prosody.util.cache".new;
+local ip_util = require "prosody.util.ip";
 local new_ip = ip_util.new_ip;
 local match_ip = ip_util.match;
 local parse_cidr = ip_util.parse_cidr;
-local errors = require "util.error";
+local errors = require "prosody.util.error";
 
 -- COMPAT drop old option names
 local min_seconds_between_registrations = module:get_option_number("min_seconds_between_registrations");

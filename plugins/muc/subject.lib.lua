@@ -7,8 +7,8 @@
 -- COPYING file in the source package for more information.
 --
 
-local st = require "util.stanza";
-local dt = require "util.datetime";
+local st = require "prosody.util.stanza";
+local dt = require "prosody.util.datetime";
 
 local muc_util = module:require "muc/util";
 local valid_roles = muc_util.valid_roles;

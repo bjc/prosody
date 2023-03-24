@@ -10,10 +10,10 @@
 local full_sessions = prosody.full_sessions;
 local bare_sessions = prosody.bare_sessions;
 
-local st = require "util.stanza";
-local jid_bare = require "util.jid".bare;
-local jid_split = require "util.jid".split;
-local user_exists = require "core.usermanager".user_exists;
+local st = require "prosody.util.stanza";
+local jid_bare = require "prosody.util.jid".bare;
+local jid_split = require "prosody.util.jid".split;
+local user_exists = require "prosody.core.usermanager".user_exists;
 
 local function process_to_bare(bare, origin, stanza)
 	local user = bare_sessions[bare];

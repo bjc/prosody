@@ -1,9 +1,9 @@
-local pubsub = require "util.pubsub";
-local st = require "util.stanza";
-local jid_bare = require "util.jid".bare;
-local new_id = require "util.id".medium;
-local storagemanager = require "core.storagemanager";
-local xtemplate = require "util.xtemplate";
+local pubsub = require "prosody.util.pubsub";
+local st = require "prosody.util.stanza";
+local jid_bare = require "prosody.util.jid".bare;
+local new_id = require "prosody.util.id".medium;
+local storagemanager = require "prosody.core.storagemanager";
+local xtemplate = require "prosody.util.xtemplate";
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_event = "http://jabber.org/protocol/pubsub#event";

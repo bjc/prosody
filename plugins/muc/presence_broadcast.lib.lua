@@ -7,7 +7,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 
 local valid_roles = { "none", "visitor", "participant", "moderator" };
 local default_broadcast = {

@@ -9,16 +9,16 @@
 -- This module implements XEP-0191: Blocking Command
 --
 
-local user_exists = require"core.usermanager".user_exists;
-local rostermanager = require"core.rostermanager";
+local user_exists = require"prosody.core.usermanager".user_exists;
+local rostermanager = require"prosody.core.rostermanager";
 local is_contact_subscribed = rostermanager.is_contact_subscribed;
 local is_contact_pending_in = rostermanager.is_contact_pending_in;
 local load_roster = rostermanager.load_roster;
 local save_roster = rostermanager.save_roster;
-local st = require"util.stanza";
+local st = require"prosody.util.stanza";
 local st_error_reply = st.error_reply;
-local jid_prep = require"util.jid".prep;
-local jid_split = require"util.jid".split;
+local jid_prep = require"prosody.util.jid".prep;
+local jid_split = require"prosody.util.jid".split;
 
 local storage = module:open_store();
 local sessions = prosody.hosts[module.host].sessions;
@@ -36,7 +36,7 @@ local cache = setmetatable({}, { __mode = "v" });
 -- want to use too much memory either, so this can be tuned by advanced
 -- users. TODO use science to figure out a better default, 64 is just a guess.
 local cache_size = module:get_option_number("blocklist_cache_size", 64);
-local cache2 = require"util.cache".new(cache_size);
+local cache2 = require"prosody.util.cache".new(cache_size);
 
 local null_blocklist = {};
 

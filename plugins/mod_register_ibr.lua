@@ -7,14 +7,14 @@
 --
 
 
-local st = require "util.stanza";
-local dataform_new = require "util.dataforms".new;
-local usermanager_user_exists  = require "core.usermanager".user_exists;
-local usermanager_create_user  = require "core.usermanager".create_user;
-local usermanager_set_password = require "core.usermanager".create_user;
-local usermanager_delete_user  = require "core.usermanager".delete_user;
-local nodeprep = require "util.encodings".stringprep.nodeprep;
-local util_error = require "util.error";
+local st = require "prosody.util.stanza";
+local dataform_new = require "prosody.util.dataforms".new;
+local usermanager_user_exists  = require "prosody.core.usermanager".user_exists;
+local usermanager_create_user  = require "prosody.core.usermanager".create_user;
+local usermanager_set_password = require "prosody.core.usermanager".create_user;
+local usermanager_delete_user  = require "prosody.core.usermanager".delete_user;
+local nodeprep = require "prosody.util.encodings".stringprep.nodeprep;
+local util_error = require "prosody.util.error";
 
 local additional_fields = module:get_option("additional_registration_fields", {});
 local require_encryption = module:get_option_boolean("c2s_require_encryption",

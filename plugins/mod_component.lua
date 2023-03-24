@@ -10,16 +10,16 @@ module:set_global();
 
 local t_concat = table.concat;
 local tostring, type = tostring, type;
-local xpcall = require "util.xpcall".xpcall;
+local xpcall = require "prosody.util.xpcall".xpcall;
 local traceback = debug.traceback;
 
-local logger = require "util.logger";
-local sha1 = require "util.hashes".sha1;
-local st = require "util.stanza";
+local logger = require "prosody.util.logger";
+local sha1 = require "prosody.util.hashes".sha1;
+local st = require "prosody.util.stanza";
 
-local jid_host = require "util.jid".host;
-local new_xmpp_stream = require "util.xmppstream".new;
-local uuid_gen = require "util.uuid".generate;
+local jid_host = require "prosody.util.jid".host;
+local new_xmpp_stream = require "prosody.util.xmppstream".new;
+local uuid_gen = require "prosody.util.uuid".generate;
 
 local core_process_stanza = prosody.core_process_stanza;
 local hosts = prosody.hosts;

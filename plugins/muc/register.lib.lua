@@ -1,8 +1,8 @@
-local jid_bare = require "util.jid".bare;
-local jid_resource = require "util.jid".resource;
-local resourceprep = require "util.encodings".stringprep.resourceprep;
-local st = require "util.stanza";
-local dataforms = require "util.dataforms";
+local jid_bare = require "prosody.util.jid".bare;
+local jid_resource = require "prosody.util.jid".resource;
+local resourceprep = require "prosody.util.encodings".stringprep.resourceprep;
+local st = require "prosody.util.stanza";
+local dataforms = require "prosody.util.dataforms";
 
 local allow_unaffiliated = module:get_option_boolean("allow_unaffiliated_register", false);
 

@@ -10,12 +10,12 @@ local hosts = _G.hosts;
 
 local log = module._log;
 
-local st = require "util.stanza";
-local sha256_hash = require "util.hashes".sha256;
-local sha256_hmac = require "util.hashes".hmac_sha256;
-local secure_equals = require "util.hashes".equals;
-local nameprep = require "util.encodings".stringprep.nameprep;
-local uuid_gen = require"util.uuid".generate;
+local st = require "prosody.util.stanza";
+local sha256_hash = require "prosody.util.hashes".sha256;
+local sha256_hmac = require "prosody.util.hashes".hmac_sha256;
+local secure_equals = require "prosody.util.hashes".equals;
+local nameprep = require "prosody.util.encodings".stringprep.nameprep;
+local uuid_gen = require"prosody.util.uuid".generate;
 
 local xmlns_stream = "http://etherx.jabber.org/streams";
 

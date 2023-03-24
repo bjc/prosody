@@ -1,9 +1,9 @@
 module:set_global();
 
-local server = require "net.http.server";
-local codes = require "net.http.codes";
-local xml_escape = require "util.stanza".xml_escape;
-local render = require "util.interpolation".new("%b{}", xml_escape);
+local server = require "prosody.net.http.server";
+local codes = require "prosody.net.http.codes";
+local xml_escape = require "prosody.util.stanza".xml_escape;
+local render = require "prosody.util.interpolation".new("%b{}", xml_escape);
 
 local show_private = module:get_option_boolean("http_errors_detailed", false);
 local always_serve = module:get_option_boolean("http_errors_always_show", true);

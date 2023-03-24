@@ -45,17 +45,17 @@ local sessions_expired = module:measure("sessions_expired", "counter");
 local sessions_started = module:measure("sessions_started", "counter");
 
 
-local datetime = require "util.datetime";
-local add_filter = require "util.filters".add_filter;
-local jid = require "util.jid";
-local smqueue = require "util.smqueue";
-local st = require "util.stanza";
-local timer = require "util.timer";
-local new_id = require "util.id".short;
-local watchdog = require "util.watchdog";
-local it = require"util.iterators";
+local datetime = require "prosody.util.datetime";
+local add_filter = require "prosody.util.filters".add_filter;
+local jid = require "prosody.util.jid";
+local smqueue = require "prosody.util.smqueue";
+local st = require "prosody.util.stanza";
+local timer = require "prosody.util.timer";
+local new_id = require "prosody.util.id".short;
+local watchdog = require "prosody.util.watchdog";
+local it = require"prosody.util.iterators";
 
-local sessionmanager = require "core.sessionmanager";
+local sessionmanager = require "prosody.core.sessionmanager";
 
 local xmlns_errors = "urn:ietf:params:xml:ns:xmpp-stanzas";
 local xmlns_delay = "urn:xmpp:delay";
@@ -104,14 +104,14 @@ local function clear_old_session(session, id)
 	return old_session_registry:set(session.username, id or session.resumption_token, nil)
 end
 
-local ack_errors = require"util.error".init("mod_smacks", xmlns_sm3, {
+local ack_errors = require"prosody.util.error".init("mod_smacks", xmlns_sm3, {
 	head = { condition = "undefined-condition"; text = "Client acknowledged more stanzas than sent by server" };
 	tail = { condition = "undefined-condition"; text = "Client acknowledged less stanzas than already acknowledged" };
 	pop = { condition = "internal-server-error"; text = "Something went wrong with Stream Management" };
 	overflow = { condition = "resource-constraint", text = "Too many unacked stanzas remaining, session can't be resumed" }
 });
 
-local enable_errors = require "util.error".init("mod_smacks", xmlns_sm3, {
+local enable_errors = require "prosody.util.error".init("mod_smacks", xmlns_sm3, {
 	already_enabled = { condition = "unexpected-request", text = "Stream management is already enabled" };
 	bind_required = { condition = "unexpected-request", text = "Client must bind a resource before enabling stream management" };
 	unavailable = { condition = "service-unavailable", text = "Stream management is not available for this stream" };

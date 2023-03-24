@@ -7,18 +7,18 @@
 --
 
 
-local st = require "util.stanza"
+local st = require "prosody.util.stanza"
 
-local jid_split = require "util.jid".split;
-local jid_resource = require "util.jid".resource;
-local jid_prep = require "util.jid".prep;
+local jid_split = require "prosody.util.jid".split;
+local jid_resource = require "prosody.util.jid".resource;
+local jid_prep = require "prosody.util.jid".prep;
 local tonumber = tonumber;
 local pairs = pairs;
 
-local rm_load_roster = require "core.rostermanager".load_roster;
-local rm_remove_from_roster = require "core.rostermanager".remove_from_roster;
-local rm_add_to_roster = require "core.rostermanager".add_to_roster;
-local rm_roster_push = require "core.rostermanager".roster_push;
+local rm_load_roster = require "prosody.core.rostermanager".load_roster;
+local rm_remove_from_roster = require "prosody.core.rostermanager".remove_from_roster;
+local rm_add_to_roster = require "prosody.core.rostermanager".add_to_roster;
+local rm_roster_push = require "prosody.core.rostermanager".roster_push;
 
 module:add_feature("jabber:iq:roster");
 

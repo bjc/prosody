@@ -1,12 +1,12 @@
-local cache = require "util.cache";
-local datamanager = require "core.storagemanager".olddm;
-local array = require "util.array";
-local datetime = require "util.datetime";
-local st = require "util.stanza";
-local now = require "util.time".now;
-local id = require "util.id".medium;
-local jid_join = require "util.jid".join;
-local set = require "util.set";
+local cache = require "prosody.util.cache";
+local datamanager = require "prosody.core.storagemanager".olddm;
+local array = require "prosody.util.array";
+local datetime = require "prosody.util.datetime";
+local st = require "prosody.util.stanza";
+local now = require "prosody.util.time".now;
+local id = require "prosody.util.id".medium;
+local jid_join = require "prosody.util.jid".join;
+local set = require "prosody.util.set";
 
 local host = module.host;
 

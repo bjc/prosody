@@ -7,15 +7,15 @@
 --
 
 
-local jid_bare = require "util.jid".bare;
-local jid_split = require "util.jid".split;
-local st = require "util.stanza";
-local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed;
+local jid_bare = require "prosody.util.jid".bare;
+local jid_split = require "prosody.util.jid".split;
+local st = require "prosody.util.stanza";
+local is_contact_subscribed = require "prosody.core.rostermanager".is_contact_subscribed;
 local pairs = pairs;
 local next = next;
 local type = type;
 local unpack = table.unpack;
-local calculate_hash = require "util.caps".calculate_hash;
+local calculate_hash = require "prosody.util.caps".calculate_hash;
 local core_post_stanza = prosody.core_post_stanza;
 local bare_sessions = prosody.bare_sessions;
 

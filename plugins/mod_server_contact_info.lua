@@ -6,12 +6,12 @@
 -- COPYING file in the source package for more information.
 --
 
-local array = require "util.array";
-local jid = require "util.jid";
+local array = require "prosody.util.array";
+local jid = require "prosody.util.jid";
 local url = require "socket.url";
 
 -- Source: http://xmpp.org/registrar/formtypes.html#http:--jabber.org-network-serverinfo
-local form_layout = require "util.dataforms".new({
+local form_layout = require "prosody.util.dataforms".new({
 	{ var = "FORM_TYPE"; type = "hidden"; value = "http://jabber.org/network/serverinfo"; };
 	{ name = "abuse", var = "abuse-addresses", type = "list-multi" },
 	{ name = "admin", var = "admin-addresses", type = "list-multi" },

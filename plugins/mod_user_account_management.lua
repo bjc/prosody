@@ -7,11 +7,11 @@
 --
 
 
-local st = require "util.stanza";
-local usermanager_set_password = require "core.usermanager".set_password;
-local usermanager_delete_user = require "core.usermanager".delete_user;
-local nodeprep = require "util.encodings".stringprep.nodeprep;
-local jid_bare = require "util.jid".bare;
+local st = require "prosody.util.stanza";
+local usermanager_set_password = require "prosody.core.usermanager".set_password;
+local usermanager_delete_user = require "prosody.core.usermanager".delete_user;
+local nodeprep = require "prosody.util.encodings".stringprep.nodeprep;
+local jid_bare = require "prosody.util.jid".bare;
 
 local compat = module:get_option_boolean("registration_compat", true);
 

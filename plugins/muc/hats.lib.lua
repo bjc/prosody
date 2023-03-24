@@ -1,4 +1,4 @@
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 local muc_util = module:require "muc/util";
 
 local xmlns_hats = "xmpp:prosody.im/protocol/hats:1";

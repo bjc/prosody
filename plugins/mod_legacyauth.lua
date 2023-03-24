@@ -8,17 +8,17 @@
 
 
 
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 local t_concat = table.concat;
 
 local secure_auth_only = module:get_option("c2s_require_encryption",
 	module:get_option("require_encryption", true))
 	or not(module:get_option("allow_unencrypted_plain_auth"));
 
-local sessionmanager = require "core.sessionmanager";
-local usermanager = require "core.usermanager";
-local nodeprep = require "util.encodings".stringprep.nodeprep;
-local resourceprep = require "util.encodings".stringprep.resourceprep;
+local sessionmanager = require "prosody.core.sessionmanager";
+local usermanager = require "prosody.core.usermanager";
+local nodeprep = require "prosody.util.encodings".stringprep.nodeprep;
+local resourceprep = require "prosody.util.encodings".stringprep.resourceprep;
 
 module:add_feature("jabber:iq:auth");
 module:hook("stream-features", function(event)

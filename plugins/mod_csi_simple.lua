@@ -6,11 +6,11 @@
 
 module:depends"csi"
 
-local jid = require "util.jid";
-local st = require "util.stanza";
-local dt = require "util.datetime";
-local filters = require "util.filters";
-local timer = require "util.timer";
+local jid = require "prosody.util.jid";
+local st = require "prosody.util.stanza";
+local dt = require "prosody.util.datetime";
+local filters = require "prosody.util.filters";
+local timer = require "prosody.util.timer";
 
 local queue_size = module:get_option_number("csi_queue_size", 256);
 local resume_delay = module:get_option_number("csi_resume_inactive_delay", 5);
@@ -255,7 +255,7 @@ function module.command(arg)
 		return 1;
 	end
 	-- luacheck: ignore 212/self
-	local xmppstream = require "util.xmppstream";
+	local xmppstream = require "prosody.util.xmppstream";
 	local input_session = { notopen = true }
 	local stream_callbacks = { stream_ns = "jabber:client", default_ns = "jabber:client" };
 	function stream_callbacks:handlestanza(stanza)

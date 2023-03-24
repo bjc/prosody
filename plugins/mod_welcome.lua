@@ -9,7 +9,7 @@
 local host = module:get_host();
 local welcome_text = module:get_option_string("welcome_message", "Hello $username, welcome to the $host IM server!");
 
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 
 module:hook("user-registered",
 	function (user)

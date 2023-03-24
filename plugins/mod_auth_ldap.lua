@@ -1,6 +1,6 @@
 -- mod_auth_ldap
 
-local new_sasl = require "util.sasl".new;
+local new_sasl = require "prosody.util.sasl".new;
 local lualdap = require "lualdap";
 
 local function ldap_filter_escape(s)

@@ -7,8 +7,8 @@
 --
 
 
-local datetime = require "util.datetime";
-local jid_split = require "util.jid".split;
+local datetime = require "prosody.util.datetime";
+local jid_split = require "prosody.util.jid".split;
 
 local offline_messages = module:open_store("offline", "archive");
 

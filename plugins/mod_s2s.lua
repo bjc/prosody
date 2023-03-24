@@ -16,23 +16,23 @@ local tostring, type = tostring, type;
 local t_insert = table.insert;
 local traceback = debug.traceback;
 
-local add_task = require "util.timer".add_task;
-local stop_timer = require "util.timer".stop;
-local st = require "util.stanza";
-local initialize_filters = require "util.filters".initialize;
-local nameprep = require "util.encodings".stringprep.nameprep;
-local new_xmpp_stream = require "util.xmppstream".new;
-local s2s_new_incoming = require "core.s2smanager".new_incoming;
-local s2s_new_outgoing = require "core.s2smanager".new_outgoing;
-local s2s_destroy_session = require "core.s2smanager".destroy_session;
-local uuid_gen = require "util.uuid".generate;
-local async = require "util.async";
+local add_task = require "prosody.util.timer".add_task;
+local stop_timer = require "prosody.util.timer".stop;
+local st = require "prosody.util.stanza";
+local initialize_filters = require "prosody.util.filters".initialize;
+local nameprep = require "prosody.util.encodings".stringprep.nameprep;
+local new_xmpp_stream = require "prosody.util.xmppstream".new;
+local s2s_new_incoming = require "prosody.core.s2smanager".new_incoming;
+local s2s_new_outgoing = require "prosody.core.s2smanager".new_outgoing;
+local s2s_destroy_session = require "prosody.core.s2smanager".destroy_session;
+local uuid_gen = require "prosody.util.uuid".generate;
+local async = require "prosody.util.async";
 local runner = async.runner;
-local connect = require "net.connect".connect;
-local service = require "net.resolvers.service";
-local resolver_chain = require "net.resolvers.chain";
-local errors = require "util.error";
-local set = require "util.set";
+local connect = require "prosody.net.connect".connect;
+local service = require "prosody.net.resolvers.service";
+local resolver_chain = require "prosody.net.resolvers.chain";
+local errors = require "prosody.util.error";
+local set = require "prosody.util.set";
 
 local connect_timeout = module:get_option_number("s2s_timeout", 90);
 local stream_close_timeout = module:get_option_number("s2s_close_timeout", 5);
@@ -1007,7 +1007,7 @@ module:hook("s2s-check-certificate", check_auth_policy, -1);
 
 module:hook("server-stopping", function(event)
 	-- Close ports
-	local pm = require "core.portmanager";
+	local pm = require "prosody.core.portmanager";
 	for _, netservice in pairs(module.items["net-provider"]) do
 		pm.unregister_service(netservice.name, netservice);
 	end

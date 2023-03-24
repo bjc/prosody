@@ -9,13 +9,13 @@
 
 local max = math.max;
 
-local scram_hashers = require "util.sasl.scram".hashers;
-local generate_uuid = require "util.uuid".generate;
-local new_sasl = require "util.sasl".new;
-local hex = require"util.hex";
+local scram_hashers = require "prosody.util.sasl.scram".hashers;
+local generate_uuid = require "prosody.util.uuid".generate;
+local new_sasl = require "prosody.util.sasl".new;
+local hex = require"prosody.util.hex";
 local to_hex, from_hex = hex.encode, hex.decode;
-local saslprep = require "util.encodings".stringprep.saslprep;
-local secure_equals = require "util.hashes".equals;
+local saslprep = require "prosody.util.encodings".stringprep.saslprep;
+local secure_equals = require "prosody.util.hashes".equals;
 
 local log = module._log;
 local host = module.host;

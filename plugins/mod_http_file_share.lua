@@ -8,16 +8,16 @@
 -- Again, from the top!
 
 local t_insert = table.insert;
-local jid = require "util.jid";
-local st = require "util.stanza";
+local jid = require "prosody.util.jid";
+local st = require "prosody.util.stanza";
 local url = require "socket.url";
-local dm = require "core.storagemanager".olddm;
-local errors = require "util.error";
-local dataform = require "util.dataforms".new;
-local urlencode = require "util.http".urlencode;
-local dt = require "util.datetime";
-local hi = require "util.human.units";
-local cache = require "util.cache";
+local dm = require "prosody.core.storagemanager".olddm;
+local errors = require "prosody.util.error";
+local dataform = require "prosody.util.dataforms".new;
+local urlencode = require "prosody.util.http".urlencode;
+local dt = require "prosody.util.datetime";
+local hi = require "prosody.util.human.units";
+local cache = require "prosody.util.cache";
 local lfs = require "lfs";
 
 local unknown = math.abs(0/0);
@@ -34,7 +34,7 @@ local uploads = module:open_store("uploads", "archive");
 local persist_stats = module:open_store("upload_stats", "map");
 -- id, <request>, time, owner
 
-local secret = module:get_option_string(module.name.."_secret", require"util.id".long());
+local secret = module:get_option_string(module.name.."_secret", require"prosody.util.id".long());
 local external_base_url = module:get_option_string(module.name .. "_base_url");
 local file_size_limit = module:get_option_number(module.name .. "_size_limit", 10 * 1024 * 1024); -- 10 MB
 local file_types = module:get_option_set(module.name .. "_allowed_file_types", {});
@@ -43,7 +43,7 @@ local expiry = module:get_option_number(module.name .. "_expires_after", 7 * 864
 local daily_quota = module:get_option_number(module.name .. "_daily_quota", file_size_limit*10); -- 100 MB / day
 local total_storage_limit = module:get_option_number(module.name.."_global_quota", unlimited);
 
-local create_jwt, verify_jwt = require "util.jwt".init("HS256", secret);
+local create_jwt, verify_jwt = require "prosody.util.jwt".init("HS256", secret);
 
 local access = module:get_option_set(module.name .. "_access", {});
 
@@ -452,9 +452,9 @@ end
 
 if expiry >= 0 and not external_base_url then
 	-- TODO HTTP DELETE to the external endpoint?
-	local array = require "util.array";
-	local async = require "util.async";
-	local ENOENT = require "util.pposix".ENOENT;
+	local array = require "prosody.util.array";
+	local async = require "prosody.util.async";
+	local ENOENT = require "prosody.util.pposix".ENOENT;
 
 	local function sleep(t)
 		local wait, done = async.waiter();

@@ -1,6 +1,6 @@
 -- XEP-0307: Unique Room Names for Multi-User Chat
-local st = require "util.stanza";
-local unique_name = require "util.id".medium;
+local st = require "prosody.util.stanza";
+local unique_name = require "prosody.util.id".medium;
 module:add_feature "http://jabber.org/protocol/muc#unique"
 module:hook("iq-get/host/http://jabber.org/protocol/muc#unique:unique", function(event)
 	local origin, stanza = event.origin, event.stanza;

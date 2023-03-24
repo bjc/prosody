@@ -8,14 +8,14 @@
 
 
 local host = module:get_host();
-local jid_prep = require "util.jid".prep;
+local jid_prep = require "prosody.util.jid".prep;
 
 local registration_watchers = module:get_option_set("registration_watchers", module:get_option("admins", {})) / jid_prep;
 local registration_from = module:get_option_string("registration_from", host);
 local registration_notification = module:get_option_string("registration_notification", "User $username just registered on $host from $ip");
 local msg_type = module:get_option_string("registration_notification_type", "chat");
 
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 
 module:hook("user-registered", function (user)
 	module:log("debug", "Notifying of new registration");

@@ -1,10 +1,10 @@
-local base64 = require "util.encodings".base64;
-local hashes = require "util.hashes";
-local id = require "util.id";
-local jid = require "util.jid";
-local random = require "util.random";
-local usermanager = require "core.usermanager";
-local generate_identifier = require "util.id".short;
+local base64 = require "prosody.util.encodings".base64;
+local hashes = require "prosody.util.hashes";
+local id = require "prosody.util.id";
+local jid = require "prosody.util.jid";
+local random = require "prosody.util.random";
+local usermanager = require "prosody.core.usermanager";
+local generate_identifier = require "prosody.util.id".short;
 
 local token_store = module:open_store("auth_tokens", "map");
 

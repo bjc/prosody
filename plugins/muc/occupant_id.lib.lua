@@ -4,9 +4,9 @@
 -- (C) 2020 Maxime “pep” Buquet <pep@bouah.net>
 -- (C) 2020 Matthew Wild <mwild1@gmail.com>
 
-local uuid = require "util.uuid";
-local hmac_sha256 = require "util.hashes".hmac_sha256;
-local b64encode = require "util.encodings".base64.encode;
+local uuid = require "prosody.util.uuid";
+local hmac_sha256 = require "prosody.util.hashes".hmac_sha256;
+local b64encode = require "prosody.util.encodings".base64.encode;
 
 local xmlns_occupant_id = "urn:xmpp:occupant-id:0";
 

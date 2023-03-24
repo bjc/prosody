@@ -7,7 +7,7 @@
 --
 
 
-local st = require "util.stanza"
+local st = require "prosody.util.stanza"
 
 local private_storage = module:open_store("private", "map");
 

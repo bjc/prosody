@@ -5,7 +5,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 
 local xmlns_bidi_feature = "urn:xmpp:features:bidi"
 local xmlns_bidi = "urn:xmpp:bidi";

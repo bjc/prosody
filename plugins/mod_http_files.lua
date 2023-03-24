@@ -9,7 +9,7 @@
 module:depends("http");
 
 local open = io.open;
-local fileserver = require"net.http.files";
+local fileserver = require"prosody.net.http.files";
 
 local base_path = module:get_option_path("http_files_dir", module:get_option_path("http_path"));
 local cache_size = module:get_option_number("http_files_cache_size", 128);
@@ -74,12 +74,12 @@ function serve(opts)
 	if opts.index_files == nil then
 		opts.index_files = dir_indices;
 	end
-	module:log("warn", "%s should be updated to use 'net.http.files' instead of mod_http_files", get_calling_module());
+	module:log("warn", "%s should be updated to use 'prosody.net.http.files' instead of mod_http_files", get_calling_module());
 	return fileserver.serve(opts);
 end
 
 function wrap_route(routes)
-	module:log("debug", "%s should be updated to use 'net.http.files' instead of mod_http_files", get_calling_module());
+	module:log("debug", "%s should be updated to use 'prosody.net.http.files' instead of mod_http_files", get_calling_module());
 	for route,handler in pairs(routes) do
 		if type(handler) ~= "function" then
 			routes[route] = fileserver.serve(handler);

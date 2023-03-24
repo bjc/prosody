@@ -6,7 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 
 module:add_feature("urn:xmpp:ping");
 

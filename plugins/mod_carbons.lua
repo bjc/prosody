@@ -3,9 +3,9 @@
 --
 -- This file is MIT/X11 licensed.
 
-local st = require "util.stanza";
-local jid_bare = require "util.jid".bare;
-local jid_resource = require "util.jid".resource;
+local st = require "prosody.util.stanza";
+local jid_bare = require "prosody.util.jid".bare;
+local jid_resource = require "prosody.util.jid".resource;
 local xmlns_carbons = "urn:xmpp:carbons:2";
 local xmlns_forward = "urn:xmpp:forward:0";
 local full_sessions, bare_sessions = prosody.full_sessions, prosody.bare_sessions;

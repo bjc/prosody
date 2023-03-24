@@ -16,22 +16,22 @@ local xmlns_st_id   = "urn:xmpp:sid:0";
 local xmlns_muc_user = "http://jabber.org/protocol/muc#user";
 local muc_form_enable = "muc#roomconfig_enablearchiving"
 
-local st = require "util.stanza";
-local rsm = require "util.rsm";
-local jid_bare = require "util.jid".bare;
-local jid_split = require "util.jid".split;
-local jid_prep = require "util.jid".prep;
-local dataform = require "util.dataforms".new;
-local get_form_type = require "util.dataforms".get_type;
+local st = require "prosody.util.stanza";
+local rsm = require "prosody.util.rsm";
+local jid_bare = require "prosody.util.jid".bare;
+local jid_split = require "prosody.util.jid".split;
+local jid_prep = require "prosody.util.jid".prep;
+local dataform = require "prosody.util.dataforms".new;
+local get_form_type = require "prosody.util.dataforms".get_type;
 
 local mod_muc = module:depends"muc";
 local get_room_from_jid = mod_muc.get_room_from_jid;
 
 local is_stanza = st.is_stanza;
 local tostring = tostring;
-local time_now = require "util.time".now;
+local time_now = require "prosody.util.time".now;
 local m_min = math.min;
-local timestamp, datestamp = import("util.datetime", "datetime", "date");
+local timestamp, datestamp = import("prosody.util.datetime", "datetime", "date");
 local default_max_items, max_max_items = 20, module:get_option_number("max_archive_query_results", 50);
 
 local cleanup_after = module:get_option_string("muc_log_expires_after", "1w");
@@ -492,7 +492,7 @@ if cleanup_after ~= "never" then
 	-- messages, we collect the union of sets of rooms from dates that fall
 	-- outside the cleanup range.
 
-	local last_date = require "util.cache".new(module:get_option_number("muc_log_cleanup_date_cache_size", 1000));
+	local last_date = require "prosody.util.cache".new(module:get_option_number("muc_log_cleanup_date_cache_size", 1000));
 	if not ( archive.caps and archive.caps.wildcard_delete ) then
 		function schedule_cleanup(roomname, date)
 			date = date or datestamp();
@@ -506,7 +506,7 @@ if cleanup_after ~= "never" then
 
 	local cleanup_time = module:measure("cleanup", "times");
 
-	local async = require "util.async";
+	local async = require "prosody.util.async";
 	module:daily("Remove expired messages", function ()
 		local cleanup_done = cleanup_time();
 

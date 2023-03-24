@@ -12,8 +12,8 @@ module:depends("admin_shell");
 
 local console_listener = { default_port = 5582; default_mode = "*a"; interface = "127.0.0.1" };
 
-local async = require "util.async";
-local st = require "util.stanza";
+local async = require "prosody.util.async";
+local st = require "prosody.util.stanza";
 
 local def_env = module:shared("admin_shell/env");
 local default_env_mt = { __index = def_env };

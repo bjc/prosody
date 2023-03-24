@@ -10,8 +10,8 @@
 -- XEP-0313: Message Archive Management for Prosody
 --
 
-local st = require"util.stanza";
-local jid_prep = require"util.jid".prep;
+local st = require"prosody.util.stanza";
+local jid_prep = require"prosody.util.jid".prep;
 local xmlns_mam = "urn:xmpp:mam:2";
 
 local default_attrs = {

@@ -8,15 +8,15 @@
 
 module:set_global();
 
-local add_task = require "util.timer".add_task;
-local new_xmpp_stream = require "util.xmppstream".new;
-local nameprep = require "util.encodings".stringprep.nameprep;
-local sessionmanager = require "core.sessionmanager";
-local statsmanager = require "core.statsmanager";
-local st = require "util.stanza";
+local add_task = require "prosody.util.timer".add_task;
+local new_xmpp_stream = require "prosody.util.xmppstream".new;
+local nameprep = require "prosody.util.encodings".stringprep.nameprep;
+local sessionmanager = require "prosody.core.sessionmanager";
+local statsmanager = require "prosody.core.statsmanager";
+local st = require "prosody.util.stanza";
 local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionmanager.destroy_session;
-local uuid_generate = require "util.uuid".generate;
-local async = require "util.async";
+local uuid_generate = require "prosody.util.uuid".generate;
+local async = require "prosody.util.async";
 local runner = async.runner;
 
 local tostring, type = tostring, type;
@@ -438,7 +438,7 @@ module:hook("c2s-read-timeout", keepalive, -1);
 
 module:hook("server-stopping", function(event) -- luacheck: ignore 212/event
 	-- Close ports
-	local pm = require "core.portmanager";
+	local pm = require "prosody.core.portmanager";
 	for _, netservice in pairs(module.items["net-provider"]) do
 		pm.unregister_service(netservice.name, netservice);
 	end

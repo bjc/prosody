@@ -11,19 +11,19 @@ pcall(function ()
 	module:depends("http_errors");
 end);
 
-local portmanager = require "core.portmanager";
-local moduleapi = require "core.moduleapi";
+local portmanager = require "prosody.core.portmanager";
+local moduleapi = require "prosody.core.moduleapi";
 local url_parse = require "socket.url".parse;
 local url_build = require "socket.url".build;
-local normalize_path = require "util.http".normalize_path;
-local set = require "util.set";
+local normalize_path = require "prosody.util.http".normalize_path;
+local set = require "prosody.util.set";
 
-local ip_util = require "util.ip";
+local ip_util = require "prosody.util.ip";
 local new_ip = ip_util.new_ip;
 local match_ip = ip_util.match;
 local parse_cidr = ip_util.parse_cidr;
 
-local server = require "net.http.server";
+local server = require "prosody.net.http.server";
 
 server.set_default_host(module:get_option_string("http_default_host"));
 

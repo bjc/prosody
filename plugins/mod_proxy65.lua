@@ -9,11 +9,11 @@
 
 module:set_global();
 
-local jid_compare, jid_prep = require "util.jid".compare, require "util.jid".prep;
-local st = require "util.stanza";
-local sha1 = require "util.hashes".sha1;
-local server = require "net.server";
-local portmanager = require "core.portmanager";
+local jid_compare, jid_prep = require "prosody.util.jid".compare, require "prosody.util.jid".prep;
+local st = require "prosody.util.stanza";
+local sha1 = require "prosody.util.hashes".sha1;
+local server = require "prosody.net.server";
+local portmanager = require "prosody.core.portmanager";
 
 local sessions = module:shared("sessions");
 local transfers = module:shared("transfers");

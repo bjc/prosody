@@ -5,9 +5,9 @@
 -- COPYING file in the source package for more information.
 --
 
-local it = require "util.iterators";
-local st = require "util.stanza";
-local jid_host = require "util.jid".host;
+local it = require "prosody.util.iterators";
+local st = require "prosody.util.stanza";
+local jid_host = require "prosody.util.jid".host;
 local adhoc_handle_cmd = module:require "adhoc".handle_cmd;
 local xmlns_cmd = "http://jabber.org/protocol/commands";
 local commands = {};

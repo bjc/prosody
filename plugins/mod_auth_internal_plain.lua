@@ -6,10 +6,10 @@
 -- COPYING file in the source package for more information.
 --
 
-local usermanager = require "core.usermanager";
-local new_sasl = require "util.sasl".new;
-local saslprep = require "util.encodings".stringprep.saslprep;
-local secure_equals = require "util.hashes".equals;
+local usermanager = require "prosody.core.usermanager";
+local new_sasl = require "prosody.util.sasl".new;
+local saslprep = require "prosody.util.encodings".stringprep.saslprep;
+local secure_equals = require "prosody.util.hashes".equals;
 
 local log = module._log;
 local host = module.host;

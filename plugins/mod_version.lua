@@ -6,7 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 
 module:add_feature("jabber:iq:version");
 
@@ -20,7 +20,7 @@ if not module:get_option_boolean("hide_os_type") then
 		platform = "Windows";
 	else
 		local os_version_command = module:get_option_string("os_version_command");
-		local ok, pposix = pcall(require, "util.pposix");
+		local ok, pposix = pcall(require, "prosody.util.pposix");
 		if not os_version_command and (ok and pposix and pposix.uname) then
 			platform = pposix.uname().sysname;
 		end

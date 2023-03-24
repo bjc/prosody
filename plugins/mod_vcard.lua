@@ -6,8 +6,8 @@
 -- COPYING file in the source package for more information.
 --
 
-local st = require "util.stanza"
-local jid_split = require "util.jid".split;
+local st = require "prosody.util.stanza"
+local jid_split = require "prosody.util.jid".split;
 
 local vcards = module:open_store();
 

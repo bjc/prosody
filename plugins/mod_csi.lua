@@ -1,4 +1,4 @@
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 local xmlns_csi = "urn:xmpp:csi:0";
 local csi_feature = st.stanza("csi", { xmlns = xmlns_csi });
 

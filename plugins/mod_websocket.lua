@@ -8,19 +8,19 @@
 
 module:set_global();
 
-local add_task = require "util.timer".add_task;
-local add_filter = require "util.filters".add_filter;
-local sha1 = require "util.hashes".sha1;
-local base64 = require "util.encodings".base64.encode;
-local st = require "util.stanza";
-local parse_xml = require "util.xml".parse;
-local contains_token = require "util.http".contains_token;
-local portmanager = require "core.portmanager";
-local sm_destroy_session = require"core.sessionmanager".destroy_session;
+local add_task = require "prosody.util.timer".add_task;
+local add_filter = require "prosody.util.filters".add_filter;
+local sha1 = require "prosody.util.hashes".sha1;
+local base64 = require "prosody.util.encodings".base64.encode;
+local st = require "prosody.util.stanza";
+local parse_xml = require "prosody.util.xml".parse;
+local contains_token = require "prosody.util.http".contains_token;
+local portmanager = require "prosody.core.portmanager";
+local sm_destroy_session = require"prosody.core.sessionmanager".destroy_session;
 local log = module._log;
-local dbuffer = require "util.dbuffer";
+local dbuffer = require "prosody.util.dbuffer";
 
-local websocket_frames = require"net.websocket.frames";
+local websocket_frames = require"prosody.net.websocket.frames";
 local parse_frame = websocket_frames.parse;
 local build_frame = websocket_frames.build;
 local build_close = websocket_frames.build_close;
@@ -370,6 +370,6 @@ function module.add_host(module)
 	module:hook("c2s-read-timeout", keepalive, -0.9);
 end
 
-if require"core.modulemanager".get_modules_for_host("*"):contains(module.name) then
+if require"prosody.core.modulemanager".get_modules_for_host("*"):contains(module.name) then
 	module:add_host();
 end

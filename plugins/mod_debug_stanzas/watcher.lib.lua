@@ -1,6 +1,6 @@
-local filters = require "util.filters";
-local jid = require "util.jid";
-local set = require "util.set";
+local filters = require "prosody.util.filters";
+local jid = require "prosody.util.jid";
+local set = require "prosody.util.set";
 
 local client_watchers = {};
 

@@ -1,7 +1,7 @@
-local st = require "util.stanza";
-local jid_split = require "util.jid".split;
-local jid_bare = require "util.jid".bare;
-local rostermanager = require "core.rostermanager";
+local st = require "prosody.util.stanza";
+local jid_split = require "prosody.util.jid".split;
+local jid_bare = require "prosody.util.jid".bare;
+local rostermanager = require "prosody.core.rostermanager";
 
 local require_encryption = module:get_option_boolean("c2s_require_encryption",
 	module:get_option_boolean("require_encryption", true));

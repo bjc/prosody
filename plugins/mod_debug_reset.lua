@@ -5,9 +5,9 @@
 
 module:set_global();
 
-local hostmanager = require "core.hostmanager";
+local hostmanager = require "prosody.core.hostmanager";
 
-local timer = require "util.timer";
+local timer = require "prosody.util.timer";
 
 local function do_reset()
 	module:log("info", "Performing reset...");

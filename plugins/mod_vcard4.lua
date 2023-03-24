@@ -1,5 +1,5 @@
-local st = require "util.stanza"
-local jid_split = require "util.jid".split;
+local st = require "prosody.util.stanza"
+local jid_split = require "prosody.util.jid".split;
 
 local mod_pep = module:depends("pep");
 

@@ -7,7 +7,7 @@
 --
 
 
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 
 local full_sessions = prosody.full_sessions;
 

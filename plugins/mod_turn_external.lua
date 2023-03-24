@@ -1,4 +1,4 @@
-local set = require "util.set";
+local set = require "prosody.util.set";
 
 local secret = module:get_option_string("turn_external_secret");
 local host = module:get_option_string("turn_external_host", module.host);

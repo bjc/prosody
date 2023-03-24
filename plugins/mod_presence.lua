@@ -15,19 +15,19 @@ local tonumber = tonumber;
 
 local core_post_stanza = prosody.core_post_stanza;
 local core_process_stanza = prosody.core_process_stanza;
-local st = require "util.stanza";
-local jid_split = require "util.jid".split;
-local jid_bare = require "util.jid".bare;
-local datetime = require "util.datetime";
+local st = require "prosody.util.stanza";
+local jid_split = require "prosody.util.jid".split;
+local jid_bare = require "prosody.util.jid".bare;
+local datetime = require "prosody.util.datetime";
 local hosts = prosody.hosts;
 local bare_sessions = prosody.bare_sessions;
 local full_sessions = prosody.full_sessions;
 local NULL = {};
 
-local rostermanager = require "core.rostermanager";
-local sessionmanager = require "core.sessionmanager";
+local rostermanager = require "prosody.core.rostermanager";
+local sessionmanager = require "prosody.core.sessionmanager";
 
-local recalc_resource_map = require "util.presence".recalc_resource_map;
+local recalc_resource_map = require "prosody.util.presence".recalc_resource_map;
 
 local ignore_presence_priority = module:get_option_boolean("ignore_presence_priority", false);
 

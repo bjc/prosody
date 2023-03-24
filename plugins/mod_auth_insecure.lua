@@ -7,9 +7,9 @@
 --
 -- luacheck: ignore 212
 
-local datamanager = require "util.datamanager";
-local new_sasl = require "util.sasl".new;
-local saslprep = require "util.encodings".stringprep.saslprep;
+local datamanager = require "prosody.util.datamanager";
+local new_sasl = require "prosody.util.sasl".new;
+local saslprep = require "prosody.util.encodings".stringprep.saslprep;
 
 local host = module.host;
 local provider = { name = "insecure" };

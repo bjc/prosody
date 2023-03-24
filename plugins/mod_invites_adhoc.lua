@@ -1,7 +1,7 @@
 -- XEP-0401: Easy User Onboarding
-local dataforms = require "util.dataforms";
-local datetime = require "util.datetime";
-local split_jid = require "util.jid".split;
+local dataforms = require "prosody.util.dataforms";
+local datetime = require "prosody.util.datetime";
+local split_jid = require "prosody.util.jid".split;
 
 local new_adhoc = module:require("adhoc").new;
 

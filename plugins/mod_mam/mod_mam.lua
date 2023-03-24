@@ -15,28 +15,28 @@ local xmlns_delay   = "urn:xmpp:delay";
 local xmlns_forward = "urn:xmpp:forward:0";
 local xmlns_st_id   = "urn:xmpp:sid:0";
 
-local um = require "core.usermanager";
-local st = require "util.stanza";
-local rsm = require "util.rsm";
+local um = require "prosody.core.usermanager";
+local st = require "prosody.util.stanza";
+local rsm = require "prosody.util.rsm";
 local get_prefs = module:require"mamprefs".get;
 local set_prefs = module:require"mamprefs".set;
 local prefs_to_stanza = module:require"mamprefsxml".tostanza;
 local prefs_from_stanza = module:require"mamprefsxml".fromstanza;
-local jid_bare = require "util.jid".bare;
-local jid_split = require "util.jid".split;
-local jid_resource = require "util.jid".resource;
-local jid_prepped_split = require "util.jid".prepped_split;
-local dataform = require "util.dataforms".new;
-local get_form_type = require "util.dataforms".get_type;
+local jid_bare = require "prosody.util.jid".bare;
+local jid_split = require "prosody.util.jid".split;
+local jid_resource = require "prosody.util.jid".resource;
+local jid_prepped_split = require "prosody.util.jid".prepped_split;
+local dataform = require "prosody.util.dataforms".new;
+local get_form_type = require "prosody.util.dataforms".get_type;
 local host = module.host;
 
-local rm_load_roster = require "core.rostermanager".load_roster;
+local rm_load_roster = require "prosody.core.rostermanager".load_roster;
 
 local is_stanza = st.is_stanza;
 local tostring = tostring;
-local time_now = require "util.time".now;
+local time_now = require "prosody.util.time".now;
 local m_min = math.min;
-local timestamp, datestamp = import("util.datetime", "datetime", "date");
+local timestamp, datestamp = import("prosody.util.datetime", "datetime", "date");
 local default_max_items, max_max_items = 20, module:get_option_number("max_archive_query_results", 50);
 local strip_tags = module:get_option_set("dont_archive_namespaces", { "http://jabber.org/protocol/chatstates" });
 
@@ -532,7 +532,7 @@ if cleanup_after ~= "never" then
 	-- outside the cleanup range.
 
 	if not (archive.caps and archive.caps.wildcard_delete) then
-		local last_date = require "util.cache".new(module:get_option_number("archive_cleanup_date_cache_size", 1000));
+		local last_date = require "prosody.util.cache".new(module:get_option_number("archive_cleanup_date_cache_size", 1000));
 		function schedule_cleanup(username, date)
 			date = date or datestamp();
 			if last_date:get(username) == date then return end
@@ -545,7 +545,7 @@ if cleanup_after ~= "never" then
 
 	local cleanup_time = module:measure("cleanup", "times");
 
-	local async = require "util.async";
+	local async = require "prosody.util.async";
 	module:daily("Remove expired messages", function ()
 		local cleanup_done = cleanup_time();
 

@@ -7,14 +7,14 @@
 -- COPYING file in the source package for more information.
 --
 
-local st = require "util.stanza";
-local jid_resource = require "util.jid".resource;
+local st = require "prosody.util.stanza";
+local jid_resource = require "prosody.util.jid".resource;
 
 module:hook("muc-disco#info", function(event)
 	event.reply:tag("feature", {var = "http://jabber.org/protocol/muc#request"}):up();
 end);
 
-local voice_request_form = require "util.dataforms".new({
+local voice_request_form = require "prosody.util.dataforms".new({
 	title = "Voice Request";
 	{
 		name = "FORM_TYPE";

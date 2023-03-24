@@ -4,7 +4,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local st, uuid = require "util.stanza", require "util.uuid";
+local st, uuid = require "prosody.util.stanza", require "prosody.util.uuid";
 
 local xmlns_cmd = "http://jabber.org/protocol/commands";
 

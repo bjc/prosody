@@ -8,21 +8,21 @@
 
 module:set_global();
 
-local new_xmpp_stream = require "util.xmppstream".new;
-local sm = require "core.sessionmanager";
+local new_xmpp_stream = require "prosody.util.xmppstream".new;
+local sm = require "prosody.core.sessionmanager";
 local sm_destroy_session = sm.destroy_session;
-local new_uuid = require "util.uuid".generate;
+local new_uuid = require "prosody.util.uuid".generate;
 local core_process_stanza = prosody.core_process_stanza;
-local st = require "util.stanza";
-local logger = require "util.logger";
+local st = require "prosody.util.stanza";
+local logger = require "prosody.util.logger";
 local log = module._log;
-local initialize_filters = require "util.filters".initialize;
+local initialize_filters = require "prosody.util.filters".initialize;
 local math_min = math.min;
 local tostring, type = tostring, type;
 local traceback = debug.traceback;
-local runner = require"util.async".runner;
-local nameprep = require "util.encodings".stringprep.nameprep;
-local cache = require "util.cache";
+local runner = require"prosody.util.async".runner;
+local nameprep = require "prosody.util.encodings".stringprep.nameprep;
+local cache = require "prosody.util.cache";
 
 local xmlns_streams = "http://etherx.jabber.org/streams";
 local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
@@ -559,6 +559,6 @@ function module.add_host(module)
 	});
 end
 
-if require"core.modulemanager".get_modules_for_host("*"):contains(module.name) then
+if require"prosody.core.modulemanager".get_modules_for_host("*"):contains(module.name) then
 	module:add_host();
 end

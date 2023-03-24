@@ -6,12 +6,12 @@
 -- COPYING file in the source package for more information.
 --
 
-local get_children = require "core.hostmanager".get_children;
-local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed;
-local jid_split = require "util.jid".split;
-local jid_bare = require "util.jid".bare;
-local st = require "util.stanza"
-local calculate_hash = require "util.caps".calculate_hash;
+local get_children = require "prosody.core.hostmanager".get_children;
+local is_contact_subscribed = require "prosody.core.rostermanager".is_contact_subscribed;
+local jid_split = require "prosody.util.jid".split;
+local jid_bare = require "prosody.util.jid".bare;
+local st = require "prosody.util.stanza"
+local calculate_hash = require "prosody.util.caps".calculate_hash;
 
 local expose_admins = module:get_option_boolean("disco_expose_admins", false);
 

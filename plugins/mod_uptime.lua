@@ -6,7 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 
 local start_time = prosody.start_time;
 module:hook_global("server-started", function() start_time = prosody.start_time end);

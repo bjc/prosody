@@ -1,11 +1,11 @@
 
-local dt = require "util.datetime";
-local base64 = require "util.encodings".base64;
-local hashes = require "util.hashes";
-local st = require "util.stanza";
-local jid = require "util.jid";
-local array = require "util.array";
-local set = require "util.set";
+local dt = require "prosody.util.datetime";
+local base64 = require "prosody.util.encodings".base64;
+local hashes = require "prosody.util.hashes";
+local st = require "prosody.util.stanza";
+local jid = require "prosody.util.jid";
+local array = require "prosody.util.array";
+local set = require "prosody.util.set";
 
 local default_host = module:get_option_string("external_service_host", module.host);
 local default_port = module:get_option_number("external_service_port");

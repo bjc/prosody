@@ -7,8 +7,8 @@
 --
 -- luacheck: ignore 212
 
-local new_sasl = require "util.sasl".new;
-local datamanager = require "util.datamanager";
+local new_sasl = require "prosody.util.sasl".new;
+local datamanager = require "prosody.util.datamanager";
 local hosts = prosody.hosts;
 
 local allow_storage = module:get_option_boolean("allow_anonymous_storage", false);

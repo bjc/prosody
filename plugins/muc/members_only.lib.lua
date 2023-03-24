@@ -7,7 +7,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 
 local muc_util = module:require "muc/util";
 local valid_affiliations = muc_util.valid_affiliations;

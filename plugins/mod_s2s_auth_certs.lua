@@ -1,6 +1,6 @@
 module:set_global();
 
-local cert_verify_identity = require "util.x509".verify_identity;
+local cert_verify_identity = require "prosody.util.x509".verify_identity;
 local NULL = {};
 local log = module._log;
 

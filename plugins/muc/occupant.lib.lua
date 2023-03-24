@@ -1,6 +1,6 @@
 local pairs = pairs;
 local setmetatable = setmetatable;
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 local util = module:require "muc/util";
 
 local function get_filtered_presence(stanza)

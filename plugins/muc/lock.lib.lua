@@ -7,7 +7,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 
 local lock_rooms = module:get_option_boolean("muc_room_locking", true);
 local lock_room_timeout = module:get_option_number("muc_room_lock_timeout", 300);

@@ -1,7 +1,7 @@
 module:set_global();
 
-local async = require("util.async");
-local datetime = require("util.datetime");
+local async = require("prosody.util.async");
+local datetime = require("prosody.util.datetime");
 
 local periods = { hourly = 3600; daily = 86400; weekly = 7 * 86400 }
 

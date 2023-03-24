@@ -5,19 +5,19 @@ local tostring = tostring;
 local next, unpack = next, table.unpack;
 local os_remove = os.remove;
 local io_open = io.open;
-local jid_bare = require "util.jid".bare;
-local jid_prep = require "util.jid".prep;
-local jid_join = require "util.jid".join;
+local jid_bare = require "prosody.util.jid".bare;
+local jid_prep = require "prosody.util.jid".prep;
+local jid_join = require "prosody.util.jid".join;
 
-local array = require "util.array";
-local base64 = require "util.encodings".base64;
-local dt = require "util.datetime";
-local hex = require "util.hex";
-local it = require "util.iterators";
-local paths = require"util.paths";
-local set = require "util.set";
-local st = require "util.stanza";
-local parse_xml_real = require "util.xml".parse;
+local array = require "prosody.util.array";
+local base64 = require "prosody.util.encodings".base64;
+local dt = require "prosody.util.datetime";
+local hex = require "prosody.util.hex";
+local it = require "prosody.util.iterators";
+local paths = require"prosody.util.paths";
+local set = require "prosody.util.set";
+local st = require "prosody.util.stanza";
+local parse_xml_real = require "prosody.util.xml".parse;
 
 local lfs = require "lfs";
 

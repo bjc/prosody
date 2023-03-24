@@ -6,7 +6,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local st, jid = require "util.stanza", require "util.jid";
+local st, jid = require "prosody.util.stanza", require "prosody.util.jid";
 
 local hosts = prosody.hosts;
 
@@ -63,7 +63,7 @@ end
 module:hook("message/host", handle_announcement);
 
 -- Ad-hoc command (XEP-0133)
-local dataforms_new = require "util.dataforms".new;
+local dataforms_new = require "prosody.util.dataforms".new;
 local announce_layout = dataforms_new{
 	title = "Making an Announcement";
 	instructions = "Fill out this form to make an announcement to all\nactive users of this service.";

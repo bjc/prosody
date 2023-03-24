@@ -2,11 +2,11 @@ local names = { "Romeo", "Juliet", "Mercutio", "Tybalt", "Benvolio" };
 local devices = { "", "phone", "laptop", "tablet", "toaster", "fridge", "shoe" };
 local users = {};
 
-local filters = require "util.filters";
-local id = require "util.id";
-local dt = require "util.datetime";
-local dm = require "util.datamanager";
-local st = require "util.stanza";
+local filters = require "prosody.util.filters";
+local id = require "prosody.util.id";
+local dt = require "prosody.util.datetime";
+local dm = require "prosody.util.datamanager";
+local st = require "prosody.util.stanza";
 
 local record_id = id.short():lower();
 local record_date = os.date("%Y%b%d"):lower();

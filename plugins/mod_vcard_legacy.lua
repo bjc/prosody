@@ -1,10 +1,10 @@
-local st = require "util.stanza";
-local jid_split = require "util.jid".split;
+local st = require "prosody.util.stanza";
+local jid_split = require "prosody.util.jid".split;
 
 local mod_pep = module:depends("pep");
 
-local sha1 = require "util.hashes".sha1;
-local base64_decode = require "util.encodings".base64.decode;
+local sha1 = require "prosody.util.hashes".sha1;
+local base64_decode = require "prosody.util.encodings".base64.decode;
 
 local vcards = module:open_store("vcard");
 

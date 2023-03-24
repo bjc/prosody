@@ -16,10 +16,10 @@ if not have_unix or type(unix) ~= "table" then
 	return;
 end
 
-local server = require "net.server";
+local server = require "prosody.net.server";
 
-local adminstream = require "util.adminstream";
-local st = require "util.stanza";
+local adminstream = require "prosody.util.adminstream";
+local st = require "prosody.util.stanza";
 
 local socket_path = module:get_option_path("admin_socket", "prosody.sock", "data");
 

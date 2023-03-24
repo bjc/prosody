@@ -6,9 +6,9 @@
 -- COPYING file in the source package for more information.
 --
 
-local create_context = require "core.certmanager".create_context;
-local rawgetopt = require"core.configmanager".rawget;
-local st = require "util.stanza";
+local create_context = require "prosody.core.certmanager".create_context;
+local rawgetopt = require"prosody.core.configmanager".rawget;
+local st = require "prosody.util.stanza";
 
 local c2s_require_encryption = module:get_option("c2s_require_encryption", module:get_option("require_encryption", true));
 local s2s_require_encryption = module:get_option("s2s_require_encryption", true);

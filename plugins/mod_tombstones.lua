@@ -1,14 +1,14 @@
 -- TODO warn when trying to create an user before the tombstone expires
 -- e.g. via telnet or other admin interface
-local datetime = require "util.datetime";
-local errors = require "util.error";
-local jid_node = require"util.jid".node;
-local st = require "util.stanza";
+local datetime = require "prosody.util.datetime";
+local errors = require "prosody.util.error";
+local jid_node = require"prosody.util.jid".node;
+local st = require "prosody.util.stanza";
 
 -- Using a map store as key-value store so that removal of all user data
 -- does not also remove the tombstone, which would defeat the point
 local graveyard = module:open_store(nil, "map");
-local graveyard_cache = require "util.cache".new(module:get_option_number("tombstone_cache_size", 1024));
+local graveyard_cache = require "prosody.util.cache".new(module:get_option_number("tombstone_cache_size", 1024));
 
 local ttl = module:get_option_number("user_tombstone_expiry", nil);
 -- Keep tombstones forever by default

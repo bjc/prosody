@@ -6,9 +6,9 @@
 -- COPYING file in the source package for more information.
 --
 
-local st = require "util.stanza";
-local datetime = require "util.datetime".datetime;
-local now = require "util.time".now;
+local st = require "prosody.util.stanza";
+local datetime = require "prosody.util.datetime".datetime;
+local now = require "prosody.util.time".now;
 
 -- XEP-0202: Entity Time
 

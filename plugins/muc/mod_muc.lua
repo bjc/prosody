@@ -95,11 +95,11 @@ local occupant_id = module:require "muc/occupant_id";
 room_mt.get_salt = occupant_id.get_room_salt;
 room_mt.get_occupant_id = occupant_id.get_occupant_id;
 
-local jid_split = require "util.jid".split;
-local jid_prep = require "util.jid".prep;
-local jid_bare = require "util.jid".bare;
-local st = require "util.stanza";
-local cache = require "util.cache";
+local jid_split = require "prosody.util.jid".split;
+local jid_prep = require "prosody.util.jid".prep;
+local jid_bare = require "prosody.util.jid".bare;
+local st = require "prosody.util.stanza";
+local cache = require "prosody.util.cache";
 
 module:require "muc/config_form_sections";
 
@@ -506,10 +506,10 @@ do -- Ad-hoc commands
 	module:depends "adhoc";
 	local t_concat = table.concat;
 	local adhoc_new = module:require "adhoc".new;
-	local adhoc_initial = require "util.adhoc".new_initial_data_form;
-	local adhoc_simple = require "util.adhoc".new_simple_form;
-	local array = require "util.array";
-	local dataforms_new = require "util.dataforms".new;
+	local adhoc_initial = require "prosody.util.adhoc".new_initial_data_form;
+	local adhoc_simple = require "prosody.util.adhoc".new_simple_form;
+	local array = require "prosody.util.array";
+	local dataforms_new = require "prosody.util.dataforms".new;
 
 	local destroy_rooms_layout = dataforms_new {
 		title = "Destroy rooms";

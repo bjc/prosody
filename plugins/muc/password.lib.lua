@@ -7,7 +7,7 @@
 -- COPYING file in the source package for more information.
 --
 
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 
 local function get_password(room)
 	return room._data.password;

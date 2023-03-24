@@ -10,8 +10,8 @@
 local groups;
 local members;
 
-local datamanager = require "util.datamanager";
-local jid_prep = require "util.jid".prep;
+local datamanager = require "prosody.util.datamanager";
+local jid_prep = require "prosody.util.jid".prep;
 
 local module_host = module:get_host();
 

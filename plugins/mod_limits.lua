@@ -1,9 +1,9 @@
 -- Because we deal with pre-authed sessions and streams we can't be host-specific
 module:set_global();
 
-local filters = require "util.filters";
-local throttle = require "util.throttle";
-local timer = require "util.timer";
+local filters = require "prosody.util.filters";
+local throttle = require "prosody.util.throttle";
+local timer = require "prosody.util.timer";
 local ceil = math.ceil;
 
 local limits_cfg = module:get_option("limits", {});

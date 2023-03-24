@@ -6,10 +6,10 @@
 -- COPYING file in the source package for more information.
 --
 
-local st = require "util.stanza";
-local is_contact_subscribed = require "core.rostermanager".is_contact_subscribed;
-local jid_bare = require "util.jid".bare;
-local jid_split = require "util.jid".split;
+local st = require "prosody.util.stanza";
+local is_contact_subscribed = require "prosody.core.rostermanager".is_contact_subscribed;
+local jid_bare = require "prosody.util.jid".bare;
+local jid_split = require "prosody.util.jid".split;
 
 module:add_feature("jabber:iq:last");
 

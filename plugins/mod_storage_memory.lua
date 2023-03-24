@@ -1,10 +1,10 @@
-local serialize = require "util.serialization".serialize;
-local array = require "util.array";
-local envload = require "util.envload".envload;
-local st = require "util.stanza";
+local serialize = require "prosody.util.serialization".serialize;
+local array = require "prosody.util.array";
+local envload = require "prosody.util.envload".envload;
+local st = require "prosody.util.stanza";
 local is_stanza = st.is_stanza or function (s) return getmetatable(s) == st.stanza_mt end
-local new_id = require "util.id".medium;
-local set = require "util.set";
+local new_id = require "prosody.util.id".medium;
+local set = require "prosody.util.set";
 
 local auto_purge_enabled = module:get_option_boolean("storage_memory_temporary", false);
 local auto_purge_stores = module:get_option_set("storage_memory_temporary_stores", {});

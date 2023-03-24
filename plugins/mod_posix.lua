@@ -9,13 +9,13 @@
 
 local want_pposix_version = "0.4.0";
 
-local pposix = assert(require "util.pposix");
+local pposix = assert(require "prosody.util.pposix");
 if pposix._VERSION ~= want_pposix_version then
 	module:log("warn", "Unknown version (%s) of binary pposix module, expected %s."
 		.. "Perhaps you need to recompile?", tostring(pposix._VERSION), want_pposix_version);
 end
 
-local have_signal, signal = pcall(require, "util.signal");
+local have_signal, signal = pcall(require, "prosody.util.signal");
 if not have_signal then
 	module:log("warn", "Couldn't load signal library, won't respond to SIGTERM");
 end
@@ -97,7 +97,7 @@ if daemonize == nil then
 end
 
 local function remove_log_sinks()
-	local lm = require "core.loggingmanager";
+	local lm = require "prosody.core.loggingmanager";
 	lm.register_sink_type("console", nil);
 	lm.register_sink_type("stdout", nil);
 	lm.reload_logging();

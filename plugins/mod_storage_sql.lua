@@ -1,17 +1,17 @@
 
 -- luacheck: ignore 212/self
 
-local deps = require "util.dependencies";
-local cache = require "util.cache";
-local json = require "util.json";
-local sqlite = deps.softreq "util.sqlite3";
-local dbisql = (sqlite and deps.softreq or require) "util.sql";
-local xml_parse = require "util.xml".parse;
-local uuid = require "util.uuid";
-local resolve_relative_path = require "util.paths".resolve_relative_path;
-local jid_join = require "util.jid".join;
+local deps = require "prosody.util.dependencies";
+local cache = require "prosody.util.cache";
+local json = require "prosody.util.json";
+local sqlite = deps.softreq "prosody.util.sqlite3";
+local dbisql = (sqlite and deps.softreq or require) "prosody.util.sql";
+local xml_parse = require "prosody.util.xml".parse;
+local uuid = require "prosody.util.uuid";
+local resolve_relative_path = require "prosody.util.paths".resolve_relative_path;
+local jid_join = require "prosody.util.jid".join;
 
-local is_stanza = require"util.stanza".is_stanza;
+local is_stanza = require"prosody.util.stanza".is_stanza;
 local t_concat = table.concat;
 
 local noop = function() end
@@ -871,8 +871,8 @@ function module.load()
 end
 
 function module.command(arg)
-	local config = require "core.configmanager";
-	local hi = require "util.human.io";
+	local config = require "prosody.core.configmanager";
+	local hi = require "prosody.util.human.io";
 	local command = table.remove(arg, 1);
 	if command == "upgrade" then
 		-- We need to find every unique dburi in the config

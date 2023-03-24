@@ -1,13 +1,13 @@
 local t_unpack = table.unpack;
 local time_now = os.time;
 
-local jid_prep = require "util.jid".prep;
-local set = require "util.set";
-local st = require "util.stanza";
-local it = require "util.iterators";
-local uuid_generate = require "util.uuid".generate;
-local dataform = require"util.dataforms".new;
-local errors = require "util.error";
+local jid_prep = require "prosody.util.jid".prep;
+local set = require "prosody.util.set";
+local st = require "prosody.util.stanza";
+local it = require "prosody.util.iterators";
+local uuid_generate = require "prosody.util.uuid".generate;
+local dataform = require"prosody.util.dataforms".new;
+local errors = require "prosody.util.error";
 
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_errors = "http://jabber.org/protocol/pubsub#errors";

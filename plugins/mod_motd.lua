@@ -13,7 +13,7 @@ local motd_jid = module:get_option_string("motd_jid", host);
 
 if not motd_text then return; end
 
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 
 motd_text = motd_text:gsub("^%s*(.-)%s*$", "%1"):gsub("\n[ \t]+", "\n"); -- Strip indentation from the config
 
