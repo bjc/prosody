@@ -8,6 +8,8 @@ local generate_identifier = require "prosody.util.id".short;
 
 local token_store = module:open_store("auth_tokens", "map");
 
+local access_time_granularity = module:get_option_number("token_auth_access_time_granularity", 60);
+
 local function select_role(username, host, role)
 	if role then
 		return prosody.hosts[host].authz.get_role_by_name(role);
@@ -33,12 +35,15 @@ function create_jid_token(actor_jid, token_jid, token_role, token_ttl, token_dat
 
 	local token_id = id.short();
 
+	local now = os.time();
+
 	local token_info = {
 		id = token_id;
 
 		owner = actor_jid;
-		created = os.time();
-		expires = token_ttl and (os.time() + token_ttl) or nil;
+		created = now;
+		expires = token_ttl and (now + token_ttl) or nil;
+		accessed = now;
 		jid = token_jid;
 		purpose = token_purpose;
 
@@ -92,7 +97,8 @@ local function _get_validated_token_info(token_id, token_user, token_host, token
 
 	local token_info = token.token_info;
 
-	if token_info.expires and token_info.expires < os.time() then
+	local now = os.time();
+	if token_info.expires and token_info.expires < now then
 		token_store:set(token_user, token_id, nil);
 		return nil, "not-authorized";
 	end
@@ -102,6 +108,12 @@ local function _get_validated_token_info(token_id, token_user, token_host, token
 	if password_updated_at and password_updated_at > token_info.created then
 		token_store:set(token_user, token_id, nil);
 		return nil, "not-authorized";
+	end
+
+	local last_accessed = token_info.accessed;
+	if not last_accessed or (now - last_accessed) > access_time_granularity then
+		token_info.accessed = now;
+		token_store:set(token_user, token_id, token_info);
 	end
 
 	return token_info
