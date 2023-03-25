@@ -653,11 +653,16 @@ function api:may(action, context)
 	if type(session) ~= "table" then
 		error("Unable to identify actor session from context");
 	end
-	if session.role and session.type == "c2s" and session.host == self.host then
-		local permit = session.role:may(action, context);
+	if session.type == "c2s" and session.host == self.host then
+		local role = session.role;
+		if not role then
+			self:log("warn", "Access denied: session %s has no role assigned");
+			return false;
+		end
+		local permit = role:may(action, context);
 		if not permit then
 			self:log("debug", "Access denied: session %s (%s) may not %s (not permitted by role %s)",
-				session.id, session.full_jid, action, session.role.name
+				session.id, session.full_jid, action, role.name
 			);
 		end
 		return permit;
