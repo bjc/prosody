@@ -10,7 +10,14 @@ local unpack = table.unpack;
 local pack = table.pack;
 local valid_utf8 = require "prosody.util.encodings".utf8.valid;
 local type = type;
-local dump = require "prosody.util.serialization".new("debug");
+local dump = require"prosody.util.serialization".new({
+	preset = "compact";
+	fallback = function(v, why)
+		return "_[[" .. (why or tostring(v)) .. "]] ";
+	end;
+	fatal = false;
+	maxdepth = 5;
+});
 local num_type = math.type;
 
 -- In Lua 5.3+ these formats throw an error if given a float
