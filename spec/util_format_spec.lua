@@ -13,7 +13,7 @@ describe("util.format", function()
 			assert.equal("true", format("%s", true));
 			assert.equal("[true]", format("%d", true));
 			assert.equal("% [true]", format("%%", true));
-			assert.equal("{ }", format("%q", { }));
+			assert.equal("{}", format("%q", {}));
 			assert.equal("[1.5]", format("%d", 1.5));
 			assert.equal("[7.3786976294838e+19]", format("%d", 73786976294838206464));
 		end);
@@ -668,7 +668,7 @@ describe("util.format", function()
 
 			describe("to %q", function ()
 				it("works", function ()
-					assert.matches('{__type="function",__error="fail"}', format("%q", function() end))
+					assert.matches('%[%[function: 0[xX]%x+]]', format("%q", function() end))
 				end);
 			end);
 
@@ -767,7 +767,7 @@ describe("util.format", function()
 
 			describe("to %q", function ()
 				it("works", function ()
-					assert.matches('{__type="thread",__error="fail"}', format("%q", coroutine.create(function() end)))
+					assert.matches('_%[%[thread: 0[xX]%x+]]', format("%q", coroutine.create(function() end)))
 				end);
 			end);
 
@@ -880,8 +880,8 @@ describe("util.format", function()
 
 			describe("to %q", function ()
 				it("works", function ()
-					assert.matches("{ }", format("%q", { }))
-					assert.equal("{ }", format("%q", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
+					assert.matches("{}", format("%q", { }))
+					assert.equal("{}", format("%q", setmetatable({},{__tostring=function ()return "foo \1\2\3 bar"end})))
 				end);
 			end);
 
