@@ -15,6 +15,7 @@ local dump = require"prosody.util.serialization".new({
 	fallback = function(v, why)
 		return "_[[" .. (why or tostring(v)) .. "]] ";
 	end;
+	freeze = true;
 	fatal = false;
 	maxdepth = 5;
 });
