@@ -233,7 +233,7 @@ function startup.set_function_metatable()
 		if info.isvararg then
 			info[n_params+1] = "...";
 		end
-		return ("function<%s:%d>(%s)"):format(info.short_src:match("[^\\/]*$"), info.linedefined, table.concat(info, ", "));
+		return ("function @%s:%d(%s)"):format(info.short_src:match("[^\\/]*$"), info.linedefined, table.concat(info, ", "));
 	end
 	debug.setmetatable(function() end, mt);
 end
