@@ -54,10 +54,13 @@ function create_jid_token(actor_jid, token_jid, token_role, token_ttl, token_dat
 
 	local token_secret = random.bytes(18);
 	local token = "secret-token:"..base64.encode("2;"..token_id..";"..token_secret..";"..jid.join(token_username, token_host));
-	token_store:set(token_username, token_id, {
+	local ok, err = token_store:set(token_username, token_id, {
 		secret_sha256 = hashes.sha256(token_secret, true);
 		token_info = token_info
 	});
+	if not ok then
+		return nil, err;
+	end
 
 	return token, token_info;
 end
