@@ -1,4 +1,4 @@
--- Copyright (C) 2021 Kim Alvefur
+-- Copyright (C) Kim Alvefur
 --
 -- This project is MIT/X11 licensed. Please see the
 -- COPYING file in the source package for more information.
@@ -24,20 +24,49 @@ local record json_schema_object
 	type json_type_name = json.json_type_name
 	type schema_object = json_schema_object
 
-	type : json_type_name | { json_type_name }
-	enum : { any }
-	const : any
+	-- json-schema-core meta stuff
+	["$schema"] : string
+	["$vocabulary"] : { string : boolean }
+	["$id"] : string
+	["$comment"] : string
+	["$defs"] : { string : schema_t }
+	["$anchor"] : string -- NYI
+	["$dynamicAnchor"] : string -- NYI
+	["$ref"] : string
+	["$dynamicRef"] : string -- NYI
 
+	-- combinations
 	allOf : { schema_t }
 	anyOf : { schema_t }
 	oneOf : { schema_t }
 
+	-- conditional logic
 	["not"] : schema_t
 	["if"] : schema_t
 	["then"] : schema_t
 	["else"] : schema_t
 
-	["$ref"] : string
+	dependentRequired : { string : { string } }
+
+	-- arrays
+	prefixItems : { schema_t }
+	items : schema_t
+	contains : schema_t
+
+	-- objects
+	properties : { string : schema_t }
+	patternProperties: schema_t -- NYI
+	additionalProperties: schema_t
+	propertyNames : schema_t
+
+	-- unevaluated
+	unevaluatedItems : schema_t -- NYI
+	unevaluatedProperties : schema_t -- NYI
+
+	-- json-schema-validation
+	type : json_type_name | { json_type_name }
+	enum : { any }
+	const : any
 
 	-- numbers
 	multipleOf : number
@@ -50,12 +79,8 @@ local record json_schema_object
 	maxLength : integer
 	minLength : integer
 	pattern : string -- NYI
-	format : string
 
 	-- arrays
-	prefixItems : { schema_t }
-	items : schema_t
-	contains : schema_t
 	maxItems : integer
 	minItems : integer
 	uniqueItems : boolean
@@ -63,15 +88,13 @@ local record json_schema_object
 	minContains : integer -- NYI
 
 	-- objects
-	properties : { string : schema_t }
 	maxProperties : integer -- NYI
 	minProperties : integer -- NYI
 	required : { string }
-	dependentRequired : { string : { string } }
-	additionalProperties: schema_t
-	patternProperties: schema_t -- NYI
-	propertyNames : schema_t
 	dependentSchemas : { string : schema_t }
+
+	-- semantic format
+	format : string
 
 	-- xml
 	record xml_t
