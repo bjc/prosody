@@ -65,6 +65,74 @@ function create_jid_token(actor_jid, token_jid, token_role, token_ttl, token_dat
 	return token, token_info;
 end
 
+function create_sub_token(actor_jid, parent_id, token_role, token_ttl, token_data, token_purpose)
+	local username, host = jid.split(actor_jid);
+	if host ~= module.host then
+		return nil, "invalid-host";
+	end
+
+	if (token_data and type(token_data) ~= "table") or (token_purpose and type(token_purpose) ~= "string") then
+		return nil, "bad-request";
+	end
+
+	-- Find parent token
+	local parent_token = token_store:get(username, parent_id);
+	if not parent_token then return nil; end
+	local token_info = parent_token.token_info;
+
+	local now = os.time();
+	local expires = token_info.expires; -- Default to same expiry as parent token
+	if token_ttl then
+		if expires then
+			-- Parent token has an expiry, so limit to that or shorter
+			expires = math.min(now + token_ttl, expires);
+		else
+			-- Parent token never expires, just add whatever expiry is requested
+			expires = now + token_ttl;
+		end
+	end
+
+	local sub_token_info = {
+		id = parent_id;
+		type = "subtoken";
+		role = token_role or token_info.role;
+		jid = token_info.jid;
+		created = now;
+		expires = expires;
+		purpose = token_purpose or token_info.purpose;
+		data = token_data;
+	};
+
+	local sub_tokens = parent_token.sub_tokens;
+	if not sub_tokens then
+		sub_tokens = {};
+		parent_token.sub_tokens = sub_tokens;
+	end
+
+	local sub_token_secret = random.bytes(18);
+	sub_tokens[hashes.sha256(sub_token_secret, true)] = sub_token_info;
+
+	local sub_token = "secret-token:"..base64.encode("2;"..token_info.id..";"..sub_token_secret..";"..token_info.jid);
+
+	local ok, err = token_store:set(username, parent_id, parent_token);
+	if not ok then
+		return nil, err;
+	end
+
+	return sub_token, sub_token_info;
+end
+
+local function clear_expired_sub_tokens(username, token_id)
+	local sub_tokens = token_store:get_key(username, token_id, "sub_tokens");
+	if not sub_tokens then return; end
+	local now = os.time();
+	for secret, info in pairs(sub_tokens) do
+		if info.expires < now then
+			sub_tokens[secret] = nil;
+		end
+	end
+end
+
 local function parse_token(encoded_token)
 	if not encoded_token then return nil; end
 	local encoded_data = encoded_token:match("^secret%-token:(.+)$");
@@ -75,6 +143,41 @@ local function parse_token(encoded_token)
 	if not token_id then return nil; end
 	local token_user, token_host = jid.split(token_jid);
 	return token_id, token_user, token_host, token_secret;
+end
+
+local function _validate_token_info(token_user, token_id, token_info, sub_token_info)
+	local now = os.time();
+	if token_info.expires and token_info.expires < now then
+		if token_info.type == "subtoken" then
+			clear_expired_sub_tokens(token_user, token_id);
+		else
+			token_store:set(token_user, token_id, nil);
+		end
+		return nil, "not-authorized";
+	end
+
+	if token_info.type ~= "subtoken" then
+		local account_info = usermanager.get_account_info(token_user, module.host);
+		local password_updated_at = account_info and account_info.password_updated;
+		if password_updated_at and password_updated_at > token_info.created then
+			token_store:set(token_user, token_id, nil);
+			return nil, "not-authorized";
+		end
+
+		-- Update last access time if necessary
+		local last_accessed = token_info.accessed;
+		if not last_accessed or (now - last_accessed) > access_time_granularity then
+			token_info.accessed = now;
+			token_store:set_key(token_user, token_id, "token_info", token_info);
+		end
+	end
+
+	if sub_token_info then
+		-- Parent token validated, now validate (and return) the subtoken
+		return _validate_token_info(token_user, token_id, sub_token_info);
+	end
+
+	return token_info
 end
 
 local function _get_validated_token_info(token_id, token_user, token_host, token_secret)
@@ -94,32 +197,17 @@ local function _get_validated_token_info(token_id, token_user, token_host, token
 	end
 
 	-- Check provided secret
-	if not hashes.equals(hashes.sha256(token_secret, true), token.secret_sha256) then
+	local secret_hash = hashes.sha256(token_secret, true);
+	if not hashes.equals(secret_hash, token.secret_sha256) then
+		local sub_token_info = token.sub_tokens and token.sub_tokens[secret_hash];
+		if sub_token_info then
+			return _validate_token_info(token_user, token_id, token.token_info, sub_token_info);
+		end
 		return nil, "not-authorized";
 	end
 
-	local token_info = token.token_info;
+	return _validate_token_info(token_user, token_id, token.token_info);
 
-	local now = os.time();
-	if token_info.expires and token_info.expires < now then
-		token_store:set(token_user, token_id, nil);
-		return nil, "not-authorized";
-	end
-
-	local account_info = usermanager.get_account_info(token_user, module.host);
-	local password_updated_at = account_info and account_info.password_updated;
-	if password_updated_at and password_updated_at > token_info.created then
-		token_store:set(token_user, token_id, nil);
-		return nil, "not-authorized";
-	end
-
-	local last_accessed = token_info.accessed;
-	if not last_accessed or (now - last_accessed) > access_time_granularity then
-		token_info.accessed = now;
-		token_store:set(token_user, token_id, token_info);
-	end
-
-	return token_info
 end
 
 function get_token_info(token)
