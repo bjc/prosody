@@ -1535,7 +1535,7 @@ function def_env.user:create(jid, password, role)
 			end
 
 			local ok, err = um.enable_user(username, host);
-			if not ok and err ~= "method-not-implemented" then
+			if not ok and err ~= "method not implemented" then
 				return nil, "Could not enable user: "..err;
 			end
 		end

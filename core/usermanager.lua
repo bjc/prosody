@@ -116,7 +116,7 @@ end
 
 local function get_account_info(username, host)
 	local method = hosts[host].users.get_account_info;
-	if not method then return nil, "method-not-supported"; end
+	if not method then return nil, "method not supported"; end
 	return method(username);
 end
 
@@ -144,7 +144,7 @@ local function user_is_enabled(username, host)
 	local info, err = get_account_info(username, host);
 	if info and info.enabled ~= nil then
 		return info.enabled;
-	elseif err ~= "method-not-implemented" then
+	elseif err ~= "method not implemented" then
 		-- Storage issues etetc
 		return info, err;
 	end
@@ -155,7 +155,7 @@ end
 
 local function enable_user(username, host)
 	local method = hosts[host].users.enable;
-	if not method then return nil, "method-not-supported"; end
+	if not method then return nil, "method not supported"; end
 	local ret, err = method(username);
 	if ret then
 		prosody.events.fire_event("user-enabled", { username = username, host = host });
@@ -165,7 +165,7 @@ end
 
 local function disable_user(username, host)
 	local method = hosts[host].users.disable;
-	if not method then return nil, "method-not-supported"; end
+	if not method then return nil, "method not supported"; end
 	local ret, err = method(username);
 	if ret then
 		prosody.events.fire_event("user-disabled", { username = username, host = host });
