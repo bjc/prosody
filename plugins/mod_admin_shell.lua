@@ -1533,6 +1533,11 @@ function def_env.user:create(jid, password, role)
 			if not ok then
 				return nil, "Could not set password for user: "..err;
 			end
+
+			local ok, err = um.enable_user(username, host);
+			if not ok and err ~= "method-not-implemented" then
+				return nil, "Could not enable user: "..err;
+			end
 		end
 	else
 		local ok, err = um.create_user(username, password, host);
