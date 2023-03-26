@@ -73,6 +73,19 @@ local function new(base_config, overrides)
 	return setmetatable(new_role, role_mt);
 end
 
+function role_mt:__freeze()
+	local t = {
+		id = self.id;
+		name = self.name;
+		description = self.description;
+		default = self.default;
+		priority = self.priority;
+		inherits = self.inherits;
+		permissions = self[permissions_key];
+	};
+	return t;
+end
+
 function role_methods:clone(overrides)
 	return new(self, overrides);
 end
