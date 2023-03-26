@@ -19,7 +19,6 @@ local skip = {
 	["const.json:9"] = "deepcompare",
 	["contains.json:0:5"] = "distinguishing objects from arrays",
 	["defs.json"] = "need built-in meta-schema",
-	["dependentRequired.json"] = "NYI",
 	["dependentSchemas.json"] = "NYI",
 	["dynamicRef.json"] = "NYI",
 	["enum.json:1:3"] = "deepcompare",

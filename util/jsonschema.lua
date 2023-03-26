@@ -206,6 +206,18 @@ function complex_validate(schema, data, root)
 			end
 		end
 
+		if schema.dependentRequired then
+			for k, reqs in pairs(schema.dependentRequired) do
+				if data[k] ~= nil then
+					for _, req in ipairs(reqs) do
+						if data[req] == nil then
+							return false
+						end
+					end
+				end
+			end
+		end
+
 		if schema.propertyNames ~= nil then
 			for k in pairs(data) do
 				if not validate(schema.propertyNames, k, root) then
