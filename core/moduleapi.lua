@@ -626,7 +626,11 @@ function api:default_permissions(role_name, permissions)
 	end
 end
 
-function api:may(action, context)
+function api:could(action, context)
+	return self:may(action, context, true);
+end
+
+function api:may(action, context, peek)
 	if action:byte(1) == 58 then -- action begins with ':'
 		action = self.name..action; -- prepend module name
 	end
@@ -639,12 +643,16 @@ function api:may(action, context)
 			role = hosts[self.host].authz.get_jid_role(context);
 		end
 		if not role then
-			self:log("debug", "Access denied: JID <%s> may not %s (no role found)", context, action);
+			if not peek then
+				self:log("debug", "Access denied: JID <%s> may not %s (no role found)", context, action);
+			end
 			return false;
 		end
 		local permit = role:may(action);
 		if not permit then
-			self:log("debug", "Access denied: JID <%s> may not %s (not permitted by role %s)", context, action, role.name);
+			if not peek then
+				self:log("debug", "Access denied: JID <%s> may not %s (not permitted by role %s)", context, action, role.name);
+			end
 		end
 		return permit;
 	end
@@ -656,11 +664,13 @@ function api:may(action, context)
 	if session.type == "c2s" and session.host == self.host then
 		local role = session.role;
 		if not role then
-			self:log("warn", "Access denied: session %s has no role assigned");
+			if not peek then
+				self:log("warn", "Access denied: session %s has no role assigned");
+			end
 			return false;
 		end
 		local permit = role:may(action, context);
-		if not permit then
+		if not permit and not peek then
 			self:log("debug", "Access denied: session %s (%s) may not %s (not permitted by role %s)",
 				session.id, session.full_jid, action, role.name
 			);
@@ -670,11 +680,13 @@ function api:may(action, context)
 		local actor_jid = context.stanza.attr.from;
 		local role = hosts[self.host].authz.get_jid_role(actor_jid);
 		if not role then
-			self:log("debug", "Access denied: JID <%s> may not %s (no role found)", actor_jid, action);
+			if not peek then
+				self:log("debug", "Access denied: JID <%s> may not %s (no role found)", actor_jid, action);
+			end
 			return false;
 		end
 		local permit = role:may(action, context);
-		if not permit then
+		if not permit and not peek then
 			self:log("debug", "Access denied: JID <%s> may not %s (not permitted by role %s)", actor_jid, action, role.name);
 		end
 		return permit;
