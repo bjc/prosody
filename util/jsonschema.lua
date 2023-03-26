@@ -244,6 +244,14 @@ function complex_validate(schema, data, root)
 			end
 		end
 
+		if schema.dependentSchemas then
+			for k, sub in pairs(schema.dependentSchemas) do
+				if data[k] ~= nil and not validate(sub, data, root) then
+					return false
+				end
+			end
+		end
+
 		if schema.uniqueItems then
 
 			local values = {}

@@ -71,6 +71,7 @@ local record json_schema_object
 	additionalProperties: schema_t
 	patternProperties: schema_t -- NYI
 	propertyNames : schema_t
+	dependentSchemas : { string : schema_t }
 
 	-- xml
 	record xml_t
@@ -329,6 +330,14 @@ function complex_validate (schema : json_schema_object, data : any, root : json_
 					if not validate(schema.additionalProperties, v, root) then
 						return false
 					end
+				end
+			end
+		end
+
+		if schema.dependentSchemas then
+			for k, sub in pairs(schema.dependentSchemas) do
+				if data[k] ~= nil and not validate(sub, data, root) then
+					return false
 				end
 			end
 		end
