@@ -226,7 +226,7 @@ function revoke_token(token)
 	if token_host ~= module.host then
 		return nil, "invalid-host";
 	end
-	return token_store:set(token_user, token_id, nil);
+	return token_store:set_key(token_user, token_id, nil);
 end
 
 function sasl_handler(auth_provider, purpose, extra)
