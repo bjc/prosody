@@ -123,7 +123,8 @@ local function clear_expired_grant_tokens(grant, now)
 	local updated;
 	now = now or os.time();
 	for secret, token_info in pairs(grant.tokens) do
-		if token_info.expires < now then
+		local expires = token_info.expires;
+		if expires and expires < now then
 			grant.tokens[secret] = nil;
 			updated = true;
 		end
