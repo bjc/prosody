@@ -10,7 +10,9 @@ writing type-aware Teal using regular Lua or C code.
 
 The Teal compiler can be installed from LuaRocks using:
 
-	luarocks install tl
+```bash
+luarocks install tl
+```
 
 ## Checking types
 
