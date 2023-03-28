@@ -24,6 +24,23 @@ Some editors and IDEs also have support, see [text editor
 support](https://github.com/teal-language/tl#text-editor-support)
 
 
+## Compiling to Lua
+
+`GNUmakefile` contains a rule for building Lua files from Teal sources.
+It also applies [LuaFormat](https://github.com/Koihik/LuaFormatter) to
+make the resulting code more readable, albeit this makes the line
+numbers no longer match the original Teal source.  Sometimes minor
+`luacheck` issues remain, such as types being represented as unused
+tables, which can be removed.
+
+```bash
+sensible-editor teal-src/prosody/util/example.tl
+# Write some code, remember to run tl check
+make util/example.lua
+sensible-editor util/example.lua
+# Apply any minor tweaks that may be needed
+```
+
 ## Files of note
 
 `module.d.tl`
