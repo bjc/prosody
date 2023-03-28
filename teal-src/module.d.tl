@@ -75,6 +75,7 @@ global record moduleapi
 	load_resource : function (moduleapi, string, file_mode) : FILE
 	enum store_type
 		"keyval"
+		"keyval+"
 		"map"
 		"archive"
 	end
