@@ -55,6 +55,13 @@ function create_grant(actor_jid, grant_jid, grant_ttl, grant_data)
 		return nil, err;
 	end
 
+	module:fire_event("token-grant-created", {
+		id = grant_id;
+		grant = grant;
+		username = grant_username;
+		host = grant_host;
+	});
+
 	return grant;
 end
 
@@ -226,7 +233,12 @@ function revoke_token(token)
 	if token_host ~= module.host then
 		return nil, "invalid-host";
 	end
-	return token_store:set_key(token_user, token_id, nil);
+	local ok, err = token_store:set_key(token_user, token_id, nil);
+	if not ok then
+		return nil, err;
+	end
+	module:fire_event("token-grant-revoked", { id = token_id, username = token_user, host = token_host });
+	return true;
 end
 
 function sasl_handler(auth_provider, purpose, extra)
