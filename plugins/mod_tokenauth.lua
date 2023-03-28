@@ -174,7 +174,7 @@ local function _get_validated_token_info(token_id, token_user, token_host, token
 	-- Invalidate grants from before last password change
 	local account_info = usermanager.get_account_info(token_user, module.host);
 	local password_updated_at = account_info and account_info.password_updated;
-	if grant.created < password_updated_at and password_updated_at then
+	if password_updated_at and grant.created < password_updated_at then
 		module:log("debug", "Token grant issued before last password change, invalidating it now");
 		token_store:set_key(token_user, token_id, nil);
 		return nil, "not-authorized";
