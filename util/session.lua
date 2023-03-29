@@ -1,10 +1,12 @@
 local initialize_filters = require "prosody.util.filters".initialize;
+local time = require "util.time";
 local logger = require "prosody.util.logger";
 
 local function new_session(typ)
 	local session = {
 		type = typ .. "_unauthed";
 		base_type = typ;
+		since = time.now();
 	};
 	return session;
 end
