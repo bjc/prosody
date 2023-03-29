@@ -139,6 +139,28 @@ local function clear_expired_grant_tokens(grant, now)
 	return updated;
 end
 
+local function _get_validated_grant_info(username, grant)
+	if type(grant) == "string" then
+		grant = token_store:get_key(username, grant);
+	end
+	if not grant or not grant.created then return nil; end
+
+	-- Invalidate grants from before last password change
+	local account_info = usermanager.get_account_info(username, module.host);
+	local password_updated_at = account_info and account_info.password_updated;
+	if password_updated_at and grant.created < password_updated_at then
+		module:log("debug", "Token grant issued before last password change, invalidating it now");
+		token_store:set_key(username, grant.id, nil);
+		return nil, "not-authorized";
+	elseif grant.expires and grant.expires < os.time() then
+		module:log("debug", "Token grant expired, cleaning up");
+		token_store:set_key(username, grant.id, nil);
+		return nil, "expired";
+	end
+
+	return grant;
+end
+
 local function _get_validated_token_info(token_id, token_user, token_host, token_secret)
 	if token_host ~= module.host then
 		return nil, "invalid-host";
@@ -171,12 +193,9 @@ local function _get_validated_token_info(token_id, token_user, token_host, token
 		return nil, "not-authorized";
 	end
 
-	-- Invalidate grants from before last password change
-	local account_info = usermanager.get_account_info(token_user, module.host);
-	local password_updated_at = account_info and account_info.password_updated;
-	if password_updated_at and grant.created < password_updated_at then
-		module:log("debug", "Token grant issued before last password change, invalidating it now");
-		token_store:set_key(token_user, token_id, nil);
+	-- Verify grant validity (expiry, etc.)
+	grant = _get_validated_grant_info(token_user, grant);
+	if not grant then
 		return nil, "not-authorized";
 	end
 
