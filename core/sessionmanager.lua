@@ -104,6 +104,7 @@ local function update_session(to_session, from_session)
 		replaced_conn:close();
 	end
 
+	to_session.since = from_session.since;
 	to_session.ip = from_session.ip;
 	to_session.conn = from_session.conn;
 	to_session.rawsend = from_session.rawsend;
