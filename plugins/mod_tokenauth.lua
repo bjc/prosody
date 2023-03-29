@@ -214,6 +214,24 @@ local function _get_validated_token_info(token_id, token_user, token_host, token
 	return token_info;
 end
 
+function get_grant_info(username, grant_id)
+	local grant = _get_validated_grant_info(username, grant_id);
+	if not grant then return nil; end
+
+	-- Caller is only interested in the grant, no need to expose token stuff to them
+	grant.tokens = nil;
+
+	return grant;
+end
+
+function get_user_grants(username)
+	local grants = token_store:get(username);
+	if not grants then return nil; end
+	for grant_id, grant in pairs(grants) do
+		grants[grant_id] = _get_validated_grant_info(username, grant);
+	end
+	return grants;
+end
 
 function get_token_info(token)
 	local token_id, token_user, token_host, token_secret = parse_token(token);
