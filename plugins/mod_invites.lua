@@ -257,7 +257,7 @@ function module.command(arg)
 	end
 
 	local allow_reset;
-	local roles;
+	local roles = {};
 	local groups = {};
 
 	while #arg > 0 do
@@ -282,7 +282,7 @@ function module.command(arg)
 			print("    --group GROUPID   Add the user to the group with the given ID")
 			print("                      Can be specified multiple times")
 			print()
-			print("--role and --admin override each other; the last one wins")
+			print("--role and --admin can be specified multiple times; the first role becomes the primary role, the rest become secondary roles")
 			print("--group can be specified multiple times; the user will be added to all groups.")
 			print()
 			print("--reset and the other options cannot be mixed.")
@@ -297,14 +297,14 @@ function module.command(arg)
 			end
 			allow_reset = username;
 		elseif value == "--admin" then
-			roles = { ["prosody:admin"] = true };
+			table.insert(roles, "prosody:admin");
 		elseif value == "--role" then
 			local rolename = arg[1];
 			if not rolename then
 				print("Please supply a role name");
 				return 2;
 			end
-			roles = { [rolename] = true };
+			table.insert(roles, rolename);
 			table.remove(arg, 1);
 		elseif value == "--group" or value == "-g" then
 			local groupid = arg[1];
