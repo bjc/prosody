@@ -147,7 +147,20 @@ module:hook("user-registered", function (event)
 	if validated_invite.additional_data then
 		module:log("debug", "Importing roles from invite");
 		local roles = validated_invite.additional_data.roles;
-		if roles then
+		if roles and roles[1] ~= nil then
+			local um = require "prosody.core.usermanager";
+			local ok, err = um.set_user_role(event.username, module.host, roles[1]);
+			if not ok then
+				module:log("error", "Could not set role %s for newly registered user %s: %s", roles[1], event.username, err);
+			end
+			for i = 2, #roles do
+				local ok, err = um.add_user_secondary_role(event.username, module.host, roles[i]);
+				if not ok then
+					module:log("warn", "Could not add secondary role %s for newly registered user %s: %s", roles[i], event.username, err);
+				end
+			end
+		elseif roles and type(next(roles)) == "string" then
+			module:log("warn", "Invite carries legacy, migration required for user '%s' for role set %q to take effect", event.username, roles);
 			module:open_store("roles"):set(contact_username, roles);
 		end
 	end
