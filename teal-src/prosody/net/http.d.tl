@@ -35,11 +35,11 @@ local record lib
 	record http_request
 		host : string
 		port : string
-		enum scheme
+		enum Scheme
 			"http"
 			"https"
 		end
-		scheme : scheme
+		scheme : Scheme
 		url : string
 		userinfo : string
 		path : string
