@@ -25,7 +25,7 @@ local prosody = _G.prosody;
 local unpack = table.unpack;
 local iterators = require "prosody.util.iterators";
 local keys, values = iterators.keys, iterators.values;
-local jid_bare, jid_split, jid_join, jid_resource = import("prosody.util.jid", "bare", "prepped_split", "join", "resource");
+local jid_bare, jid_split, jid_join, jid_resource, jid_compare = import("prosody.util.jid", "bare", "prepped_split", "join", "resource", "compare");
 local set, array = require "prosody.util.set", require "prosody.util.array";
 local cert_verify_identity = require "prosody.util.x509".verify_identity;
 local envload = require "prosody.util.envload".envload;
@@ -998,7 +998,7 @@ function def_env.c2s:show(match_jid, colspec)
 
 	local function match(session)
 		local jid = get_jid(session)
-		return (not match_jid) or jid == match_jid;
+		return (not match_jid) or jid_compare(jid, match_jid);
 	end
 
 	local group_by_host = true;
