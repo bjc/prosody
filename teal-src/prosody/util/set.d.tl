@@ -4,6 +4,7 @@ local record lib
 		contains : function<T> (Set<T>, T) : boolean
 		contains_set : function<T> (Set<T>, Set<T>) : boolean
 		items :  function<T> (Set<T>) : function<T> (Set<T>, T) : T
+		remove : function<T> (Set<T>, T)
 		add_list : function<T> (Set<T>, { T })
 		include : function<T> (Set<T>, Set<T>)
 		exclude : function<T> (Set<T>, Set<T>)
