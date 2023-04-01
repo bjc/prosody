@@ -430,8 +430,16 @@ end
 function startup.prepare_to_start()
 	log("info", "Prosody is using the %s backend for connection handling", server.get_backend());
 	-- Signal to modules that we are ready to start
-	prosody.events.fire_event("server-starting");
-	prosody.start_time = os.time();
+	prosody.started = require "util.promise".new(function (resolve)
+		prosody.events.add_handler("server-started", function ()
+			resolve();
+		end);
+		prosody.log("debug", "Firing server-starting event");
+		prosody.events.fire_event("server-starting");
+		prosody.start_time = os.time();
+	end):catch(function (err)
+		prosody.log("error", "Prosody startup error: %s", err);
+	end);
 end
 
 function startup.init_global_protection()
@@ -476,7 +484,10 @@ function startup.log_greeting()
 end
 
 function startup.notify_started()
-	prosody.events.fire_event("server-started");
+	require "util.timer".add_task(0, function ()
+		prosody.log("debug", "Firing server-started event");
+		prosody.events.fire_event("server-started");
+	end);
 end
 
 -- Override logging config (used by prosodyctl)
