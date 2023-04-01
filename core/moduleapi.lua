@@ -693,4 +693,9 @@ function api:may(action, context, peek)
 	end
 end
 
+-- Execute a function, once, but only after startup is complete
+function api:once(f)
+	return prosody.started:next(f);
+end
+
 return api;
