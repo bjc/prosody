@@ -694,7 +694,7 @@ function api:may(action, context, peek)
 end
 
 -- Execute a function, once, but only after startup is complete
-function api:once(f)
+function api:once(f) --luacheck: ignore 212/self
 	return prosody.started:next(f);
 end
 
