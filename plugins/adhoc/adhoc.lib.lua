@@ -27,10 +27,10 @@ function _M.new(name, node, handler, permission)
 		error "the permission mode 'user' has been renamed 'any', please update your code"
 	end
 	if permission == "admin" then
-		module:default_permission("prosody:admin", "mod_adhoc:"..node);
+		module:default_permission("prosody:admin", "adhoc:"..node);
 		permission = "check";
 	elseif permission == "global_admin" then
-		module:default_permission("prosody:operator", "mod_adhoc:"..node);
+		module:default_permission("prosody:operator", "adhoc:"..node);
 		permission = "check";
 	end
 	return { name = name, node = node, handler = handler, cmdtag = _cmdtag, permission = permission };

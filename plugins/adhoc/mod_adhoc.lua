@@ -15,7 +15,7 @@ local commands = {};
 module:add_feature(xmlns_cmd);
 
 local function check_permissions(event, node, command)
-	return (command.permission == "check" and module:may("mod_adhoc:"..node, event))
+	return (command.permission == "check" and module:may("adhoc:"..node, event))
 	    or (command.permission == "local_user" and jid_host(event.stanza.attr.from) == module.host)
 	    or (command.permission == "any");
 end
