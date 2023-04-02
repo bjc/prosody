@@ -966,11 +966,12 @@ available_columns = {
 	};
 	role = {
 		title = "Role";
-		description = "Session role";
-		width = 20;
+		description = "Session role with 'prosody:' prefix removed";
+		width = #"admin";
 		key = "role";
 		mapper = function(role)
-			return role and role.name;
+			local name = role and role.name;
+			return name and name:match"^prosody:(%w+)" or name;
 		end;
 	}
 };
