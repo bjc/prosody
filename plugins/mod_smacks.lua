@@ -521,7 +521,16 @@ module:hook("pre-resource-unbind", function (event)
 	if session.hibernating then return end
 
 	session.hibernating = os_time();
-	session.hibernating_watchdog = watchdog.new(resume_timeout, function()
+	if session.hibernating_watchdog then
+		session.log("debug", "Session already has a sleeping watchdog, replacing it");
+		session.hibernating_watchdog:cancel();
+	end
+	session.hibernating_watchdog = watchdog.new(resume_timeout, function(this_dog)
+		if this_dog ~= session.hibernating_watchdog then
+			-- This really shouldn't happen?
+			session.log("debug", "Releasing a stray watchdog");
+			return
+		end
 		session.log("debug", "mod_smacks hibernation timeout reached...");
 		if session.destroyed then
 			session.log("debug", "The session has already been destroyed");
