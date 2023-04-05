@@ -278,6 +278,13 @@ function revoke_token(token)
 	return true;
 end
 
+function revoke_grant(username, grant_id)
+	local ok, err = token_store:set_key(username, grant_id, nil);
+	if not ok then return nil, err; end
+	module:fire_event("token-grant-revoked", { id = grant_id, username = username, host = module.host });
+	return true;
+end
+
 function sasl_handler(auth_provider, purpose, extra)
 	return function (sasl, token, realm, _authzid)
 		local token_info, err = get_token_info(token);
