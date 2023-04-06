@@ -2,16 +2,7 @@ local st = require "prosody.util.stanza";
 local xmlns_csi = "urn:xmpp:csi:0";
 local csi_feature = st.stanza("csi", { xmlns = xmlns_csi });
 
-local sum = module:metric("gauge", "sessions_per_state", "sessions", "CSI state per session", { "csi_state" })
 local change = module:metric("counter", "changes", "events", "CSI state changes", {"csi_state"});
-
-module:hook_global("stats-update", function ()
-	for _, session in pairs(prosody.full_sessions) do
-		if session.host == module.host then
-			sum:with_labels(session.state or "none"):add(1);
-		end
-	end
-end);
 
 local csi_handler_available = nil;
 module:hook("stream-features", function (event)
