@@ -18,18 +18,16 @@ local function do_reset()
 	module:fire_event("server-resetting");
 	for _, host in ipairs(hosts) do
 		hostmanager.deactivate(host);
-		timer.add_task(0, function ()
-			hostmanager.activate(host);
-			module:log("info", "Reset complete");
-			module:fire_event("server-reset");
-		end);
+		hostmanager.activate(host);
+		module:log("info", "Reset complete");
+		module:fire_event("server-reset");
 	end
 end
 
 function module.add_host(host_module)
 	host_module:hook("resource-unbind", function ()
 		if next(prosody.full_sessions) == nil then
-			timer.add_task(0, do_reset);
+			do_reset();
 		end
 	end);
 end
