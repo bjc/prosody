@@ -139,14 +139,14 @@ local function new_table(col_specs, max_width)
 	local total_proportional_width = 0;
 	for i = 1, #col_specs do
 		if not widths[i] then
-			local width_spec = col_specs[i].width:match("(%d+)[p%%]");
+			local width_spec = col_specs[i].width:match("([%d%.]+)[p%%]");
 			total_proportional_width = total_proportional_width + tonumber(width_spec);
 		end
 	end
 
 	for i = 1, #col_specs do
 		if not widths[i] then
-			local width_spec = col_specs[i].width:match("(%d+)[p%%]");
+			local width_spec = col_specs[i].width:match("([%d%.]+)[p%%]");
 			local rel_width = tonumber(width_spec);
 			widths[i] = math.floor(free_width*(rel_width/total_proportional_width));
 		end
