@@ -1,15 +1,14 @@
 --luacheck: ignore
 
--- Mock time functions to simplify tests
+-- Mock time functions to simplify tests --
+local time = require "util.time";
 function _G.os.time()
 	return 1219439344;
 end
-package.preload["util.time"] = function ()
-	return {
-		now = function () return 1219439344.5; end;
-		monotonic = function () return 0.5; end;
-	}
+function time.now()
+	return 1219439344.5;
 end
+-------------------------------------------
 
 admins = { "admin@localhost" }
 
