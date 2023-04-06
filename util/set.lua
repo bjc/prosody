@@ -186,7 +186,7 @@ function set_mt.__tostring(set)
 	for item in pairs(items) do
 		s[#s+1] = tostring(item);
 	end
-	return t_concat(s, ", ");
+	return "{"..t_concat(s, ", ").."}";
 end
 
 function set_mt.__freeze(set)
