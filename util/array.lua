@@ -24,7 +24,7 @@ local array_methods = {};
 local array_mt = {
 	__index = array_methods;
 	__name = "array";
-	__tostring = function (self) return "{"..self:concat(", ").."}"; end;
+	__tostring = function (self) return "["..self:concat(", ").."]"; end;
 };
 
 function array_mt:__freeze() return self; end
