@@ -124,7 +124,7 @@ local function new_table(col_specs, max_width)
 	-- Calculate width of fixed-size columns
 	for i = 1, #col_specs do
 		local width = col_specs[i].width or "0";
-		if not(type(width) == "string" and width:sub(-1) == "%") then
+		if not (type(width) == "string" and width:match("[p%%]$")) then
 			local title = col_specs[i].title;
 			width = math.max(tonumber(width), title and (#title+1) or 0);
 			widths[i] = width;
@@ -134,11 +134,21 @@ local function new_table(col_specs, max_width)
 			end
 		end
 	end
-	-- Calculate width of %-based columns
+
+	-- Calculate width of proportional columns
+	local total_proportional_width = 0;
 	for i = 1, #col_specs do
 		if not widths[i] then
-			local pc_width = tonumber((col_specs[i].width:gsub("%%$", "")));
-			widths[i] = math.floor(free_width*(pc_width/100));
+			local width_spec = col_specs[i].width:match("(%d+)[p%%]");
+			total_proportional_width = total_proportional_width + tonumber(width_spec);
+		end
+	end
+
+	for i = 1, #col_specs do
+		if not widths[i] then
+			local width_spec = col_specs[i].width:match("(%d+)[p%%]");
+			local rel_width = tonumber(width_spec);
+			widths[i] = math.floor(free_width*(rel_width/total_proportional_width));
 		end
 	end
 
