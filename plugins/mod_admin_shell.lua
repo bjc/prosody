@@ -795,7 +795,7 @@ available_columns = {
 	port = {
 		title = "Port";
 		description = "Server port used";
-		width = 5;
+		width = #string.format("%d", 0xffff); -- max 16 bit unsigned integer
 		align = "right";
 		key = "conn";
 		mapper = function(conn)
@@ -807,7 +807,7 @@ available_columns = {
 	dir = {
 		title = "Dir";
 		description = "Direction of server-to-server connection";
-		width = 3;
+		width = #"<->";
 		key = "direction";
 		mapper = function(dir, session)
 			if session.incoming and session.outgoing then return "<->"; end
@@ -820,7 +820,7 @@ available_columns = {
 	method = {
 		title = "Method";
 		description = "Connection method";
-		width = 10;
+		width = math.max(#"BOSH", #"WebSocket", #"TCP");
 		mapper = function(_, session)
 			if session.bosh_version then
 				return "BOSH";
@@ -834,15 +834,20 @@ available_columns = {
 	ipv = {
 		title = "IPv";
 		description = "Internet Protocol version (4 or 6)";
-		width = 4;
+		width = #"IPvX";
 		key = "ip";
 		mapper = function(ip) if ip then return ip:find(":") and "IPv6" or "IPv4"; end end;
 	};
-	ip = { title = "IP address"; description = "IP address the session connected from"; width = 40; key = "ip" };
+	ip = {
+		title = "IP address";
+		description = "IP address the session connected from";
+		width = #"ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff";
+		key = "ip";
+	};
 	status = {
 		title = "Status";
 		description = "Presence status";
-		width = 6;
+		width = math.max(#"online", #"chat");
 		key = "presence";
 		mapper = function(p)
 			if not p then return ""; end
@@ -853,7 +858,7 @@ available_columns = {
 		title = "Security";
 		description = "TLS version or security status";
 		key = "conn";
-		width = 8;
+		width = math.max(#"secure", "TLSvX.Y");
 		mapper = function(conn, session)
 			if not session.secure then return "insecure"; end
 			if not conn or not conn:ssl() then return "secure" end
@@ -864,6 +869,7 @@ available_columns = {
 	encryption = {
 		title = "Encryption";
 		description = "Encryption algorithm used (TLS cipher suite)";
+		-- openssl ciphers 'ALL:COMPLEMENTOFALL' | tr : \\n | awk 'BEGIN {n=1} length() > n {n=length()} END {print(n)}'
 		width = 30;
 		key = "conn";
 		mapper = function(conn)
@@ -875,7 +881,7 @@ available_columns = {
 		title = "Certificate";
 		description = "Validation status of certificate";
 		key = "cert_identity_status";
-		width = 11;
+		width = math.max(#"Expired", #"Self-signed", #"Untrusted", #"Mismatched", #"Unknown");
 		mapper = function(cert_status, session)
 			if cert_status then return capitalize(cert_status); end
 			if session.cert_chain_status == "Invalid" then
@@ -895,7 +901,7 @@ available_columns = {
 	sni = {
 		title = "SNI";
 		description = "Hostname requested in TLS";
-		width = 22;
+		width = 22; -- same as host, remote etc
 		mapper = function(_, session)
 			if not session.conn then return end
 			local sock = session.conn:socket();
@@ -905,7 +911,7 @@ available_columns = {
 	alpn = {
 		title = "ALPN";
 		description = "Protocol requested in TLS";
-		width = 11;
+		width = math.max(#"http/1.1", #"xmpp-client", #"xmpp-server");
 		mapper = function(_, session)
 			if not session.conn then return end
 			local sock = session.conn:socket();
@@ -916,7 +922,8 @@ available_columns = {
 		title = "SM";
 		description = "Stream Management (XEP-0198) status";
 		key = "smacks";
-		width = 11;
+		-- FIXME shorter synonym for hibernating
+		width = math.max(#"yes", #"no", #"hibernating");
 		mapper = function(smacks_xmlns, session)
 			if not smacks_xmlns then return "no"; end
 			if session.hibernating then return "hibernating"; end
@@ -950,7 +957,7 @@ available_columns = {
 		title = "Dialback";
 		description = "Legacy server verification";
 		key = "dialback_key";
-		width = 13;
+		width = math.max(#"Not used", #"Not initiated", #"Initiated", #"Completed");
 		mapper = function (dialback_key, session)
 			if not dialback_key then
 				if session.type == "s2sin" or session.type == "s2sout" then
