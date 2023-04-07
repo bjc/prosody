@@ -869,7 +869,7 @@ available_columns = {
 		title = "Security";
 		description = "TLS version or security status";
 		key = "conn";
-		width = math.max(#"secure", "TLSvX.Y");
+		width = math.max(#"secure", #"TLSvX.Y");
 		mapper = function(conn, session)
 			if not session.secure then return "insecure"; end
 			if not conn or not conn:ssl() then return "secure" end
