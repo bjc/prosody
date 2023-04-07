@@ -30,7 +30,7 @@ local function read_line(prompt_string)
 end
 
 local function send_line(client, line)
-	client.send(st.stanza("repl-input", { width = os.getenv "COLUMNS" or term_width() }):text(line));
+	client.send(st.stanza("repl-input", { width = term_width() }):text(line));
 end
 
 local function repl(client)

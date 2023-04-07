@@ -109,6 +109,8 @@ if utf8.len and utf8.offset then
 end
 
 local function term_width(default)
+	local env_cols = os.getenv "COLUMNS";
+	if env_cols then return env_cols; end
 	local stty = io.popen("stty -a");
 	if not stty then return default; end
 	local result = stty:read("*a");
