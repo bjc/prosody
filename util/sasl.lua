@@ -47,7 +47,7 @@ local registered_mechanisms = {};
 local backend_mechanism = {};
 local mechanism_channelbindings = {};
 
--- register a new SASL mechanisms
+-- register a new SASL mechanism
 local function registerMechanism(name, backends, f, cb_backends)
 	assert(type(name) == "string", "Parameter name MUST be a string.");
 	assert(type(backends) == "string" or type(backends) == "table", "Parameter backends MUST be either a string or a table.");
