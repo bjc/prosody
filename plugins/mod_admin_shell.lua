@@ -815,8 +815,19 @@ available_columns = {
 			if dir == "incoming" then return "<--"; end
 		end;
 	};
-	id = { title = "Session ID"; description = "Internal session ID used in logging"; width = 20; key = "id" };
-	type = { title = "Type"; description = "Session type"; width = #"c2s_unauthed"; key = "type" };
+	id = {
+		title = "Session ID";
+		description = "Internal session ID used in logging";
+		-- Depends on log16(?) of pointers which may vary over runtime, so + some margin
+		width = math.max(#"c2s", #"s2sin", #"s2sout") + #(tostring({}):match("%x+$")) + 2;
+		key = "id";
+	};
+	type = {
+		title = "Type";
+		description = "Session type";
+		width = math.max(#"c2s_unauthed", #"s2sout_unauthed");
+		key = "type";
+	};
 	method = {
 		title = "Method";
 		description = "Connection method";
@@ -870,7 +881,7 @@ available_columns = {
 		title = "Encryption";
 		description = "Encryption algorithm used (TLS cipher suite)";
 		-- openssl ciphers 'ALL:COMPLEMENTOFALL' | tr : \\n | awk 'BEGIN {n=1} length() > n {n=length()} END {print(n)}'
-		width = 30;
+		width = #"ECDHE-ECDSA-CHACHA20-POLY1305";
 		key = "conn";
 		mapper = function(conn)
 			local info = conn and conn.ssl_info and conn:ssl_info();
