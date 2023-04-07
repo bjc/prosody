@@ -85,7 +85,7 @@ local function start(arg) --luacheck: ignore 212/arg
 		end
 
 		client.events.add_handler("connected", function()
-			client.send(st.stanza("repl-input"):text(arg[1]));
+			send_line(client, arg[1]);
 			return true;
 		end, 1);
 
