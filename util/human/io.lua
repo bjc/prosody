@@ -162,7 +162,7 @@ local function new_table(col_specs, max_width)
 			local width = widths[i];
 			local v = row[not titles and column.key or i];
 			if not titles and column.mapper then
-				v = column.mapper(v, row);
+				v = column.mapper(v, row, width);
 			end
 			if v == nil then
 				v = column.default or "";
