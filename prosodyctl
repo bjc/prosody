@@ -680,7 +680,7 @@ local command_runner = async.runner(function ()
 			end
 			os.exit(0, true); -- :)
 		else
-			show_message("Failed to execute command: "..error_messages[ret]);
+			show_message("Failed to execute command: %s", error_messages[ret]);
 			os.exit(1); -- :(
 		end
 	end
