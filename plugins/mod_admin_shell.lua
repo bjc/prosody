@@ -999,7 +999,7 @@ local function get_colspec(colspec, default)
 	local columns = {};
 	for i, col in pairs(colspec or default) do
 		if type(col) == "string" then
-			columns[i] = available_columns[col] or { title = capitalize(col); width = 20; key = col };
+			columns[i] = available_columns[col] or { title = capitalize(col); width = "1p"; key = col };
 		elseif type(col) ~= "table" then
 			return false, ("argument %d: expected string|table but got %s"):format(i, type(col));
 		else
