@@ -6,6 +6,7 @@ local parse_args = require "prosody.util.argparse".parse;
 local unpack = table.unpack or _G.unpack;
 local tc = require "prosody.util.termcolours";
 local isatty = require "prosody.util.pposix".isatty;
+local term_width = require"prosody.util.human.io".term_width;
 
 local have_readline, readline = pcall(require, "readline");
 
@@ -29,7 +30,7 @@ local function read_line(prompt_string)
 end
 
 local function send_line(client, line)
-	client.send(st.stanza("repl-input", { width = os.getenv "COLUMNS" }):text(line));
+	client.send(st.stanza("repl-input", { width = os.getenv "COLUMNS" or term_width() }):text(line));
 end
 
 local function repl(client)
