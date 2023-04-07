@@ -128,7 +128,7 @@ local function ellipsis(s, width)
 end
 
 local function new_table(col_specs, max_width)
-	max_width = max_width or term_width(os.getenv("COLUMNS") or 80);
+	max_width = max_width or term_width(80);
 	local separator = " | ";
 
 	local widths = {};
