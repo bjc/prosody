@@ -771,7 +771,7 @@ available_columns = {
 	jid = {
 		title = "JID";
 		description = "Full JID of user session";
-		width = 32;
+		width = "3p";
 		key = "full_jid";
 		mapper = function(full_jid, session) return full_jid or get_jid(session) end;
 	};
@@ -779,7 +779,7 @@ available_columns = {
 		title = "Host";
 		description = "Local hostname";
 		key = "host";
-		width = 22;
+		width = "1p";
 		mapper = function(host, session)
 			return host or get_s2s_hosts(session) or "?";
 		end;
@@ -787,7 +787,7 @@ available_columns = {
 	remote = {
 		title = "Remote";
 		description = "Remote hostname";
-		width = 22;
+		width = "1p";
 		mapper = function(_, session)
 			return select(2, get_s2s_hosts(session));
 		end;
@@ -912,7 +912,7 @@ available_columns = {
 	sni = {
 		title = "SNI";
 		description = "Hostname requested in TLS";
-		width = 22; -- same as host, remote etc
+		width = "1p"; -- same as host, remote etc
 		mapper = function(_, session)
 			if not session.conn then return end
 			local sock = session.conn:socket();
