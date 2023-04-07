@@ -42,6 +42,24 @@ describe("util.human.io", function ()
 			assert.equal("räksmörgås", human_io.ellipsis("räksmörgås", 10));
 		end);
 	end);
+
+	describe("parse_duration", function ()
+		local function test(expected, duration)
+			assert.equal(expected, human_io.parse_duration(duration));
+		end
+		it("works", function ()
+			test(1, "1s");
+			test(60, "1mi");
+			test(60, "1min");
+			test(60, "1 min");
+			test(60, "1 minute");
+			test(120, "2min");
+			test(86400, "1d");
+			test(2678400, "1m");
+			test(2678400, "1month");
+			test(2678400, "1 month");
+		end);
+	end);
 end);
 
 
