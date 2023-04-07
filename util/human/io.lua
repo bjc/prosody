@@ -108,6 +108,17 @@ if utf8.len and utf8.offset then
 	end
 end
 
+local function term_width(default)
+	local stty = io.popen("stty -a");
+	if not stty then return default; end
+	local result = stty:read("*a");
+	if result then
+		result = result:match("%f[%w]columns[ =]*(%d+)");
+	end
+	stty:close();
+	return tonumber(result or default);
+end
+
 local function ellipsis(s, width)
 	if len(s) <= width then return s; end
 	if width == 1 then return "…"; end
@@ -194,6 +205,7 @@ return {
 	printf = printf;
 	padleft = padleft;
 	padright = padright;
+	term_width = term_width;
 	ellipsis = ellipsis;
 	table = new_table;
 };
