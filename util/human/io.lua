@@ -194,7 +194,7 @@ local function new_table(col_specs, max_width)
 			table.insert(output, v);
 		end
 		return table.concat(output, separator);
-	end;
+	end, max_width;
 end
 
 return {
