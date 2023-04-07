@@ -852,7 +852,7 @@ available_columns = {
 	ip = {
 		title = "IP address";
 		description = "IP address the session connected from";
-		width = #"ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff";
+		width = module:get_option_boolean("use_ipv6", true) and #"ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff" or #"198.051.100.255";
 		key = "ip";
 	};
 	status = {
