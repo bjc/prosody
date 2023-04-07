@@ -44,6 +44,7 @@ local function parse(arg, config)
 					param_k, param_v = param, true;
 				end
 			end
+			param_k = param_k:gsub("%-", "_");
 		end
 		parsed_opts[param_k] = param_v;
 	end
