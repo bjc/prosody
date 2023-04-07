@@ -176,7 +176,7 @@ local function new_table(col_specs, max_width)
 					v = padright(v, width);
 				end
 			elseif len(v) > width then
-				v = ellipsis(v, width);
+				v = (column.ellipsis or ellipsis)(v, width);
 			end
 			table.insert(output, v);
 		end
