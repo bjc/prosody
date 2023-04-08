@@ -1100,7 +1100,19 @@ function def_env.s2s:show(match_jid, colspec)
 
 	local function match(session)
 		local host, remote = get_s2s_hosts(session);
-		return not match_jid or match_jid == "*" or host == match_jid or remote == match_jid;
+		if not match_jid or match_jid == "*" then
+			return true;
+		elseif host == match_jid or remote == match_jid then
+			return true;
+		elseif match_jid:sub(1, 2) == "*." then
+			-- (host) == *.(host) or sub(.host) == *(.host)
+			if host == match_jid:sub(3) or host:sub(-#match_jid + 1) == match_jid:sub(2) then
+				return true
+			elseif remote == match_jid:sub(3) or remote:sub(-#match_jid + 1) == match_jid:sub(2) then
+				return true
+			end
+		end
+		return false;
 	end
 
 	local group_by_host = true;
