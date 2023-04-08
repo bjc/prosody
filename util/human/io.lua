@@ -123,7 +123,7 @@ end
 
 local function ellipsis(s, width)
 	if len(s) <= width then return s; end
-	if width == 1 then return "…"; end
+	if width <= 1 then return "…"; end
 	return utf8_cut(s, width - 1) .. "…";
 end
 
