@@ -1,5 +1,7 @@
 #!/usr/bin/env lua
 -- traceback to errors.err for vim -q
+-- e.g. curl https://prosody.im/paste/xxx | tb2err > errors.err && vim -q
+
 local path_sep = package.config:sub(1,1);
 for line in io.lines() do
 	local src, err = line:match("%s*(%S+)(:%d+: .*)")
