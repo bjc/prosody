@@ -13,7 +13,7 @@ for line in io.lines() do
 			or src:match("/()modules/")
 			or src:match("/()prosody%-modules/")
 			or src:match("/()plugins/")
-			or src:match("/()prosody[ctl]*$") 
+			or src:match("/()prosody[ctl]*$")
 		if cut then
 			src = src:sub(cut);
 		end
