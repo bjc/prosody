@@ -313,6 +313,7 @@ function commands.help(session, data)
 	elseif section == "config" then
 		print [[config:reload() - Reload the server configuration. Modules may need to be reloaded for changes to take effect.]]
 		print [[config:get([host,] option) - Show the value of a config option.]]
+		print [[config:set([host,] option, value) - Update the value of a config option without writing to the config file.]]
 	elseif section == "stats" then -- luacheck: ignore 542
 		print [[stats:show(pattern) - Show internal statistics, optionally filtering by name with a pattern]]
 		print [[stats:show():cfgraph() - Show a cumulative frequency graph]]
@@ -710,6 +711,13 @@ function def_env.config:get(host, key)
 	end
 	local config_get = require "prosody.core.configmanager".get
 	return true, serialize_config(config_get(host, key));
+end
+
+function def_env.config:set(host, key, value)
+	if host ~= "*" and not prosody.hosts[host] then
+		host, key, value = "*", host, key;
+	end
+	return require "prosody.core.configmanager".set(host, key, value);
 end
 
 function def_env.config:reload()
