@@ -11,11 +11,13 @@ for line in io.lines() do
 			or src:match("/()net/")
 			or src:match("/()util/")
 			or src:match("/()modules/")
+			or src:match("/()prosody%-modules/")
 			or src:match("/()plugins/")
 			or src:match("/()prosody[ctl]*$") 
 		if cut then
 			src = src:sub(cut);
 		end
+		src = src:gsub("prosody%-modules/", "../modules/")
 		src = src:gsub("^modules/", "plugins/")
 		io.write(src, err, "\n");
 	end
