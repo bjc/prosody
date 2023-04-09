@@ -142,9 +142,6 @@ local function new_table(col_specs, max_width)
 			width = math.max(tonumber(width), title and (#title+1) or 0);
 			widths[i] = width;
 			free_width = free_width - width;
-			if i > 1 then
-				free_width = free_width - #separator;
-			end
 		end
 	end
 
