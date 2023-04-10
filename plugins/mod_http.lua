@@ -17,6 +17,7 @@ local url_parse = require "socket.url".parse;
 local url_build = require "socket.url".build;
 local normalize_path = require "prosody.util.http".normalize_path;
 local set = require "prosody.util.set";
+local array = require "util.array";
 
 local ip_util = require "prosody.util.ip";
 local new_ip = ip_util.new_ip;
@@ -112,12 +113,16 @@ function moduleapi.http_url(module, app_name, default_path)
 	return "http://disabled.invalid/";
 end
 
+local function header_set_tostring(header_value)
+	return array(pairs(header_value._items)):concat(", ");
+end
+
 local function apply_cors_headers(response, methods, headers, max_age, allow_credentials, allowed_origins, origin)
 	if allowed_origins and not allowed_origins[origin] then
 		return;
 	end
-	response.headers.access_control_allow_methods = tostring(methods);
-	response.headers.access_control_allow_headers = tostring(headers);
+	response.headers.access_control_allow_methods = header_set_tostring(methods);
+	response.headers.access_control_allow_headers = header_set_tostring(headers);
 	response.headers.access_control_max_age = tostring(max_age)
 	response.headers.access_control_allow_origin = origin or "*";
 	if allow_credentials then
