@@ -1191,7 +1191,7 @@ function def_env.s2s:showcert(domain)
 	local print = self.session.print;
 	local s2s_sessions = module:shared"/*/s2s/sessions";
 	local domain_sessions = set.new(array.collect(values(s2s_sessions)))
-		/function(session) return (session.to_host == domain or session.from_host == domain) and session or nil; end;
+		/function(session) return match_s2s_jid(session, domain) and session or nil; end;
 	local cert_set = {};
 	for session in domain_sessions do
 		local conn = session.conn;
@@ -1294,12 +1294,11 @@ function def_env.s2s:close(from, to, text, condition)
 	end
 
 	for _, session in pairs(s2s_sessions) do
-		local id = session.id or (session.type..tostring(session):match("[a-f0-9]+$"));
-		if (match_id and match_id == id)
-		or (session.from_host == from and session.to_host == to) then
+		local id = session.id or (session.type .. tostring(session):match("[a-f0-9]+$"));
+		if (match_id and match_id == id) or ((from and match_wildcard(from, session.to_host)) or (to and match_wildcard(to, session.to_host))) then
 			print(("Closing connection from %s to %s [%s]"):format(session.from_host, session.to_host, id));
 			(session.close or s2smanager.destroy_session)(session, build_reason(text, condition));
-			count = count + 1 ;
+			count = count + 1;
 		end
 	end
 	return true, "Closed "..count.." s2s session"..((count == 1 and "") or "s");
@@ -1309,7 +1308,7 @@ function def_env.s2s:closeall(host, text, condition)
 	local count = 0;
 	local s2s_sessions = module:shared"/*/s2s/sessions";
 	for _,session in pairs(s2s_sessions) do
-		if not host or session.from_host == host or session.to_host == host then
+		if not host or host == "*" or match_s2s_jid(session, host) then
 			session:close(build_reason(text, condition));
 			count = count + 1;
 		end
