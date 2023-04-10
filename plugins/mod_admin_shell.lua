@@ -1101,26 +1101,30 @@ local function _sort_s2s(a, b)
 	return _sort_hosts(a_local or "", b_local or "");
 end
 
+local function match_wildcard(match_jid, jid)
+	-- host == host or (host) == *.(host) or sub(.host) == *(.host)
+	return jid == match_jid or jid == match_jid:sub(3) or jid:sub(-#match_jid + 1) == match_jid:sub(2);
+end
+
+local function match_s2s_jid(session, match_jid)
+	local host, remote = get_s2s_hosts(session);
+	if not match_jid or match_jid == "*" then
+		return true;
+	elseif host == match_jid or remote == match_jid then
+		return true;
+	elseif match_jid:sub(1, 2) == "*." then
+		return match_wildcard(match_jid, host) or match_wildcard(match_jid, remote);
+	end
+	return false;
+end
+
 function def_env.s2s:show(match_jid, colspec)
 	local print = self.session.print;
 	local columns = get_colspec(colspec, { "id"; "host"; "dir"; "remote"; "ipv"; "secure"; "s2s_sasl"; "dialback" });
 	local row = format_table(columns, self.session.width);
 
 	local function match(session)
-		local host, remote = get_s2s_hosts(session);
-		if not match_jid or match_jid == "*" then
-			return true;
-		elseif host == match_jid or remote == match_jid then
-			return true;
-		elseif match_jid:sub(1, 2) == "*." then
-			-- (host) == *.(host) or sub(.host) == *(.host)
-			if host == match_jid:sub(3) or host:sub(-#match_jid + 1) == match_jid:sub(2) then
-				return true
-			elseif remote == match_jid:sub(3) or remote:sub(-#match_jid + 1) == match_jid:sub(2) then
-				return true
-			end
-		end
-		return false;
+		return match_s2s_jid(session, match_jid);
 	end
 
 	local group_by_host = true;
