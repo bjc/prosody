@@ -186,7 +186,7 @@ local function _get_validated_token_info(token_id, token_user, token_host, token
 
 	-- Check expiry
 	local now = os.time();
-	if token_info.expires < now then
+	if token_info.expires and token_info.expires < now then
 		module:log("debug", "Token has expired, cleaning it up");
 		grant.tokens[secret_hash] = nil;
 		token_store:set_key(token_user, token_id, grant);
