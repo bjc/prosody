@@ -120,7 +120,7 @@ local function parse_token(encoded_token)
 	if not encoded_data then return nil; end
 	local token = base64.decode(encoded_data);
 	if not token then return nil; end
-	local token_id, token_secret, token_jid = token:match("^2;([^;]+);([^;]+);(.+)$");
+	local token_id, token_secret, token_jid = token:match("^2;([^;]+);(..................);(.+)$");
 	if not token_id then return nil; end
 	local token_user, token_host = jid.split(token_jid);
 	return token_id, token_user, token_host, token_secret;
