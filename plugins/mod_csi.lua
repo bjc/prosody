@@ -4,9 +4,8 @@ local csi_feature = st.stanza("csi", { xmlns = xmlns_csi });
 
 local change = module:metric("counter", "changes", "events", "CSI state changes", {"csi_state"});
 
-local csi_handler_available = nil;
 module:hook("stream-features", function (event)
-	if event.origin.username and csi_handler_available then
+	if event.origin.username then
 		event.features:add_child(csi_feature);
 	end
 end);
