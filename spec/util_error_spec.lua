@@ -56,6 +56,9 @@ describe("util.error", function ()
 			assert.equal(e, err.context.stanza);
 			assert.equal("error.example", err.context.by);
 			assert.not_nil(err.extra.tag);
+			assert.not_has_error(function ()
+				errors.from_stanza(st.message())
+			end);
 		end);
 	end);
 
