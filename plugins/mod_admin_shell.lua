@@ -903,7 +903,7 @@ available_columns = {
 		width = math.max(#"Expired", #"Self-signed", #"Untrusted", #"Mismatched", #"Unknown");
 		mapper = function(cert_status, session)
 			if cert_status then return capitalize(cert_status); end
-			if session.cert_chain_status == "Invalid" then
+			if session.cert_chain_status == "invalid" then
 				local cert_errors = set.new(session.cert_chain_errors[1]);
 				if cert_errors:contains("certificate has expired") then
 					return "Expired";

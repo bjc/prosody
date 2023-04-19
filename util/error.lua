@@ -141,7 +141,7 @@ local function from_stanza(stanza, context, source)
 	local error_tag = stanza:get_child("error");
 	context = context or {};
 	context.stanza = stanza;
-	context.by = error_tag.attr.by or stanza.attr.from;
+	context.by = error_tag and error_tag.attr.by or stanza.attr.from;
 
 	local uri;
 	if condition == "gone" or condition == "redirect" then
