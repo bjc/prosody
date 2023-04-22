@@ -13,7 +13,6 @@ local skip = {
 	["additionalProperties.json:1:0"] = "NYI",
 	["anchor.json"] = "$anchor NYI",
 	["const.json:1"] = "deepcompare",
-	["const.json:13:2"] = "IEEE 754 equality",
 	["const.json:2"] = "deepcompare",
 	["const.json:8"] = "deepcompare",
 	["const.json:9"] = "deepcompare",
