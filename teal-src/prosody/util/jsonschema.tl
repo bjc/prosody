@@ -55,7 +55,7 @@ local record json_schema_object
 
 	-- objects
 	properties : { string : schema_t }
-	patternProperties: schema_t -- NYI
+	patternProperties: { string : schema_t } -- NYI
 	additionalProperties: schema_t
 	propertyNames : schema_t
 
