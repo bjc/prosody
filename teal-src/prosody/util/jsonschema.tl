@@ -98,6 +98,7 @@ local record json_schema_object
 
 	-- for Lua
 	luaPatternProperties: { string : schema_t }
+	luaPattern : string
 
 	-- xml
 	record xml_t
@@ -223,6 +224,9 @@ function complex_validate (schema : json_schema_object, data : any, root : json_
 			return false
 		end
 		if schema.minLength and #data < schema.minLength then
+			return false
+		end
+		if schema.luaPattern and not data:match(schema.luaPattern) then
 			return false
 		end
 	end

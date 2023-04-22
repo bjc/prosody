@@ -109,6 +109,9 @@ function complex_validate(schema, data, root)
 		if schema.minLength and #data < schema.minLength then
 			return false
 		end
+		if schema.luaPattern and not data:match(schema.luaPattern) then
+			return false
+		end
 	end
 
 	if type(data) == "number" then
