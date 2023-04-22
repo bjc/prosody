@@ -309,6 +309,9 @@ function complex_validate (schema : json_schema_object, data : any, root : json_
 	end
 
 	if data is table then
+		-- tables combine object and array behavior, thus we do both kinds of
+		-- validations in this block, which could be useful for validating Lua
+		-- tables
 
 		if schema.maxItems and #data > schema.maxItems then
 			return false
@@ -339,6 +342,7 @@ function complex_validate (schema : json_schema_object, data : any, root : json_
 		end
 
 		if schema.propertyNames ~= nil then
+			-- could be used to validate non-string keys of Lua tables
 			for k in pairs(data) do
 				if not validate(schema.propertyNames, k, root) then
 					return false
