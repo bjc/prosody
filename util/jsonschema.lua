@@ -226,17 +226,34 @@ function complex_validate(schema, data, root)
 			end
 		end
 
+		local seen_properties = {}
+
 		if schema.properties then
 			for k, sub in pairs(schema.properties) do
 				if data[k] ~= nil and not validate(sub, data[k], root) then
 					return false
+				end
+				seen_properties[k] = true
+			end
+		end
+
+		if schema.luaPatternProperties then
+
+			for pattern, sub in pairs(schema.luaPatternProperties) do
+				for k in pairs(data) do
+					if type(k) == "string" and k:match(pattern) then
+						if not validate(sub, data[k], root) then
+							return false
+						end
+						seen_properties[k] = true
+					end
 				end
 			end
 		end
 
 		if schema.additionalProperties ~= nil then
 			for k, v in pairs(data) do
-				if schema.properties == nil or schema.properties[k] == nil then
+				if not seen_properties[k] then
 					if not validate(schema.additionalProperties, v, root) then
 						return false
 					end

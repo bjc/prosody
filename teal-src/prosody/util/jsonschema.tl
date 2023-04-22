@@ -96,6 +96,9 @@ local record json_schema_object
 	-- semantic format
 	format : string
 
+	-- for Lua
+	luaPatternProperties: { string : schema_t }
+
 	-- xml
 	record xml_t
 		name : string
@@ -339,17 +342,37 @@ function complex_validate (schema : json_schema_object, data : any, root : json_
 			end
 		end
 
+		-- additionalProperties applies to properties not validated by properties
+		-- or patternProperties, so we must keep track of properties validated by
+		-- the later
+		local seen_properties : { string : boolean } = {}
+
 		if schema.properties then
 			for k, sub in pairs(schema.properties) do
 				if data[k] ~= nil and not validate(sub, data[k], root) then
 					return false
+				end
+				seen_properties[k] = true
+			end
+		end
+
+		if schema.luaPatternProperties then
+			-- like patternProperties, but Lua patterns
+			for pattern, sub in pairs(schema.luaPatternProperties) do
+				for k in pairs(data) do
+					if k is string and k:match(pattern) then
+						if not validate(sub, data[k], root) then
+							return false
+						end
+						seen_properties[k] = true
+					end
 				end
 			end
 		end
 
 		if schema.additionalProperties ~= nil then
 			for k, v in pairs(data) do
-				if schema.properties == nil or schema.properties[k as string] == nil then
+				if not seen_properties[k as string] then
 					if not validate(schema.additionalProperties, v, root) then
 						return false
 					end
