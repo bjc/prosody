@@ -10,6 +10,13 @@
 
 if not math.type then require "prosody.util.mathcompat" end
 
+
+local utf8 = rawget(_G, "utf8") or require"prosody.util.encodings".utf8;
+local utf8_len = utf8.len or function(s)
+	local _, count = s:gsub("[%z\001-\127\194-\253][\128-\191]*", "");
+	return count;
+end;
+
 local json = require "prosody.util.json"
 local null = json.null;
 
@@ -220,10 +227,10 @@ function complex_validate (schema : json_schema_object, data : any, root : json_
 	-- XXX this is measured in byte, while JSON measures in ... bork
 	-- TODO use utf8.len?
 	if data is string then
-		if schema.maxLength and #data > schema.maxLength then
+		if schema.maxLength and utf8_len(data) > schema.maxLength then
 			return false
 		end
-		if schema.minLength and #data < schema.minLength then
+		if schema.minLength and utf8_len(data) < schema.minLength then
 			return false
 		end
 		if schema.luaPattern and not data:match(schema.luaPattern) then
