@@ -305,14 +305,13 @@ function complex_validate(schema, data, root)
 		end
 
 		if schema.contains ~= nil then
-			local found = false
+			local found = 0
 			for i = 1, #data do
 				if validate(schema.contains, data[i], root) then
-					found = true
-					break
+					found = found + 1
 				end
 			end
-			if not found then
+			if found < (schema.minContains or 1) or found > (schema.maxContains or math.huge) then
 				return false
 			end
 		end

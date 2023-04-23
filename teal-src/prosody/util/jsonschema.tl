@@ -84,8 +84,8 @@ local record json_schema_object
 	maxItems : integer
 	minItems : integer
 	uniqueItems : boolean
-	maxContains : integer -- NYI
-	minContains : integer -- NYI
+	maxContains : integer
+	minContains : integer
 
 	-- objects
 	maxProperties : integer -- NYI
@@ -429,14 +429,13 @@ function complex_validate (schema : json_schema_object, data : any, root : json_
 		end
 
 		if schema.contains ~= nil then
-			local found = false
+			local found = 0
 			for i = 1, #data do
 				if validate(schema.contains, data[i], root) then
-					found = true
-					break
+					found = found + 1
 				end
 			end
-			if not found then
+			if found < (schema.minContains or 1) or found > (schema.maxContains or math.huge) then
 				return false
 			end
 		end
