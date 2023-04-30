@@ -902,17 +902,25 @@ available_columns = {
 		key = "cert_identity_status";
 		width = math.max(#"Expired", #"Self-signed", #"Untrusted", #"Mismatched", #"Unknown");
 		mapper = function(cert_status, session)
-			if cert_status then return capitalize(cert_status); end
-			if session.cert_chain_status == "invalid" then
+			if cert_status == "invalid" then
+				-- non-nil cert_identity_status implies valid chain, which covers just
+				-- about every error condition except mismatched certificate names
+				return "Mismatched";
+			elseif cert_status then
+				-- basically only "valid"
+				return capitalize(cert_status);
+			end
+			-- no certificate status,
+			if session.cert_chain_errors then
 				local cert_errors = set.new(session.cert_chain_errors[1]);
 				if cert_errors:contains("certificate has expired") then
 					return "Expired";
 				elseif cert_errors:contains("self signed certificate") then
 					return "Self-signed";
 				end
+				-- Some other cert issue, or something up the chain
+				-- TODO borrow more logic from mod_s2s/friendly_cert_error()
 				return "Untrusted";
-			elseif session.cert_identity_status == "invalid" then
-				return "Mismatched";
 			end
 			return "Unknown";
 		end;
