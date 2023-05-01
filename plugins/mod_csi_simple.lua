@@ -166,6 +166,10 @@ function enable_optimizations(session)
 		session.conn:pause_writes();
 		session.csi_measure_buffer_hold = measure_buffer_hold();
 		session.csi_counter = 0;
+		if session.csi_resume then
+			timer.stop(session.csi_resume);
+			session.csi_resume = nil;
+		end
 		filters.add_filter(session, "stanzas/out", manage_buffer);
 		filters.add_filter(session, "bytes/in", flush_buffer);
 	else
@@ -177,6 +181,10 @@ function disable_optimizations(session)
 	filters.remove_filter(session, "stanzas/out", manage_buffer);
 	filters.remove_filter(session, "bytes/in", flush_buffer);
 	session.csi_counter = nil;
+	if session.csi_resume then
+		timer.stop(session.csi_resume);
+		session.csi_resume = nil;
+	end
 	if session.csi_measure_buffer_hold then
 		session.csi_measure_buffer_hold();
 		session.csi_measure_buffer_hold = nil;
