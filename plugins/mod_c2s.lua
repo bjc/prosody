@@ -133,7 +133,7 @@ function stream_callbacks._streamopened(session, attr)
 		if stanza_size_limit then
 			features:reset();
 			features:tag("limits", { xmlns = "urn:xmpp:stream-limits:0" })
-				:text_tag("max-size", string.format("%d", stanza_size_limit)):up();
+				:text_tag("max-bytes", string.format("%d", stanza_size_limit)):up();
 		end
 		send(features);
 	else
