@@ -14,8 +14,8 @@ local commands = {};
 
 module:add_feature(xmlns_cmd);
 
-local function check_permissions(event, node, command)
-	return (command.permission == "check" and module:may("adhoc:"..node, event))
+local function check_permissions(event, node, command, execute)
+	return (command.permission == "check" and module:may("adhoc:"..node, event, not execute))
 	    or (command.permission == "local_user" and jid_host(event.stanza.attr.from) == module.host)
 	    or (command.permission == "any");
 end
@@ -62,7 +62,7 @@ module:hook("iq-set/host/"..xmlns_cmd..":command", function (event)
 	local node = stanza.tags[1].attr.node
 	local command = commands[node];
 	if command then
-		if not check_permissions(event, node, command) then
+		if not check_permissions(event, node, command, true) then
 			origin.send(st.error_reply(stanza, "auth", "forbidden", "You don't have permission to execute this command"):up()
 				:add_child(command:cmdtag("canceled")
 				:tag("note", {type="error"}):text("You don't have permission to execute this command")));
