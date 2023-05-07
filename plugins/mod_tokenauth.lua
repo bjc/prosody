@@ -252,12 +252,14 @@ function get_token_session(token, resource)
 	local token_info, err = _get_validated_token_info(token_id, token_user, token_host, token_secret);
 	if not token_info then return nil, err; end
 
+	local role = select_role(token_user, token_host, token_info.role);
+	if not role then return nil, "not-authorized"; end
 	return {
 		username = token_user;
 		host = token_host;
 		resource = token_info.resource or resource or generate_identifier();
 
-		role = select_role(token_user, token_host, token_info.role);
+		role = role;
 	};
 end
 
