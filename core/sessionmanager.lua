@@ -100,8 +100,7 @@ local function update_session(to_session, from_session)
 
 	local replaced_conn = to_session.conn;
 	if replaced_conn then
-		to_session.log("debug", "closing a replaced connection for this session");
-		replaced_conn:close();
+		to_session.conn = nil;
 	end
 
 	to_session.since = from_session.since;

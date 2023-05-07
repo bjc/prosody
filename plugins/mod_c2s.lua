@@ -273,6 +273,7 @@ module:hook_global("c2s-session-updated", function (event)
 	local replaced_conn = event.replaced_conn;
 	if replaced_conn then
 		sessions[replaced_conn] = nil;
+		replaced_conn:close();
 	end
 end);
 
