@@ -10,11 +10,12 @@ local token_store = module:open_store("auth_tokens", "keyval+");
 
 local access_time_granularity = module:get_option_number("token_auth_access_time_granularity", 60);
 
-local function select_role(username, host, role)
-	if role then
-		return prosody.hosts[host].authz.get_role_by_name(role);
-	end
-	return usermanager.get_user_role(username, host);
+local function select_role(username, host, role_name)
+	if not role_name then return end
+	local role = usermanager.get_role_by_name(role_name, host);
+	if not role then return end
+	if not usermanager.user_can_assume_role(username, host, role.name) then return end
+	return role;
 end
 
 function create_grant(actor_jid, grant_jid, grant_ttl, grant_data)
