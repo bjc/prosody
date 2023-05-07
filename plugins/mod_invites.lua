@@ -321,7 +321,7 @@ function module.command(arg)
 
 	local invite;
 	if allow_reset then
-		if roles then
+		if roles[1] then
 			print("--role/--admin and --reset are mutually exclusive")
 			return 2;
 		end
