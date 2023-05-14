@@ -14,6 +14,7 @@ local promise = require "prosody.util.promise";
 local errors = require "prosody.util.error";
 local blocksize = 2^16;
 local async = require "prosody.util.async";
+local id = require"prosody.util.id";
 
 local _M = {};
 
@@ -128,6 +129,7 @@ function listener.onconnect(conn)
 	end, runner_callbacks, session);
 	local function success_cb(request)
 		--log("debug", "success_cb: %s", request.path);
+		request.id = id.short();
 		request.ip = ip;
 		request.secure = secure;
 		session.thread:run(request);
@@ -249,6 +251,7 @@ function handle_request(conn, request, finish_cb)
 	local is_head_request = request.method == "HEAD";
 
 	local response = {
+		id = request.id;
 		request = request;
 		is_head_request = is_head_request;
 		status_code = 200;
