@@ -289,11 +289,9 @@ function handle_request(conn, request, finish_cb)
 	local global_event = request.method.." "..request.path:match("[^?]*");
 
 	local payload = { request = request, response = response };
-	request.log("debug", "Firing event: %s", global_event);
 	local result = events.fire_event(global_event, payload);
 	if result == nil and is_head_request then
 		local global_head_event = "GET "..request.path:match("[^?]*");
-		request.log("debug", "Firing event: %s", global_head_event);
 		result = events.fire_event(global_head_event, payload);
 	end
 	if result == nil then
@@ -314,12 +312,10 @@ function handle_request(conn, request, finish_cb)
 		end
 
 		local host_event = request.method.." "..host..request.path:match("[^?]*");
-		request.log("debug", "Firing event: %s", host_event);
 		result = events.fire_event(host_event, payload);
 
 		if result == nil and is_head_request then
 			local host_head_event = "GET "..host..request.path:match("[^?]*");
-			request.log("debug", "Firing event: %s", host_head_event);
 			result = events.fire_event(host_head_event, payload);
 		end
 	end
