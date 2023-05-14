@@ -236,6 +236,8 @@ function handle_request(conn, request, finish_cb)
 	request.headers = headers;
 	request.conn = conn;
 
+	request.log("debug", "%s %s HTTP/%s", request.method, request.path, request.httpversion);
+
 	local date_header = os_date('!%a, %d %b %Y %H:%M:%S GMT'); -- FIXME use
 	local conn_header = request.headers.connection;
 	conn_header = conn_header and ","..conn_header:gsub("[ \t]", ""):lower().."," or ""
@@ -327,6 +329,7 @@ end
 
 local function prepare_header(response)
 	local status_line = "HTTP/"..response.request.httpversion.." "..(response.status or codes[response.status_code]);
+	response.log("debug", "%s", status_line);
 	local headers = response.headers;
 	local output = { status_line };
 	for k,v in pairs(headers) do
