@@ -1927,7 +1927,11 @@ end
 def_env.debug = {};
 
 function def_env.debug:logevents(host)
-	helpers.log_host_events(host);
+	if host == "*" then
+		helpers.log_events(prosody.events);
+	else
+		helpers.log_host_events(host);
+	end
 	return true;
 end
 
