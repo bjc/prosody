@@ -3,7 +3,8 @@ local t_insert, t_concat = table.insert, table.concat;
 local parser_new = require "prosody.net.http.parser".new;
 local events = require "prosody.util.events".new();
 local addserver = require "prosody.net.server".addserver;
-local log = require "prosody.util.logger".init("http.server");
+local logger = require "prosody.util.logger";
+local log = logger.init("http.server");
 local os_date = os.date;
 local pairs = pairs;
 local s_upper = string.upper;
@@ -130,6 +131,7 @@ function listener.onconnect(conn)
 	local function success_cb(request)
 		--log("debug", "success_cb: %s", request.path);
 		request.id = id.short();
+		request.log = logger.init("http." .. request.method .. "-" .. request.id);
 		request.ip = ip;
 		request.secure = secure;
 		session.thread:run(request);
@@ -252,6 +254,7 @@ function handle_request(conn, request, finish_cb)
 
 	local response = {
 		id = request.id;
+		log = request.log;
 		request = request;
 		is_head_request = is_head_request;
 		status_code = 200;
@@ -284,11 +287,11 @@ function handle_request(conn, request, finish_cb)
 	local global_event = request.method.." "..request.path:match("[^?]*");
 
 	local payload = { request = request, response = response };
-	log("debug", "Firing event: %s", global_event);
+	request.log("debug", "Firing event: %s", global_event);
 	local result = events.fire_event(global_event, payload);
 	if result == nil and is_head_request then
 		local global_head_event = "GET "..request.path:match("[^?]*");
-		log("debug", "Firing event: %s", global_head_event);
+		request.log("debug", "Firing event: %s", global_head_event);
 		result = events.fire_event(global_head_event, payload);
 	end
 	if result == nil then
@@ -309,12 +312,12 @@ function handle_request(conn, request, finish_cb)
 		end
 
 		local host_event = request.method.." "..host..request.path:match("[^?]*");
-		log("debug", "Firing event: %s", host_event);
+		request.log("debug", "Firing event: %s", host_event);
 		result = events.fire_event(host_event, payload);
 
 		if result == nil and is_head_request then
 			local host_head_event = "GET "..host..request.path:match("[^?]*");
-			log("debug", "Firing event: %s", host_head_event);
+			request.log("debug", "Firing event: %s", host_head_event);
 			result = events.fire_event(host_head_event, payload);
 		end
 	end
