@@ -1929,6 +1929,9 @@ def_env.debug = {};
 function def_env.debug:logevents(host)
 	if host == "*" then
 		helpers.log_events(prosody.events);
+	elseif host == "http" then
+		helpers.log_events(require "prosody.net.http.server"._events);
+		return true
 	else
 		helpers.log_host_events(host);
 	end
