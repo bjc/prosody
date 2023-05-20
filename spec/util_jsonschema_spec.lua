@@ -2,7 +2,7 @@ local js = require "util.jsonschema";
 local json = require "util.json";
 local lfs = require "lfs";
 
--- https://github.com/json-schema-org/JSON-Schema-Test-Suite.git 2.0.0-724-g19947ea
+-- https://github.com/json-schema-org/JSON-Schema-Test-Suite.git 2.0.0-755-g7950d9e
 local test_suite_dir = "spec/JSON-Schema-Test-Suite/tests/draft2020-12"
 if lfs.attributes(test_suite_dir, "mode") ~= "directory" then return end
 
@@ -64,11 +64,12 @@ local skip = {
 	["type.json:9:6"] = "null is weird",
 	["unevaluatedItems.json"] = "NYI",
 	["unevaluatedProperties.json"] = "NYI",
-	["uniqueItems.json:0:11"] = "deepcompare",
-	["uniqueItems.json:0:13"] = "deepcompare",
+	["uniqueItems.json:0:10"] = "deepcompare",
+	["uniqueItems.json:0:12"] = "deepcompare",
 	["uniqueItems.json:0:14"] = "deepcompare",
-	["uniqueItems.json:0:22"] = "deepcompare",
-	["uniqueItems.json:0:24"] = "deepcompare",
+	["uniqueItems.json:0:15"] = "deepcompare",
+	["uniqueItems.json:0:23"] = "deepcompare",
+	["uniqueItems.json:0:25"] = "deepcompare",
 	["uniqueItems.json:0:9"] = "deepcompare",
 	["unknownKeyword.json"] = "NYI",
 	["vocabulary.json"] = "NYI",
