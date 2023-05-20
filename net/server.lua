@@ -6,20 +6,23 @@
 -- COPYING file in the source package for more information.
 --
 
-if not (prosody and prosody.config_loaded) then
-	-- This module only supports loading inside Prosody, outside Prosody
-	-- you should directly require net.server_select or server_event, etc.
-	error(debug.traceback("Loading outside Prosody or Prosody not yet initialized"), 0);
+local function log(level, format, ...)
+	print("net.server", level, format:format(...));
 end
 
-local log = require "prosody.util.logger".init("net.server");
+local default_backend = "select";
+local server_type = default_backend;
 
-local default_backend = "epoll";
+if (prosody and prosody.config_loaded) then
+	default_backend = "epoll";
+	log = require"prosody.util.logger".init("net.server");
+	server_type = require"prosody.core.configmanager".get("*", "network_backend") or default_backend;
 
-local server_type = require "prosody.core.configmanager".get("*", "network_backend") or default_backend;
-
-if require "prosody.core.configmanager".get("*", "use_libevent") then
-	server_type = "event";
+	if require"prosody.core.configmanager".get("*", "use_libevent") then
+		server_type = "event";
+	end
+elseif pcall(require, "prosody.util.poll") then
+	server_type = "epoll";
 end
 
 if server_type == "event" then
@@ -118,11 +121,13 @@ if prosody and set_config then
 	prosody.events.add_handler("config-reloaded", load_config);
 end
 
-local tls_builder = server.tls_builder;
--- resolving the basedir here avoids util.sslconfig depending on
--- prosody.paths.config
-function server.tls_builder()
-	return tls_builder(prosody.paths.config or "")
+if prosody and server.tls_builder then
+	local tls_builder = server.tls_builder;
+	-- resolving the basedir here avoids util.sslconfig depending on
+	-- prosody.paths.config
+	function server.tls_builder()
+		return tls_builder(prosody.paths.config or "")
+	end
 end
 
 -- require "prosody.net.server" shall now forever return this,
