@@ -10,5 +10,7 @@ return {
 		"loader";
 		-- "keyval+" store
 		"keyval+";
+
+		"s2sout-pre-connect-event";
 	};
 };

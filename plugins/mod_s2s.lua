@@ -226,6 +226,10 @@ function route_to_new_session(event)
 			resolver;
 		});
 	end
+
+	local pre_event = { session = host_session; resolver = resolver };
+	module:context(from_host):fire_event("s2sout-pre-connect", pre_event);
+	resolver = pre_event.resolver;
 	connect(resolver, listener, nil, { session = host_session });
 	m_initiated_connections:with_labels(from_host):add(1)
 	return true;
