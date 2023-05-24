@@ -76,11 +76,11 @@ end
 local ports_by_scheme = { http = 80, https = 443, };
 
 -- Helper to deduce a module's external URL
-function moduleapi.http_url(module, app_name, default_path)
+function moduleapi.http_url(module, app_name, default_path, mode)
 	app_name = app_name or (module.name:gsub("^http_", ""));
 
 	local external_url = url_parse(module:get_option_string("http_external_url"));
-	if external_url then
+	if external_url and mode ~= "internal" then
 		local url = {
 			scheme = external_url.scheme;
 			host = external_url.host;
