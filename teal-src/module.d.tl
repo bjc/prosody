@@ -138,6 +138,9 @@ global record moduleapi
 	save : function () : any
 	restore : function (any)
 	unload : function ()
+
+	-- added by mod_http
+	http_url : function (moduleapi, string, string, string) : string
 end
 
 global module : moduleapi
