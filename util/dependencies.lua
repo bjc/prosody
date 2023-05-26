@@ -7,7 +7,6 @@
 --
 
 local function softreq(...) local ok, lib =  pcall(require, ...); if ok then return lib; else return nil, lib; end end
-local platform_table = require "prosody.util.human.io".table({ { width = 15, align = "right" }, { width = "100%" } });
 
 -- Required to be able to find packages installed with luarocks
 if not softreq "luarocks.loader" then -- LuaRocks 2.x
@@ -22,7 +21,7 @@ local function missingdep(name, sources, msg, err) -- luacheck: ignore err
 	print("This package can be obtained in the following ways:");
 	print("");
 	for _, row in ipairs(sources) do
-		print(platform_table(row));
+		print(string.format("%15s | %s", table.unpack(row)));
 	end
 	print("");
 	print(msg or (name.." is required for Prosody to run, so we will now exit."));
