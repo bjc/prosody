@@ -39,5 +39,37 @@ describe("util.sasl", function ()
 
 		-- TODO SCRAM
 	end);
+
+	describe("oauthbearer profile", function()
+		local profile = {
+			oauthbearer = function(_, token, _realm, _authzid)
+				if token == "example-bearer-token" then
+					return "user", true, {};
+				else
+					return nil, nil, {}
+				end
+			end;
+		}
+
+		it("works with OAUTHBEARER", function()
+			local bearer = sasl.new("sasl.test", profile);
+
+			assert.truthy(bearer:select("OAUTHBEARER"));
+			assert.equals("success", bearer:process("n,,\1auth=Bearer example-bearer-token\1\1"));
+			assert.equals("user", bearer.username);
+		end)
+
+
+		it("returns extras with OAUTHBEARER", function()
+			local bearer = sasl.new("sasl.test", profile);
+
+			assert.truthy(bearer:select("OAUTHBEARER"));
+			local status, extra = bearer:process("n,,\1auth=Bearer unknown\1\1");
+			assert.equals("challenge", status);
+			assert.equals("{\"status\":\"invalid_token\"}", extra);
+			assert.equals("failure", bearer:process("\1"));
+		end)
+
+	end)
 end);
 
