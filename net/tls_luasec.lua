@@ -110,4 +110,5 @@ local luasec_has = ssl.config or {
 return {
 	features = luasec_has;
 	new_context = new_context,
+	load_certificate = ssl.loadcertificate;
 };

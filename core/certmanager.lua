@@ -6,7 +6,6 @@
 -- COPYING file in the source package for more information.
 --
 
-local ssl = require "ssl";
 local configmanager = require "prosody.core.configmanager";
 local log = require "prosody.util.logger".init("certmanager");
 local new_config = require"prosody.net.server".tls_builder;
@@ -98,7 +97,7 @@ local function index_certs(dir, files_by_name, depth_limit)
 				local firstline = f:read();
 				if firstline == "-----BEGIN CERTIFICATE-----" and lfs.attributes(find_matching_key(full), "mode") == "file" then
 					f:seek("set")
-					local cert = ssl.loadcertificate(f:read("*a"))
+					local cert = tls.load_certificate(f:read("*a"))
 					-- TODO if more than one cert is found for a name, the most recently
 					-- issued one should be used.
 					-- for now, just filter out expired certs
