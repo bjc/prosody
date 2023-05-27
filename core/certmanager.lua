@@ -9,8 +9,8 @@
 local ssl = require "ssl";
 local configmanager = require "prosody.core.configmanager";
 local log = require "prosody.util.logger".init("certmanager");
-local ssl_newcontext = ssl.newcontext;
 local new_config = require"prosody.net.server".tls_builder;
+local tls = require "prosody.net.tls_luasec";
 local stat = require "lfs".attributes;
 
 local x509 = require "prosody.util.x509";
@@ -30,29 +30,6 @@ local prosody = prosody;
 local pathutil = require"prosody.util.paths";
 local resolve_path = pathutil.resolve_relative_path;
 local config_path = prosody.paths.config or ".";
-
-local function test_option(option)
-	return not not ssl_newcontext({mode="server",protocol="sslv23",options={ option }});
-end
-
-local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
-local luasec_version = tonumber(luasec_major) * 100 + tonumber(luasec_minor);
-local luasec_has = ssl.config or {
-	algorithms = {
-		ec = luasec_version >= 5;
-	};
-	capabilities = {
-		curves_list = luasec_version >= 7;
-	};
-	options = {
-		cipher_server_preference = test_option("cipher_server_preference");
-		no_ticket = test_option("no_ticket");
-		no_compression = test_option("no_compression");
-		single_dh_use = test_option("single_dh_use");
-		single_ecdh_use = test_option("single_ecdh_use");
-		no_renegotiation = test_option("no_renegotiation");
-	};
-};
 
 local _ENV = nil;
 -- luacheck: std none
@@ -206,18 +183,18 @@ local core_defaults = {
 	protocol = "tlsv1+";
 	verify = "none";
 	options = {
-		cipher_server_preference = luasec_has.options.cipher_server_preference;
-		no_ticket = luasec_has.options.no_ticket;
-		no_compression = luasec_has.options.no_compression and configmanager.get("*", "ssl_compression") ~= true;
-		single_dh_use = luasec_has.options.single_dh_use;
-		single_ecdh_use = luasec_has.options.single_ecdh_use;
-		no_renegotiation = luasec_has.options.no_renegotiation;
+		cipher_server_preference = tls.features.options.cipher_server_preference;
+		no_ticket = tls.features.options.no_ticket;
+		no_compression = tls.features.options.no_compression and configmanager.get("*", "ssl_compression") ~= true;
+		single_dh_use = tls.features.options.single_dh_use;
+		single_ecdh_use = tls.features.options.single_ecdh_use;
+		no_renegotiation = tls.features.options.no_renegotiation;
 	};
 	verifyext = {
 		"lsec_continue", -- Continue past certificate verification errors
 		"lsec_ignore_purpose", -- Validate client certificates as if they were server certificates
 	};
-	curve = luasec_has.algorithms.ec and not luasec_has.capabilities.curves_list and "secp384r1";
+	curve = tls.features.algorithms.ec and not tls.features.capabilities.curves_list and "secp384r1";
 	curveslist = {
 		"X25519",
 		"P-384",
@@ -234,7 +211,7 @@ local core_defaults = {
 		"!3DES",       -- 3DES - slow and of questionable security
 		"!aNULL",      -- Ciphers that does not authenticate the connection
 	};
-	dane = luasec_has.capabilities.dane and configmanager.get("*", "use_dane") and { "no_ee_namechecks" };
+	dane = tls.features.capabilities.dane and configmanager.get("*", "use_dane") and { "no_ee_namechecks" };
 }
 
 local mozilla_ssl_configs = {
@@ -302,9 +279,9 @@ local mozilla_ssl_configs = {
 };
 
 
-if luasec_has.curves then
+if tls.features.curves then
 	for i = #core_defaults.curveslist, 1, -1 do
-		if not luasec_has.curves[ core_defaults.curveslist[i] ] then
+		if not tls.features.curves[ core_defaults.curveslist[i] ] then
 			t_remove(core_defaults.curveslist, i);
 		end
 	end
@@ -386,7 +363,7 @@ end
 local function reload_ssl_config()
 	global_ssl_config = configmanager.get("*", "ssl");
 	global_certificates = configmanager.get("*", "certificates") or "certs";
-	if luasec_has.options.no_compression then
+	if tls.features.options.no_compression then
 		core_defaults.options.no_compression = configmanager.get("*", "ssl_compression") ~= true;
 	end
 	core_defaults.dane = configmanager.get("*", "use_dane") or false;

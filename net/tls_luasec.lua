@@ -84,6 +84,30 @@ local function new_context(cfg, builder)
 	}, context_mt), nil
 end
 
+-- Feature detection / guessing
+local function test_option(option)
+	return not not ssl_newcontext({mode="server",protocol="sslv23",options={ option }});
+end
+local luasec_major, luasec_minor = ssl._VERSION:match("^(%d+)%.(%d+)");
+local luasec_version = tonumber(luasec_major) * 100 + tonumber(luasec_minor);
+local luasec_has = ssl.config or {
+	algorithms = {
+		ec = luasec_version >= 5;
+	};
+	capabilities = {
+		curves_list = luasec_version >= 7;
+	};
+	options = {
+		cipher_server_preference = test_option("cipher_server_preference");
+		no_ticket = test_option("no_ticket");
+		no_compression = test_option("no_compression");
+		single_dh_use = test_option("single_dh_use");
+		single_ecdh_use = test_option("single_ecdh_use");
+		no_renegotiation = test_option("no_renegotiation");
+	};
+};
+
 return {
+	features = luasec_has;
 	new_context = new_context,
 };
