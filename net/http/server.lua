@@ -260,7 +260,7 @@ function handle_request(conn, request, finish_cb)
 		request = request;
 		is_head_request = is_head_request;
 		status_code = 200;
-		headers = { date = date_header, connection = response_conn_header };
+		headers = { date = date_header; connection = response_conn_header; x_request_id = request.id };
 		persistent = persistent;
 		conn = conn;
 		send = _M.send_response;
