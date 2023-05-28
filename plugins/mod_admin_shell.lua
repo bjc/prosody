@@ -1836,9 +1836,13 @@ def_env.http = {};
 function def_env.http:list(hosts)
 	local print = self.session.print;
 	hosts = array.collect(set.new({ not hosts and "*" or nil }) + get_hosts_set(hosts)):sort(_sort_hosts);
-	local output = format_table({
+	local output_simple = format_table({
 		{ title = "Module"; width = "1p" };
-		{ title = "URL"; width = "3p" };
+		{ title = "External URL"; width = "6p" };
+	}, self.session.width);
+	local output_split = format_table({
+		{ title = "Module"; width = "1p" };
+		{ title = "External URL"; width = "3p" };
 		{ title = "Internal URL"; width = "3p" };
 	}, self.session.width);
 
@@ -1851,14 +1855,14 @@ function def_env.http:list(hosts)
 			else
 				print("HTTP endpoints on "..host..(http_host and (" (using "..http_host.."):") or ":"));
 			end
-			print(output());
+			print(output_split());
 			for _, provider in ipairs(http_apps) do
 				local mod = provider._provided_by;
 				local external = module:context(host):http_url(provider.name, provider.default_path);
 				local internal = module:context(host):http_url(provider.name, provider.default_path, "internal");
 				if external==internal then internal="" end
 				mod = mod and "mod_"..mod or ""
-				print(output{mod, external, internal});
+				print((internal=="" and output_simple or output_split){mod, external, internal});
 			end
 			print("");
 		end
