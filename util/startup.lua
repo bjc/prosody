@@ -367,7 +367,7 @@ function startup.load_secondary_libraries()
 	--- Load and initialise core modules
 	require "prosody.util.xmppstream"
 	require "prosody.core.stanza_router"
-	require "prosody.core.statsmanager"
+	require "prosody.core.statsmanager".metric("gauge", "prosody_info", "", "Prosody version", { "version" }):with_labels(prosody.version):set(1);
 	require "prosody.core.hostmanager"
 	require "prosody.core.portmanager"
 	require "prosody.core.modulemanager"
