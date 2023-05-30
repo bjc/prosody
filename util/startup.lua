@@ -374,11 +374,6 @@ function startup.load_secondary_libraries()
 	require "prosody.core.usermanager"
 	require "prosody.core.rostermanager"
 	require "prosody.core.sessionmanager"
-	package.loaded['core.componentmanager'] = setmetatable({},{__index=function()
-		-- COMPAT which version?
-		log("warn", "componentmanager is deprecated: %s", debug.traceback():match("\n[^\n]*\n[ \t]*([^\n]*)"));
-		return function() end
-	end});
 
 	require "prosody.util.array"
 	require "prosody.util.datetime"
