@@ -751,16 +751,17 @@ local function check(arg)
 
 		local fqdn = socket.dns.tohostname(socket.dns.gethostname());
 		if fqdn then
-			do
-				local res = dns.lookup(idna.to_ascii(fqdn), "A");
+			local fqdn_a = idna.to_ascii(fqdn);
+			if fqdn_a then
+				local res = dns.lookup(fqdn_a, "A");
 				if res then
 					for _, record in ipairs(res) do
 						external_addresses:add(record.a);
 					end
 				end
 			end
-			do
-				local res = dns.lookup(idna.to_ascii(fqdn), "AAAA");
+			if fqdn_a then
+				local res = dns.lookup(fqdn_a, "AAAA");
 				if res then
 					for _, record in ipairs(res) do
 						external_addresses:add(record.aaaa);
