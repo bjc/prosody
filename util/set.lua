@@ -189,15 +189,6 @@ function set_mt.__tostring(set)
 	return "{"..t_concat(s, ", ").."}";
 end
 
-function set_mt.__freeze(set)
-	local s = {};
-	for item in pairs(set._items) do
-		s[#s + 1] = item;
-	end
-	return s;
-end
-
-
 return {
 	new = new;
 	is_set = is_set;
