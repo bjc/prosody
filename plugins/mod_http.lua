@@ -15,7 +15,8 @@ local portmanager = require "prosody.core.portmanager";
 local moduleapi = require "prosody.core.moduleapi";
 local url_parse = require "socket.url".parse;
 local url_build = require "socket.url".build;
-local normalize_path = require "prosody.util.http".normalize_path;
+local http_util = require "prosody.util.http";
+local normalize_path = http_util.normalize_path;
 local set = require "prosody.util.set";
 local array = require "util.array";
 
@@ -319,6 +320,24 @@ end
 local function get_forwarded_connection_info(request) --> ip:string, secure:boolean
 	local ip = request.ip;
 	local secure = request.secure; -- set by net.http.server
+
+	local forwarded = http_util.parse_forwarded(request.headers.forwarded);
+	if forwarded then
+		request.forwarded = forwarded;
+		for i = #forwarded, 1, -1 do
+			local proxy = forwarded[i]
+			if is_trusted_proxy(ip) then
+				ip = normal_ip(proxy["for"]);
+				secure = secure and proxy.proto == "https";
+			else
+				break
+			end
+		end
+
+		-- Ignore legacy X-Forwarded-For and X-Forwarded-Proto, handling both seems unfeasible.
+		return ip, secure;
+	end
+
 	local forwarded_for = request.headers.x_forwarded_for;
 	if forwarded_for then
 		-- luacheck: ignore 631
