@@ -69,9 +69,42 @@ local function normalize_path(path, is_dir)
 	return path;
 end
 
+--- Parse the RFC 7239 Forwarded header into array of key-value pairs.
+local function parse_forwarded(forwarded)
+	if type(forwarded) ~= "string" then
+		return nil;
+	end
+
+	local fwd = {}; -- array
+	local cur = {}; -- map, to which we add the next key-value pair
+	for key, quoted, value, delim in forwarded:gmatch("(%w+)%s*=%s*(\"?)([^,;\"]+)%2%s*(.?)") do
+		-- FIXME quoted quotes like "foo\"bar"
+		-- unlikely when only dealing with IP addresses
+		if quoted == '"' then
+			value = value:gsub("\\(.)", "%1");
+		end
+
+		cur[key:lower()] = value;
+		if delim == "" or delim == "," then
+			t_insert(fwd, cur)
+			if delim == "" then
+				-- end of the string
+				break;
+			end
+			cur = {};
+		elseif delim ~= ";" then
+			-- misparsed
+			return false;
+		end
+	end
+
+	return fwd;
+end
+
 return {
 	urlencode = urlencode, urldecode = urldecode;
 	formencode = formencode, formdecode = formdecode;
 	contains_token = contains_token;
 	normalize_path = normalize_path;
+	parse_forwarded = parse_forwarded;
 };

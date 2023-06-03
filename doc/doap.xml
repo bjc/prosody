@@ -56,6 +56,7 @@
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc6455"/>
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc6901"/>
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc7233"/>
+    <implements rdf:resource="https://www.rfc-editor.org/info/rfc7239"/>
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc7301"/>
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc7395"/>
     <implements rdf:resource="https://www.rfc-editor.org/info/rfc7590"/>

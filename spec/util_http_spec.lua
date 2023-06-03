@@ -108,4 +108,25 @@ describe("util.http", function()
 			assert.is_(http.contains_token("fo o", "foo"));
 		end);
 	end);
+
+do
+	describe("parse_forwarded", function()
+		it("works", function()
+			assert.same({ { ["for"] = "[2001:db8:cafe::17]:4711" } }, http.parse_forwarded('For="[2001:db8:cafe::17]:4711"'), "case insensitive");
+
+			assert.same({ { ["for"] = "192.0.2.60"; proto = "http"; by = "203.0.113.43" } }, http.parse_forwarded('for=192.0.2.60;proto=http;by=203.0.113.43'),
+				"separated by semicolon");
+
+			assert.same({ { ["for"] = "192.0.2.43" }; { ["for"] = "198.51.100.17" } }, http.parse_forwarded('for=192.0.2.43, for=198.51.100.17'),
+				"Values from multiple proxy servers can be appended using a comma");
+
+		end)
+		it("rejects quoted quotes", function ()
+			assert.falsy(http.parse_forwarded('foo="bar\"bar'), "quoted quotes");
+		end)
+		pending("deals with quoted quotes", function ()
+			assert.same({ { foo = 'bar"baz' } }, http.parse_forwarded('foo="bar\"bar'), "quoted quotes");
+		end)
+	end)
+end
 end);
