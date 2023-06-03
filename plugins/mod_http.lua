@@ -297,7 +297,13 @@ module.add_host(module); -- set up handling on global context too
 
 local trusted_proxies = module:get_option_set("trusted_proxies", { "127.0.0.1", "::1" })._items;
 
+--- deal with [ipv6]:port / ip:port format
+local function normal_ip(ip)
+	return ip:match("^%[([%x:]*)%]") or ip:match("^([%d.]+)") or ip;
+end
+
 local function is_trusted_proxy(ip)
+	ip = normal_ip(ip);
 	if trusted_proxies[ip] then
 		return true;
 	end
