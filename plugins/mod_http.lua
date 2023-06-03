@@ -333,10 +333,16 @@ local function get_forwarded_connection_info(request) --> ip:string, secure:bool
 				break
 			end
 		end
-
-		-- Ignore legacy X-Forwarded-For and X-Forwarded-Proto, handling both seems unfeasible.
-		return ip, secure;
 	end
+
+	return ip, secure;
+end
+
+-- TODO switch to RFC 7239 by default once support is more common
+if module:get_option_boolean("http_legacy_x_forwarded", true) then
+function get_forwarded_connection_info(request) --> ip:string, secure:boolean
+	local ip = request.ip;
+	local secure = request.secure; -- set by net.http.server
 
 	local forwarded_for = request.headers.x_forwarded_for;
 	if forwarded_for then
@@ -359,6 +365,7 @@ local function get_forwarded_connection_info(request) --> ip:string, secure:bool
 	secure = secure or request.headers.x_forwarded_proto == "https";
 
 	return ip, secure;
+end
 end
 
 module:wrap_object_event(server._events, false, function (handlers, event_name, event_data)
