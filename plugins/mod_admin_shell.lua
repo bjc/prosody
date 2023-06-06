@@ -599,6 +599,8 @@ function def_env.module:load(name, hosts)
 	-- Load the module for each host
 	local ok, err, count, mod = true, nil, 0;
 	for host in hosts do
+		local configured_modules, component = modulemanager.get_modules_for_host(host);
+
 		if (not modulemanager.is_loaded(host, name)) then
 			mod, err = modulemanager.load(host, name);
 			if not mod then
@@ -613,6 +615,10 @@ function def_env.module:load(name, hosts)
 			else
 				count = count + 1;
 				self.session.print("Loaded for "..mod.module.host);
+
+				if not (configured_modules:contains(name) or name == component) then
+					self.session.print("Note: Module will not be loaded after restart unless enabled in configuration");
+				end
 			end
 		end
 	end
@@ -626,6 +632,8 @@ function def_env.module:unload(name, hosts)
 	-- Unload the module for each host
 	local ok, err, count = true, nil, 0;
 	for host in hosts do
+		local configured_modules, component = modulemanager.get_modules_for_host(host);
+
 		if modulemanager.is_loaded(host, name) then
 			ok, err = modulemanager.unload(host, name);
 			if not ok then
@@ -634,6 +642,10 @@ function def_env.module:unload(name, hosts)
 			else
 				count = count + 1;
 				self.session.print("Unloaded from "..host);
+
+				if configured_modules:contains(name) or name == component then
+					self.session.print("Note: Module will be loaded after restart unless disabled in configuration");
+				end
 			end
 		end
 	end
