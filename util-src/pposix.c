@@ -802,6 +802,41 @@ static int lc_atomic_append(lua_State *L) {
 	return 3;
 }
 
+static int lc_remove_blocks(lua_State *L) {
+#if defined(__linux__)
+	int err;
+
+	FILE *f = *(FILE **) luaL_checkudata(L, 1, LUA_FILEHANDLE);
+	off_t offset = (off_t)luaL_checkinteger(L, 2);
+	off_t length = (off_t)luaL_checkinteger(L, 3);
+
+	errno = 0;
+
+	if((err = fallocate(fileno(f), FALLOC_FL_COLLAPSE_RANGE, offset, length))) {
+		if(errno != 0) {
+			/* Some old versions of Linux apparently use the return value instead of errno */
+			err = errno;
+		}
+
+		switch(err) {
+			default: /* Other issues */
+				luaL_pushfail(L);
+				lua_pushstring(L, strerror(err));
+				lua_pushinteger(L, err);
+				return 3;
+		}
+	}
+
+	lua_pushboolean(L, err == 0);
+	return 1;
+#else
+	luaL_pushfail(L);
+	lua_pushstring(L, strerror(EOPNOTSUPP));
+	lua_pushinteger(L, EOPNOTSUPP);
+	return 3;
+#endif
+}
+
 static int lc_isatty(lua_State *L) {
 	FILE *f = *(FILE **) luaL_checkudata(L, 1, LUA_FILEHANDLE);
 	const int fd = fileno(f);
@@ -847,6 +882,7 @@ int luaopen_prosody_util_pposix(lua_State *L) {
 #endif
 
 		{ "atomic_append", lc_atomic_append },
+		{ "remove_blocks", lc_remove_blocks },
 
 		{ "isatty", lc_isatty },
 

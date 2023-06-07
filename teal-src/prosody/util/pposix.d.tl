@@ -97,6 +97,7 @@ local record pposix
 	meminfo : function () : memoryinfo
 
 	atomic_append : function (f : FILE, s : string) : boolean, string, integer
+	remove_blocks : function (f : FILE, integer, integer)
 
 	isatty : function(FILE) : boolean
 
