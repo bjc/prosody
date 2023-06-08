@@ -43,7 +43,11 @@ local function usage()
 	print("If no stores are specified, 'input' and 'output' are used.");
 end
 
-local startup = require "util.startup";
+if not pcall(require, "prosody.loader") then
+	pcall(require, "loader");
+end
+
+local startup = require "prosody.util.startup";
 do
 	startup.parse_args({
 		short_params = { v = "verbose", h = "help", ["?"] = "help" };
@@ -79,7 +83,7 @@ end
 -- Command-line parsing
 local options = prosody.opts;
 
-local envloadfile = require "util.envload".envloadfile;
+local envloadfile = require "prosody.util.envload".envloadfile;
 
 local config_file = options.config or default_config;
 local from_store = arg[1] or "input";
@@ -132,8 +136,8 @@ if have_err then
 	os.exit(1);
 end
 
-local async = require "util.async";
-local server = require "net.server";
+local async = require "prosody.util.async";
+local server = require "prosody.net.server";
 local watchers = {
 	error = function (_, err)
 		error(err);
@@ -143,10 +147,10 @@ local watchers = {
 	end;
 };
 
-local cm = require "core.configmanager";
-local hm = require "core.hostmanager";
-local sm = require "core.storagemanager";
-local um = require "core.usermanager";
+local cm = require "prosody.core.configmanager";
+local hm = require "prosody.core.hostmanager";
+local sm = require "prosody.core.storagemanager";
+local um = require "prosody.core.usermanager";
 
 local function users(store, host)
 	if store.users then
@@ -200,7 +204,7 @@ migrate_once.pubsub = function(origin, destination, user, prefix, input_driver, 
 end
 
 if options["keep-going"] then
-	local xpcall = require "util.xpcall".xpcall;
+	local xpcall = require "prosody.util.xpcall".xpcall;
 	for t, f in pairs(migrate_once) do
 		migrate_once[t] = function (origin, destination, user, ...)
 			local function log_err(err)

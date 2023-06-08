@@ -15,6 +15,10 @@ if my_name:match("[/\\]") then
 	package.cpath = package.cpath..";"..my_name:gsub("[^/\\]+$", "../?.so");
 end
 
+if not pcall(require, "prosody.loader") then
+	pcall(require, "loader");
+end
+
 -- ugly workaround for getting datamanager to work outside of prosody :(
 prosody = { };
 prosody.platform = "unknown";
@@ -24,12 +28,12 @@ elseif package.config:sub(1,1) == "/" then
 	prosody.platform = "posix";
 end
 
-local parse_xml = require "util.xml".parse;
+local parse_xml = require "prosody.util.xml".parse;
 
 -----------------------------------------------------------------------
 
 package.loaded["util.logger"] = {init = function() return function() end; end}
-local dm = require "util.datamanager"
+local dm = require "prosody.util.datamanager"
 dm.set_data_path("data");
 
 local arg = ...;

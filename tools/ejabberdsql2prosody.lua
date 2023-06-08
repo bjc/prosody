@@ -16,13 +16,16 @@ if my_name:match("[/\\]") then
 	package.path = package.path..";"..my_name:gsub("[^/\\]+$", "../?.lua");
 	package.cpath = package.cpath..";"..my_name:gsub("[^/\\]+$", "../?.so");
 end
+if not pcall(require, "prosody.loader") then
+	pcall(require, "loader");
+end
 
 
-local serialize = require "util.serialization".serialize;
-local st = require "util.stanza";
-local parse_xml = require "util.xml".parse;
-package.loaded["util.logger"] = {init = function() return function() end; end}
-local dm = require "util.datamanager"
+local serialize = require "prosody.util.serialization".serialize;
+local st = require "prosody.util.stanza";
+local parse_xml = require "prosody.util.xml".parse;
+package.loaded["prosody.util.logger"] = {init = function() return function() end; end}
+local dm = require "prosody.util.datamanager"
 dm.set_data_path("data");
 
 function parseFile(filename)

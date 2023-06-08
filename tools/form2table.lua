@@ -1,4 +1,7 @@
 -- Read an XML dataform and spit out a serialized Lua table of it
+if not pcall(require, "prosody.loader") then
+	pcall(require, "loader");
+end
 
 local function from_stanza(stanza)
 	local layout = {
@@ -45,4 +48,5 @@ local function from_stanza(stanza)
 	return layout;
 end
 
-print("dataforms.new " .. require "util.serialization".serialize(from_stanza(require "util.xml".parse(io.read("*a"))), { unquoted = true }))
+print("dataforms.new " .. require"prosody.util.serialization".serialize(from_stanza(require"prosody.util.xml".parse(io.read("*a"))),
+	{ unquoted = true }))

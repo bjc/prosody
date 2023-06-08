@@ -1,7 +1,10 @@
 
+if not pcall(require, "prosody.loader") then
+	pcall(require, "loader");
+end
 local lfs = require "lfs";
-local st = require "util.stanza";
-local parse_xml = require "util.xml".parse;
+local st = require "prosody.util.stanza";
+local parse_xml = require "prosody.util.xml".parse;
 local os_getenv = os.getenv;
 local io_open = io.open;
 local assert = assert;

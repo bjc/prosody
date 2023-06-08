@@ -1,6 +1,9 @@
 -- Generate net/http/codes.lua from IANA HTTP status code registry
+if not pcall(require, "prosody.loader") then
+	pcall(require, "loader");
+end
 
-local xml = require "util.xml";
+local xml = require "prosody.util.xml";
 local registry = xml.parse(io.read("*a"), { allow_processing_instructions = true });
 
 io.write([[

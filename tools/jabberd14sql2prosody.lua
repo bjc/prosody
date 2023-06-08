@@ -1,4 +1,7 @@
 #!/usr/bin/env lua
+if not pcall(require, "prosody.loader") then
+	pcall(require, "loader");
+end
 
 
 do
@@ -447,13 +450,13 @@ elseif package.config:sub(1,1) == "/" then
 end
 package.loaded["util.logger"] = {init = function() return function() end; end}
 
-local dm = require "util.datamanager";
+local dm = require "prosody.util.datamanager";
 dm.set_data_path("data");
 
-local datetime = require "util.datetime";
+local datetime = require "prosody.util.datetime";
 
-local st = require "util.stanza";
-local parse_xml = require "util.xml".parse;
+local st = require "prosody.util.stanza";
+local parse_xml = require "prosody.util.xml".parse;
 
 function store_password(username, host, password)
 	-- create or update account for username@host
