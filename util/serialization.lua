@@ -96,6 +96,10 @@ local function new(opt)
 		opt.itemlast = opt.itemlast or "";
 		opt.equals = opt.equals or "=";
 		opt.unquoted = true;
+	elseif opt.preset == "pretty" then
+		opt.fatal = false;
+		opt.freeze = true;
+		opt.unquoted = true;
 	end
 
 	local fallback = opt.fallback or opt.fatal == false and nonfatal_fallback or fatal_error;
