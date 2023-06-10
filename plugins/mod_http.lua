@@ -115,7 +115,7 @@ function moduleapi.http_url(module, app_name, default_path, mode)
 end
 
 local function header_set_tostring(header_value)
-	return array(pairs(header_value._items)):concat(", ");
+	return array(header_value:items()):concat(", ");
 end
 
 local function apply_cors_headers(response, methods, headers, max_age, allow_credentials, allowed_origins, origin)
