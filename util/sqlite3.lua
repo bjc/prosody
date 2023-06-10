@@ -163,6 +163,7 @@ end
 function engine:ondisconnect() -- luacheck: ignore 212/self
 	-- Override from create_engine()
 end
+
 function engine:execute(sql, ...)
 	local success, err = self:connect();
 	if not success then return success, err; end
@@ -178,20 +179,17 @@ function engine:execute(sql, ...)
 		return true;
 	end
 
-	local stmt = prepared[sql];
+	local stmt, err = self.conn:prepare(sql);
 	if not stmt then
-		local err;
-		stmt, err = self.conn:prepare(sql);
-		if not stmt then
-			err = sqlite_errors.new(err);
-			err.text = self.conn:errmsg();
-			return stmt, err;
-		end
-		prepared[sql] = stmt;
+		err = sqlite_errors.new(err);
+		err.text = self.conn:errmsg();
+		return stmt, err;
 	end
 
 	local ret = stmt:bind_values(...);
-	if ret ~= lsqlite3.OK then return nil, sqlite_errors.new(ret, { message = self.conn:errmsg() }); end
+	if ret ~= lsqlite3.OK then
+		return nil, sqlite_errors.new(ret, { message = self.conn:errmsg() });
+	end
 	return stmt;
 end
 
