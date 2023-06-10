@@ -202,10 +202,10 @@ local result_mt = {
 };
 
 local function iterator(table)
-	local i=0;
+	local i = 0;
 	return function()
-		i=i+1;
-		local item=table[i];
+		i = i + 1;
+		local item = table[i];
 		if item ~= nil then
 			return item;
 		end
@@ -268,6 +268,7 @@ function engine:execute_update(sql, ...)
 	end
 	return setmetatable({ __affected = affected, __rowcount = rowcount }, result_mt);
 end
+
 engine.insert = engine.execute_update;
 engine.select = engine.execute_query;
 engine.delete = engine.execute_update;
@@ -371,10 +372,11 @@ function engine:_create_table(table)
 	end
 	return success;
 end
+
 function engine:set_encoding() -- to UTF-8
 	return self:transaction(function()
-			for encoding in self:select"PRAGMA encoding;" do
-				if encoding[1] == "UTF-8" then
+		for encoding in self:select "PRAGMA encoding;" do
+			if encoding[1] == "UTF-8" then
 				self.charset = "utf8";
 			end
 		end
