@@ -623,7 +623,7 @@ function archive_store:delete(username, query)
 				LIMIT %s OFFSET ?
 			);]];
 			if engine.params.driver == "SQLite3" then
-				if engine._have_delete_limit then
+				if engine.sqlite_compile_options.enable_update_delete_limit then
 					sql_query = [[
 					DELETE FROM "prosodyarchive"
 					WHERE %s
@@ -903,11 +903,13 @@ function module.load()
 				end
 			end
 			if engine.params.driver == "SQLite3" then
+				local compile_options = {}
 				for row in engine:select("PRAGMA compile_options") do
-					if row[1] == "ENABLE_UPDATE_DELETE_LIMIT" then
-						engine._have_delete_limit = true;
-					end
+					local option = row[1]:lower();
+					local opt, val = option:match("^([^=]+)=(.*)$");
+					compile_options[opt or option] = tonumber(val) or val or true;
 				end
+				engine.sqlite_compile_options = compile_options;
 			end
 			module:set_status("info", "Connected to " .. engine.params.driver);
 		end, function (engine) -- luacheck: ignore 431/engine
