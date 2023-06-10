@@ -203,6 +203,13 @@ function map_store:set_keys(username, keydatas)
 		("host","user","store","key","type","value")
 		VALUES (?,?,?,?,?,?);
 		]];
+		local upsert_sql = [[
+		INSERT INTO "prosody"
+		("host","user","store","key","type","value")
+		VALUES (?,?,?,?,?,?)
+		ON CONFLICT ("host", "user","store", "key")
+		DO UPDATE SET "type"=?, "value"=?;
+		]];
 		local select_extradata_sql = [[
 		SELECT "type", "value"
 		FROM "prosody"
@@ -210,7 +217,10 @@ function map_store:set_keys(username, keydatas)
 		LIMIT 1;
 		]];
 		for key, data in pairs(keydatas) do
-			if type(key) == "string" and key ~= "" then
+			if type(key) == "string" and key ~= "" and engine.params.driver == "SQLite3" and data ~= self.remove then
+				local t, value = assert(serialize(data));
+				engine:insert(upsert_sql, host, username or "", self.store, key, t, value, t, value);
+			elseif type(key) == "string" and key ~= "" then
 				engine:delete(delete_sql,
 					host, username or "", self.store, key);
 				if data ~= self.remove then
@@ -705,7 +715,7 @@ local function create_table(engine) -- luacheck: ignore 431/engine
 		Column { name="key", type="TEXT", nullable=false };
 		Column { name="type", type="TEXT", nullable=false };
 		Column { name="value", type="MEDIUMTEXT", nullable=false };
-		Index { name="prosody_index", "host", "user", "store", "key" };
+		Index { name = "prosody_unique_index"; unique = engine.params.driver ~= "MySQL"; "host"; "user"; "store"; "key" };
 	};
 	engine:transaction(function()
 		ProsodyTable:create(engine);
@@ -803,12 +813,36 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 		success,err = engine:transaction(function()
 			return engine:execute(check_encoding_query, params.database,
 				engine.charset, engine.charset.."_bin");
-		end);
-		if not success then
-			module:log("error", "Failed to check/upgrade database encoding: %s", err or "unknown error");
-			return false;
+			end);
+			if not success then
+				module:log("error", "Failed to check/upgrade database encoding: %s", err or "unknown error");
+				return false;
+			end
+		else
+			local indices = {};
+			engine:transaction(function ()
+				if params.driver == "SQLite3" then
+					for row in engine:select [[SELECT "name" from "sqlite_schema" WHERE "name"='prosody_index';]] do
+						indices[row[1]] = true;
+					end
+				elseif params.driver == "PostgreSQL" then
+					for row in engine:select [[SELECT "relname" FROM "pg_class" WHERE "relname"='prosody_index';]] do
+						indices[row[1]] = true;
+					end
+				end
+			end)
+			if apply_changes then
+				local success = engine:transaction(function ()
+					return assert(engine:execute([[DROP INDEX "prosody_index";]]));
+				end);
+				if not success then
+					module:log("error", "Failed to delete obsolete index \"prosody_index\"");
+					return false;
+				end
+			else
+				changes = changes or indices["prosody_index"];
+			end
 		end
-	end
 	return changes;
 end
 
