@@ -155,7 +155,7 @@ function module.add_host(module)
 		local app_credentials = opt_credentials;
 		local app_origins;
 		if opt_origins and not (opt_origins:empty() or opt_origins:contains("*")) then
-			opt_origins = opt_origins._items;
+			app_origins = opt_origins._items;
 		end
 
 		local function cors_handler(event_data)
