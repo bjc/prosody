@@ -660,10 +660,27 @@ function archive_store:users()
 	return iterator(result);
 end
 
+local keyvalplus = {
+	__index = {
+		-- keyval
+		get = keyval_store.get;
+		set = keyval_store.set;
+		items = keyval_store.users;
+		-- map
+		get_key = map_store.get;
+		set_key = map_store.set;
+		remove = map_store.remove;
+		set_keys = map_store.set_keys;
+		get_key_from_all = map_store.get_all;
+		delete_key_from_all = map_store.delete_all;
+	};
+}
+
 local stores = {
 	keyval = keyval_store;
 	map = map_store;
 	archive = archive_store;
+	["keyval+"] = keyvalplus;
 };
 
 --- Implement storage driver API
