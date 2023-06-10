@@ -9,6 +9,7 @@ local type = type
 local t_concat = table.concat;
 local t_insert = table.insert;
 local s_char = string.char;
+local array = require "prosody.util.array";
 local log = require "prosody.util.logger".init("sql");
 
 local lsqlite3 = require "lsqlite3";
@@ -194,13 +195,6 @@ function engine:execute(sql, ...)
 	return stmt;
 end
 
-local result_mt = {
-	__index = {
-	affected = function(self) return self.__affected; end;
-	rowcount = function(self) return self.__rowcount; end;
-	},
-};
-
 local function iterator(table)
 	local i = 0;
 	return function()
@@ -211,6 +205,23 @@ local function iterator(table)
 		end
 	end
 end
+
+local result_mt = {
+	__len = function(self)
+		return self.__rowcount;
+	end;
+	__index = {
+		affected = function(self)
+			return self.__affected;
+		end;
+		rowcount = function(self)
+			return self.__rowcount;
+		end;
+	};
+	__call = function(self)
+		return iterator(self.__data);
+	end;
+};
 
 local function debugquery(where, sql, ...)
 	local i = 0; local a = {...}
@@ -225,7 +236,7 @@ local function debugquery(where, sql, ...)
 	end)));
 end
 
-function engine:execute_query(sql, ...)
+function engine:execute_update(sql, ...)
 	local prepared = self.prepared;
 	local stmt = prepared[sql];
 	if stmt and stmt:isopen() then
@@ -235,38 +246,20 @@ function engine:execute_query(sql, ...)
 	end
 	local ret = stmt:bind_values(...);
 	if ret ~= lsqlite3.OK then error(self.conn:errmsg()); end
-	local data, ret = {}
-	while stmt:step() == ROW do
-		t_insert(data, stmt:get_values());
+	local data = array();
+	for row in stmt:rows() do
+		data:push(array(row));
 	end
 	-- FIXME Error handling, BUSY, ERROR, MISUSE
 	if stmt:reset() == lsqlite3.OK then
 		prepared[sql] = stmt;
 	end
-	return setmetatable({ __data = data }, { __index = result_mt.__index, __call = iterator(data) });
-end
-function engine:execute_update(sql, ...)
-	local prepared = self.prepared;
-	local stmt = prepared[sql];
-	if not stmt or not stmt:isopen() then
-		stmt = assert(self.conn:prepare(sql));
-	else
-		prepared[sql] = nil;
-	end
-	local ret = stmt:bind_values(...);
-	if ret ~= lsqlite3.OK then error(self.conn:errmsg()); end
-	local rowcount = 0;
-	repeat
-		ret = stmt:step();
-		if ret == lsqlite3.ROW then
-			rowcount = rowcount + 1;
-		end
-	until ret ~= lsqlite3.ROW;
 	local affected = self.conn:changes();
-	if stmt:reset() == lsqlite3.OK then
-		prepared[sql] = stmt;
-	end
-	return setmetatable({ __affected = affected, __rowcount = rowcount }, result_mt);
+	return setmetatable({ __affected = affected; __rowcount = #data; __data = data }, result_mt);
+end
+
+function engine:execute_query(sql, ...)
+	return self:execute_update(sql, ...)()
 end
 
 engine.insert = engine.execute_update;
