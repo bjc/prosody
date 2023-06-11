@@ -910,6 +910,44 @@ function module.load()
 					compile_options[opt or option] = tonumber(val) or val or true;
 				end
 				engine.sqlite_compile_options = compile_options;
+
+				local journal_mode = "delete";
+				for row in engine:select[[PRAGMA journal_mode;]] do
+					journal_mode = row[1];
+				end
+
+				-- Note: These things can't be changed with in a transaction. LuaDBI
+				-- opens a transaction automatically for every statement(?), so this
+				-- will not work there.
+				local tune = module:get_option_string("sqlite_tune", "default");
+				if tune == "normal" then
+					if journal_mode ~= "wal" then
+						engine:execute("PRAGMA journal_mode=WAL;");
+					end
+					engine:execute("PRAGMA auto_vacuum=FULL;");
+					engine:execute("PRAGMA synchronous=NORMAL;")
+				elseif tune == "fast" then
+					if journal_mode ~= "wal" then
+						engine:execute("PRAGMA journal_mode=WAL;");
+					end
+					if compile_options.secure_delete then
+						engine:execute("PRAGMA secure_delete=FAST;");
+					end
+					engine:execute("PRAGMA synchronous=OFF;")
+					engine:execute("PRAGMA fullfsync=0;")
+				elseif tune == "safe" then
+					if journal_mode ~= "delete" then
+						engine:execute("PRAGMA journal_mode=DELETE;");
+					end
+					engine:execute("PRAGMA synchronous=EXTRA;")
+					engine:execute("PRAGMA fullfsync=1;")
+				end
+
+				for row in engine:select[[PRAGMA journal_mode;]] do
+					journal_mode = row[1];
+				end
+
+				module:log("debug", "SQLite3 database %q operating with journal_mode=%s", engine.params.database, journal_mode);
 			end
 			module:set_status("info", "Connected to " .. engine.params.driver);
 		end, function (engine) -- luacheck: ignore 431/engine
