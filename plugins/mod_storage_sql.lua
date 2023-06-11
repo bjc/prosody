@@ -303,30 +303,31 @@ function archive_store:append(username, key, value, when, with)
 	local user,store = username,self.store;
 	local cache_key = jid_join(username, host, store);
 	local item_count = archive_item_count_cache:get(cache_key);
-	if not item_count then
-		item_count_cache_miss();
-		local ok, ret = engine:transaction(function()
-			local count_sql = [[
+
+	if archive_item_limit then
+		if not item_count then
+			item_count_cache_miss();
+			local ok, ret = engine:transaction(function()
+				local count_sql = [[
 			SELECT COUNT(*) FROM "prosodyarchive"
 			WHERE "host"=? AND "user"=? AND "store"=?;
 			]];
-			local result = engine:select(count_sql, host, user, store);
-			if result then
-				for row in result do
-					item_count = row[1];
+				local result = engine:select(count_sql, host, user, store);
+				if result then
+					for row in result do
+						item_count = row[1];
+					end
 				end
+			end);
+			if not ok or not item_count then
+				module:log("error", "Failed while checking quota for %s: %s", username, ret);
+				return nil, "Failure while checking quota";
 			end
-		end);
-		if not ok or not item_count then
-			module:log("error", "Failed while checking quota for %s: %s", username, ret);
-			return nil, "Failure while checking quota";
+			archive_item_count_cache:set(cache_key, item_count);
+		else
+			item_count_cache_hit();
 		end
-		archive_item_count_cache:set(cache_key, item_count);
-	else
-		item_count_cache_hit();
-	end
 
-	if archive_item_limit then
 		module:log("debug", "%s has %d items out of %d limit", username, item_count, archive_item_limit);
 		if item_count >= archive_item_limit then
 			return nil, "quota-limit";
@@ -348,7 +349,7 @@ function archive_store:append(username, key, value, when, with)
 		]];
 		if key then
 			local result = engine:delete(delete_sql, host, user or "", store, key);
-			if result then
+			if result and item_count then
 				item_count = item_count - result:affected();
 			end
 		else
@@ -356,7 +357,9 @@ function archive_store:append(username, key, value, when, with)
 		end
 		local t, encoded_value = assert(serialize(value));
 		engine:insert(insert_sql, host, user or "", store, when, with, key, t, encoded_value);
-		archive_item_count_cache:set(cache_key, item_count+1);
+		if item_count then
+			archive_item_count_cache:set(cache_key, item_count+1);
+		end
 		return key;
 	end);
 	if not ok then return ok, ret; end
@@ -642,7 +645,13 @@ function archive_store:delete(username, query)
 		archive_item_count_cache:clear();
 	else
 		local cache_key = jid_join(username, host, self.store);
-		archive_item_count_cache:set(cache_key, nil);
+		if query.start == nil and query.with == nil and query["end"] == nil and query.key == nil and query.ids == nil and query.truncate == nil then
+			-- All items deleted, count should be zero.
+			archive_item_count_cache:set(cache_key, 0);
+		else
+			-- Not sure how many items left
+			archive_item_count_cache:set(cache_key, nil);
+		end
 	end
 	return ok and stmt:affected(), stmt;
 end
