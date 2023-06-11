@@ -217,6 +217,7 @@ function map_store:set_keys(username, keydatas)
 		LIMIT 1;
 		]];
 		for key, data in pairs(keydatas) do
+			-- TODO Test UPSERT in PostgreSQL before enabling it.
 			if type(key) == "string" and key ~= "" and engine.params.driver == "SQLite3" and data ~= self.remove then
 				local t, value = assert(serialize(data));
 				engine:insert(upsert_sql, host, username or "", self.store, key, t, value, t, value);
@@ -348,6 +349,7 @@ function archive_store:append(username, key, value, when, with)
 		VALUES (?,?,?,?,?,?,?,?);
 		]];
 		if key then
+			-- TODO use UPSERT like map store
 			local result = engine:delete(delete_sql, host, user or "", store, key);
 			if result and item_count then
 				item_count = item_count - result:affected();
