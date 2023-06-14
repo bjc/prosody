@@ -507,55 +507,43 @@ static int lc_mkdir(lua_State *L) {
  *	Example usage:
  *	pposix.setrlimit("NOFILE", 1000, 2000)
  */
-static int string2resource(const char *s) {
-	if(!strcmp(s, "CORE")) {
-		return RLIMIT_CORE;
-	}
 
-	if(!strcmp(s, "CPU")) {
-		return RLIMIT_CPU;
-	}
-
-	if(!strcmp(s, "DATA")) {
-		return RLIMIT_DATA;
-	}
-
-	if(!strcmp(s, "FSIZE")) {
-		return RLIMIT_FSIZE;
-	}
-
-	if(!strcmp(s, "NOFILE")) {
-		return RLIMIT_NOFILE;
-	}
-
-	if(!strcmp(s, "STACK")) {
-		return RLIMIT_STACK;
-	}
-
+static const char *const resource_strings[] = {
+	/* Defined by POSIX */
+	"CORE",
+	"CPU",
+	"DATA",
+	"FSIZE",
+	"NOFILE",
+	"STACK",
 #if !(defined(sun) || defined(__sun) || defined(__APPLE__))
-
-	if(!strcmp(s, "MEMLOCK")) {
-		return RLIMIT_MEMLOCK;
-	}
-
-	if(!strcmp(s, "NPROC")) {
-		return RLIMIT_NPROC;
-	}
-
-	if(!strcmp(s, "RSS")) {
-		return RLIMIT_RSS;
-	}
-
+	"MEMLOCK",
+	"NPROC",
+	"RSS",
 #endif
 #ifdef RLIMIT_NICE
-
-	if(!strcmp(s, "NICE")) {
-		return RLIMIT_NICE;
-	}
-
+	"NICE",
 #endif
-	return -1;
-}
+	NULL
+};
+
+static int resource_constants[] =	{
+	RLIMIT_CORE,
+	RLIMIT_CPU,
+	RLIMIT_DATA,
+	RLIMIT_FSIZE,
+	RLIMIT_NOFILE,
+	RLIMIT_STACK,
+#if !(defined(sun) || defined(__sun) || defined(__APPLE__))
+	RLIMIT_MEMLOCK,
+	RLIMIT_NPROC,
+	RLIMIT_RSS,
+#endif
+#ifdef RLIMIT_NICE
+	RLIMIT_NICE,
+#endif
+	-1,
+};
 
 static rlim_t arg_to_rlimit(lua_State *L, int idx, rlim_t current) {
 	switch(lua_type(L, idx)) {
@@ -589,7 +577,7 @@ static int lc_setrlimit(lua_State *L) {
 		return 2;
 	}
 
-	rid = string2resource(luaL_checkstring(L, 1));
+	rid = resource_constants[luaL_checkoption(L, 1,NULL, resource_strings)];
 
 	if(rid == -1) {
 		lua_pushboolean(L, 0);
@@ -619,7 +607,6 @@ static int lc_setrlimit(lua_State *L) {
 
 static int lc_getrlimit(lua_State *L) {
 	int arguments = lua_gettop(L);
-	const char *resource = NULL;
 	int rid = -1;
 	struct rlimit lim;
 
@@ -629,8 +616,7 @@ static int lc_getrlimit(lua_State *L) {
 		return 2;
 	}
 
-	resource = luaL_checkstring(L, 1);
-	rid = string2resource(resource);
+	rid = resource_constants[luaL_checkoption(L, 1, NULL, resource_strings)];
 
 	if(rid != -1) {
 		if(getrlimit(rid, &lim)) {
