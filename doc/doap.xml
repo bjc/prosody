@@ -869,7 +869,7 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
-        <xmpp:xep rdf:resources="https://xmpp.org/extensions/xep-0478.html"/>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0478.html"/>
         <xmpp:version>0.1.0</xmpp:version>
         <xmpp:since>trunk</xmpp:since>
       </xmpp:SupportedXep>
