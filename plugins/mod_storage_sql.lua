@@ -218,7 +218,7 @@ function map_store:set_keys(username, keydatas)
 		]];
 		for key, data in pairs(keydatas) do
 			-- TODO Test UPSERT in PostgreSQL before enabling it.
-			if type(key) == "string" and key ~= "" and engine.params.driver == "SQLite3" and data ~= self.remove then
+			if type(key) == "string" and key ~= "" and engine.params.driver ~= "MySQL" and data ~= self.remove then
 				local t, value = assert(serialize(data));
 				engine:insert(upsert_sql, host, username or "", self.store, key, t, value, t, value);
 			elseif type(key) == "string" and key ~= "" then
