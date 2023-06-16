@@ -854,7 +854,7 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 						indices[row[1]] = true;
 					end
 				elseif params.driver == "PostgreSQL" then
-					for row in engine:select [[SELECT "relname" FROM "pg_class" WHERE "relname"='prosody_index';]] do
+					for row in engine:select [[SELECT "relname" FROM "pg_indexes" WHERE "tablename"='prosody' AND "indexname"='prosody_index';]] do
 						indices[row[1]] = true;
 					end
 				end
