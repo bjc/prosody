@@ -310,9 +310,9 @@ function archive_store:append(username, key, value, when, with)
 			item_count_cache_miss();
 			local ok, ret = engine:transaction(function()
 				local count_sql = [[
-			SELECT COUNT(*) FROM "prosodyarchive"
-			WHERE "host"=? AND "user"=? AND "store"=?;
-			]];
+				SELECT COUNT(*) FROM "prosodyarchive"
+				WHERE "host"=? AND "user"=? AND "store"=?;
+				]];
 				local result = engine:select(count_sql, host, user, store);
 				if result then
 					for row in result do
