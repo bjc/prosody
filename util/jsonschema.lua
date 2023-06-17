@@ -199,11 +199,11 @@ function complex_validate(schema, data, root)
 
 	if type(data) == "table" then
 
-		if schema.maxItems and #data > schema.maxItems then
+		if schema.maxItems and #(data) > schema.maxItems then
 			return false
 		end
 
-		if schema.minItems and #data < schema.minItems then
+		if schema.minItems and #(data) < schema.minItems then
 			return false
 		end
 
@@ -303,7 +303,7 @@ function complex_validate(schema, data, root)
 		end
 
 		if schema.items ~= nil then
-			for i = p + 1, #data do
+			for i = p + 1, #(data) do
 				if not validate(schema.items, data[i], root) then
 					return false
 				end
@@ -312,7 +312,7 @@ function complex_validate(schema, data, root)
 
 		if schema.contains ~= nil then
 			local found = 0
-			for i = 1, #data do
+			for i = 1, #(data) do
 				if validate(schema.contains, data[i], root) then
 					found = found + 1
 				end

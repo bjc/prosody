@@ -320,11 +320,11 @@ function complex_validate (schema : json_schema_object, data : any, root : json_
 		-- validations in this block, which could be useful for validating Lua
 		-- tables
 
-		if schema.maxItems and #data > schema.maxItems then
+		if schema.maxItems and #(data as {any}) > schema.maxItems then
 			return false
 		end
 
-		if schema.minItems and #data < schema.minItems then
+		if schema.minItems and #(data as {any}) < schema.minItems then
 			return false
 		end
 
@@ -428,7 +428,7 @@ function complex_validate (schema : json_schema_object, data : any, root : json_
 		end
 
 		if schema.items ~= nil then
-			for i = p+1, #data do
+			for i = p+1, #(data as {any}) do
 				if not validate(schema.items, data[i], root) then
 					return false
 				end
@@ -437,7 +437,7 @@ function complex_validate (schema : json_schema_object, data : any, root : json_
 
 		if schema.contains ~= nil then
 			local found = 0
-			for i = 1, #data do
+			for i = 1, #(data as {any}) do
 				if validate(schema.contains, data[i], root) then
 					found = found + 1
 				end
