@@ -43,17 +43,10 @@ local function simple_validate(schema, data)
 	end
 end
 
-local complex_validate
-
 local function validate(schema, data, root)
 	if type(schema) == "boolean" then
 		return schema
-	else
-		return complex_validate(schema, data, root)
 	end
-end
-
-function complex_validate(schema, data, root)
 
 	if root == nil then
 		root = schema

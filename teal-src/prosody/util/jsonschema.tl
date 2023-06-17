@@ -159,17 +159,10 @@ local function simple_validate(schema : json_type_name | { json_type_name }, dat
 	end
 end
 
-local complex_validate : function ( json_schema_object, any, json_schema_object ) : boolean
-
 local function validate (schema : schema_t, data : any, root : json_schema_object) : boolean
 	if schema is boolean then
 		return schema
-	else
-		return complex_validate(schema, data, root)
 	end
-end
-
-function complex_validate (schema : json_schema_object, data : any, root : json_schema_object) : boolean
 
 	if root == nil then
 		root = schema
