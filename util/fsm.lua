@@ -1,4 +1,4 @@
-local events = require "util.events";
+local events = require "prosody.util.events";
 
 local fsm_methods = {};
 local fsm_mt = { __index = fsm_methods };

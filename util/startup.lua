@@ -425,7 +425,7 @@ end
 function startup.prepare_to_start()
 	log("info", "Prosody is using the %s backend for connection handling", server.get_backend());
 	-- Signal to modules that we are ready to start
-	prosody.started = require "util.promise".new(function (resolve)
+	prosody.started = require "prosody.util.promise".new(function (resolve)
 		prosody.events.add_handler("server-started", function ()
 			resolve();
 		end);
@@ -479,7 +479,7 @@ function startup.log_greeting()
 end
 
 function startup.notify_started()
-	require "util.timer".add_task(0, function ()
+	require "prosody.util.timer".add_task(0, function ()
 		prosody.log("debug", "Firing server-started event");
 		prosody.events.fire_event("server-started");
 	end);

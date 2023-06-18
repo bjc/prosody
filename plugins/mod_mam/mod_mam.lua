@@ -37,7 +37,7 @@ local tostring = tostring;
 local time_now = require "prosody.util.time".now;
 local m_min = math.min;
 local timestamp, datestamp = import( "util.datetime", "datetime", "date");
-local parse_duration = require "util.human.io".parse_duration;
+local parse_duration = require "prosody.util.human.io".parse_duration;
 local default_max_items, max_max_items = 20, module:get_option_number("max_archive_query_results", 50);
 local strip_tags = module:get_option_set("dont_archive_namespaces", { "http://jabber.org/protocol/chatstates" });
 

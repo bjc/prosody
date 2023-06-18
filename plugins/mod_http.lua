@@ -18,7 +18,7 @@ local url_build = require "socket.url".build;
 local http_util = require "prosody.util.http";
 local normalize_path = http_util.normalize_path;
 local set = require "prosody.util.set";
-local array = require "util.array";
+local array = require "prosody.util.array";
 
 local ip_util = require "prosody.util.ip";
 local new_ip = ip_util.new_ip;
