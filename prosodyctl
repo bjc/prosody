@@ -565,6 +565,15 @@ function commands.reload(arg)
 		return 0;
 	end
 
+	if arg[1] and arg[1]:match"^mod_" then
+		-- TODO reword the usage text, document
+		local shell = require "prosody.util.prosodyctl.shell";
+		arg[1] = arg[1]:match("^mod_(.*)"); -- strip mod_ prefix
+		table.insert(arg, 1, "module");
+		table.insert(arg, 2, "reload");
+		return shell.shell(arg);
+	end
+
 	service_command_warning("reload");
 
 	if not prosodyctl.isrunning() then
