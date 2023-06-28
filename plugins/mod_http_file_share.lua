@@ -49,7 +49,7 @@ end
 local daily_quota = module:get_option_number(module.name .. "_daily_quota", file_size_limit*10); -- 100 MB / day
 local total_storage_limit = module:get_option_number(module.name.."_global_quota", unlimited);
 
-local create_jwt, verify_jwt = require "prosody.util.jwt".init("HS256", secret);
+local create_jwt, verify_jwt = require"prosody.util.jwt".init("HS256", secret, secret, { default_ttl = 600 });
 
 local access = module:get_option_set(module.name .. "_access", {});
 
@@ -182,7 +182,6 @@ function get_authz(slot, uploader, filename, filesize, filetype)
 
 		-- slot properties
 		slot = slot;
-		expires = expiry >= 0 and (os.time()+expiry) or nil;
 		-- file properties
 		filename = filename;
 		filesize = filesize;
