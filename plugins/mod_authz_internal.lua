@@ -11,10 +11,13 @@ local host = module.host;
 local host_suffix = host:gsub("^[^%.]+%.", "");
 
 local hosts = prosody.hosts;
+local is_anon_host = module:get_option_string("authentication") == "anonymous";
+local default_user_role = module:get_option_string("default_user_role", is_anon_host and "prosody:guest" or "prosody:registered");
+
 local is_component = hosts[host].type == "component";
 local host_user_role, server_user_role, public_user_role;
 if is_component then
-	host_user_role = module:get_option_string("host_user_role", "prosody:user");
+	host_user_role = module:get_option_string("host_user_role", "prosody:registered");
 	server_user_role = module:get_option_string("server_user_role");
 	public_user_role = module:get_option_string("public_user_role");
 end
@@ -48,23 +51,36 @@ function register_role(role)
 end
 
 -- Default roles
+
+-- For untrusted guest/anonymous users
 register_role {
-	name = "prosody:restricted";
+	name = "prosody:guest";
 	priority = 15;
 };
 
+-- For e.g. self-registered accounts
 register_role {
-	name = "prosody:user";
+	name = "prosody:registered";
 	priority = 25;
-	inherits = { "prosody:restricted" };
+	inherits = { "prosody:guest" };
 };
 
+
+-- For trusted/provisioned accounts
+register_role {
+	name = "prosody:member";
+	priority = 35;
+	inherits = { "prosody:registered" };
+};
+
+-- For administrators, e.g. of a host
 register_role {
 	name = "prosody:admin";
 	priority = 50;
-	inherits = { "prosody:user" };
+	inherits = { "prosody:member" };
 };
 
+-- For server operators (full access)
 register_role {
 	name = "prosody:operator";
 	priority = 75;
@@ -128,11 +144,11 @@ function get_user_role(user)
 			return nil, err;
 		end
 		-- No role set, use default role
-		return role_registry["prosody:user"];
+		return role_registry[default_user_role];
 	end
 	if stored_roles._default == nil then
 		-- No primary role explicitly set, return default
-		return role_registry["prosody:user"];
+		return role_registry[default_user_role];
 	end
 	local primary_stored_role = role_registry[stored_roles._default];
 	if not primary_stored_role then
@@ -152,7 +168,7 @@ function set_user_role(user, role_name)
 		-- Primary role cannot be secondary role
 		[role_name] = role_map_store.remove;
 	};
-	if role_name == "prosody:user" then
+	if role_name == default_user_role then
 		-- Don't store default
 		keys_update._default = role_map_store.remove;
 	end

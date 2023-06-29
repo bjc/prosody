@@ -12,5 +12,8 @@ return {
 		"keyval+";
 
 		"s2sout-pre-connect-event";
+
+		-- prosody:guest, prosody:registered, prosody:member
+		"split-user-roles";
 	};
 };

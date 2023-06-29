@@ -282,8 +282,10 @@ function commands.help(session, data)
 	elseif section == "roles" then
 		print [[Roles may grant access or restrict users from certain operations]]
 		print [[Built-in roles are:]]
-		print [[  prosody:user     - Normal user (default)]]
-		print [[  prosody:admin    - Host administrator]]
+		print [[  prosody:guest      - Guest/anonymous user]]
+		print [[  prosody:registered - Registered user]]
+		print [[  prosody:member     - Provisioned user]]
+		print [[  prosody:admin      - Host administrator]]
 		print [[  prosody:operator - Server administrator]]
 		print [[]]
 		print [[Roles can be assigned using the user management commands (see 'help user').]]
@@ -1582,36 +1584,16 @@ function def_env.user:create(jid, password, role)
 		return nil, "User exists";
 	end
 
-	if role then
-		local ok, err = um.create_user(username, nil, host);
-		if not ok then
-			return nil, "Could not create user: "..err;
-		end
-
-		local role_ok, rerr = um.set_user_role(jid, host, role);
-		if not role_ok then
-			return nil, "Could not set role: " .. tostring(rerr);
-		end
-
-		if password then
-			local ok, err = um.set_password(username, password, host, nil);
-			if not ok then
-				return nil, "Could not set password for user: "..err;
-			end
-
-			local ok, err = um.enable_user(username, host);
-			if not ok and err ~= "method not implemented" then
-				return nil, "Could not enable user: "..err;
-			end
-		end
-	else
-		local ok, err = um.create_user(username, password, host);
-		if not ok then
-			return nil, "Could not create user: "..err;
-		end
+	if not role then
+		role = module:get_option_string("default_provisioned_role", "prosody:member");
 	end
 
-	return true, "User created";
+	local ok, err = um.create_user_with_role(username, password, host, role);
+	if not ok then
+		return nil, "Could not create user: "..err;
+	end
+
+	return true, ("Created %s with role '%s'"):format(jid, role);
 end
 
 function def_env.user:disable(jid)

@@ -10,7 +10,7 @@
 local st = require "prosody.util.stanza";
 local dataform_new = require "prosody.util.dataforms".new;
 local usermanager_user_exists  = require "prosody.core.usermanager".user_exists;
-local usermanager_create_user  = require "prosody.core.usermanager".create_user;
+local usermanager_create_user_with_role  = require "prosody.core.usermanager".create_user_with_role;
 local usermanager_set_password = require "prosody.core.usermanager".create_user;
 local usermanager_delete_user  = require "prosody.core.usermanager".delete_user;
 local nodeprep = require "prosody.util.encodings".stringprep.nodeprep;
@@ -19,6 +19,8 @@ local util_error = require "prosody.util.error";
 local additional_fields = module:get_option("additional_registration_fields", {});
 local require_encryption = module:get_option_boolean("c2s_require_encryption",
 	module:get_option_boolean("require_encryption", true));
+
+local default_role = module:get_option_string("register_ibr_default_role", "prosody:registered");
 
 pcall(function ()
 	module:depends("register_limits");
@@ -166,7 +168,12 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 		return true;
 	end
 
-	local user = { username = username, password = password, host = host, additional = data, ip = session.ip, session = session, allowed = true }
+	local user = {
+		username = username, password = password, host = host;
+		additional = data, ip = session.ip, session = session;
+		role = default_role;
+		allowed = true;
+	};
 	module:fire_event("user-registering", user);
 	if not user.allowed then
 		local error_type, error_condition, reason;
@@ -200,7 +207,7 @@ module:hook("stanza/iq/jabber:iq:register:query", function(event)
 		end
 	end
 
-	local created, err = usermanager_create_user(username, password, host);
+	local created, err = usermanager_create_user_with_role(username, password, host, user.role);
 	if created then
 		data.registered = os.time();
 		if not account_details:set(username, data) then

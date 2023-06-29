@@ -8,7 +8,7 @@
 --
 
 local restrict_public = not module:get_option_boolean("muc_room_allow_public", true);
-module:default_permission(restrict_public and "prosody:admin" or "prosody:user", ":create-public-room");
+module:default_permission(restrict_public and "prosody:admin" or "prosody:registered", ":create-public-room");
 
 local function get_hidden(room)
 	return room._data.hidden;

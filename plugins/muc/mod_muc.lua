@@ -414,7 +414,7 @@ if module:get_option_boolean("muc_tombstones", true) then
 end
 
 local restrict_room_creation = module:get_option("restrict_room_creation");
-module:default_permission(restrict_room_creation == true and "prosody:admin" or "prosody:user", ":create-room");
+module:default_permission(restrict_room_creation == true and "prosody:admin" or "prosody:registered", ":create-room");
 module:hook("muc-room-pre-create", function(event)
 	local origin, stanza = event.origin, event.stanza;
 	if restrict_room_creation ~= false and not module:may(":create-room", event) then

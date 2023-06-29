@@ -9,7 +9,7 @@
 
 local restrict_persistent = not module:get_option_boolean("muc_room_allow_persistent", true);
 module:default_permission(
-	restrict_persistent and "prosody:admin" or "prosody:user",
+	restrict_persistent and "prosody:admin" or "prosody:registered",
 	":create-persistent-room"
 );
 

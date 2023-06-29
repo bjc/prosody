@@ -12,7 +12,7 @@ local allow_user_invites = module:get_option_boolean("allow_user_invites", false
 -- on the server, use the option above instead.
 local allow_contact_invites = module:get_option_boolean("allow_contact_invites", true);
 
-module:default_permission(allow_user_invites and "prosody:user" or "prosody:admin", ":invite-users");
+module:default_permission(allow_user_invites and "prosody:registered" or "prosody:admin", ":invite-users");
 
 local invites;
 if prosody.shutdown then -- COMPAT hack to detect prosodyctl
