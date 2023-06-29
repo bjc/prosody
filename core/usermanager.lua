@@ -205,6 +205,31 @@ local function set_user_role(user, host, role_name)
 	return role, err;
 end
 
+local function create_user_with_role(username, password, host, role)
+	local ok, err = create_user(username, nil, host);
+	if not ok then return ok, err; end
+
+	local role_ok, role_err = set_user_role(username, host, role);
+	if not role_ok then
+		delete_user(username, host);
+		return nil, "Failed to assign role: "..role_err;
+	end
+
+	if password then
+		local pw_ok, pw_err = set_password(username, password, host);
+		if not pw_ok then
+			return nil, "Failed to set password: "..pw_err;
+		end
+
+		local enable_ok, enable_err = enable_user(username, host);
+		if not enable_ok and enable_err ~= "method not implemented" then
+			return enable_ok, "Failed to enable account: "..enable_err;
+		end
+	end
+
+	return true;
+end
+
 local function user_can_assume_role(user, host, role_name)
 	if host and not hosts[host] then return false; end
 	if type(user) ~= "string" then return false; end
@@ -308,6 +333,7 @@ return {
 	get_account_info = get_account_info;
 	user_exists = user_exists;
 	create_user = create_user;
+	create_user_with_role = create_user_with_role;
 	delete_user = delete_user;
 	user_is_enabled = user_is_enabled;
 	enable_user = enable_user;
