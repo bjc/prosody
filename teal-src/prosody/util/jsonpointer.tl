@@ -9,7 +9,7 @@ local function unescape_token(escaped_token : string) : string
 	return unescaped
 end
 
-local function resolve_json_pointer(ref : table, path : string) : any, ptr_error
+local function resolve_json_pointer(ref : any, path : string) : any, ptr_error
 	local ptr_len = #path+1
 	for part, pos in path:gmatch("/([^/]*)()") do
 		local token = unescape_token(part)
