@@ -3,6 +3,7 @@ local record _M
 		"debug"
 		"oneline"
 		"compact"
+		"pretty"
 	end
 	type fallback = function (any, string) : string
 	record config
