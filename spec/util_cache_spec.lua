@@ -388,5 +388,26 @@ describe("util.cache", function()
 			c:resize(3);
 			assert.same({"v5", "v4", "v3"}, vs(c));
 		end);
+
+		it("eviction stuff", function ()
+			local c;
+			c = cache.new(4, function(_k,_v)
+				if c.size < 10 then
+					c:resize(c.size*2);
+				end
+			end)
+			for i = 1,20 do
+				c:set(i,i)
+			end
+			assert.equal(16, c.size);
+			assert.is_nil(c:get(1))
+			assert.is_nil(c:get(4))
+			assert.equal(5, c:get(5))
+			assert.equal(20, c:get(20))
+			c:resize(4)
+			assert.equal(20, c:get(20))
+			assert.equal(17, c:get(17))
+			assert.is_nil(c:get(10))
+		end)
 	end);
 end);

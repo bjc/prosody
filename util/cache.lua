@@ -54,12 +54,17 @@ function cache_methods:set(k, v)
 	if self._count == self.size then
 		local tail = self._tail;
 		local on_evict, evicted_key, evicted_value = self._on_evict, tail.key, tail.value;
-		if on_evict ~= nil and (on_evict == false or on_evict(evicted_key, evicted_value) == false) then
+
+		local do_evict = on_evict and on_evict(evicted_key, evicted_value);
+
+		if do_evict == false then
 			-- Cache is full, and we're not allowed to evict
 			return false;
+		elseif self._count == self.size then
+			-- Cache wasn't grown
+			_remove(self, tail);
+			self._data[evicted_key] = nil;
 		end
-		_remove(self, tail);
-		self._data[evicted_key] = nil;
 	end
 
 	m = { key = k, value = v, prev = nil, next = nil };
