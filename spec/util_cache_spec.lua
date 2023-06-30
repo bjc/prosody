@@ -390,8 +390,7 @@ describe("util.cache", function()
 		end);
 
 		it("eviction stuff", function ()
-			local c;
-			c = cache.new(4, function(_k,_v)
+			local c = cache.new(4, function(_k,_v,c)
 				if c.size < 10 then
 					c:resize(c.size*2);
 				end

@@ -55,7 +55,7 @@ function cache_methods:set(k, v)
 		local tail = self._tail;
 		local on_evict, evicted_key, evicted_value = self._on_evict, tail.key, tail.value;
 
-		local do_evict = on_evict and on_evict(evicted_key, evicted_value);
+		local do_evict = on_evict and on_evict(evicted_key, evicted_value, self);
 
 		if do_evict == false then
 			-- Cache is full, and we're not allowed to evict
@@ -129,7 +129,7 @@ function cache_methods:resize(new_size)
 	while self._count > new_size do
 		local tail = self._tail;
 		local evicted_key, evicted_value = tail.key, tail.value;
-		if on_evict ~= nil and (on_evict == false or on_evict(evicted_key, evicted_value) == false) then
+		if on_evict ~= nil and (on_evict == false or on_evict(evicted_key, evicted_value, self) == false) then
 			-- Cache is full, and we're not allowed to evict
 			return false;
 		end
