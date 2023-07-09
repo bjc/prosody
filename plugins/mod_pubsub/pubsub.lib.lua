@@ -320,7 +320,7 @@ function _M.handle_disco_items_node(event, service)
 	end
 
 	for _, id in ipairs(ret) do
-		reply:tag("item", { jid = service.jid or module.host, name = id }):up();
+		reply:tag("item", { jid = service.config.jid or module.host, name = id }):up();
 	end
 	event.exists = true;
 end

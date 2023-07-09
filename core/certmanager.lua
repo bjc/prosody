@@ -215,7 +215,7 @@ local core_defaults = {
 
 local mozilla_ssl_configs = {
 	-- https://wiki.mozilla.org/Security/Server_Side_TLS
-	-- Version 5.6 as of 2021-12-26
+	-- Version 5.7 as of 2023-07-09
 	modern = {
 		protocol = "tlsv1_3";
 		options = { cipher_server_preference = false };
@@ -236,6 +236,7 @@ local mozilla_ssl_configs = {
 			"ECDHE-RSA-CHACHA20-POLY1305";
 			"DHE-RSA-AES128-GCM-SHA256";
 			"DHE-RSA-AES256-GCM-SHA384";
+			"DHE-RSA-CHACHA20-POLY1305";
 		};
 		curveslist = { "X25519"; "prime256v1"; "secp384r1" };
 		ciphersuites = { "TLS_AES_128_GCM_SHA256"; "TLS_AES_256_GCM_SHA384"; "TLS_CHACHA20_POLY1305_SHA256" };
