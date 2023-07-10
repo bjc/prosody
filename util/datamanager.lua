@@ -329,7 +329,7 @@ local function build_list_index(username, host, datastore, items)
 		return fh, err, errno;
 	end
 	local prev_pos = 0; -- position before reading
-	local last_item_start = 0;
+	local last_item_start = nil;
 
 	if items and items[1] then
 		local last_item = items[#items];
@@ -340,7 +340,7 @@ local function build_list_index(username, host, datastore, items)
 
 	for line in fh:lines() do
 		if line:sub(1, 4) == "item" then
-			if prev_pos ~= 0 then
+			if prev_pos ~= 0 and last_item_start then
 				t_insert(items, { start = last_item_start; length = prev_pos - last_item_start });
 			end
 			last_item_start = prev_pos
