@@ -397,7 +397,7 @@ local index_mt = {
 }
 
 local function get_list_index(username, host, datastore)
-	log("debug", "Loading index for (%s%s/%s)", username, host, datastore);
+	log("debug", "Loading index for (%s@%s/%s)", username, host, datastore);
 	local index_filename = getpath(username, host, datastore, "lidx");
 	local ih = io_open(index_filename);
 	if ih then
