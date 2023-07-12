@@ -14,6 +14,8 @@ local host = module.host;
 local archive_item_limit = module:get_option_number("storage_archive_item_limit", 10000);
 local archive_item_count_cache = cache.new(module:get_option("storage_archive_item_limit_cache_size", 1000));
 
+local use_shift = module:get_option_boolean("storage_archive_experimental_fast_delete", false);
+
 local driver = {};
 
 function driver:open(store, typ)
@@ -342,12 +344,32 @@ function archive:users()
 	return datamanager.users(host, self.store, "list");
 end
 
+function archive:trim(username, to_when)
+	local list, err = datamanager.list_open(username, host, self.store);
+	if not list then return list,err;end
+	-- luacheck: ignore 211/exact
+	local i, exact = binary_search(list, function(item)
+		local when = item.when or datetime.parse(item.attr.stamp);
+		return to_when - when;
+	end);
+	-- TODO if exact then ... off by one?
+	if i == 1 then return 0; end
+	local ok, err = datamanager.list_shift(username, host, self.store, i);
+	if not ok then return ok, err; end
+	return i-1;
+end
+
 function archive:delete(username, query)
 	local cache_key = jid_join(username, host, self.store);
 	if not query or next(query) == nil then
 		archive_item_count_cache:set(cache_key, nil);
 		return datamanager.list_store(username, host, self.store, nil);
 	end
+
+	if use_shift and next(query) == "end" and next(query, "end") == nil then
+		return self:trim(username, query["end"]);
+	end
+
 	local items, err = datamanager.list_load(username, host, self.store);
 	if not items then
 		if err then
