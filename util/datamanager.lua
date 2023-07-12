@@ -34,11 +34,13 @@ local prosody = prosody;
 
 local raw_mkdir = lfs.mkdir;
 local atomic_append;
+local remove_blocks;
 local ENOENT = 2;
 pcall(function()
 	local pposix = require "prosody.util.pposix";
 	raw_mkdir = pposix.mkdir or raw_mkdir; -- Doesn't trample on umask
 	atomic_append = pposix.atomic_append;
+	remove_blocks = pposix.remove_blocks;
 	ENOENT = pposix.ENOENT or ENOENT;
 end);
 
@@ -570,6 +572,44 @@ local function list_shift(username, host, datastore, trim_to)
 	local offset = new_first.start;
 	if offset == 0 then
 		return true;
+	end
+
+	if remove_blocks then
+		local f, err = io_open(list_filename, "r+");
+		if not f then
+			return f, err;
+		end
+
+		local diff = 0;
+		local block_offset = 0;
+		if offset % 0x1000 ~= 0 then
+			-- Not an even block boundary, we will have to overwrite
+			diff = offset % 0x1000;
+			block_offset = offset - diff;
+		end
+
+		if block_offset == 0 then
+			log("debug", "")
+		else
+			local ok, err = remove_blocks(f, 0, block_offset);
+			log("debug", "remove_blocks(%s, 0, %d)", f, block_offset);
+			if not ok then
+				log("warn", "Could not remove blocks from %q[%d, %d]: %s", list_filename, 0, block_offset, err);
+			else
+				if diff ~= 0 then
+					-- overwrite unaligned leftovers
+					if f:seek("set", 0) then
+						local wrote, err = f:write(string.rep("\n", diff));
+						if not wrote then
+							log("error", "Could not blank out %q[%d, %d]: %s", list_filename, 0, diff, err);
+						end
+					end
+				end
+				local ok, err = f:close();
+				shift_index(index_filename, index, trim_to, offset); -- Shift or delete the index
+				return ok, err;
+			end
+		end
 	end
 
 	local r, err = io_open(list_filename, "r");
