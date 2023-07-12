@@ -403,7 +403,7 @@ local function get_list_index(username, host, datastore)
 	if ih then
 		local magic = ih:read(#index_magic);
 		if magic ~= index_magic then
-			log("warn", "Index %q has wrong version number (got %q, expected %q)", index_filename, magic, index_magic);
+			log("debug", "Index %q has wrong version number (got %q, expected %q), rebuilding...", index_filename, magic, index_magic);
 			-- wrong version or something
 			ih:close();
 			ih = nil;
@@ -487,7 +487,7 @@ end
 
 local function list_open(username, host, datastore)
 	if not index_magic then
-		log("warn", "Falling back from lazy loading to to loading full list for %s storage for user: %s@%s", datastore, username or "nil", host or "nil");
+		log("debug", "Falling back from lazy loading to to loading full list for %s storage for user: %s@%s", datastore, username or "nil", host or "nil");
 		return list_load(username, host, datastore);
 	end
 	local filename = getpath(username, host, datastore, "list");
