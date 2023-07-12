@@ -35,6 +35,7 @@ TRUNK
 ### Storage
 
 - New 'keyval+' combined keyval/map store type
+- Performance improvements in internal archive stores
 
 ## Changes
 
