@@ -506,6 +506,97 @@ local function list_open(username, host, datastore)
 	return setmetatable({ file = file; index = index }, indexed_list_mt);
 end
 
+local function shift_index(index_filename, index, trim_to, offset)
+	local index_scratch = index_filename .. "~";
+	local new_index, err = io_open(index_scratch, "w");
+	if not new_index then
+		os_remove(index_filename);
+		return "deleted", err;
+	end
+
+	local ok, err = new_index:write(index_magic);
+	if not ok then
+		new_index:close();
+		os_remove(index_filename);
+		os_remove(index_scratch);
+		return "deleted", err;
+	end
+
+	if not index.file or not index.file:seek("set", index_item_size * trim_to) then
+		new_index:close();
+		os_remove(index_filename);
+		os_remove(index_scratch);
+		return "deleted";
+	else
+		local pack, unpack = string.pack, string.unpack;
+		for item in index.file:lines(index_item_size) do
+			local ok, err = new_index:write(pack(index_fmt, unpack(index_fmt, item) - offset));
+			if not ok then
+				os_remove(index_filename);
+				os_remove(index_scratch);
+				return "deleted", err;
+			end
+		end
+		local ok, err = new_index:close();
+		if not ok then
+			os_remove(index_filename);
+			os_remove(index_scratch);
+			return "deleted", err;
+		end
+		return os_rename(index_scratch, index_filename);
+	end
+end
+
+local function list_shift(username, host, datastore, trim_to)
+	if trim_to == 1 then
+		return true
+	end
+	if type(trim_to) ~= "number" or trim_to < 1 then
+		return nil, "invalid-argument";
+	end
+	local list_filename = getpath(username, host, datastore, "list");
+	local index_filename = getpath(username, host, datastore, "lidx");
+	local index, err = get_list_index(username, host, datastore);
+	if not index then
+		return nil, err;
+	end
+
+	local new_first = index[trim_to];
+	if not new_first then
+		os_remove(index_filename);
+		return os_remove(list_filename);
+	end
+
+	local offset = new_first.start;
+	if offset == 0 then
+		return true;
+	end
+
+	local r, err = io_open(list_filename, "r");
+	if not r then
+		return nil, err;
+	end
+	local w, err = io_open(list_filename .. "~", "w");
+	if not w then
+		return nil, err;
+	end
+	r:seek("set", offset);
+	for block in r:lines(0x1000) do
+		local ok, err = w:write(block);
+		if not ok then
+			return nil, err;
+		end
+	end
+	r:close();
+	local ok, err = w:close();
+	if not ok then
+		return nil, err;
+	end
+	shift_index(index_filename, index, trim_to, offset)
+	return os_rename(list_filename .. "~", list_filename);
+end
+
+
 local type_map = {
 	keyval = "dat";
 	list = "list";
@@ -609,4 +700,5 @@ return {
 
 	build_list_index = build_list_index;
 	list_open = list_open;
+	list_shift = list_shift;
 };
