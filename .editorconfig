@@ -18,6 +18,7 @@ indent_style = space
 indent_size = 3
 indent_style = space
 
-[**.xml]
+[*.xml]
+# xmllint --nsclean --encode UTF-8 --noent --format -
 indent_size = 2
 indent_style = space
