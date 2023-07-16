@@ -21,6 +21,7 @@ local format = require "prosody.util.format".format;
 local jid_node = require "prosody.util.jid".node;
 local jid_split = require "prosody.util.jid".split;
 local jid_resource = require "prosody.util.jid".resource;
+local human_io = require "prosody.util.human.io";
 
 local t_insert, t_remove, t_concat = table.insert, table.remove, table.concat;
 local error, setmetatable, type = error, setmetatable, type;
@@ -249,6 +250,20 @@ function api:get_option_number(name, default_value, min, max)
 	if max and ret > max then
 		self:log("warn", "Config option '%s' out of bounds %g > %g", name, ret, max);
 		return max;
+	end
+	return ret;
+end
+
+function api:get_option_period(name, default_value)
+	local value = self:get_option_scalar(name, default_value);
+	local num = tonumber(value);
+	if num then
+		-- assume seconds
+		return num;
+	end
+	local ret = human_io.parse_duration(value);
+	if value ~= nil and ret == nil then
+		self:log("error", "Config option '%s' not understood, expecting a period", name);
 	end
 	return ret;
 end
