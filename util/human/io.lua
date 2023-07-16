@@ -197,10 +197,10 @@ end
 local day = 86400;
 local multipliers = {
 	d = day, w = day * 7, m = 31 * day, mo = 31 * day, y = 365.2425 * day;
-	s = 1, mi = 60, h = 3600
+	s = 1, mi = 60, h = 3600, ho = 3600
 };
 local function parse_duration(duration_string)
-	local n, m = duration_string:lower():match("(%d+)%s*([dwmy]?.?)");
+	local n, m = duration_string:lower():match("(%d+)%s*([smhdwy]?[io]?)");
 	if not n then return nil; end
 	return tonumber(n) * ( multipliers[m] or 1 );
 end
