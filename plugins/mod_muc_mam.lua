@@ -32,12 +32,12 @@ local tostring = tostring;
 local time_now = require "prosody.util.time".now;
 local m_min = math.min;
 local timestamp, datestamp = import("prosody.util.datetime", "datetime", "date");
-local default_max_items, max_max_items = 20, module:get_option_number("max_archive_query_results", 50);
+local default_max_items, max_max_items = 20, module:get_option_integer("max_archive_query_results", 50, 0);
 
 local cleanup_after = module:get_option_string("muc_log_expires_after", "1w");
 
 local default_history_length = 20;
-local max_history_length = module:get_option_number("max_history_messages", math.huge);
+local max_history_length = module:get_option_integer("max_history_messages", math.huge, 0);
 
 local function get_historylength(room)
 	return math.min(room._data.history_length or default_history_length, max_history_length);
@@ -53,7 +53,7 @@ local log_by_default = module:get_option_boolean("muc_log_by_default", true);
 local archive_store = "muc_log";
 local archive = module:open_store(archive_store, "archive");
 
-local archive_item_limit = module:get_option_number("storage_archive_item_limit", archive.caps and archive.caps.quota or 1000);
+local archive_item_limit = module:get_option_integer("storage_archive_item_limit", archive.caps and archive.caps.quota or 1000, 0);
 local archive_truncate = math.floor(archive_item_limit * 0.99);
 
 if archive.name == "null" or not archive.find then
@@ -492,7 +492,7 @@ if cleanup_after ~= "never" then
 	-- messages, we collect the union of sets of rooms from dates that fall
 	-- outside the cleanup range.
 
-	local last_date = require "prosody.util.cache".new(module:get_option_number("muc_log_cleanup_date_cache_size", 1000));
+	local last_date = require "prosody.util.cache".new(module:get_option_integer("muc_log_cleanup_date_cache_size", 1000, 1));
 	if not ( archive.caps and archive.caps.wildcard_delete ) then
 		function schedule_cleanup(roomname, date)
 			date = date or datestamp();

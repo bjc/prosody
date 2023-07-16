@@ -35,7 +35,7 @@ local cache = setmetatable({}, { __mode = "v" });
 -- disk, which we want to avoid during routing. On the other hand, we don't
 -- want to use too much memory either, so this can be tuned by advanced
 -- users. TODO use science to figure out a better default, 64 is just a guess.
-local cache_size = module:get_option_number("blocklist_cache_size", 64);
+local cache_size = module:get_option_integer("blocklist_cache_size", 64, 1);
 local cache2 = require"prosody.util.cache".new(cache_size);
 
 local null_blocklist = {};

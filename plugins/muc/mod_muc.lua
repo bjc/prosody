@@ -159,8 +159,8 @@ local function room_save(room, forced, savestate)
 	end
 end
 
-local max_rooms = module:get_option_number("muc_max_rooms");
-local max_live_rooms = module:get_option_number("muc_room_cache_size", 100);
+local max_rooms = module:get_option_integer("muc_max_rooms", nil, 0);
+local max_live_rooms = module:get_option_integer("muc_room_cache_size", 100, 1);
 
 local room_hit = module:measure("room_hit", "rate");
 local room_miss = module:measure("room_miss", "rate")
@@ -288,7 +288,7 @@ local function set_room_defaults(room, lang)
 	room:set_whois(module:get_option_boolean("muc_room_default_public_jids",
 		room:get_whois() == "anyone") and "anyone" or "moderators");
 	room:set_changesubject(module:get_option_boolean("muc_room_default_change_subject", room:get_changesubject()));
-	room:set_historylength(module:get_option_number("muc_room_default_history_length", room:get_historylength()));
+	room:set_historylength(module:get_option_integer("muc_room_default_history_length", room:get_historylength(), 0));
 	room:set_language(lang or module:get_option_string("muc_room_default_language"));
 	room:set_presence_broadcast(module:get_option("muc_room_default_presence_broadcast", room:get_presence_broadcast()));
 end

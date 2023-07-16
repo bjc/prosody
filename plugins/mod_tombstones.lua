@@ -8,7 +8,7 @@ local st = require "prosody.util.stanza";
 -- Using a map store as key-value store so that removal of all user data
 -- does not also remove the tombstone, which would defeat the point
 local graveyard = module:open_store(nil, "map");
-local graveyard_cache = require "prosody.util.cache".new(module:get_option_number("tombstone_cache_size", 1024));
+local graveyard_cache = require "prosody.util.cache".new(module:get_option_integer("tombstone_cache_size", 1024, 1));
 
 local ttl = module:get_option_period("user_tombstone_expiry", nil);
 -- Keep tombstones forever by default

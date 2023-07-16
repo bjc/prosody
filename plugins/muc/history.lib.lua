@@ -12,7 +12,7 @@ local datetime = require "prosody.util.datetime";
 local st = require "prosody.util.stanza";
 
 local default_history_length = 20;
-local max_history_length = module:get_option_number("max_history_messages", math.huge);
+local max_history_length = module:get_option_integer("max_history_messages", math.huge, 0);
 
 local function set_max_history_length(_max_history_length)
 	max_history_length = _max_history_length or math.huge;

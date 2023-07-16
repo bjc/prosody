@@ -39,7 +39,7 @@ end
 --   get(node_name)
 --   users(): iterator over (node_name)
 
-local max_max_items = module:get_option_number("pubsub_max_items", 256);
+local max_max_items = module:get_option_integer("pubsub_max_items", 256, 1);
 
 local function tonumber_max_items(n)
 	if n == "max" then

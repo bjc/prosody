@@ -37,14 +37,14 @@ local tostring = tostring;
 local time_now = require "prosody.util.time".now;
 local m_min = math.min;
 local timestamp, datestamp = import( "util.datetime", "datetime", "date");
-local default_max_items, max_max_items = 20, module:get_option_number("max_archive_query_results", 50);
+local default_max_items, max_max_items = 20, module:get_option_integer("max_archive_query_results", 50, 0);
 local strip_tags = module:get_option_set("dont_archive_namespaces", { "http://jabber.org/protocol/chatstates" });
 
 local archive_store = module:get_option_string("archive_store", "archive");
 local archive = module:open_store(archive_store, "archive");
 
 local cleanup_after = module:get_option_period("archive_expires_after", "1w");
-local archive_item_limit = module:get_option_number("storage_archive_item_limit", archive.caps and archive.caps.quota or 1000);
+local archive_item_limit = module:get_option_integer("storage_archive_item_limit", archive.caps and archive.caps.quota or 1000, 0);
 local archive_truncate = math.floor(archive_item_limit * 0.99);
 
 if not archive.find then
@@ -522,7 +522,7 @@ if cleanup_after ~= "never" then
 	-- outside the cleanup range.
 
 	if not (archive.caps and archive.caps.wildcard_delete) then
-		local last_date = require "prosody.util.cache".new(module:get_option_number("archive_cleanup_date_cache_size", 1000));
+		local last_date = require "prosody.util.cache".new(module:get_option_integer("archive_cleanup_date_cache_size", 1000, 1));
 		function schedule_cleanup(username, date)
 			date = date or datestamp();
 			if last_date:get(username) == date then return end

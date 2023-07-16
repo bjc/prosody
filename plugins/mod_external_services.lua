@@ -8,7 +8,7 @@ local array = require "prosody.util.array";
 local set = require "prosody.util.set";
 
 local default_host = module:get_option_string("external_service_host", module.host);
-local default_port = module:get_option_number("external_service_port");
+local default_port = module:get_option_integer("external_service_port", nil, 1, 65535);
 local default_secret = module:get_option_string("external_service_secret");
 local default_ttl = module:get_option_period("external_service_ttl", "1 day");
 

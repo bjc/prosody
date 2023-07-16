@@ -12,7 +12,7 @@ local dt = require "prosody.util.datetime";
 local filters = require "prosody.util.filters";
 local timer = require "prosody.util.timer";
 
-local queue_size = module:get_option_number("csi_queue_size", 256);
+local queue_size = module:get_option_integer("csi_queue_size", 256, 1);
 local resume_delay = module:get_option_period("csi_resume_inactive_delay", 5);
 
 local important_payloads = module:get_option_set("csi_important_payloads", { });

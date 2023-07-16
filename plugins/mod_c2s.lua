@@ -28,7 +28,7 @@ local log = module._log;
 local c2s_timeout = module:get_option_period("c2s_timeout", "5 minutes");
 local stream_close_timeout = module:get_option_period("c2s_close_timeout", 5);
 local opt_keepalives = module:get_option_boolean("c2s_tcp_keepalives", module:get_option_boolean("tcp_keepalives", true));
-local stanza_size_limit = module:get_option_number("c2s_stanza_size_limit", 1024*256);
+local stanza_size_limit = module:get_option_integer("c2s_stanza_size_limit", 1024*256,10000);
 
 local measure_connections = module:metric("gauge", "connections", "", "Established c2s connections", {"host", "type", "ip_family"});
 

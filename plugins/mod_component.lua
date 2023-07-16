@@ -27,7 +27,8 @@ local hosts = prosody.hosts;
 local log = module._log;
 
 local opt_keepalives = module:get_option_boolean("component_tcp_keepalives", module:get_option_boolean("tcp_keepalives", true));
-local stanza_size_limit = module:get_option_number("component_stanza_size_limit", module:get_option_number("s2s_stanza_size_limit", 1024*512));
+local stanza_size_limit = module:get_option_integer("component_stanza_size_limit",
+	module:get_option_integer("s2s_stanza_size_limit", 1024 * 512, 10000), 10000);
 
 local sessions = module:shared("sessions");
 

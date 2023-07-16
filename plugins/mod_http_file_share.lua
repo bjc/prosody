@@ -36,12 +36,12 @@ local persist_stats = module:open_store("upload_stats", "map");
 
 local secret = module:get_option_string(module.name.."_secret", require"prosody.util.id".long());
 local external_base_url = module:get_option_string(module.name .. "_base_url");
-local file_size_limit = module:get_option_number(module.name .. "_size_limit", 10 * 1024 * 1024); -- 10 MB
+local file_size_limit = module:get_option_integer(module.name .. "_size_limit", 10 * 1024 * 1024, 0); -- 10 MB
 local file_types = module:get_option_set(module.name .. "_allowed_file_types", {});
 local safe_types = module:get_option_set(module.name .. "_safe_file_types", {"image/*","video/*","audio/*","text/plain"});
 local expiry = module:get_option_period(module.name .. "_expires_after", "1w");
-local daily_quota = module:get_option_number(module.name .. "_daily_quota", file_size_limit*10); -- 100 MB / day
-local total_storage_limit = module:get_option_number(module.name.."_global_quota", unlimited);
+local daily_quota = module:get_option_integer(module.name .. "_daily_quota", file_size_limit*10, 0); -- 100 MB / day
+local total_storage_limit = module:get_option_integer(module.name.."_global_quota", unlimited, 0);
 
 local create_jwt, verify_jwt = require"prosody.util.jwt".init("HS256", secret, secret, { default_ttl = 600 });
 

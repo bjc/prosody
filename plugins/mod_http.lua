@@ -29,8 +29,8 @@ local server = require "prosody.net.http.server";
 
 server.set_default_host(module:get_option_string("http_default_host"));
 
-server.set_option("body_size_limit", module:get_option_number("http_max_content_size"));
-server.set_option("buffer_size_limit", module:get_option_number("http_max_buffer_size"));
+server.set_option("body_size_limit", module:get_option_number("http_max_content_size", 0));
+server.set_option("buffer_size_limit", module:get_option_number("http_max_buffer_size", 0));
 
 -- CORS settings
 local cors_overrides = module:get_option("http_cors_override", {});

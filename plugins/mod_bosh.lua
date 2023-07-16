@@ -45,7 +45,7 @@ local bosh_max_wait = module:get_option_period("bosh_max_wait", 120);
 
 local consider_bosh_secure = module:get_option_boolean("consider_bosh_secure");
 local cross_domain = module:get_option("cross_domain_bosh");
-local stanza_size_limit = module:get_option_number("c2s_stanza_size_limit", 1024*256);
+local stanza_size_limit = module:get_option_integer("c2s_stanza_size_limit", 1024*256, 10000);
 
 if cross_domain ~= nil then
 	module:log("info", "The 'cross_domain_bosh' option has been deprecated");

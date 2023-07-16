@@ -24,7 +24,7 @@ local empty_set = set_new();
 local pep_service_items = {};
 
 -- size of caches with full pubsub service objects
-local service_cache_size = module:get_option_number("pep_service_cache_size", 1000);
+local service_cache_size = module:get_option_integer("pep_service_cache_size", 1000, 1);
 
 -- username -> util.pubsub service object
 local services = cache.new(service_cache_size, function (username, _)
@@ -36,7 +36,7 @@ local services = cache.new(service_cache_size, function (username, _)
 end):table();
 
 -- size of caches with smaller objects
-local info_cache_size = module:get_option_number("pep_info_cache_size", 10000);
+local info_cache_size = module:get_option_integer("pep_info_cache_size", 10000, 1);
 
 -- username -> recipient -> set of nodes
 local recipients = cache.new(info_cache_size):table();
@@ -49,7 +49,7 @@ local host = module.host;
 local node_config = module:open_store("pep", "map");
 local known_nodes = module:open_store("pep");
 
-local max_max_items = module:get_option_number("pep_max_items", 256);
+local max_max_items = module:get_option_number("pep_max_items", 256, 0);
 
 local function tonumber_max_items(n)
 	if n == "max" then

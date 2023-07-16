@@ -3,10 +3,10 @@ local set = require "prosody.util.set";
 local secret = module:get_option_string("turn_external_secret");
 local host = module:get_option_string("turn_external_host", module.host);
 local user = module:get_option_string("turn_external_user");
-local port = module:get_option_number("turn_external_port", 3478);
+local port = module:get_option_integer("turn_external_port", 3478, 1, 65535);
 local ttl = module:get_option_period("turn_external_ttl", "1 day");
 local tcp = module:get_option_boolean("turn_external_tcp", false);
-local tls_port = module:get_option_number("turn_external_tls_port");
+local tls_port = module:get_option_integer("turn_external_tls_port", nil, 1, 65535);
 
 if not secret then
 	module:log_status("error", "Failed to initialize: the 'turn_external_secret' option is not set in your configuration");

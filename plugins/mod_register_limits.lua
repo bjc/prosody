@@ -21,9 +21,9 @@ local allowlist_only = module:get_option_boolean("allowlist_registration_only", 
 local allowlisted_ips = module:get_option_set("registration_allowlist", module:get_option("registration_whitelist", { "127.0.0.1", "::1" }))._items;
 local blocklisted_ips = module:get_option_set("registration_blocklist", module:get_option_set("registration_blacklist", {}))._items;
 
-local throttle_max = module:get_option_number("registration_throttle_max", min_seconds_between_registrations and 1);
+local throttle_max = module:get_option_number("registration_throttle_max", min_seconds_between_registrations and 1, 0);
 local throttle_period = module:get_option_period("registration_throttle_period", min_seconds_between_registrations);
-local throttle_cache_size = module:get_option_number("registration_throttle_cache_size", 100);
+local throttle_cache_size = module:get_option_integer("registration_throttle_cache_size", 100, 1);
 local blocklist_overflow = module:get_option_boolean("blocklist_on_registration_throttle_overload",
 	module:get_option_boolean("blacklist_on_registration_throttle_overload", false));
 

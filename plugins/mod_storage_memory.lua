@@ -9,7 +9,7 @@ local set = require "prosody.util.set";
 local auto_purge_enabled = module:get_option_boolean("storage_memory_temporary", false);
 local auto_purge_stores = module:get_option_set("storage_memory_temporary_stores", {});
 
-local archive_item_limit = module:get_option_number("storage_archive_item_limit", 1000);
+local archive_item_limit = module:get_option_integer("storage_archive_item_limit", 1000, 0);
 
 local memory = setmetatable({}, {
 	__index = function(t, k)
