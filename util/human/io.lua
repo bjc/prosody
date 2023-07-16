@@ -1,4 +1,5 @@
 local array = require "prosody.util.array";
+local pposix = require "prosody.util.pposix";
 local utf8 = rawget(_G, "utf8") or require"prosody.util.encodings".utf8;
 local len = utf8.len or function(s)
 	local _, count = s:gsub("[%z\001-\127\194-\253][\128-\191]*", "");
@@ -111,6 +112,9 @@ end
 local function term_width(default)
 	local env_cols = tonumber(os.getenv "COLUMNS");
 	if env_cols then return env_cols; end
+	if not pposix.isatty(io.stdout) then
+		return default;
+	end
 	local stty = io.popen("stty -a");
 	if not stty then return default; end
 	local result = stty:read("*a");
