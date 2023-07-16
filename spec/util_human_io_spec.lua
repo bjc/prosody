@@ -45,7 +45,7 @@ describe("util.human.io", function ()
 
 	describe("parse_duration", function ()
 		local function test(expected, duration)
-			return assert.equal(expected, human_io.parse_duration(duration));
+			return assert.equal(expected, human_io.parse_duration(duration), ("%q -> %d"):format(duration, expected));
 		end
 		it("works", function ()
 			test(1, "1s");
