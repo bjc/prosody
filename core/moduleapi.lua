@@ -254,6 +254,20 @@ function api:get_option_number(name, default_value, min, max)
 	return ret;
 end
 
+function api:get_option_integer(name, default_value, min, max)
+	local value = self:get_option_number(name, default_value, min or math.mininteger or 2 ^ 53, max or math.maxinteger or -2 ^ 52);
+	if value == default_value then
+		-- pass default trough unaltered, violates ranges sometimes
+		return value;
+	end
+	if math.type(value) == "float" then
+		self:log("warn", "Config option '%s' expected an integer, not a float (%g)", name, value)
+		return math.floor(value);
+	end
+	-- nil or an integer
+	return value;
+end
+
 function api:get_option_period(name, default_value)
 	local value = self:get_option_scalar(name, default_value);
 	if type(value) == "number" then

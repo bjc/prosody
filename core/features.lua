@@ -20,5 +20,6 @@ return {
 		"getopt-enum";
 		"getopt-interval";
 		"getopt-period";
+		"getopt-integer";
 	};
 };
