@@ -272,6 +272,8 @@ function api:get_option_period(name, default_value)
 			self:log("error", "Config option '%s' not understood, expecting a period (e.g. \"2 days\")", name);
 		end
 		return ret;
+	elseif value ~= nil then
+		self:log("error", "Config option '%s' expects a number or a period description string (e.g. \"3 hours\"), not %s", name, type(value));
 	end
 end
 
