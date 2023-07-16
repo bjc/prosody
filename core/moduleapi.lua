@@ -256,16 +256,16 @@ end
 
 function api:get_option_period(name, default_value)
 	local value = self:get_option_scalar(name, default_value);
-	local num = tonumber(value);
-	if num then
+	if type(value) == "number" then
 		-- assume seconds
-		return num;
+		return value;
+	elseif type(value) == "string" then
+		local ret = human_io.parse_duration(value);
+		if value ~= nil and ret == nil then
+			self:log("error", "Config option '%s' not understood, expecting a period (e.g. \"2 days\")", name);
+		end
+		return ret;
 	end
-	local ret = human_io.parse_duration(value);
-	if value ~= nil and ret == nil then
-		self:log("error", "Config option '%s' not understood, expecting a period", name);
-	end
-	return ret;
 end
 
 function api:get_option_boolean(name, ...)
