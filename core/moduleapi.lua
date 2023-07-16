@@ -257,8 +257,15 @@ end
 function api:get_option_period(name, default_value)
 	local value = self:get_option_scalar(name, default_value);
 	if type(value) == "number" then
+		if value < 0 then
+			self:log("debug", "Treating negative period as infinity");
+			return math.huge;
+		end
 		-- assume seconds
 		return value;
+	elseif value == "never" then
+		-- usually for disabling some periodic thing
+		return math.huge;
 	elseif type(value) == "string" then
 		local ret = human_io.parse_duration(value);
 		if value ~= nil and ret == nil then
