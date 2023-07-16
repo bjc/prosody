@@ -268,27 +268,43 @@ function api:get_option_integer(name, default_value, min, max)
 	return value;
 end
 
-function api:get_option_period(name, default_value)
+function api:get_option_period(name, default_value, min, max)
 	local value = self:get_option_scalar(name, default_value);
-	if type(value) == "number" then
-		if value < 0 then
-			self:log("debug", "Treating negative period as infinity");
-			return math.huge;
-		end
-		-- assume seconds
-		return value;
-	elseif value == "never" or value == false then
+
+	local ret;
+	if value == "never" or value == false then
 		-- usually for disabling some periodic thing
 		return math.huge;
+	elseif type(value) == "number" then
+		-- assume seconds
+		ret = value;
 	elseif type(value) == "string" then
-		local ret = human_io.parse_duration(value);
+		ret = human_io.parse_duration(value);
 		if value ~= nil and ret == nil then
 			self:log("error", "Config option '%s' not understood, expecting a period (e.g. \"2 days\")", name);
 		end
-		return ret;
 	elseif value ~= nil then
 		self:log("error", "Config option '%s' expects a number or a period description string (e.g. \"3 hours\"), not %s", name, type(value));
+		return nil;
+	else
+		return nil;
 	end
+
+	if ret < 0 then
+		self:log("debug", "Treating negative period as infinity");
+		return math.huge;
+	end
+
+	if min and ret < min then
+		self:log("warn", "Config option '%s' out of bounds %g < %g", name, ret, min);
+		return min;
+	end
+	if max and ret > max then
+		self:log("warn", "Config option '%s' out of bounds %g > %g", name, ret, max);
+		return max;
+	end
+
+	return ret;
 end
 
 function api:get_option_boolean(name, ...)
