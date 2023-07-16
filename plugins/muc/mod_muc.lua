@@ -389,7 +389,7 @@ end);
 
 if module:get_option_boolean("muc_tombstones", true) then
 
-	local ttl = module:get_option_number("muc_tombstone_expiry", 86400 * 31);
+	local ttl = module:get_option_period("muc_tombstone_expiry", "31 days");
 
 	module:hook("muc-room-destroyed",function(event)
 		local room = event.room;

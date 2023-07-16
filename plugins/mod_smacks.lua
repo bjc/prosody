@@ -67,12 +67,12 @@ local sm2_attr = { xmlns = xmlns_sm2 };
 local sm3_attr = { xmlns = xmlns_sm3 };
 
 local queue_size = module:get_option_number("smacks_max_queue_size", 500);
-local resume_timeout = module:get_option_number("smacks_hibernation_time", 600);
+local resume_timeout = module:get_option_period("smacks_hibernation_time", "10 minutes");
 local s2s_smacks = module:get_option_boolean("smacks_enabled_s2s", true);
 local s2s_resend = module:get_option_boolean("smacks_s2s_resend", false);
 local max_unacked_stanzas = module:get_option_number("smacks_max_unacked_stanzas", 0);
 local max_inactive_unacked_stanzas = module:get_option_number("smacks_max_inactive_unacked_stanzas", 256);
-local delayed_ack_timeout = module:get_option_number("smacks_max_ack_delay", 30);
+local delayed_ack_timeout = module:get_option_period("smacks_max_ack_delay", 30);
 local max_old_sessions = module:get_option_number("smacks_max_old_sessions", 10);
 
 local c2s_sessions = module:shared("/*/c2s/sessions");

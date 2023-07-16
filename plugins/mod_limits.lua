@@ -7,7 +7,7 @@ local timer = require "prosody.util.timer";
 local ceil = math.ceil;
 
 local limits_cfg = module:get_option("limits", {});
-local limits_resolution = module:get_option_number("limits_resolution", 1);
+local limits_resolution = module:get_option_period("limits_resolution", 1);
 
 local default_bytes_per_second = 3000;
 local default_burst = 2;

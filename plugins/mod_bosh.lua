@@ -36,12 +36,12 @@ local BOSH_HOLD = 1;
 local BOSH_MAX_REQUESTS = 2;
 
 -- The number of seconds a BOSH session should remain open with no requests
-local bosh_max_inactivity = module:get_option_number("bosh_max_inactivity", 60);
+local bosh_max_inactivity = module:get_option_period("bosh_max_inactivity", 60);
 -- The minimum amount of time between requests with no payload
-local bosh_max_polling = module:get_option_number("bosh_max_polling", 5);
+local bosh_max_polling = module:get_option_period("bosh_max_polling", 5);
 -- The maximum amount of time that the server will hold onto a request before replying
 -- (the client can set this to a lower value when it connects, if it chooses)
-local bosh_max_wait = module:get_option_number("bosh_max_wait", 120);
+local bosh_max_wait = module:get_option_period("bosh_max_wait", 120);
 
 local consider_bosh_secure = module:get_option_boolean("consider_bosh_secure");
 local cross_domain = module:get_option("cross_domain_bosh");

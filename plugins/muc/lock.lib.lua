@@ -10,7 +10,7 @@
 local st = require "prosody.util.stanza";
 
 local lock_rooms = module:get_option_boolean("muc_room_locking", true);
-local lock_room_timeout = module:get_option_number("muc_room_lock_timeout", 300);
+local lock_room_timeout = module:get_option_period("muc_room_lock_timeout", "5 minutes");
 
 local function lock(room)
 	module:fire_event("muc-room-locked", {room = room;});

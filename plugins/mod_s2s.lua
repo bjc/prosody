@@ -34,8 +34,8 @@ local resolver_chain = require "prosody.net.resolvers.chain";
 local errors = require "prosody.util.error";
 local set = require "prosody.util.set";
 
-local connect_timeout = module:get_option_number("s2s_timeout", 90);
-local stream_close_timeout = module:get_option_number("s2s_close_timeout", 5);
+local connect_timeout = module:get_option_period("s2s_timeout", 90);
+local stream_close_timeout = module:get_option_period("s2s_close_timeout", 5);
 local opt_keepalives = module:get_option_boolean("s2s_tcp_keepalives", module:get_option_boolean("tcp_keepalives", true));
 local secure_auth = module:get_option_boolean("s2s_secure_auth", false); -- One day...
 local secure_domains, insecure_domains =

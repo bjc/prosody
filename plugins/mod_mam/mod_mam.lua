@@ -37,14 +37,13 @@ local tostring = tostring;
 local time_now = require "prosody.util.time".now;
 local m_min = math.min;
 local timestamp, datestamp = import( "util.datetime", "datetime", "date");
-local parse_duration = require "prosody.util.human.io".parse_duration;
 local default_max_items, max_max_items = 20, module:get_option_number("max_archive_query_results", 50);
 local strip_tags = module:get_option_set("dont_archive_namespaces", { "http://jabber.org/protocol/chatstates" });
 
 local archive_store = module:get_option_string("archive_store", "archive");
 local archive = module:open_store(archive_store, "archive");
 
-local cleanup_after = module:get_option_string("archive_expires_after", "1w");
+local cleanup_after = module:get_option_period("archive_expires_after", "1w");
 local archive_item_limit = module:get_option_number("storage_archive_item_limit", archive.caps and archive.caps.quota or 1000);
 local archive_truncate = math.floor(archive_item_limit * 0.99);
 
@@ -510,13 +509,6 @@ end);
 if cleanup_after ~= "never" then
 	local cleanup_storage = module:open_store("archive_cleanup");
 	local cleanup_map = module:open_store("archive_cleanup", "map");
-
-	local cleanup_after_seconds, parse_err = parse_duration(cleanup_after);
-	if parse_err ~= nil then
-		module:log("error", "Could not parse archive_expires_after string %q: %s", cleanup_after, parse_err);
-		return false;
-	end
-	cleanup_after = cleanup_after_seconds;
 
 	module:log("debug", "archive_expires_after = %d -- in seconds", cleanup_after);
 

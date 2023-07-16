@@ -10,7 +10,7 @@ local st = require "prosody.util.stanza";
 local graveyard = module:open_store(nil, "map");
 local graveyard_cache = require "prosody.util.cache".new(module:get_option_number("tombstone_cache_size", 1024));
 
-local ttl = module:get_option_number("user_tombstone_expiry", nil);
+local ttl = module:get_option_period("user_tombstone_expiry", nil);
 -- Keep tombstones forever by default
 --
 -- Rationale:

@@ -5,7 +5,7 @@ local jid_node = require "prosody.util.jid".node;
 local jid_split = require "prosody.util.jid".split;
 local argparse = require "prosody.util.argparse";
 
-local default_ttl = module:get_option_number("invite_expiry", 86400 * 7);
+local default_ttl = module:get_option_period("invite_expiry", "1 week");
 
 local token_storage;
 if prosody.process_type == "prosody" or prosody.shutdown then

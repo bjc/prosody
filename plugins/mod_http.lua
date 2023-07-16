@@ -38,7 +38,7 @@ local opt_methods = module:get_option_set("access_control_allow_methods", { "GET
 local opt_headers = module:get_option_set("access_control_allow_headers", { "Content-Type" });
 local opt_origins = module:get_option_set("access_control_allow_origins");
 local opt_credentials = module:get_option_boolean("access_control_allow_credentials", false);
-local opt_max_age = module:get_option_number("access_control_max_age", 2 * 60 * 60);
+local opt_max_age = module:get_option_period("access_control_max_age", "2 hours");
 local opt_default_cors = module:get_option_boolean("http_default_cors_enabled", true);
 
 local function get_http_event(host, app_path, key)

@@ -8,7 +8,7 @@ local generate_identifier = require "prosody.util.id".short;
 
 local token_store = module:open_store("auth_tokens", "keyval+");
 
-local access_time_granularity = module:get_option_number("token_auth_access_time_granularity", 60);
+local access_time_granularity = module:get_option_period("token_auth_access_time_granularity", 60);
 
 local function select_role(username, host, role_name)
 	if not role_name then return end
