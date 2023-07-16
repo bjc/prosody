@@ -263,7 +263,7 @@ function api:get_option_period(name, default_value)
 		end
 		-- assume seconds
 		return value;
-	elseif value == "never" then
+	elseif value == "never" or value == false then
 		-- usually for disabling some periodic thing
 		return math.huge;
 	elseif type(value) == "string" then
