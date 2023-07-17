@@ -366,7 +366,7 @@ function archive_store:append(username, key, value, when, with)
 				item_count = item_count - result:affected();
 			end
 		else
-			key = uuid.generate();
+			key = uuid.v7();
 		end
 		local t, encoded_value = assert(serialize(value));
 		engine:insert(insert_sql, host, user or "", store, when, with, key, t, encoded_value);
