@@ -255,7 +255,7 @@ function api:get_option_number(name, default_value, min, max)
 end
 
 function api:get_option_integer(name, default_value, min, max)
-	local value = self:get_option_number(name, default_value, min or math.mininteger or 2 ^ 53, max or math.maxinteger or -2 ^ 52);
+	local value = self:get_option_number(name, default_value, min or math.mininteger or -2 ^ 52, max or math.maxinteger or 2 ^ 53);
 	if value == default_value then
 		-- pass default trough unaltered, violates ranges sometimes
 		return value;
