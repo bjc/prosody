@@ -1,4 +1,5 @@
 local configmanager = require "prosody.core.configmanager";
+local moduleapi = require "prosody.core.moduleapi";
 local show_usage = require "prosody.util.prosodyctl".show_usage;
 local show_warning = require "prosody.util.prosodyctl".show_warning;
 local is_prosody_running = require "prosody.util.prosodyctl".isrunning;
@@ -10,6 +11,10 @@ local jid_split = require "prosody.util.jid".prepped_split;
 local modulemanager = require "prosody.core.modulemanager";
 local async = require "prosody.util.async";
 local httputil = require "prosody.util.http";
+
+local function api(host)
+	return setmetatable({ name = "prosodyctl.check"; host = host; log = prosody.log }, { __index = moduleapi })
+end
 
 local function check_ojn(check_type, target_host)
 	local http = require "prosody.net.http"; -- .new({});
@@ -317,8 +322,8 @@ local function check(arg)
 	end
 	if not what or what == "disabled" then
 		local disabled_hosts_set = set.new();
-		for host, host_options in it.filter("*", pairs(configmanager.getconfig())) do
-			if host_options.enabled == false then
+		for host in it.filter("*", pairs(configmanager.getconfig())) do
+			if api(host):get_option_boolean("enabled") == false then
 				disabled_hosts_set:add(host);
 			end
 		end
@@ -457,6 +462,7 @@ local function check(arg)
 			"websocket_get_response_text",
 		});
 		local config = configmanager.getconfig();
+		local global = api("*");
 		-- Check that we have any global options (caused by putting a host at the top)
 		if it.count(it.filter("log", pairs(config["*"]))) == 0 then
 			ok = false;
@@ -490,8 +496,36 @@ local function check(arg)
 			print();
 		end
 
+		local function validate_module_list(host, name, modules)
+			if modules == nil then
+				return -- okay except for global section, checked separately
+			end
+			local t = type(modules)
+			if t ~= "table" then
+				print("    The " .. name .. " in the " .. host .. " section should not be a " .. t .. " but a list of strings, e.g.");
+				print("    " .. name .. " = { \"name_of_module\", \"another_plugin\", }")
+				print()
+				ok = false
+				return
+			end
+			for k, v in pairs(modules) do
+				if type(k) ~= "number" or type(v) ~= "string" then
+					print("    The " .. name .. " in the " .. host .. " section should not be a map of " .. type(k) .. " to " .. type(v)
+									.. " but a list of strings, e.g.");
+					print("    " .. name .. " = { \"name_of_module\", \"another_plugin\", }")
+					ok = false
+					break
+				end
+			end
+		end
+
+		for host, options in enabled_hosts() do
+			validate_module_list(host, "modules_enabled", options.modules_enabled);
+			validate_module_list(host, "modules_disabled", options.modules_disabled);
+		end
+
 		do -- Check for modules enabled both normally and as components
-			local modules = set.new(config["*"]["modules_enabled"]);
+			local modules = global:get_option_set("modules_enabled");
 			for host, options in enabled_hosts() do
 				local component_module = options.component_module;
 				if component_module and modules:contains(component_module) then
@@ -619,10 +653,10 @@ local function check(arg)
 			elseif all_options:contains("s2s_secure_domains") then
 				local secure_domains = set.new();
 				for host in enabled_hosts() do
-					if config[host].s2s_secure_auth == true then
+					if api(host):get_option_boolean("s2s_secure_auth") then
 						secure_domains:add("*");
 					else
-						secure_domains:include(set.new(config[host].s2s_secure_domains));
+						secure_domains:include(api(host):get_option_set("s2s_secure_domains", {}));
 					end
 				end
 				if not secure_domains:empty() then
@@ -641,16 +675,16 @@ local function check(arg)
 		end
 
 		do
-			local global_modules = set.new(config["*"].modules_enabled);
 			local registration_enabled_hosts = {};
 			for host in enabled_hosts() do
-				local host_modules = set.new(config[host].modules_enabled) + global_modules;
-				local allow_registration = config[host].allow_registration;
+				local host_modules, component = modulemanager.get_modules_for_host(host);
+				local hostapi = api(host);
+				local allow_registration = hostapi:get_option_boolean("allow_registration", false);
 				local mod_register = host_modules:contains("register");
 				local mod_register_ibr = host_modules:contains("register_ibr");
 				local mod_invites_register = host_modules:contains("invites_register");
-				local registration_invite_only = config[host].registration_invite_only;
-				local is_vhost = not config[host].component_module;
+				local registration_invite_only = hostapi:get_option_boolean("registration_invite_only", true);
+				local is_vhost = not component;
 				if is_vhost and (mod_register_ibr or (mod_register and allow_registration))
 				   and not (mod_invites_register and registration_invite_only) then
 					table.insert(registration_enabled_hosts, host);
@@ -672,16 +706,17 @@ local function check(arg)
 			local orphan_components = {};
 			local referenced_components = set.new();
 			local enabled_hosts_set = set.new();
-			for host, host_options in it.filter("*", pairs(configmanager.getconfig())) do
-				if host_options.enabled ~= false then
+			for host in it.filter("*", pairs(configmanager.getconfig())) do
+				local hostapi = api(host);
+				if hostapi:get_option_boolean("enabled", true) then
 					enabled_hosts_set:add(host);
-					for _, disco_item in ipairs(host_options.disco_items or {}) do
+					for _, disco_item in ipairs(hostapi:get_option_array("disco_items", {})) do
 						referenced_components:add(disco_item[1]);
 					end
 				end
 			end
-			for host, host_config in it.filter(skip_bare_jid_hosts, enabled_hosts()) do
-				local is_component = not not host_config.component_module;
+			for host in it.filter(skip_bare_jid_hosts, enabled_hosts()) do
+				local is_component = not not select(2, modulemanager.get_modules_for_host(host));
 				if is_component then
 					local parent_domain = host:match("^[^.]+%.(.+)$");
 					local is_orphan = not (enabled_hosts_set:contains(parent_domain) or referenced_components:contains(host));
@@ -713,14 +748,19 @@ local function check(arg)
 		end)
 		local idna = require "prosody.util.encodings".idna;
 		local ip = require "prosody.util.ip";
-		local c2s_ports = set.new(configmanager.get("*", "c2s_ports") or {5222});
-		local s2s_ports = set.new(configmanager.get("*", "s2s_ports") or {5269});
-		local c2s_tls_ports = set.new(configmanager.get("*", "c2s_direct_tls_ports") or {});
-		local s2s_tls_ports = set.new(configmanager.get("*", "s2s_direct_tls_ports") or {});
+		local global = api("*");
+		local c2s_ports = global:get_option_set("c2s_ports", {5222});
+		local s2s_ports = global:get_option_set("s2s_ports", {5269});
+		local c2s_tls_ports = global:get_option_set("c2s_direct_tls_ports", {});
+		local s2s_tls_ports = global:get_option_set("s2s_direct_tls_ports", {});
 
-		if set.new(configmanager.get("*", "modules_enabled")):contains("net_multiplex") then
-			local multiplex_ports = set.new(configmanager.get("*", "ports") or {});
-			local multiplex_tls_ports = set.new(configmanager.get("*", "ssl_ports") or {});
+		local global_enabled = set.new();
+		for host in enabled_hosts() do
+			global_enabled:include(modulemanager.get_modules_for_host(host));
+		end
+		if global_enabled:contains("net_multiplex") then
+			local multiplex_ports = global:get_option_set("ports", {});
+			local multiplex_tls_ports = global:get_option_set("ssl_ports", {});
 			if not multiplex_ports:empty() then
 				c2s_ports = c2s_ports + multiplex_ports;
 				s2s_ports = s2s_ports + multiplex_ports;
@@ -781,7 +821,7 @@ local function check(arg)
 		end
 
 		-- Allow admin to specify additional (e.g. undiscoverable) IP addresses in the config
-		for _, address in ipairs(configmanager.get("*", "external_addresses") or {}) do
+		for _, address in ipairs(global:get_option_array("external_addresses", {})) do
 			external_addresses:add(address);
 		end
 
@@ -792,8 +832,8 @@ local function check(arg)
 		end
 
 		local v6_supported = not not socket.tcp6;
-		local use_ipv4 = configmanager.get("*", "use_ipv4") ~= false;
-		local use_ipv6 = v6_supported and configmanager.get("*", "use_ipv6") ~= false;
+		local use_ipv4 = global:get_option_boolean("use_ipv4", true);
+		local use_ipv6 = global:get_option_boolean("use_ipv6", true);
 
 		local function trim_dns_name(n)
 			return (n:gsub("%.$", ""));
@@ -801,7 +841,7 @@ local function check(arg)
 
 		local unknown_addresses = set.new();
 
-		for jid, host_options in enabled_hosts() do
+		for jid in enabled_hosts() do
 			local all_targets_ok, some_targets_ok = true, false;
 			local node, host = jid_split(jid);
 
@@ -814,7 +854,7 @@ local function check(arg)
 			-- FIXME Suggest concrete actionable steps to correct issues so that
 			-- users don't have to copy-paste the message into the support chat and
 			-- ask what to do about it.
-			local is_component = not not host_options.component_module;
+			local is_component = not not component_module;
 			print("Checking DNS for "..(is_component and "component" or "host").." "..jid.."...");
 			if node then
 				print("Only the domain part ("..host..") is used in DNS.")
@@ -922,7 +962,7 @@ local function check(arg)
 			end
 
 			if modules:contains("proxy65") then
-				local proxy65_target = configmanager.get(host, "proxy65_address") or host;
+				local proxy65_target = api(host):get_option_string("proxy65_address", host);
 				if type(proxy65_target) == "string" then
 					local prob = check_address(proxy65_target);
 					if #prob > 0 then
@@ -942,9 +982,9 @@ local function check(arg)
 			if modules:contains("http") or not set.intersection(modules, known_http_modules):empty()
 				or contains_match(modules, "^http_") or contains_match(modules, "_web$") then
 
-				local http_host = configmanager.get(host, "http_host") or host;
+				local http_host = api(host):get_option_string("http_host", host);
 				local http_internal_host = http_host;
-				local http_url = configmanager.get(host, "http_external_url");
+				local http_url = api(host):get_option_string("http_external_url");
 				if http_url then
 					local url_parse = require "socket.url".parse;
 					local external_url_parts = url_parse(http_url);
@@ -1128,13 +1168,13 @@ local function check(arg)
 						elseif not cert:validat(os.time() + 86400*31) then
 							print("    Certificate expires within one month.")
 						end
-						if configmanager.get(host, "component_module") == nil
+						if select(2, modulemanager.get_modules_for_host(host)) == nil
 							and not x509_verify_identity(host, "_xmpp-client", cert) then
 							print("    Not valid for client connections to "..host..".")
 							cert_ok = false
 						end
-						if (not (configmanager.get(host, "anonymous_login")
-							or configmanager.get(host, "authentication") == "anonymous"))
+						if (not (api(host):get_option_boolean("anonymous_login", false)
+							or api(host):get_option_string("authentication", "internal_hashed") == "anonymous"))
 							and not x509_verify_identity(host, "_xmpp-server", cert) then
 							print("    Not valid for server-to-server connections to "..host..".")
 							cert_ok = false
@@ -1153,7 +1193,7 @@ local function check(arg)
 	-- intentionally not doing this by default
 	if what == "connectivity" then
 		local _, prosody_is_running = is_prosody_running();
-		if configmanager.get("*", "pidfile") and not prosody_is_running then
+		if api("*"):get_option_string("pidfile") and not prosody_is_running then
 			print("Prosody does not appear to be running, which is required for this test.");
 			print("Start it and then try again.");
 			return 1;
@@ -1167,7 +1207,7 @@ local function check(arg)
 			["xmpps-client"] = nil; -- TODO
 			["xmpps-server"] = nil; -- TODO
 		};
-		local probe_settings = configmanager.get("*", "connectivity_probe");
+		local probe_settings = api("*"):get_option_string("connectivity_probe");
 		if type(probe_settings) == "string" then
 			probe_instance = probe_settings;
 		elseif type(probe_settings) == "table" and type(probe_settings.url) == "string" then
@@ -1225,14 +1265,14 @@ local function check(arg)
 
 			if modules:contains("c2s") then
 				check_connectivity("xmpp-client")
-				if configmanager.get("*", "c2s_direct_tls_ports") then
+				if not api("*"):get_option_set("c2s_direct_tls_ports", {}):empty() then
 					check_connectivity("xmpps-client");
 				end
 			end
 
 			if modules:contains("s2s") then
 				check_connectivity("xmpp-server")
-				if configmanager.get("*", "s2s_direct_tls_ports") then
+				if not api("*"):get_option_set("s2s_direct_tls_ports", {}):empty() then
 					check_connectivity("xmpps-server");
 				end
 			end
@@ -1250,10 +1290,11 @@ local function check(arg)
 		for host in enabled_hosts() do
 			local has_external_turn = modulemanager.get_modules_for_host(host):contains("turn_external");
 			if has_external_turn then
+				local hostapi = api(host);
 				table.insert(turn_enabled_hosts, host);
-				local turn_host = configmanager.get(host, "turn_external_host") or host;
-				local turn_port = configmanager.get(host, "turn_external_port") or 3478;
-				local turn_secret = configmanager.get(host, "turn_external_secret");
+				local turn_host = hostapi:get_option_string("turn_external_host", host);
+				local turn_port = hostapi:get_option_number("turn_external_port", 3478);
+				local turn_secret = hostapi:get_option_string("turn_external_secret");
 				if not turn_secret then
 					print("Error: Your configuration is missing a turn_external_secret for "..host);
 					print("Error: TURN will not be advertised for this host.");
