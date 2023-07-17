@@ -335,7 +335,11 @@ function archive_store:append(username, key, value, when, with)
 	end
 
 	-- FIXME update the schema to allow precision timestamps
-	when = when and math.floor(when) or os.time();
+	when = when or os.time();
+	if engine.params.driver ~= "SQLite3" then
+		-- SQLite3 doesn't enforce types :)
+		when = math.floor(when);
+	end
 	with = with or "";
 	local ok, ret = engine:transaction(function()
 		local delete_sql = [[
