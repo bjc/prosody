@@ -828,6 +828,8 @@ local function check(arg)
 		if external_addresses:empty() then
 			print("");
 			print("   Failed to determine the external addresses of this server. Checks may be inaccurate.");
+			print("   If you know the correct external addresses you can specify them in the config like:")
+			print("      external_addresses = { \"192.0.2.34\", \"2001:db8::abcd:1234\" }")
 			c2s_srv_required, s2s_srv_required = true, true;
 		end
 
@@ -1103,6 +1105,9 @@ local function check(arg)
 				print("");
 				print("    Internal: "..tostring(internal_addresses));
 				print("    External: "..tostring(external_addresses));
+				print("")
+				print("If the list of external external addresses is incorrect you can specify correct addresses in the config:")
+				print("    external_addresses = { \"192.0.2.34\", \"2001:db8::abcd:1234\" }")
 			end
 			print("");
 			print("For more information about DNS configuration please see https://prosody.im/doc/dns");
