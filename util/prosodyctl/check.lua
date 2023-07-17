@@ -496,6 +496,34 @@ local function check(arg)
 			print();
 		end
 
+		local function validate_module_list(host, name, modules)
+			if modules == nil then
+				return -- okay except for global section, checked separately
+			end
+			local t = type(modules)
+			if t ~= "table" then
+				print("    The " .. name .. " in the " .. host .. " section should not be a " .. t .. " but a list of strings, e.g.");
+				print("    " .. name .. " = { \"name_of_module\", \"another_plugin\", }")
+				print()
+				ok = false
+				return
+			end
+			for k, v in pairs(modules) do
+				if type(k) ~= "number" or type(v) ~= "string" then
+					print("    The " .. name .. " in the " .. host .. " section should not be a map of " .. type(k) .. " to " .. type(v)
+									.. " but a list of strings, e.g.");
+					print("    " .. name .. " = { \"name_of_module\", \"another_plugin\", }")
+					ok = false
+					break
+				end
+			end
+		end
+
+		for host, options in enabled_hosts() do
+			validate_module_list(host, "modules_enabled", options.modules_enabled);
+			validate_module_list(host, "modules_disabled", options.modules_disabled);
+		end
+
 		do -- Check for modules enabled both normally and as components
 			local modules = global:get_option_set("modules_enabled");
 			for host, options in enabled_hosts() do
