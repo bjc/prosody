@@ -80,7 +80,7 @@ local handlers = {};
 -- In order to support custom account properties
 local extended = "http://prosody.im/protocol/extended-xep0227\1";
 
-local scram_hash_name = module:get_option_string("password_hash", "SHA-1");
+local scram_hash_name = module:get_option_enum("password_hash", "SHA-1", "SHA-256");
 local scram_properties = set.new({ "server_key", "stored_key", "iteration_count", "salt" });
 
 handlers.accounts = {
