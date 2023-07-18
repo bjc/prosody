@@ -34,7 +34,7 @@ local m_min = math.min;
 local timestamp, datestamp = import("prosody.util.datetime", "datetime", "date");
 local default_max_items, max_max_items = 20, module:get_option_integer("max_archive_query_results", 50, 0);
 
-local cleanup_after = module:get_option_string("muc_log_expires_after", "1w");
+local cleanup_after = module:get_option_period("muc_log_expires_after", "1w");
 
 local default_history_length = 20;
 local max_history_length = module:get_option_integer("max_history_messages", math.huge, 0);
@@ -397,7 +397,7 @@ local function save_to_history(self, stanza)
 	local id, err = archive:append(room_node, nil, stored_stanza, time, with);
 
 	if not id and err == "quota-limit" then
-		if type(cleanup_after) == "number" then
+		if cleanup_after ~= math.huge then
 			module:log("debug", "Room '%s' over quota, cleaning archive", room_node);
 			local cleaned = archive:delete(room_node, {
 				["end"] = (os.time() - cleanup_after);
@@ -467,19 +467,9 @@ end);
 
 -- Cleanup
 
-if cleanup_after ~= "never" then
+if cleanup_after ~= math.huge then
 	local cleanup_storage = module:open_store("muc_log_cleanup");
 	local cleanup_map = module:open_store("muc_log_cleanup", "map");
-
-	local day = 86400;
-	local multipliers = { d = day, w = day * 7, m = 31 * day, y = 365.2425 * day };
-	local n, m = cleanup_after:lower():match("(%d+)%s*([dwmy]?)");
-	if not n then
-		module:log("error", "Could not parse muc_log_expires_after string %q", cleanup_after);
-		return false;
-	end
-
-	cleanup_after = tonumber(n) * ( multipliers[m] or 1 );
 
 	module:log("debug", "muc_log_expires_after = %d -- in seconds", cleanup_after);
 
