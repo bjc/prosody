@@ -12,7 +12,7 @@ local it = require "prosody.util.iterators";
 local host = module.host;
 
 local archive_item_limit = module:get_option_integer("storage_archive_item_limit", 10000, 0);
-local archive_item_count_cache = cache.new(module:get_option("storage_archive_item_limit_cache_size", 1000));
+local archive_item_count_cache = cache.new(module:get_option_integer("storage_archive_item_limit_cache_size", 1000, 1));
 
 local use_shift = module:get_option_boolean("storage_archive_experimental_fast_delete", false);
 
