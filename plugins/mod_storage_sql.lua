@@ -935,7 +935,7 @@ function module.load()
 				-- Note: These things can't be changed with in a transaction. LuaDBI
 				-- opens a transaction automatically for every statement(?), so this
 				-- will not work there.
-				local tune = module:get_option_string("sqlite_tune", "default");
+				local tune = module:get_option_enum("sqlite_tune", "default", "normal", "fast", "safe");
 				if tune == "normal" then
 					if journal_mode ~= "wal" then
 						engine:execute("PRAGMA journal_mode=WAL;");
