@@ -10,10 +10,10 @@ local create_context = require "prosody.core.certmanager".create_context;
 local rawgetopt = require"prosody.core.configmanager".rawget;
 local st = require "prosody.util.stanza";
 
-local c2s_require_encryption = module:get_option("c2s_require_encryption", module:get_option("require_encryption", true));
-local s2s_require_encryption = module:get_option("s2s_require_encryption", true);
-local allow_s2s_tls = module:get_option("s2s_allow_encryption") ~= false;
-local s2s_secure_auth = module:get_option("s2s_secure_auth");
+local c2s_require_encryption = module:get_option_boolean("c2s_require_encryption", module:get_option_boolean("require_encryption", true));
+local s2s_require_encryption = module:get_option_boolean("s2s_require_encryption", true);
+local allow_s2s_tls = module:get_option_boolean("s2s_allow_encryption", true);
+local s2s_secure_auth = module:get_option_boolean("s2s_secure_auth", false);
 
 if s2s_secure_auth and s2s_require_encryption == false then
 	module:log("warn", "s2s_secure_auth implies s2s_require_encryption, but s2s_require_encryption is set to false");
