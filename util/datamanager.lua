@@ -361,6 +361,7 @@ local function build_list_index(username, host, datastore, items)
 		-- so we need to collect the "current" position at the end of the previous
 		prev_pos = fh:seek()
 	end
+	fh:close();
 	if prev_pos ~= 0 then
 		t_insert(items, { start = last_item_start; length = prev_pos - last_item_start });
 	end
