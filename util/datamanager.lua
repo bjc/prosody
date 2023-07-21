@@ -245,12 +245,14 @@ local function append(username, host, datastore, ext, data)
 	end
 
 	local pos = f:seek("end");
+	--[[ TODO needs tests
 	if (blocksize-(pos%blocksize)) < (#data%blocksize) then
 		-- pad to blocksize with newlines so that the next item is both on a new
 		-- block and a new line
 		atomic_append(f, ("\n"):rep(blocksize-(pos%blocksize)));
 		pos = f:seek("end");
 	end
+	--]]
 
 	local ok, msg = atomic_append(f, data);
 
