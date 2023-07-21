@@ -367,7 +367,7 @@ function listener.onconnect(conn)
 		end
 	end
 
-	if c2s_timeout then
+	if c2s_timeout < math.huge then
 		add_task(c2s_timeout, function ()
 			if session.type == "c2s_unauthed" then
 				(session.log or log)("debug", "Connection still not authenticated after c2s_timeout=%gs, closing it", c2s_timeout);

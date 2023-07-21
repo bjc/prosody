@@ -441,7 +441,7 @@ local function message_handler(event, c2s)
 		local time = time_now();
 		local ok, err = archive:append(store_user, nil, clone_for_storage, time, with);
 		if not ok and err == "quota-limit" then
-			if type(cleanup_after) == "number" then
+			if cleanup_after ~= math.huge then
 				module:log("debug", "User '%s' over quota, cleaning archive", store_user);
 				local cleaned = archive:delete(store_user, {
 					["end"] = (os.time() - cleanup_after);
@@ -506,7 +506,7 @@ module:hook("message/offline/broadcast", function (event)
 	end
 end);
 
-if cleanup_after ~= "never" then
+if cleanup_after ~= math.huge then
 	local cleanup_storage = module:open_store("archive_cleanup");
 	local cleanup_map = module:open_store("archive_cleanup", "map");
 

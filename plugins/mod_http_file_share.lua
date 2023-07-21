@@ -176,7 +176,7 @@ function get_authz(slot, uploader, filename, filesize, filetype)
 
 		-- slot properties
 		slot = slot;
-		expires = expiry >= 0 and (os.time()+expiry) or nil;
+		expires = expiry < math.huge and (os.time()+expiry) or nil;
 		-- file properties
 		filename = filename;
 		filesize = filesize;
