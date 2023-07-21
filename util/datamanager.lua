@@ -32,6 +32,7 @@ local path_separator = assert ( package.config:match ( "^([^\n]+)" ) , "package.
 
 local prosody = prosody;
 
+--luacheck: ignore 211/blocksize 211/remove_blocks
 local blocksize = 0x1000;
 local raw_mkdir = lfs.mkdir;
 local atomic_append;
@@ -41,7 +42,7 @@ pcall(function()
 	local pposix = require "prosody.util.pposix";
 	raw_mkdir = pposix.mkdir or raw_mkdir; -- Doesn't trample on umask
 	atomic_append = pposix.atomic_append;
-	remove_blocks = pposix.remove_blocks;
+	-- remove_blocks = pposix.remove_blocks;
 	ENOENT = pposix.ENOENT or ENOENT;
 end);
 
@@ -583,6 +584,7 @@ local function list_shift(username, host, datastore, trim_to)
 		return true;
 	end
 
+	--[[
 	if remove_blocks then
 		local f, err = io_open(list_filename, "r+");
 		if not f then
@@ -620,6 +622,7 @@ local function list_shift(username, host, datastore, trim_to)
 			end
 		end
 	end
+	--]]
 
 	local r, err = io_open(list_filename, "r");
 	if not r then
