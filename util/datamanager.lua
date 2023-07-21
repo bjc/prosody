@@ -461,6 +461,13 @@ local function list_load_one(fh, start, length)
 	return item;
 end
 
+local function list_close(list)
+	if list.index and list.index.file then
+		list.index.file:close();
+	end
+	return list.file:close();
+end
+
 local indexed_list_mt = {
 	__index = function(t, i)
 		if type(i) ~= "number" or i % 1 ~= 0 or i < 1 then
@@ -476,6 +483,7 @@ local indexed_list_mt = {
 	__len = function(t)
 		return #t.index;
 	end;
+	__close = list_close;
 }
 
 local function list_load(username, host, datastore)
@@ -516,7 +524,7 @@ local function list_open(username, host, datastore)
 		file:close()
 		return index, err;
 	end
-	return setmetatable({ file = file; index = index }, indexed_list_mt);
+	return setmetatable({ file = file; index = index; close = list_close }, indexed_list_mt);
 end
 
 local function shift_index(index_filename, index, trim_to, offset)
