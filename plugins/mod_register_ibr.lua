@@ -16,7 +16,7 @@ local usermanager_delete_user  = require "prosody.core.usermanager".delete_user;
 local nodeprep = require "prosody.util.encodings".stringprep.nodeprep;
 local util_error = require "prosody.util.error";
 
-local additional_fields = module:get_option("additional_registration_fields", {});
+local additional_fields = module:get_option_array("additional_registration_fields", {});
 local require_encryption = module:get_option_boolean("c2s_require_encryption",
 	module:get_option_boolean("require_encryption", true));
 

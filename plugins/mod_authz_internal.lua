@@ -90,7 +90,7 @@ register_role {
 
 -- Process custom roles from config
 
-local custom_roles = module:get_option("custom_roles", {});
+local custom_roles = module:get_option_array("custom_roles", {});
 for n, role_config in ipairs(custom_roles) do
 	local ok, err = pcall(register_role, role_config);
 	if not ok then
