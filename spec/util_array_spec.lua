@@ -1,6 +1,13 @@
 local array = require "util.array";
 describe("util.array", function ()
 	describe("creation", function ()
+		describe("new", function ()
+			it("works", function ()
+				local a = array.new({"a", "b", "c"});
+				assert.same({"a", "b", "c"}, a);
+			end);
+		end);
+
 		describe("from table", function ()
 			it("works", function ()
 				local a = array({"a", "b", "c"});

@@ -36,7 +36,9 @@ local function new_array(self, t, _s, _var)
 	return setmetatable(t or {}, array_mt);
 end
 
-array.new = new_array;
+function array.new(t)
+	return setmetatable(t or {}, array_mt);
+end
 
 function array_mt.__add(a1, a2)
 	local res = new_array();
