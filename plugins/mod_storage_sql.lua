@@ -1,11 +1,8 @@
 
 -- luacheck: ignore 212/self
 
-local deps = require "prosody.util.dependencies";
 local cache = require "prosody.util.cache";
 local json = require "prosody.util.json";
-local sqlite = deps.softreq "prosody.util.sqlite3";
-local dbisql = (sqlite and deps.softreq or require) "prosody.util.sql";
 local xml_parse = require "prosody.util.xml".parse;
 local uuid = require "prosody.util.uuid";
 local resolve_relative_path = require "prosody.util.paths".resolve_relative_path;
@@ -13,6 +10,22 @@ local jid_join = require "prosody.util.jid".join;
 
 local is_stanza = require"prosody.util.stanza".is_stanza;
 local t_concat = table.concat;
+
+local have_dbisql, dbisql = pcall(require, "prosody.util.sql");
+local have_sqlite, sqlite = pcall(require, "prosody.util.sqlite3");
+if not have_dbisql then
+	module:log("debug", "Could not load LuaDBI, error was: %s", dbisql)
+	dbisql = nil;
+end
+if not have_sqlite then
+	module:log("debug", "Could not load LuaSQLite3, error was: %s", sqlite)
+	sqlite = nil;
+end
+if not (have_dbisql or have_sqlite) then
+	module:log("error", "LuaDBI or LuaSQLite3 are required for using SQL databases but neither are installed");
+	module:log("error", "Please install at least one of LuaDBI and LuaSQLite3. See https://prosody.im/doc/depends");
+	error("No SQL library available")
+end
 
 local noop = function() end
 local unpack = table.unpack;
