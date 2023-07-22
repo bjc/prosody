@@ -1,20 +1,16 @@
 
--- luacheck: ignore 113/unpack 211 212 411 213
 local setmetatable, getmetatable = setmetatable, getmetatable;
-local ipairs, unpack, select = ipairs, table.unpack or unpack, select;
-local tonumber, tostring = tonumber, tostring;
+local ipairs, select = ipairs, select;
+local tostring = tostring;
 local assert, xpcall, debug_traceback = assert, xpcall, debug.traceback;
 local error = error
 local type = type
 local t_concat = table.concat;
-local t_insert = table.insert;
-local s_char = string.char;
 local array = require "prosody.util.array";
 local log = require "prosody.util.logger".init("sql");
 
 local lsqlite3 = require "lsqlite3";
 local build_url = require "socket.url".build;
-local ROW, DONE = lsqlite3.ROW, lsqlite3.DONE;
 
 -- from sqlite3.h, no copyright claimed
 local sqlite_errors = require"prosody.util.error".init("util.sqlite3", {
@@ -51,6 +47,7 @@ local sqlite_errors = require"prosody.util.error".init("util.sqlite3", {
 	[101] = { code = 101; type = "continue"; condition = "DONE";       text = "sqlite3_step() has finished executing" };
 });
 
+-- luacheck: ignore 411/assert
 local assert = function(cond, errno, err)
 	return assert(sqlite_errors.coerce(cond, err or errno));
 end
@@ -67,8 +64,6 @@ local function is_column(x) return getmetatable(x)==column_mt; end
 local function is_index(x) return getmetatable(x)==index_mt; end
 local function is_table(x) return getmetatable(x)==table_mt; end
 local function is_query(x) return getmetatable(x)==query_mt; end
-local function Integer(n) return "Integer()" end
-local function String(n) return "String()" end
 
 local function Column(definition)
 	return setmetatable(definition, column_mt);
@@ -90,7 +85,7 @@ end
 
 function table_mt:__tostring()
 	local s = { 'name="'..self.__table__.name..'"' }
-	for i,col in ipairs(self.__table__) do
+	for _, col in ipairs(self.__table__) do
 		s[#s+1] = tostring(col);
 	end
 	return 'Table{ '..t_concat(s, ", ")..' }'
@@ -98,9 +93,6 @@ end
 table_mt.__index = {};
 function table_mt.__index:create(engine)
 	return engine:_create_table(self);
-end
-function table_mt:__call(...)
-	-- TODO
 end
 function column_mt:__tostring()
 	return 'Column{ name="'..self.name..'", type="'..self.type..'" }'
@@ -110,31 +102,6 @@ function index_mt:__tostring()
 	for i=1,#self do s = s..', "'..self[i]:gsub("[\\\"]", "\\%1")..'"'; end
 	return s..' }';
 --	return 'Index{ name="'..self.name..'", type="'..self.type..'" }'
-end
-
-local function urldecode(s) return s and (s:gsub("%%(%x%x)", function (c) return s_char(tonumber(c,16)); end)); end
-local function parse_url(url)
-	local scheme, secondpart, database = url:match("^([%w%+]+)://([^/]*)/?(.*)");
-	assert(scheme, "Invalid URL format");
-	local username, password, host, port;
-	local authpart, hostpart = secondpart:match("([^@]+)@([^@+])");
-	if not authpart then hostpart = secondpart; end
-	if authpart then
-		username, password = authpart:match("([^:]*):(.*)");
-		username = username or authpart;
-		password = password and urldecode(password);
-	end
-	if hostpart then
-		host, port = hostpart:match("([^:]*):(.*)");
-		host = host or hostpart;
-		port = port and assert(tonumber(port), "Invalid URL format");
-	end
-	return {
-		scheme = scheme:lower();
-		username = username; password = password;
-		host = host; port = port;
-		database = #database > 0 and database or nil;
-	};
 end
 
 local engine = {};
@@ -157,7 +124,7 @@ function engine:connect()
 	end
 	return true;
 end
-function engine:onconnect()
+function engine:onconnect() -- luacheck: ignore 212/self
 	-- Override from create_engine()
 end
 function engine:ondisconnect() -- luacheck: ignore 212/self
@@ -167,7 +134,6 @@ end
 function engine:execute(sql, ...)
 	local success, err = self:connect();
 	if not success then return success, err; end
-	local prepared = self.prepared;
 
 	if select('#', ...) == 0 then
 		local ret = self.conn:exec(sql);
@@ -356,7 +322,7 @@ function engine:_create_table(table)
 	end
 	local success,err = self:execute(sql);
 	if not success then return success,err; end
-	for i,v in ipairs(table.__table__) do
+	for _, v in ipairs(table.__table__) do
 		if is_index(v) then
 			self:_create_index(v);
 		end
@@ -396,8 +362,6 @@ return {
 	is_index = is_index;
 	is_table = is_table;
 	is_query = is_query;
-	Integer = Integer;
-	String = String;
 	Column = Column;
 	Table = Table;
 	Index = Index;
