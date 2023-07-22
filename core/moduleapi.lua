@@ -295,9 +295,15 @@ function api:get_option_period(name, default_value, min, max)
 		return math.huge;
 	end
 
+	if type(min) == "string" then
+		min = human_io.parse_duration(min);
+	end
 	if min and ret < min then
 		self:log("warn", "Config option '%s' out of bounds %g < %g", name, ret, min);
 		return min;
+	end
+	if type(max) == "string" then
+		max = human_io.parse_duration(max);
 	end
 	if max and ret > max then
 		self:log("warn", "Config option '%s' out of bounds %g > %g", name, ret, max);
