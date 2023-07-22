@@ -34,6 +34,11 @@ local configs = {
 	};
 };
 
+local test_only_driver = os.getenv "PROSODY_TEST_ONLY_STORAGE";
+if test_only_driver then
+	configs = { [test_only_driver] = configs[test_only_driver] }
+end
+
 local test_host = "storage-unit-tests.invalid";
 
 describe("storagemanager", function ()
