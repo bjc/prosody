@@ -527,45 +527,10 @@ local function list_open(username, host, datastore)
 	return setmetatable({ file = file; index = index; close = list_close }, indexed_list_mt);
 end
 
-local function shift_index(index_filename, index, trim_to, offset)
-	local index_scratch = index_filename .. "~";
-	local new_index, err = io_open(index_scratch, "w");
-	if not new_index then
-		os_remove(index_filename);
-		return "deleted", err;
-	end
-
-	local ok, err = new_index:write(index_magic);
-	if not ok then
-		new_index:close();
-		os_remove(index_filename);
-		os_remove(index_scratch);
-		return "deleted", err;
-	end
-
-	if not index.file or not index.file:seek("set", index_item_size * trim_to) then
-		new_index:close();
-		os_remove(index_filename);
-		os_remove(index_scratch);
-		return "deleted";
-	else
-		local pack, unpack = string.pack, string.unpack;
-		for item in index.file:lines(index_item_size) do
-			local ok, err = new_index:write(pack(index_fmt, unpack(index_fmt, item) - offset));
-			if not ok then
-				os_remove(index_filename);
-				os_remove(index_scratch);
-				return "deleted", err;
-			end
-		end
-		local ok, err = new_index:close();
-		if not ok then
-			os_remove(index_filename);
-			os_remove(index_scratch);
-			return "deleted", err;
-		end
-		return os_rename(index_scratch, index_filename);
-	end
+local function shift_index(index_filename, index, trim_to, offset) -- luacheck: ignore 212
+	os_remove(index_filename);
+	return "deleted";
+	-- TODO move and recalculate remaining items
 end
 
 local function list_shift(username, host, datastore, trim_to)
