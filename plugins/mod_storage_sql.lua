@@ -61,9 +61,8 @@ local function deserialize(t, value)
 end
 
 local host = module.host;
-local user, store;
 
-local function keyval_store_get()
+local function keyval_store_get(user, store)
 	local haveany;
 	local result = {};
 	local select_sql = [[
@@ -88,7 +87,7 @@ local function keyval_store_get()
 		return result;
 	end
 end
-local function keyval_store_set(data)
+local function keyval_store_set(data, user, store)
 	local delete_sql = [[
 	DELETE FROM "prosody"
 	WHERE "host"=? AND "user"=? AND "store"=?
@@ -123,19 +122,15 @@ end
 local keyval_store = {};
 keyval_store.__index = keyval_store;
 function keyval_store:get(username)
-	user, store = username, self.store;
-	local ok, result = engine:transaction(keyval_store_get);
+	local ok, result = engine:transaction(keyval_store_get, username, self.store);
 	if not ok then
-		module:log("error", "Unable to read from database %s store for %s: %s", store, username or "<host>", result);
+		module:log("error", "Unable to read from database %s store for %s: %s", self.store, username or "<host>", result);
 		return nil, result;
 	end
 	return result;
 end
 function keyval_store:set(username, data)
-	user,store = username,self.store;
-	return engine:transaction(function()
-		return keyval_store_set(data);
-	end);
+	return engine:transaction(keyval_store_set, data, username, self.store);
 end
 function keyval_store:users()
 	local ok, result = engine:transaction(function()
