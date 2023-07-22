@@ -1,13 +1,11 @@
 local unpack = table.unpack;
-local server = require "net.server_select";
-package.loaded["net.server"] = server;
 
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 
 local function mock_prosody()
 	_G.prosody = {
 		core_post_stanza = function () end;
-		events = require "util.events".new();
+		events = require "prosody.util.events".new();
 		hosts = {};
 		paths = {
 			data = "./data";
@@ -47,10 +45,10 @@ describe("storagemanager", function ()
 		insulate(tagged_name.." #storage backend", function ()
 			mock_prosody();
 
-			local config = require "core.configmanager";
-			local sm = require "core.storagemanager";
-			local hm = require "core.hostmanager";
-			local mm = require "core.modulemanager";
+			local config = require "prosody.core.configmanager";
+			local sm = require "prosody.core.storagemanager";
+			local hm = require "prosody.core.hostmanager";
+			local mm = require "prosody.core.modulemanager";
 
 			-- Simple check to ensure insulation is working correctly
 			assert.is_nil(config.get(test_host, "storage"));
