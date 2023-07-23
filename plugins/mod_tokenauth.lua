@@ -265,19 +265,33 @@ function get_token_session(token, resource)
 end
 
 function revoke_token(token)
-	local token_id, token_user, token_host = parse_token(token);
-	if not token_id then
+	local grant_id, token_user, token_host, token_secret = parse_token(token);
+	if not grant_id then
 		module:log("warn", "Failed to verify access token: %s", token_user);
 		return nil, "invalid-token-format";
 	end
 	if token_host ~= module.host then
 		return nil, "invalid-host";
 	end
-	local ok, err = token_store:set_key(token_user, token_id, nil);
+	local grant, err = _get_validated_grant_info(token_user, grant_id);
+	if not grant then return grant, err; end
+	local secret_hash = "sha256:"..hashes.sha256(token_secret, true);
+	local token_info = grant.tokens[secret_hash];
+	if not grant or not token_info then
+		return nil, "item-not-found";
+	end
+	grant.tokens[secret_hash] = nil;
+	local ok, err = token_store:set_key(token_user, grant_id, grant);
 	if not ok then
 		return nil, err;
 	end
-	module:fire_event("token-grant-revoked", { id = token_id, username = token_user, host = token_host });
+	module:fire_event("token-revoked", {
+		grant_id = grant_id;
+		grant = grant;
+		info = token_info;
+		username = token_user;
+		host = token_host;
+	});
 	return true;
 end
 
