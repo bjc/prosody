@@ -82,6 +82,7 @@ function moduleapi.http_url(module, app_name, default_path, mode)
 
 	local external_url = url_parse(module:get_option_string("http_external_url"));
 	if external_url and mode ~= "internal" then
+		-- Current URL does not depend on knowing which ports are used, only configuration.
 		local url = {
 			scheme = external_url.scheme;
 			host = external_url.host;
@@ -93,6 +94,36 @@ function moduleapi.http_url(module, app_name, default_path, mode)
 		return url_build(url);
 	end
 
+	if prosody.process_type ~= "prosody" then
+		-- We generally don't open ports outside of Prosody, so we can't rely on
+		-- portmanager to tell us which ports and services are used and derive the
+		-- URL from that, so instead we derive it entirely from configuration.
+		local https_ports = module:get_option_array("https_ports", { 5281 });
+		local scheme = "https";
+		local port = tonumber(https_ports[1]);
+		if not port then
+			-- https is disabled and no http_external_url set
+			scheme = "http";
+			local http_ports = module:get_option_array("http_ports", { 5280 });
+			port = tonumber(http_ports[1]);
+			if not port then
+				return "http://disabled.invalid/";
+			end
+		end
+
+		local url = {
+			scheme = scheme;
+			host = module:get_option_string("http_host", module.global and module:get_option_string("http_default_host") or module.host);
+			port = port;
+			path = get_base_path(module, app_name, default_path or "/" .. app_name);
+		}
+		if ports_by_scheme[url.scheme] == url.port then
+			url.port = nil
+		end
+		return url_build(url);
+	end
+
+	-- Use portmanager to find the actual port of https or http services
 	local services = portmanager.get_active_services();
 	local http_services = services:get("https") or services:get("http") or {};
 	for interface, ports in pairs(http_services) do -- luacheck: ignore 213/interface
