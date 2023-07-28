@@ -77,7 +77,6 @@ local function parse_frame_header(frame)
 end
 
 -- XORs the string `str` with the array of bytes `key`
--- TODO: optimize
 local function apply_mask(str, key, from, to)
 	return sxor(str:sub(from or 1, to or -1), key);
 end
