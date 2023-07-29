@@ -48,14 +48,11 @@ local function error_to_friendly_message(service_name, port, err) --luacheck: ig
 	if err:match(" in use") then
 		-- FIXME: Use service_name here
 		if port == 5222 or port == 5223 or port == 5269 then
-			friendly_message = "check that Prosody or another XMPP server is "
-				.."not already running and using this port";
+			friendly_message = "check that Prosody or another XMPP server is not already running and using this port";
 		elseif port == 80 or port == 81 or port == 443 then
-			friendly_message = "check that a HTTP server is not already using "
-				.."this port";
+			friendly_message = "check that a HTTP server is not already using this port";
 		elseif port == 5280 then
-			friendly_message = "check that Prosody or a BOSH connection manager "
-				.."is not already running";
+			friendly_message = "check that Prosody or a BOSH connection manager is not already running";
 		else
 			friendly_message = "this port is in use by another application";
 		end
