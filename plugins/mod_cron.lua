@@ -22,10 +22,6 @@ function module.add_host(host_module)
 		task.save = save_task;
 		module:log("debug", "%s task %s added, last run %s", task.when, task.id,
 			task.last and datetime.datetime(task.last) or "never");
-		if task.last == nil then
-			local now = os.time();
-			task.last = now - now % periods[task.when];
-		end
 		return true
 	end
 

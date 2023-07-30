@@ -56,11 +56,6 @@ function module.add_host(host_module : moduleapi)
 		task.save = save_task;
 		module:log("debug", "%s task %s added, last run %s", task.when, task.id,
 			task.last and datetime.datetime(task.last) or "never");
-		if task.last == nil then
-			-- initialize new tasks so e.g. daily tasks run at ~midnight UTC for now
-			local now = os.time();
-			task.last = now - now % periods[task.when];
-		end
 		return true;
 	end
 
