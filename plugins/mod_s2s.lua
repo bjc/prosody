@@ -963,6 +963,8 @@ local function friendly_cert_error(session) --> string
 				return "has expired";
 			elseif cert_errors:contains("self signed certificate") then
 				return "is self-signed";
+			elseif cert_errors:contains("no matching DANE TLSA records") then
+				return "does not match any DANE TLSA records";
 			end
 
 			local chain_errors = set.new(session.cert_chain_errors[2]);
@@ -971,7 +973,7 @@ local function friendly_cert_error(session) --> string
 			end
 			if chain_errors:contains("certificate has expired") then
 				return "has an expired certificate chain";
-			elseif chain_errors:contains("No matching DANE TLSA records") then
+			elseif chain_errors:contains("no matching DANE TLSA records") then
 				return "does not match any DANE TLSA records";
 			end
 		end
