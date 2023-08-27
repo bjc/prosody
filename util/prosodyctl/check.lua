@@ -369,7 +369,7 @@ local function check(arg)
 		local deprecated_replacements = {
 			anonymous_login = instead_use("option", "authentication", "anonymous");
 			daemonize = "instead, use the --daemonize/-D or --foreground/-F command line flags";
-			disallow_s2s = instead_use("module", "s2s");
+			disallow_s2s = instead_use("module", "s2s", "modules_disabled");
 			no_daemonize = "instead, use the --daemonize/-D or --foreground/-F command line flags";
 			require_encryption = "instead, use 'c2s_require_encryption' and 's2s_require_encryption'";
 			vcard_compatibility = instead_use("community", "mod_compat_vcard");
