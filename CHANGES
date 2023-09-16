@@ -51,6 +51,7 @@ TRUNK
 - mod_blocklist: New option 'migrate_legacy_blocking' to disable migration from mod_privacy
 - Moved all modules into the Lua namespace `prosody.`
 - Forwarded header from RFC 7239 supported, disabled by default
+- mod_http_file_share now uses roles framework, affecting access from e.g. components
 
 ## Removed
 

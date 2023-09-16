@@ -47,6 +47,8 @@ local create_jwt, verify_jwt = require"prosody.util.jwt".init("HS256", secret, s
 
 local access = module:get_option_set(module.name .. "_access", {});
 
+module:default_permission("prosody:registered", ":upload");
+
 if not external_base_url then
 	module:depends("http");
 end
@@ -136,7 +138,7 @@ end
 
 function may_upload(uploader, filename, filesize, filetype) -- > boolean, error
 	local uploader_host = jid.host(uploader);
-	if not ((access:empty() and prosody.hosts[uploader_host]) or access:contains(uploader) or access:contains(uploader_host)) then
+	if not (module:may(":upload", uploader) or access:contains(uploader) or access:contains(uploader_host)) then
 		return false, upload_errors.new("access");
 	end
 
