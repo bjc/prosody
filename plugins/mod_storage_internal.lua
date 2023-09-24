@@ -347,6 +347,13 @@ end
 function archive:trim(username, to_when)
 	local list, err = datamanager.list_open(username, host, self.store);
 	if not list then return list,err;end
+
+	-- shortcut: check if the last item should be trimmed, if so, drop the whole archive
+	local last = list[#list].when or datetime.parse(list[#list].attr.stamp);
+	if last <= to_when then
+		return datamanager.list_store(username, host, self.store, nil);
+	end
+
 	-- luacheck: ignore 211/exact
 	local i, exact = binary_search(list, function(item)
 		local when = item.when or datetime.parse(item.attr.stamp);
