@@ -346,7 +346,13 @@ end
 
 function archive:trim(username, to_when)
 	local list, err = datamanager.list_open(username, host, self.store);
-	if not list then return list,err;end
+	if not list then
+		if err == nil then
+			module:log("debug", "store already empty, can't trim");
+			return 0;
+		end
+		return list, err;
+	end
 
 	-- shortcut: check if the last item should be trimmed, if so, drop the whole archive
 	local last = list[#list].when or datetime.parse(list[#list].attr.stamp);
