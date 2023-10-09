@@ -149,11 +149,12 @@ local function _get_validated_grant_info(username, grant)
 	-- Invalidate grants from before last password change
 	local account_info = usermanager.get_account_info(username, module.host);
 	local password_updated_at = account_info and account_info.password_updated;
+	local now = os.time();
 	if password_updated_at and grant.created < password_updated_at then
 		module:log("debug", "Token grant issued before last password change, invalidating it now");
 		token_store:set_key(username, grant.id, nil);
 		return nil, "not-authorized";
-	elseif grant.expires and grant.expires < os.time() then
+	elseif grant.expires and grant.expires < now then
 		module:log("debug", "Token grant expired, cleaning up");
 		token_store:set_key(username, grant.id, nil);
 		return nil, "expired";
@@ -163,6 +164,12 @@ local function _get_validated_grant_info(username, grant)
 		module:log("debug", "Token grant without tokens, cleaning up");
 		token_store:set_key(username, grant.id, nil);
 		return nil, "invalid";
+	end
+	for secret_hash, token_info in pairs(grant.tokens) do
+		if token_info.expires and token_info.expires < now then
+			module:log("debug", "Token has expired, cleaning it up");
+			grant.tokens[secret_hash] = nil;
+		end
 	end
 	return grant;
 end
