@@ -159,6 +159,11 @@ local function _get_validated_grant_info(username, grant)
 		return nil, "expired";
 	end
 
+	if not grant.tokens then
+		module:log("debug", "Token grant without tokens, cleaning up");
+		token_store:set_key(username, grant.id, nil);
+		return nil, "invalid";
+	end
 	return grant;
 end
 
