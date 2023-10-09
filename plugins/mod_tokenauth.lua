@@ -341,3 +341,9 @@ function sasl_handler(auth_provider, purpose, extra)
 		return token_user, true, token_info;
 	end;
 end
+
+module:daily(function()
+	for username in token_store:items() do
+		get_user_grants(username); -- clears out expired grants
+	end
+end)
