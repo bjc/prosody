@@ -12,16 +12,27 @@ function module.add_host(host_module)
 	local last_run_times = host_module:open_store("cron", "map");
 	active_hosts[host_module.host] = true;
 
-	local function save_task(task, started_at) last_run_times:set(nil, task.id, started_at); end
+	local function save_task(task, started_at)
+		last_run_times:set(nil, task.id, started_at);
+	end
+
+	local function restore_task(task)
+		if task.last == nil then
+			task.last = last_run_times:get(nil, task.id);
+		end
+	end
 
 	local function task_added(event)
 		local task = event.item;
-		if task.name == nil then task.name = task.when; end
-		if task.id == nil then task.id = event.source.name .. "/" .. task.name:gsub("%W", "_"):lower(); end
-		if task.last == nil then task.last = last_run_times:get(nil, task.id); end
+		if task.name == nil then
+			task.name = task.when;
+		end
+		if task.id == nil then
+			task.id = event.source.name .. "/" .. task.name:gsub("%W", "_"):lower();
+		end
+		task.restore = restore_task;
 		task.save = save_task;
-		module:log("debug", "%s task %s added, last run %s", task.when, task.id,
-			task.last and datetime.datetime(task.last) or "never");
+		module:log("debug", "%s task %s added", task.when, task.id);
 		return true
 	end
 
@@ -33,12 +44,20 @@ function module.add_host(host_module)
 
 	host_module:handle_items("task", task_added, task_removed, true);
 
-	function host_module.unload() active_hosts[host_module.host] = nil; end
+	function host_module.unload()
+		active_hosts[host_module.host] = nil;
+	end
 end
 
-local function should_run(when, last) return not last or last + periods[when] * 0.995 <= os.time() end
+local function should_run(when, last)
+	return not last or last + periods[when] * 0.995 <= os.time()
+end
 
 local function run_task(task)
+	task:restore();
+	if not should_run(task.when, task.last) then
+		return
+	end
 	local started_at = os.time();
 	task:run(started_at);
 	task.last = started_at;
@@ -52,8 +71,7 @@ scheduled = module:add_timer(1, function()
 	for host in pairs(active_hosts) do
 		module:log("debug", "Running periodic tasks for host %s", host);
 		for _, task in ipairs(module:context(host):get_host_items("task")) do
-			module:log("debug", "Considering %s task %s (%s)", task.when, task.id, task.run);
-			if should_run(task.when, task.last) then task_runner:run(task); end
+			task_runner:run(task);
 		end
 	end
 	module:log("debug", "Wait %ds", delay);
