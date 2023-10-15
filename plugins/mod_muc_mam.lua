@@ -90,7 +90,7 @@ if not log_all_rooms then
 		{
 			name = muc_form_enable,
 			type = "boolean",
-			label = "Enable archiving?",
+			label = "Archive chat on server",
 			value = archiving_enabled(room),
 		}
 		);
