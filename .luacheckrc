@@ -94,6 +94,7 @@ files["plugins/"] = {
 		"module.may",
 		"module.measure",
 		"module.metric",
+		"module.once",
 		"module.open_store",
 		"module.provides",
 		"module.remove_item",
