@@ -1,7 +1,6 @@
 module:set_global();
 
 local async = require "prosody.util.async";
-local datetime = require "prosody.util.datetime";
 
 local record map_store<K,V>
 	-- TODO move to somewhere sensible
