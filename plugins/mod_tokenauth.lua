@@ -9,6 +9,7 @@ local generate_identifier = require "prosody.util.id".short;
 local token_store = module:open_store("auth_tokens", "keyval+");
 
 local access_time_granularity = module:get_option_period("token_auth_access_time_granularity", 60);
+local empty_grant_lifetime = module:get_option_period("tokenless_grant_ttl", "2w");
 
 local function select_role(username, host, role_name)
 	if not role_name then return end
@@ -171,6 +172,13 @@ local function _get_validated_grant_info(username, grant)
 			grant.tokens[secret_hash] = nil;
 		end
 	end
+
+	if not grant.expires and next(grant.tokens) == nil and grant.accessed + empty_grant_lifetime < now then
+		module:log("debug", "Token grant has no tokens, discarding");
+		token_store:set_key(username, grant.id, nil);
+		return nil, "expired";
+	end
+
 	return grant;
 end
 
