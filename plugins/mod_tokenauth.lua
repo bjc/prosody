@@ -167,9 +167,14 @@ local function _get_validated_grant_info(username, grant)
 		return nil, "invalid";
 	end
 	for secret_hash, token_info in pairs(grant.tokens) do
+		local found_expired = false
 		if token_info.expires and token_info.expires < now then
 			module:log("debug", "Token has expired, cleaning it up");
 			grant.tokens[secret_hash] = nil;
+			found_expired = true;
+		end
+		if found_expired then
+			token_store:set_key(username, grant.id, nil);
 		end
 	end
 
