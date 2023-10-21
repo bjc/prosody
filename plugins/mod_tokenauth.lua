@@ -347,7 +347,7 @@ function sasl_handler(auth_provider, purpose, extra)
 	end;
 end
 
-module:daily(function()
+module:daily("clear expired grants", function()
 	for username in token_store:items() do
 		get_user_grants(username); -- clears out expired grants
 	end
