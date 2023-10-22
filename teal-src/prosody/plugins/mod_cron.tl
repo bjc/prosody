@@ -21,6 +21,7 @@ local record task_spec
 	last : integer
 	run : function (task_spec, integer)
 	save : function (task_spec, integer)
+	restore : function (task_spec, integer)
 end
 
 local record task_event
