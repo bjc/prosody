@@ -53,6 +53,7 @@ TRUNK
 - Moved all modules into the Lua namespace `prosody.`
 - Forwarded header from RFC 7239 supported, disabled by default
 - mod_http_file_share now uses roles framework, affecting access from e.g. components
+- Intervals of mod_cron managed periodic jobs made configurable
 
 ## Removed
 

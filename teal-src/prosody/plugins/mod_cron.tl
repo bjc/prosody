@@ -18,6 +18,7 @@ local record task_spec
 	id : string -- unique id
 	name : string -- name or short description
 	when : frequency
+	period : number
 	last : integer
 	run : function (task_spec, integer)
 	save : function (task_spec, integer)
@@ -28,8 +29,6 @@ local record task_event
 	source : module
 	item : task_spec
 end
-
-local periods : { frequency : integer } = { hourly = 3600, daily = 86400, weekly = 7*86400 }
 
 local active_hosts : { string : boolean } = {  }
 
@@ -56,6 +55,7 @@ function module.add_host(host_module : moduleapi)
 		if task.id == nil then
 			task.id = event.source.name .. "/" .. task.name:gsub("%W", "_"):lower();
 		end
+		task.period = host_module:get_option_period(task.id:gsub("/", "_") .. "_period", "1" .. task.when, 60, 86400*7*53);
 		task.restore = restore_task;
 		task.save = save_task;
 		module:log("debug", "%s task %s added", task.when, task.id);
@@ -75,13 +75,13 @@ function module.add_host(host_module : moduleapi)
 	end
 end
 
-local function should_run(when : frequency, last : integer) : boolean
-	return not last or last + periods[when]*0.995 <= os.time();
+local function should_run(task : task_spec, last : integer) : boolean
+	return not last or last + task.period * 0.995 <= os.time();
 end
 
 local function run_task(task : task_spec)
 	task:restore();
-	if not should_run(task.when, task.last) then
+	if not should_run(task, task.last) then
 		return;
 	end
 	local started_at = os.time();

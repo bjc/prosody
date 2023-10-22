@@ -2,8 +2,6 @@ module:set_global();
 
 local async = require("prosody.util.async");
 
-local periods = { hourly = 3600; daily = 86400; weekly = 7 * 86400 }
-
 local active_hosts = {}
 
 function module.add_host(host_module)
@@ -29,6 +27,7 @@ function module.add_host(host_module)
 		if task.id == nil then
 			task.id = event.source.name .. "/" .. task.name:gsub("%W", "_"):lower();
 		end
+		task.period = host_module:get_option_period(task.id:gsub("/", "_") .. "_period", "1" .. task.when, 60, 86400 * 7 * 53);
 		task.restore = restore_task;
 		task.save = save_task;
 		module:log("debug", "%s task %s added", task.when, task.id);
@@ -48,13 +47,13 @@ function module.add_host(host_module)
 	end
 end
 
-local function should_run(when, last)
-	return not last or last + periods[when] * 0.995 <= os.time()
+local function should_run(task, last)
+	return not last or last + task.period * 0.995 <= os.time()
 end
 
 local function run_task(task)
 	task:restore();
-	if not should_run(task.when, task.last) then
+	if not should_run(task, task.last) then
 		return
 	end
 	local started_at = os.time();
