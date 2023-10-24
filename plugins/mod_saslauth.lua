@@ -274,7 +274,7 @@ local function tls_server_end_point(self)
 		if not certfile then return end
 		local f = io.open(certfile);
 		if not f then return end
-		local certdata = f:read("*");
+		local certdata = f:read("*a");
 		cert = ssl.loadcertificate(certdata);
 	end
 
