@@ -335,6 +335,7 @@ module:hook("stream-features", function(event)
 
 				local certfile;
 				if tls_server_end_point_hash == "auto" then
+					tls_server_end_point_hash = nil;
 					local ssl_cfg = origin.ssl_cfg;
 					if not ssl_cfg then
 						local server = origin.conn:server();
