@@ -19,6 +19,8 @@ local pem2der = require"util.x509".pem2der;
 local hashes = require"util.hashes";
 local ssl = require "ssl"; -- FIXME Isolate LuaSec from the rest of the code
 
+local certmanager = require "core.certmanager";
+local pm_get_tls_config_at = require "prosody.core.portmanager".get_tls_config_at;
 local usermanager_get_sasl_handler = require "prosody.core.usermanager".get_sasl_handler;
 
 local secure_auth_only = module:get_option_boolean("c2s_require_encryption", module:get_option_boolean("require_encryption", true));
@@ -330,17 +332,31 @@ module:hook("stream-features", function(event)
 				else
 					log("debug", "Channel binding 'tls-unique' not supported (by LuaSec?)");
 				end
-				local certfile = origin.ssl_cfg and origin.ssl_cfg.certificate;
-				-- FIXME .ssl_cfg is set by mod_tls and thus only available with starttls
-				if tls_server_end_point_hash then
+
+				local certfile;
+				if tls_server_end_point_hash == "auto" then
+					local ssl_cfg = origin.ssl_cfg;
+					if not ssl_cfg then
+						local server = origin.conn:server();
+						local tls_config = pm_get_tls_config_at(server:ip(), server:serverport());
+						local autocert = certmanager.find_host_cert(origin.conn:socket():getsniname());
+						ssl_cfg = autocert or tls_config;
+					end
+
+					certfile = ssl_cfg and ssl_cfg.certificate;
+					if certfile then
+						log("debug", "Channel binding 'tls-server-end-point' can be offered based on the certificate used");
+						sasl_handler:add_cb_handler("tls-server-end-point", tls_server_end_point);
+						channel_bindings:add("tls-server-end-point");
+					else
+						log("debug", "Channel binding 'tls-server-end-point' set to 'auto' but cannot determine cert");
+					end
+				elseif tls_server_end_point_hash then
 					log("debug", "Channel binding 'tls-server-end-point' can be offered with the configured certificate hash");
 					sasl_handler:add_cb_handler("tls-server-end-point", tls_server_end_point);
 					channel_bindings:add("tls-server-end-point");
-				elseif certfile then
-					log("debug", "Channel binding 'tls-server-end-point' can be offered based on the certificate used");
-					sasl_handler:add_cb_handler("tls-server-end-point", tls_server_end_point);
-					channel_bindings:add("tls-server-end-point");
 				end
+
 				sasl_handler["userdata"] = {
 					["tls-unique"] = origin.conn;
 					["tls-exporter"] = origin.conn;

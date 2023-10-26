@@ -11,11 +11,9 @@ module:set_global();
 local add_task = require "prosody.util.timer".add_task;
 local new_xmpp_stream = require "prosody.util.xmppstream".new;
 local nameprep = require "prosody.util.encodings".stringprep.nameprep;
-local certmanager = require "prosody.core.certmanager";
 local sessionmanager = require "prosody.core.sessionmanager";
 local statsmanager = require "prosody.core.statsmanager";
 local st = require "prosody.util.stanza";
-local pm_get_tls_config_at = require "core.portmanager".get_tls_config_at;
 local sm_new_session, sm_destroy_session = sessionmanager.new_session, sessionmanager.destroy_session;
 local uuid_generate = require "prosody.util.uuid".generate;
 local async = require "prosody.util.async";
@@ -309,11 +307,6 @@ function listener.onconnect(conn)
 	if conn:ssl() then
 		session.secure = true;
 		session.encrypted = true;
-
-		local server = conn:server();
-		local tls_config = pm_get_tls_config_at(server:ip(), server:serverport());
-		local autocert = certmanager.find_host_cert(session.conn:socket():getsniname());
-		session.ssl_cfg = autocert or tls_config;
 		session.ssl_ctx = conn:sslctx();
 
 		-- Check if TLS compression is used
