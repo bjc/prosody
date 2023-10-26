@@ -280,16 +280,21 @@ local function tls_server_end_point(self)
 	end
 
 	-- Hash function selection, see RFC 5929 §4.1
-	local hash = hashes.sha256;
+	local hash, hash_name = hashes.sha256, "sha256";
 	if cert.getsignaturename then
 		local sigalg = cert:getsignaturename():lower():match("sha%d+");
 		if sigalg and sigalg ~= "sha1" and hashes[sigalg] then
 			-- This should have ruled out MD5 and SHA1
-			hash = hashes[sigalg];
+			hash, hash_name = hashes[sigalg], sigalg;
 		end
 	end
 
-	return hash(pem2der(cert));
+	local certdata_der = pem2der(cert:pem());
+	local hashed_der = hash(certdata_der);
+
+	module:log("debug", "tls-server-end-point: hex(%s(der)) = %q, hash = %s", hash_name, hex.encode(hashed_der));
+
+	return hashed_der;
 end
 
 local mechanisms_attr = { xmlns='urn:ietf:params:xml:ns:xmpp-sasl' };
