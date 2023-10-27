@@ -307,8 +307,11 @@ local function create_context(host, mode, ...)
 		password = function() log("error", "Encrypted certificate for %s requires 'ssl' 'password' to be set in config", host); end;
 	});
 	local profile = configmanager.get("*", "tls_profile") or "intermediate";
-	if profile ~= "legacy" then
+	if mozilla_ssl_configs[profile] then
 		cfg:apply(mozilla_ssl_configs[profile]);
+	elseif profile ~= "legacy" then
+		log("error", "Invalid value for 'tls_profile': expected one of \"modern\", \"intermediate\" (default), \"old\" or \"legacy\" but got %q", profile);
+		return nil, "Invalid configuration, 'tls_profile' had an unknown value.";
 	end
 	cfg:apply(global_ssl_config);
 
