@@ -322,7 +322,7 @@ local function create_context(host, mode, ...)
 
 	if mode == "server" then
 		if not user_ssl_config.certificate then
-			log("info", "No certificate present in SSL/TLS configuration for %s. SNI will be required.", host);
+			log("debug", "No certificate present in SSL/TLS configuration for %s. SNI will be required.", host);
 		end
 		if user_ssl_config.certificate and not user_ssl_config.key then return nil, "No key present in SSL/TLS configuration for "..host; end
 	end
