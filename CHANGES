@@ -32,6 +32,7 @@ TRUNK
 - Implement 'tls-server-end-point' channel binding
 - New role and permissions framework and API
 - Ability to disable and enable user accounts
+- Full DANE support for s2s
 
 ### Storage
 
