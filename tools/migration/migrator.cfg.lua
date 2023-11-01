@@ -23,11 +23,17 @@ local muc = {
 	"muc_log-archive",
 	"cron",
 };
+local upload = {
+	"uploads-archive",
+	"upload_stats",
+	"cron",
+}
 
 input {
 	hosts = {
 		["example.com"] = vhost;
 		["conference.example.com"] = muc;
+		["share.example.com"] = upload;
 	};
 	type = "internal";
 	path = data_path;
