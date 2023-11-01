@@ -3,6 +3,7 @@ local data_path = "../../data";
 local vhost = {
 	"accounts",
 	"account_details",
+	"account_roles",
 	"roster",
 	"vcard",
 	"private",
@@ -12,12 +13,15 @@ local vhost = {
 	"offline-archive",
 	"pubsub_nodes-pubsub",
 	"pep-pubsub",
+	"cron",
+	"smacks_h",
 }
 local muc = {
 	"persistent",
 	"config",
 	"state",
 	"muc_log-archive",
+	"cron",
 };
 
 input {
