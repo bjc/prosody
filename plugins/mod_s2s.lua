@@ -95,6 +95,12 @@ local s2s_service_options = {
 };
 local s2s_service_options_mt = { __index = s2s_service_options }
 
+if module:get_option_boolean("use_dane", false) then
+	-- DANE is supported in net.connect but only for outgoing connections,
+	-- to authenticate incoming connections with DANE we need
+	module:depends("s2s_auth_dane_in");
+end
+
 module:hook("stats-update", function ()
 	measure_connections_inbound:clear()
 	measure_connections_outbound:clear()
