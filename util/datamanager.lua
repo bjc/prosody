@@ -701,6 +701,8 @@ local function purge(username, host)
 
 			local ok, err = do_remove(getpath(username, host, store_name, "list"));
 			if not ok then errs[#errs+1] = err; end
+			local ok, err = do_remove(getpath(username, host, store_name, "lidx"));
+			if not ok then errs[#errs+1] = err; end
 		end
 	end
 	return #errs == 0, t_concat(errs, ", ");
