@@ -315,12 +315,8 @@ local function check(arg)
 	local ok = true;
 	local function disabled_hosts(host, conf) return host ~= "*" and conf.enabled ~= false; end
 	local function enabled_hosts() return it.filter(disabled_hosts, pairs(configmanager.getconfig())); end
-	if not (what == nil or what == "disabled" or what == "config" or what == "dns" or what == "certs" or what == "connectivity" or what == "turn") then
-		show_warning("Don't know how to check '%s'. Try one of 'config', 'dns', 'certs', 'disabled', 'turn' or 'connectivity'.", what);
-		show_warning("Note: The connectivity check will connect to a remote server.");
-		return 1;
-	end
-	if not what or what == "disabled" then
+	local checks = {};
+	function checks.disabled()
 		local disabled_hosts_set = set.new();
 		for host in it.filter("*", pairs(configmanager.getconfig())) do
 			if api(host):get_option_boolean("enabled") == false then
@@ -335,7 +331,7 @@ local function check(arg)
 			print""
 		end
 	end
-	if not what or what == "config" then
+	function checks.config()
 		print("Checking config...");
 
 		if what == "config" then
@@ -740,7 +736,7 @@ local function check(arg)
 
 		print("Done.\n");
 	end
-	if not what or what == "dns" then
+	function checks.dns()
 		local dns = require "prosody.net.dns";
 		pcall(function ()
 			local unbound = require"prosody.net.unbound";
@@ -1115,7 +1111,7 @@ local function check(arg)
 			ok = false;
 		end
 	end
-	if not what or what == "certs" then
+	function checks.certs()
 		local cert_ok;
 		print"Checking certificates..."
 		local x509_verify_identity = require"prosody.util.x509".verify_identity;
@@ -1137,8 +1133,8 @@ local function check(arg)
 				local host_ssl_config = configmanager.rawget(host, "ssl")
 					or configmanager.rawget(host:match("%.(.*)"), "ssl");
 				local global_ssl_config = configmanager.rawget("*", "ssl");
-				local ok, err, ssl_config = create_context(host, "server", host_ssl_config, global_ssl_config);
-				if not ok then
+				local ctx_ok, err, ssl_config = create_context(host, "server", host_ssl_config, global_ssl_config);
+				if not ctx_ok then
 					print("  Error: "..err);
 					cert_ok = false
 				elseif not ssl_config.certificate then
@@ -1196,7 +1192,7 @@ local function check(arg)
 		print("")
 	end
 	-- intentionally not doing this by default
-	if what == "connectivity" then
+	function checks.connectivity()
 		local _, prosody_is_running = is_prosody_running();
 		if api("*"):get_option_string("pidfile") and not prosody_is_running then
 			print("Prosody does not appear to be running, which is required for this test.");
@@ -1288,7 +1284,7 @@ local function check(arg)
 		print("Note: It does not ensure that the check actually reaches this specific prosody instance.")
 	end
 
-	if not what or what == "turn" then
+	function checks.turn()
 		local turn_enabled_hosts = {};
 		local turn_services = {};
 
@@ -1362,6 +1358,26 @@ local function check(arg)
 				print("Success!\n");
 			end
 		end
+	end
+	if what == nil or what == "all" then
+		local ret;
+		ret = checks.disabled();
+		if ret ~= nil then return ret; end
+		ret = checks.config();
+		if ret ~= nil then return ret; end
+		ret = checks.dns();
+		if ret ~= nil then return ret; end
+		ret = checks.certs();
+		if ret ~= nil then return ret; end
+		ret = checks.turn();
+		if ret ~= nil then return ret; end
+	elseif checks[what] then
+		local ret = checks[what]();
+		if ret ~= nil then return ret; end
+	else
+		show_warning("Don't know how to check '%s'. Try one of 'config', 'dns', 'certs', 'disabled', 'turn' or 'connectivity'.", what);
+		show_warning("Note: The connectivity check will connect to a remote server.");
+		return 1;
 	end
 
 	if not ok then
