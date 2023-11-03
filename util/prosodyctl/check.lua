@@ -1115,6 +1115,9 @@ local function check(arg)
 		local cert_ok;
 		print"Checking certificates..."
 		local x509_verify_identity = require"prosody.util.x509".verify_identity;
+		local use_dane = configmanager.get("*", "use_dane");
+		local pem2der = require"prosody.util.x509".pem2der;
+		local sha256 = require"prosody.util.hashes".sha256;
 		local create_context = require "prosody.core.certmanager".create_context;
 		local ssl = dependencies.softreq"ssl";
 		-- local datetime_parse = require"util.datetime".parse_x509;
@@ -1179,6 +1182,13 @@ local function check(arg)
 							and not x509_verify_identity(host, "_xmpp-server", cert) then
 							print("    Not valid for server-to-server connections to "..host..".")
 							cert_ok = false
+						end
+						if use_dane then
+							if cert.pubkey then
+								print("    DANE: TLSA 3 1 1 "..sha256(pem2der(cert:pubkey()), true))
+							elseif cert.pem then
+								print("    DANE: TLSA 3 0 1 "..sha256(pem2der(cert:pem()), true))
+							end
 						end
 					end
 				end
