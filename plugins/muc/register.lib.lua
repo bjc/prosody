@@ -94,8 +94,10 @@ local function enforce_nick_policy(event)
 		local nick = get_registered_nick(room, jid_bare(stanza.attr.from));
 		if nick then
 			if event.occupant then
+				-- someone is joining, force their nickname to the registered one
 				event.occupant.nick = jid_bare(event.occupant.nick) .. "/" .. nick;
 			elseif event.dest_occupant.nick ~= jid_bare(event.dest_occupant.nick) .. "/" .. nick then
+				-- someone is trying to change nickname to something other than their registered nickname, can't have that
 				module:log("debug", "Attempt by %s to join as %s, but their reserved nick is %s", stanza.attr.from, requested_nick, nick);
 				local reply = st.error_reply(stanza, "cancel", "not-acceptable", nil, room.jid):up();
 				origin.send(reply);
