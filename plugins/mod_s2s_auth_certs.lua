@@ -19,12 +19,7 @@ module:hook("s2s-check-certificate", function(event)
 		return;
 	end
 
-	local chain_valid, errors;
-	if conn.ssl_peerverification then
-		chain_valid, errors = conn:ssl_peerverification();
-	else
-		chain_valid, errors = false, { { "Chain verification not supported by this version of LuaSec" } };
-	end
+	local chain_valid, errors = conn:ssl_peerverification();
 	-- Is there any interest in printing out all/the number of errors here?
 	if not chain_valid then
 		log("debug", "certificate chain validation result: invalid");
