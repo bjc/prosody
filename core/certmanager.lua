@@ -369,7 +369,13 @@ local function reload_ssl_config()
 	if tls.features.options.no_compression then
 		core_defaults.options.no_compression = configmanager.get("*", "ssl_compression") ~= true;
 	end
-	core_defaults.dane = configmanager.get("*", "use_dane") or false;
+	if not configmanager.get("*", "use_dane") then
+		core_defaults.dane = false;
+	elseif tls.features.capabilities.dane then
+		core_defaults.dane = { "no_ee_namechecks" };
+	else
+		core_defaults.dane = true;
+	end
 	cert_index = index_certs(resolve_path(config_path, global_certificates));
 end
 
