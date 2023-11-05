@@ -166,15 +166,13 @@ local function _get_validated_grant_info(username, grant)
 		token_store:set_key(username, grant.id, nil);
 		return nil, "invalid";
 	end
+
+	local found_expired = false
 	for secret_hash, token_info in pairs(grant.tokens) do
-		local found_expired = false
 		if token_info.expires and token_info.expires < now then
 			module:log("debug", "Token has expired, cleaning it up");
 			grant.tokens[secret_hash] = nil;
 			found_expired = true;
-		end
-		if found_expired then
-			token_store:set_key(username, grant.id, nil);
 		end
 	end
 
@@ -182,6 +180,8 @@ local function _get_validated_grant_info(username, grant)
 		module:log("debug", "Token grant has no tokens, discarding");
 		token_store:set_key(username, grant.id, nil);
 		return nil, "expired";
+	elseif found_expired then
+		token_store:set_key(username, grant.id, grant);
 	end
 
 	return grant;
