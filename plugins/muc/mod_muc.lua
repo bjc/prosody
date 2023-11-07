@@ -123,13 +123,13 @@ if module:get_option_boolean("component_admins_as_room_owners", true) then
 	-- Monkey patch to make server admins room owners
 	local _get_affiliation = room_mt.get_affiliation;
 	function room_mt:get_affiliation(jid)
-		if module:may(":automatic-ownership", jid) then return "owner"; end
+		if module:could(":automatic-ownership", jid) then return "owner"; end
 		return _get_affiliation(self, jid);
 	end
 
 	local _set_affiliation = room_mt.set_affiliation;
 	function room_mt:set_affiliation(actor, jid, affiliation, reason, data)
-		if affiliation ~= "owner" and module:may(":automatic-ownership", jid) then return nil, "modify", "not-acceptable"; end
+		if affiliation ~= "owner" and module:could(":automatic-ownership", jid) then return nil, "modify", "not-acceptable"; end
 		return _set_affiliation(self, actor, jid, affiliation, reason, data);
 	end
 end
