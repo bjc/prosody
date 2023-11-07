@@ -115,6 +115,9 @@ module:default_permissions("prosody:admin", {
 	":create-room";
 	":recreate-destroyed-room";
 });
+module:default_permissions("prosody:guest", {
+	":list-rooms";
+});
 
 if module:get_option_boolean("component_admins_as_room_owners", true) then
 	-- Monkey patch to make server admins room owners
