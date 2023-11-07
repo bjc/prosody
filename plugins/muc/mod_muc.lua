@@ -350,8 +350,12 @@ function each_room(live_only)
 end
 
 module:hook("host-disco-items", function(event)
-	local reply = event.reply;
 	module:log("debug", "host-disco-items called");
+	if not module:could(":list-rooms", event) then
+		module:log("debug", "Returning empty room list to unauthorized request");
+		return;
+	end
+	local reply = event.reply;
 	if next(room_items_cache) ~= nil then
 		for jid, room_name in pairs(room_items_cache) do
 			if room_name == "" then room_name = nil; end
