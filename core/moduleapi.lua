@@ -715,29 +715,35 @@ function api:may(action, context, peek)
 	if action:byte(1) == 58 then -- action begins with ':'
 		action = self.name..action; -- prepend module name
 	end
-	if type(context) == "string" then -- check JID permissions
-		local role;
-		local node, host = jid_split(context);
-		if host == self.host then
-			role = hosts[host].authz.get_user_role(node);
-		else
-			role = hosts[self.host].authz.get_jid_role(context);
-		end
-		if not role then
-			if not peek then
-				self:log("debug", "Access denied: JID <%s> may not %s (no role found)", context, action);
+
+	do
+		-- JID-based actor
+		local actor_jid = type(context) == "string" and context or context.actor_jid;
+		if actor_jid then -- check JID permissions
+			local role;
+			local node, host = jid_split(actor_jid);
+			if host == self.host then
+				role = hosts[host].authz.get_user_role(node);
+			else
+				role = hosts[self.host].authz.get_jid_role(actor_jid);
 			end
-			return false;
-		end
-		local permit = role:may(action);
-		if not permit then
-			if not peek then
-				self:log("debug", "Access denied: JID <%s> may not %s (not permitted by role %s)", context, action, role.name);
+			if not role then
+				if not peek then
+					self:log("debug", "Access denied: JID <%s> may not %s (no role found)", actor_jid, action);
+				end
+				return false;
 			end
+			local permit = role:may(action);
+			if not permit then
+				if not peek then
+					self:log("debug", "Access denied: JID <%s> may not %s (not permitted by role %s)", actor_jid, action, role.name);
+				end
+			end
+			return permit;
 		end
-		return permit;
 	end
 
+	-- Session-based actor
 	local session = context.origin or context.session;
 	if type(session) ~= "table" then
 		error("Unable to identify actor session from context");
