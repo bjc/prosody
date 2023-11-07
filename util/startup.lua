@@ -422,19 +422,49 @@ function startup.init_data_store()
 	require "prosody.core.storagemanager";
 end
 
+local running_state = require "util.fsm".new({
+	default_state = "uninitialized";
+	transitions = {
+		{ name = "begin_startup",   from = "uninitialized",           to = "starting" };
+		{ name = "finish_startup",  from = "starting",                to = "running" };
+		{ name = "begin_shutdown",  from = { "running", "starting" }, to = "stopping" };
+		{ name = "finish_shutdown", from = "stopping",                to = "stopped" };
+	};
+	handlers = {
+		transitioned = function (transition)
+			prosody.state = transition.to;
+		end;
+	};
+	state_handlers = {
+		starting = function ()
+			prosody.log("debug", "Firing server-starting event");
+			prosody.events.fire_event("server-starting");
+			prosody.start_time = os.time();
+		end;
+		running = function ()
+			prosody.log("debug", "Startup complete, firing server-started");
+			prosody.events.fire_event("server-started");
+		end;
+	};
+}):init();
+
 function startup.prepare_to_start()
 	log("info", "Prosody is using the %s backend for connection handling", server.get_backend());
+
 	-- Signal to modules that we are ready to start
 	prosody.started = require "prosody.util.promise".new(function (resolve)
-		prosody.events.add_handler("server-started", function ()
+		if prosody.state == "running" then
 			resolve();
-		end);
-		prosody.log("debug", "Firing server-starting event");
-		prosody.events.fire_event("server-starting");
-		prosody.start_time = os.time();
+		else
+			prosody.events.add_handler("server-started", function ()
+				resolve();
+			end);
+		end
 	end):catch(function (err)
 		prosody.log("error", "Prosody startup error: %s", err);
 	end);
+
+	running_state:begin_startup();
 end
 
 function startup.init_global_protection()
@@ -479,10 +509,7 @@ function startup.log_greeting()
 end
 
 function startup.notify_started()
-	require "prosody.util.timer".add_task(0, function ()
-		prosody.log("debug", "Firing server-started event");
-		prosody.events.fire_event("server-started");
-	end);
+	running_state:finish_startup();
 end
 
 -- Override logging config (used by prosodyctl)
@@ -648,11 +675,15 @@ function startup.cleanup()
 end
 
 function startup.shutdown()
+	running_state:begin_shutdown();
+
 	prosody.log("info", "Shutting down...");
 	startup.cleanup();
 	prosody.events.fire_event("server-stopped");
-	prosody.log("info", "Shutdown complete");
 
+	running_state:finish_shutdown();
+
+	prosody.log("info", "Shutdown complete");
 	prosody.log("debug", "Shutdown reason was: %s", prosody.shutdown_reason or "not specified");
 	prosody.log("debug", "Exiting with status code: %d", prosody.shutdown_code or 0);
 	server.setquitting(true);
