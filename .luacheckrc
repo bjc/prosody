@@ -61,6 +61,7 @@ files["plugins/"] = {
 		"module.hourly",
 		"module.broadcast",
 		"module.context",
+		"module.could",
 		"module.depends",
 		"module.default_permission",
 		"module.default_permissions",
