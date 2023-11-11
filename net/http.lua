@@ -51,10 +51,19 @@ local function log_if_failed(req, ret, ...)
 	return ...;
 end
 
-local function destroy_request(request)
+local function destroy_request(request, force)
 	local conn = request.conn;
 	if conn then
 		request.conn = nil;
+		local pool = request.http.pool;
+		if pool and not force then
+			local pool_id = request.scheme .. "://" .. request.authority;
+			if not pool[pool_id] then
+				pool[conn] = pool_id;
+				pool[pool_id] = conn;
+				return;
+			end
+		end
 		conn:close()
 	end
 end
@@ -193,6 +202,13 @@ function listener.ondisconnect(conn, err)
 	if request and request.conn then
 		request:reader(nil, err or "closed");
 	end
+	if request and request.http.pool then
+		local pool = request.http.pool;
+		local pool_id = pool[conn];
+		if pool_id then
+			pool[pool_id], pool[conn] = nil, nil;
+		end
+	end
 	requests[conn] = nil;
 end
 
@@ -296,6 +312,23 @@ local function request(self, u, ex, callback)
 		end
 	end
 
+	if self.pool then
+		local pool_id = req.scheme .. "://" .. req.authority;
+		local conn = self.pool[pool_id];
+		if conn then
+			log("debug", "Re-using connection to %s from pool", req.host);
+			self.pool[pool_id] = nil;
+			self.pool[conn] = nil;
+			req.conn = conn;
+			requests[conn] = req;
+			self.events.fire_event("request", { http = self, request = req, url = u });
+			listener.onconnect(conn);
+			return req;
+		else
+			log("debug", "Opening a new connection for this request");
+		end
+	end
+
 	local http_service = basic_resolver.new(host, port_number, "tcp", { servername = req.host; use_dane = use_dane });
 	connect(http_service, listener, { sslctx = sslctx }, req);
 
@@ -332,6 +365,10 @@ local function new(options)
 		end or new;
 		events = events.new();
 	};
+	if options and options.connection_pooling then
+		-- util.cache in the future?
+		http.pool = {};
+	end
 	return http;
 end
 
