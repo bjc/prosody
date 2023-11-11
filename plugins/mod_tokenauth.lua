@@ -152,17 +152,17 @@ local function _get_validated_grant_info(username, grant)
 	local password_updated_at = account_info and account_info.password_updated;
 	local now = os.time();
 	if password_updated_at and grant.created < password_updated_at then
-		module:log("debug", "Token grant issued before last password change, invalidating it now");
+		module:log("debug", "Token grant %s of %s issued before last password change, invalidating it now", grant.id, username);
 		token_store:set_key(username, grant.id, nil);
 		return nil, "not-authorized";
 	elseif grant.expires and grant.expires < now then
-		module:log("debug", "Token grant expired, cleaning up");
+		module:log("debug", "Token grant %s of %s expired, cleaning up", grant.id, username);
 		token_store:set_key(username, grant.id, nil);
 		return nil, "expired";
 	end
 
 	if not grant.tokens then
-		module:log("debug", "Token grant without tokens, cleaning up");
+		module:log("debug", "Token grant %s of %s without tokens, cleaning up", grant.id, username);
 		token_store:set_key(username, grant.id, nil);
 		return nil, "invalid";
 	end
@@ -170,14 +170,14 @@ local function _get_validated_grant_info(username, grant)
 	local found_expired = false
 	for secret_hash, token_info in pairs(grant.tokens) do
 		if token_info.expires and token_info.expires < now then
-			module:log("debug", "Token has expired, cleaning it up");
+			module:log("debug", "Token %s of grant %s of %s has expired, cleaning it up", secret_hash:sub(-8), grant.id, username);
 			grant.tokens[secret_hash] = nil;
 			found_expired = true;
 		end
 	end
 
 	if not grant.expires and next(grant.tokens) == nil and grant.accessed + empty_grant_lifetime < now then
-		module:log("debug", "Token grant has no tokens, discarding");
+		module:log("debug", "Token %s of %s grant has no tokens, discarding", grant.id, username);
 		token_store:set_key(username, grant.id, nil);
 		return nil, "expired";
 	elseif found_expired then
