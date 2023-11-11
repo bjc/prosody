@@ -725,7 +725,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0353.html"/>
-        <xmpp:version>0.4.0</xmpp:version>
+        <xmpp:version>0.6.0</xmpp:version>
         <xmpp:since>0.11.6</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>triggers buffer flush in mod_csi_simple since 0.11.6; recognised by mod_carbons and mod_mam since 0.12</xmpp:note>
