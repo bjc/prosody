@@ -123,7 +123,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0045.html"/>
-        <xmpp:version>1.34.3</xmpp:version>
+        <xmpp:version>1.34.5</xmpp:version>
         <xmpp:since>0.3.0</xmpp:since>
         <xmpp:status>partial</xmpp:status>
       </xmpp:SupportedXep>
