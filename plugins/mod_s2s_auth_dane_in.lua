@@ -70,6 +70,7 @@ module:hook("s2s-check-certificate", function(event)
 	local function fetch_tlsa(res)
 		local tlsas = {};
 		for _, rr in ipairs(res) do
+			if rr.srv.target == "." then return {}; end
 			table.insert(tlsas, resolver:lookup_promise(("_%d._tcp.%s"):format(rr.srv.port, rr.srv.target), "TLSA"):next(ensure_secure));
 		end
 		return promise.all(tlsas);
