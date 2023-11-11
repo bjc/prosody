@@ -689,7 +689,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0313.html"/>
-        <xmpp:version>1.0.1</xmpp:version>
+        <xmpp:version>1.1.0</xmpp:version>
         <xmpp:status>complete</xmpp:status>
         <xmpp:since>0.10.0</xmpp:since>
         <xmpp:note>mod_mam, mod_muc_mam</xmpp:note>
