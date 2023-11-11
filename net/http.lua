@@ -115,7 +115,8 @@ local function request_reader(request, data, err)
 				request.callback(r.body, r.code, r, request);
 				request.callback = nil;
 			end
-			destroy_request(request);
+			local persistent = (","..(r.headers.connection or "keep-alive")..","):find(",keep-alive,")
+			destroy_request(request, persistent);
 		end
 		local function options_cb()
 			return request;
@@ -268,6 +269,12 @@ local function request(self, u, ex, callback)
 		["Host"] = host_header;
 		["User-Agent"] = "Prosody XMPP Server";
 	};
+
+	if self.pool then
+		headers["Connection"] = "keep-alive";
+	else
+		headers["Connection"] = "close";
+	end
 
 	if req.userinfo then
 		headers["Authorization"] = "Basic "..b64(req.userinfo);
