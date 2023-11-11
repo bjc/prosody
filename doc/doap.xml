@@ -734,7 +734,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0359.html"/>
-        <xmpp:version>0.6.1</xmpp:version>
+        <xmpp:version>0.7.0</xmpp:version>
         <xmpp:status>complete</xmpp:status>
         <xmpp:since>0.10.0</xmpp:since>
         <xmpp:note>Used in context of XEP-0313 by mod_mam and mod_muc_mam</xmpp:note>
