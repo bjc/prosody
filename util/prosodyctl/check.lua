@@ -506,9 +506,9 @@ local function check(arg)
 			end
 			for k, v in pairs(modules) do
 				if type(k) ~= "number" or type(v) ~= "string" then
-					print("    The " .. name .. " in the " .. host .. " section should not be a map of " .. type(k) .. " to " .. type(v)
-									.. " but a list of strings, e.g.");
+					print("    The " .. name .. " in the " .. host .. " section should be a list of strings, e.g.");
 					print("    " .. name .. " = { \"name_of_module\", \"another_plugin\", }")
+					print("    It should not contain key = value pairs, try putting them outside the {} brackets.");
 					ok = false
 					break
 				end
