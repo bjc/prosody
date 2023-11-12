@@ -1,0 +1,31 @@
+ARG os
+ARG dist
+FROM ${os:-debian}:${dist:-sid}
+ENV DEBIAN_FRONTEND noninteractive
+RUN set -ex; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+	ccache dh-lua libicu-dev libidn11-dev libssl-dev \
+	lua-bitop lua-dbi-mysql lua-dbi-postgresql lua-dbi-sqlite3 \
+	lua-event lua-expat lua-filesystem lua-ldap lua-sec lua-socket \
+	luarocks shellcheck mercurial; \
+	apt-get install -y ca-certificates dns-root-data; \
+	apt-get install -y lua-bit32 || true; \
+	apt-get install -y lua-busted || true; \
+	apt-get install -y lua-check || true; \
+	apt-get install -y lua-readline || true; \
+	apt-get install -y lua-unbound || true; \
+	update-alternatives --set lua-interpreter /usr/bin/lua5.4 || true \
+	apt-get clean
+
+# Place this file in an empty directory and build the image with
+# podman build . -t prosody.im/build-env
+#
+# Substituting podman for docker should work, where that is what's available.
+#
+# Then in a source directory, run:
+# podman run -it --rm -v "$PWD:$PWD" -w "$PWD" --entrypoint /bin/bash \
+#            --userns=keep-id --network host prosody.im/build-env
+#
+# In the resulting environment everything required to compile and run prosody
+# is available, so e.g. `./configure; make; ./prosody` should Just Work!
