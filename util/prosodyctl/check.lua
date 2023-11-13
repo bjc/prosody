@@ -1177,9 +1177,9 @@ local function check(arg)
 							print("    Not valid for client connections to "..host..".")
 							cert_ok = false
 						end
-						if modules:contains("s2s") and (not (api(host):get_option_boolean("anonymous_login", false)
-							or api(host):get_option_string("authentication", "internal_hashed") == "anonymous"))
-							and not x509_verify_identity(host, "_xmpp-server", cert) then
+						local anon = api(host):get_option_string("authentication", "internal_hashed") == "anonymous";
+						local anon_s2s = api(host):get_option_boolean("allow_anonymous_s2s", false);
+						if modules:contains("s2s") and (anon_s2s or not anon) and not x509_verify_identity(host, "_xmpp-server", cert) then
 							print("    Not valid for server-to-server connections to "..host..".")
 							cert_ok = false
 						end
