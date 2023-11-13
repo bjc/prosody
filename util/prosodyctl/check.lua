@@ -1189,6 +1189,10 @@ local function check(arg)
 							or contains_match(modules, "_web$");
 
 						local http_host = api(host):get_option_string("http_host", host);
+						if api(host):get_option_string("http_external_url") then
+							-- Assumed behind a reverse proxy
+							http_loaded = false;
+						end
 						if http_loaded and not x509_verify_identity(http_host, nil, cert) then
 							print("    Not valid for HTTPS connections to "..host..".")
 							cert_ok = false
