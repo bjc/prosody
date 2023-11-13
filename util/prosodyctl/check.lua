@@ -313,6 +313,7 @@ local function check(arg)
 	local set = require "prosody.util.set";
 	local it = require "prosody.util.iterators";
 	local ok = true;
+	local function contains_match(hayset, needle) for member in hayset do if member:find(needle) then return true end end end
 	local function disabled_hosts(host, conf) return host ~= "*" and conf.enabled ~= false; end
 	local function enabled_hosts() return it.filter(disabled_hosts, pairs(configmanager.getconfig())); end
 	local checks = {};
@@ -973,9 +974,6 @@ local function check(arg)
 			end
 
 			local known_http_modules = set.new { "bosh"; "http_files"; "http_file_share"; "http_openmetrics"; "websocket" };
-			local function contains_match(hayset, needle)
-				for member in hayset do if member:find(needle) then return true end end
-			end
 
 			if modules:contains("http") or not set.intersection(modules, known_http_modules):empty()
 				or contains_match(modules, "^http_") or contains_match(modules, "_web$") then
@@ -1181,6 +1179,18 @@ local function check(arg)
 						local anon_s2s = api(host):get_option_boolean("allow_anonymous_s2s", false);
 						if modules:contains("s2s") and (anon_s2s or not anon) and not x509_verify_identity(host, "_xmpp-server", cert) then
 							print("    Not valid for server-to-server connections to "..host..".")
+							cert_ok = false
+						end
+
+						local known_http_modules = set.new { "bosh"; "http_files"; "http_file_share"; "http_openmetrics"; "websocket" };
+						local http_loaded = modules:contains("http")
+							or not set.intersection(modules, known_http_modules):empty()
+							or contains_match(modules, "^http_")
+							or contains_match(modules, "_web$");
+
+						local http_host = api(host):get_option_string("http_host", host);
+						if http_loaded and not x509_verify_identity(http_host, nil, cert) then
+							print("    Not valid for HTTPS connections to "..host..".")
 							cert_ok = false
 						end
 						if use_dane then
