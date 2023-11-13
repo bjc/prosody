@@ -1131,6 +1131,7 @@ local function check(arg)
 			cert_ok = false
 		else
 			for host in it.filter(skip_bare_jid_hosts, enabled_hosts()) do
+				local modules = modulemanager.get_modules_for_host(host);
 				print("Checking certificate for "..host);
 				-- First, let's find out what certificate this host uses.
 				local host_ssl_config = configmanager.rawget(host, "ssl")
@@ -1172,12 +1173,11 @@ local function check(arg)
 						elseif not cert:validat(os.time() + 86400*31) then
 							print("    Certificate expires within one month.")
 						end
-						if select(2, modulemanager.get_modules_for_host(host)) == nil
-							and not x509_verify_identity(host, "_xmpp-client", cert) then
+						if modules:contains("c2s") and not x509_verify_identity(host, "_xmpp-client", cert) then
 							print("    Not valid for client connections to "..host..".")
 							cert_ok = false
 						end
-						if (not (api(host):get_option_boolean("anonymous_login", false)
+						if modules:contains("s2s") and (not (api(host):get_option_boolean("anonymous_login", false)
 							or api(host):get_option_string("authentication", "internal_hashed") == "anonymous"))
 							and not x509_verify_identity(host, "_xmpp-server", cert) then
 							print("    Not valid for server-to-server connections to "..host..".")
