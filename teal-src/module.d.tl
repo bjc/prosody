@@ -34,8 +34,11 @@ global record moduleapi
 	get_option : config_getter<any>
 	get_option_scalar : config_getter<nil | boolean | number | string>
 	get_option_string : config_getter<string>
-	get_option_number : config_getter<number>
+	get_option_number : function (moduleapi, string, number, number, number) : number
+	get_option_integer : function (moduleapi, string, integer, integer, integer) : integer
 	get_option_boolean : config_getter<boolean>
+	get_option_enum : function<A> (moduleapi, string, ... : A) : A
+	get_option_period : function (moduleapi, string|number, string|number, string|number, string|number) : number
 	record util_array
 		-- TODO import def
 		{ any }
