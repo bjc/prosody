@@ -26,7 +26,7 @@
 #include <unistd.h>
 #include <sys/epoll.h>
 #ifndef MAX_EVENTS
-#define MAX_EVENTS 64
+#define MAX_EVENTS 256
 #endif
 #endif
 #ifdef USE_POLL
