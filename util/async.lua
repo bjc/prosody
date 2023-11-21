@@ -305,5 +305,7 @@ return {
 
 	set_nexttick = function(new_next_tick) next_tick = new_next_tick; end;
 	set_schedule_function = function (new_schedule_function) schedule_task = new_schedule_function; end;
+
 	waiting_runners = waiting_runners;
+	default_runner_func = default_func;
 };
