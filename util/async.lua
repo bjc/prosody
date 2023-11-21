@@ -201,6 +201,7 @@ function runner_mt:run(input)
 		for i = 1,n do
 			local queued_input = q[i];
 			self:log("Resuming thread with new item [%s]", thread);
+			self.current_item = queued_input;
 			local ok, new_state = coroutine.resume(thread, queued_input);
 			if not ok then
 				-- There was an error running the coroutine, save the error, mark runner as ready to begin again
@@ -227,6 +228,10 @@ function runner_mt:run(input)
 	end
 	-- Runner processed all items it can, so save current runner state
 	self.state = state;
+	if state == "ready" and self.current_item then
+		self.current_item = nil;
+	end
+
 	if err or state ~= self.notified_state then
 		self:log("debug", "changed state from %s to %s [%s %s]", self.notified_state, err and ("error ("..state..")") or state, self.thread, self.thread and coroutine.status(self.thread));
 		if err then
