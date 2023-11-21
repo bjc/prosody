@@ -2017,18 +2017,11 @@ end
 
 function def_env.debug:async(runner_id)
 	local print = self.session.print;
-	local async = require "prosody.util.async";
-	local time_now = require "prosody.util.time".now();
-
-	local function format_time(t)
-		return os.date("%F %T", math.floor(normalize_time(t)));
-	end
+	local time_now = time.now();
 
 	if runner_id then
-		local matched;
 		for runner, since in pairs(async.waiting_runners) do
 			if runner.id == runner_id then
-				matched = runner;
 				print("ID        ", runner.id);
 				local f = runner.func;
 				if f == async.default_runner_func then
@@ -2039,7 +2032,7 @@ function def_env.debug:async(runner_id)
 						print("Stanza:")
 						print("\t"..runner.current_item:indent(2):pretty_print());
 					else
-						print("Work item", serialize(runner.current_item, "debug"));
+						print("Work item", self.session.serialize(runner.current_item, "debug"));
 					end
 				end
 
@@ -2054,7 +2047,12 @@ function def_env.debug:async(runner_id)
 		return nil, "Runner not found or is currently idle";
 	end
 
-	local row = format_table({ { title = "ID", width = 12 }, { title = "Function", width = "10p" }, { title = "Status", width = "16" }, { title = "Location", width = "10p" } }, self.session.width);
+	local row = format_table({
+		{ title = "ID"; width = 12 };
+		{ title = "Function"; width = "10p" };
+		{ title = "Status"; width = "16" };
+		{ title = "Location"; width = "10p" };
+	}, self.session.width);
 	print(row())
 
 	local c = 0;
