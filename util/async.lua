@@ -233,7 +233,8 @@ function runner_mt:run(input)
 	end
 
 	if err or state ~= self.notified_state then
-		self:log("debug", "changed state from %s to %s [%s %s]", self.notified_state, err and ("error ("..state..")") or state, self.thread, self.thread and coroutine.status(self.thread));
+		self:log("debug", "changed state from %s to %s [%s %s]", self.notified_state, err and ("error (" .. state .. ")") or state, self.thread,
+			self.thread and coroutine.status(self.thread));
 		if err then
 			state = "error"
 		else
