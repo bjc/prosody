@@ -321,6 +321,7 @@ function commands.help(session, data)
 		print [[stats:show():cfgraph() - Show a cumulative frequency graph]]
 		print [[stats:show():histogram() - Show a histogram of selected metric]]
 	elseif section == "debug" then
+		print [[debug:async() - Show information about pending asynchronous tasks]]
 		print [[debug:logevents(host) - Enable logging of fired events on host]]
 		print [[debug:events(host, event) - Show registered event handlers]]
 		print [[debug:timers() - Show information about scheduled timers]]
@@ -2012,6 +2013,70 @@ function def_env.debug:timers()
 		end
 	end
 	return true;
+end
+
+function def_env.debug:async(runner_id)
+	local print = self.session.print;
+	local async = require "prosody.util.async";
+	local time_now = require "prosody.util.time".now();
+
+	local function format_time(t)
+		return os.date("%F %T", math.floor(normalize_time(t)));
+	end
+
+	if runner_id then
+		local matched;
+		for runner, since in pairs(async.waiting_runners) do
+			if runner.id == runner_id then
+				matched = runner;
+				print("ID        ", runner.id);
+				local f = runner.func;
+				if f == async.default_runner_func then
+					print("Function ", tostring(runner.current_item).." (from work queue)");
+				else
+					print("Function ", tostring(f));
+					if st.is_stanza(runner.current_item) then
+						print("Stanza:")
+						print("\t"..runner.current_item:indent(2):pretty_print());
+					else
+						print("Work item", serialize(runner.current_item, "debug"));
+					end
+				end
+
+				print("Coroutine ", tostring(runner.thread).." ("..coroutine.status(runner.thread)..")");
+				print("Since     ", since);
+				print("Status    ", ("%s since %s (%0.2f seconds ago)"):format(runner.state, os.date("%Y-%m-%d %R:%S", math.floor(since)), time_now-since));
+				print("");
+				print(debug.traceback(runner.thread));
+				return true, "Runner is "..runner.state;
+			end
+		end
+		return nil, "Runner not found or is currently idle";
+	end
+
+	local row = format_table({ { title = "ID", width = 12 }, { title = "Function", width = "10p" }, { title = "Status", width = "16" }, { title = "Location", width = "10p" } }, self.session.width);
+	print(row())
+
+	local c = 0;
+	for runner, since in pairs(async.waiting_runners) do
+		c = c + 1;
+		local f = runner.func;
+		if f == async.default_runner_func then
+			f = runner.current_item;
+		end
+		-- We want to fetch the location in the code that the runner yielded from,
+		-- excluding util.async's wrapper code. A level of  `2` assumes that we
+		-- yielded directly from a function in util.async. This is *currently* true
+		-- of all util.async yields, but it's fragile.
+		local location = debug.getinfo(runner.thread, 2);
+		print(row {
+			runner.id;
+			tostring(f);
+			("%s (%0.2fs)"):format(runner.state, time_now - since);
+			location.short_src..(location.currentline and ":"..location.currentline or "");
+		});
+	end
+	return true, ("%d runners pending"):format(c);
 end
 
 -- COMPAT: debug:timers() was timer:info() for some time in trunk
