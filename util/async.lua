@@ -2,6 +2,7 @@ local logger = require "prosody.util.logger";
 local log = logger.init("util.async");
 local new_id = require "prosody.util.id".short;
 local xpcall = require "prosody.util.xpcall".xpcall;
+local time_now = require "prosody.util.time".now;
 
 local function checkthread()
 	local thread, main = coroutine.running();
@@ -138,6 +139,8 @@ end
 local runner_mt = {};
 runner_mt.__index = runner_mt;
 
+local waiting_runners = {};
+
 local function runner_create_thread(func, self)
 	local thread = coroutine.create(function (self) -- luacheck: ignore 432/self
 		while true do
@@ -234,6 +237,7 @@ function runner_mt:run(input)
 	if n > 0 then
 		return self:run();
 	end
+	waiting_runners[self] = state == "waiting" and time_now() or nil;
 	return true, state, n;
 end
 
@@ -293,4 +297,5 @@ return {
 
 	set_nexttick = function(new_next_tick) next_tick = new_next_tick; end;
 	set_schedule_function = function (new_schedule_function) schedule_task = new_schedule_function; end;
+	waiting_runners = waiting_runners;
 };
