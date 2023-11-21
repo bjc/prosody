@@ -46,7 +46,9 @@ end
 local function runner_continue(thread)
 	-- ASSUMPTION: runner is in 'waiting' state (but we don't have the runner to know for sure)
 	if coroutine.status(thread) ~= "suspended" then -- This should suffice
-		log("error", "unexpected async state: thread not suspended");
+		log("error", "unexpected async state: thread not suspended (%s, %s)", thread, coroutine.status(thread));
+		-- Fetching the traceback is likely to *crash* if a C library is calling us while suspended
+		--log("error", "coroutine stack: %s", debug.traceback());
 		return false;
 	end
 	local ok, state, runner = coroutine.resume(thread);
@@ -198,6 +200,7 @@ function runner_mt:run(input)
 		-- Loop through queue items, and attempt to run them
 		for i = 1,n do
 			local queued_input = q[i];
+			self:log("Resuming thread with new item [%s]", thread);
 			local ok, new_state = coroutine.resume(thread, queued_input);
 			if not ok then
 				-- There was an error running the coroutine, save the error, mark runner as ready to begin again
@@ -225,7 +228,7 @@ function runner_mt:run(input)
 	-- Runner processed all items it can, so save current runner state
 	self.state = state;
 	if err or state ~= self.notified_state then
-		self:log("debug", "changed state from %s to %s", self.notified_state, err and ("error ("..state..")") or state);
+		self:log("debug", "changed state from %s to %s [%s %s]", self.notified_state, err and ("error ("..state..")") or state, self.thread, self.thread and coroutine.status(self.thread));
 		if err then
 			state = "error"
 		else
