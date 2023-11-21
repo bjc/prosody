@@ -411,6 +411,12 @@ static int Lwait(lua_State *L) {
 	lua_Number timeout = luaL_checknumber(L, 2);
 	luaL_argcheck(L, timeout >= 0, 1, "positive number expected");
 
+	if(timeout == 0.0) {
+		lua_pushnil(L);
+		lua_pushstring(L, "timeout");
+		return 2;
+	}
+
 #ifdef USE_EPOLL
 	ret = epoll_wait(state->epoll_fd, state->events, MAX_EVENTS, timeout * 1000);
 #endif
