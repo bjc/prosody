@@ -400,6 +400,9 @@ function interface:set(r, w)
 	end
 	if r == nil then r = self._wantread; end
 	if w == nil then w = self._wantwrite; end
+	if r  == self._wantread and w == self._wantwrite then
+		return true
+	end
 	local ok, err, errno = poll:set(fd, r, w);
 	if not ok then
 		self:debug("Could not update poller state: %s(%d)", err, errno);
