@@ -139,12 +139,22 @@ end
 
 -- Compose a textual representation of Atom payloads
 local summary_templates = module:get_option("pubsub_summary_templates", {
-	["http://www.w3.org/2005/Atom"] = "{summary|or{{author/name|and{{author/name} posted }}{title}}}";
+	["http://www.w3.org/2005/Atom"] = "{@pubsub:title|and{*{@pubsub:title}*\n\n}}{summary|or{{author/name|and{{author/name} posted }}{title}}}";
 })
 
 for pubsub_type, template in pairs(summary_templates) do
 	module:hook("pubsub-summary/"..pubsub_type, function (event)
 		local payload = event.payload;
+
+		local got_config, node_config = service:get_node_config(event.node, true);
+		if got_config then
+			payload = st.clone(payload);
+			payload.attr["xmlns:pubsub"] = xmlns_pubsub;
+			payload.attr["pubsub:node"] = event.node;
+			payload.attr["pubsub:title"] = node_config.title;
+			payload.attr["pubsub:description"] = node_config.description;
+		end
+
 		return xtemplate.render(template, payload, tostring);
 	end, -1);
 end
