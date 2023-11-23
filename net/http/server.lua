@@ -407,9 +407,8 @@ function _M.finish_response(response)
 		response:on_destroy();
 		response.on_destroy = nil;
 	end
-	if response.persistent then
-		response:finish_cb();
-	else
+	response:finish_cb();
+	if not response.persistent then
 		response.conn:close();
 	end
 end
