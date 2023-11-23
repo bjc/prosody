@@ -258,6 +258,7 @@ function archive:find(username, query)
 	return function()
 		local item = iter();
 		if item == nil then
+			list:close();
 			return
 		end
 		local key = item.key;
