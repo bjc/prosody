@@ -422,7 +422,7 @@ function startup.init_data_store()
 	require "prosody.core.storagemanager";
 end
 
-local running_state = require "util.fsm".new({
+local running_state = require "prosody.util.fsm".new({
 	default_state = "uninitialized";
 	transitions = {
 		{ name = "begin_startup",   from = "uninitialized",           to = "starting" };
