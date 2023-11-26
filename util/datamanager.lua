@@ -424,7 +424,8 @@ local function get_list_index(username, host, datastore)
 	end
 
 	if ih then
-		return setmetatable({ file = ih }, index_mt);
+		local first_length = string.unpack(ih:read(index_item_size));
+		return setmetatable({ file = ih; { start = 0; length = first_length } }, index_mt);
 	end
 
 	local index, err = build_list_index(username, host, datastore);
