@@ -249,8 +249,7 @@ module:hook("iq-get/self/"..xmlns_mam..":metadata", function (event)
 			return true;
 		end
 
-		local id, _, when = first();
-		if id then
+		for id, _, when in first do
 			reply:tag("start", { id = id, timestamp = timestamp(when) }):up();
 		end
 	end
@@ -262,8 +261,7 @@ module:hook("iq-get/self/"..xmlns_mam..":metadata", function (event)
 			return true;
 		end
 
-		local id, _, when = last();
-		if id then
+		for id, _, when in last do
 			reply:tag("end", { id = id, timestamp = timestamp(when) }):up();
 		end
 	end
