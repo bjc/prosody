@@ -348,6 +348,7 @@ function archive:users()
 end
 
 function archive:trim(username, to_when)
+	local cache_key = jid_join(username, host, self.store);
 	local list, err = datamanager.list_open(username, host, self.store);
 	if not list then
 		if err == nil then
@@ -378,13 +379,14 @@ function archive:trim(username, to_when)
 	if i == 1 then return 0; end
 	local ok, err = datamanager.list_shift(username, host, self.store, i);
 	if not ok then return ok, err; end
+	archive_item_count_cache:set(cache_key, nil); -- TODO calculate how many items are left
 	return i-1;
 end
 
 function archive:delete(username, query)
 	local cache_key = jid_join(username, host, self.store);
 	if not query or next(query) == nil then
-		archive_item_count_cache:set(cache_key, nil);
+		archive_item_count_cache:set(cache_key, nil); -- nil because we don't check if the following succeeds
 		return datamanager.list_store(username, host, self.store, nil);
 	end
 
