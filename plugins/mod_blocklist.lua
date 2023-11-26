@@ -24,19 +24,14 @@ local storage = module:open_store();
 local sessions = prosody.hosts[module.host].sessions;
 local full_sessions = prosody.full_sessions;
 
--- First level cache of blocklists by username.
--- Weak table so may randomly expire at any time.
-local cache = setmetatable({}, { __mode = "v" });
-
--- Second level of caching, keeps a fixed number of items, also anchors
--- items in the above cache.
+-- Cache of blocklists, keeps a fixed number of items.
 --
 -- The size of this affects how often we will need to load a blocklist from
 -- disk, which we want to avoid during routing. On the other hand, we don't
 -- want to use too much memory either, so this can be tuned by advanced
 -- users. TODO use science to figure out a better default, 64 is just a guess.
-local cache_size = module:get_option_integer("blocklist_cache_size", 64, 1);
-local cache2 = require"prosody.util.cache".new(cache_size);
+local cache_size = module:get_option_integer("blocklist_cache_size", 256, 1);
+local blocklist_cache = require"prosody.util.cache".new(cache_size);
 
 local null_blocklist = {};
 
@@ -48,8 +43,7 @@ local function set_blocklist(username, blocklist)
 		return ok, err;
 	end
 	-- Successful save, update the cache
-	cache2:set(username, blocklist);
-	cache[username] = blocklist;
+	blocklist_cache:set(username, blocklist);
 	return true;
 end
 
@@ -86,7 +80,7 @@ if not module:get_option_boolean("migrate_legacy_blocking", true) then
 end
 
 local function get_blocklist(username)
-	local blocklist = cache2:get(username);
+	local blocklist = blocklist_cache:get(username);
 	if not blocklist then
 		if not user_exists(username, module.host) then
 			return null_blocklist;
@@ -98,9 +92,8 @@ local function get_blocklist(username)
 		if not blocklist then
 			blocklist = { [false] = { created = os.time(); }; };
 		end
-		cache2:set(username, blocklist);
+		blocklist_cache:set(username, blocklist);
 	end
-	cache[username] = blocklist;
 	return blocklist;
 end
 
@@ -108,7 +101,7 @@ module:hook("iq-get/self/urn:xmpp:blocking:blocklist", function (event)
 	local origin, stanza = event.origin, event.stanza;
 	local username = origin.username;
 	local reply = st.reply(stanza):tag("blocklist", { xmlns = "urn:xmpp:blocking" });
-	local blocklist = cache[username] or get_blocklist(username);
+	local blocklist = get_blocklist(username);
 	for jid in pairs(blocklist) do
 		if jid then
 			reply:tag("item", { jid = jid }):up();
@@ -167,7 +160,7 @@ local function edit_blocklist(event)
 		return true;
 	end
 
-	local blocklist = cache[username] or get_blocklist(username);
+	local blocklist = get_blocklist(username);
 
 	local new_blocklist = {
 		-- We set the [false] key to something as a signal not to migrate privacy lists
@@ -241,8 +234,7 @@ module:hook("iq-set/self/urn:xmpp:blocking:unblock", edit_blocklist, -1);
 -- Cache invalidation, solved!
 module:hook_global("user-deleted", function (event)
 	if event.host == module.host then
-		cache2:set(event.username, nil);
-		cache[event.username] = nil;
+		blocklist_cache:set(event.username, nil);
 	end
 end);
 
@@ -257,7 +249,7 @@ module:hook("iq-error/self/blocklist-push", function (event)
 end);
 
 local function is_blocked(user, jid)
-	local blocklist = cache[user] or get_blocklist(user);
+	local blocklist = get_blocklist(user);
 	if blocklist[jid] then return true; end
 	local node, host = jid_split(jid);
 	return blocklist[host] or node and blocklist[node..'@'..host];
