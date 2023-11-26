@@ -360,6 +360,9 @@ function archive:trim(username, to_when)
 	-- shortcut: check if the last item should be trimmed, if so, drop the whole archive
 	local last = list[#list].when or datetime.parse(list[#list].attr.stamp);
 	if last <= to_when then
+		if list.close then
+			list:close()
+		end
 		return datamanager.list_store(username, host, self.store, nil);
 	end
 
@@ -368,6 +371,9 @@ function archive:trim(username, to_when)
 		local when = item.when or datetime.parse(item.attr.stamp);
 		return to_when - when;
 	end);
+	if list.close then
+		list:close()
+	end
 	-- TODO if exact then ... off by one?
 	if i == 1 then return 0; end
 	local ok, err = datamanager.list_shift(username, host, self.store, i);
