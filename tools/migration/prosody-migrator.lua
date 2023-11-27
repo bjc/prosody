@@ -168,6 +168,11 @@ local function prepare_config(host, conf)
 	elseif conf.type == "sql" then
 		cm.set(host, "sql", conf);
 	end
+	if type(conf.config) == "table" then
+		for option, value in pairs(conf.config) do
+			cm.set(host, option, value);
+		end
+	end
 end
 
 local function get_driver(host, conf)
