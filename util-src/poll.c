@@ -26,13 +26,15 @@
 #include <unistd.h>
 #include <sys/epoll.h>
 #ifndef MAX_EVENTS
+/* Maximum number of returned events, retrieved into Lpoll_state */
 #define MAX_EVENTS 256
 #endif
 #endif
 #ifdef USE_POLL
 #include <poll.h>
-#ifndef MAX_EVENTS
-#define MAX_EVENTS 10000
+#ifndef MAX_WATCHED
+/* Maximum number of watched sockets, kept in Lpoll_state */
+#define MAX_WATCHED 10000
 #endif
 #endif
 #ifdef USE_SELECT
@@ -59,7 +61,7 @@ typedef struct Lpoll_state {
 #endif
 #ifdef USE_POLL
 	nfds_t count;
-	struct pollfd events[MAX_EVENTS];
+	struct pollfd events[MAX_WATCHED];
 #endif
 #ifdef USE_SELECT
 	fd_set wantread;
@@ -120,7 +122,7 @@ static int Ladd(lua_State *L) {
 		}
 	}
 
-	if(state->count >= MAX_EVENTS) {
+	if(state->count >= MAX_WATCHED) {
 		luaL_pushfail(L);
 		lua_pushstring(L, strerror(EMFILE));
 		lua_pushinteger(L, EMFILE);
@@ -543,7 +545,7 @@ static int Lnew(lua_State *L) {
 	state->processed = -1;
 	state->count = 0;
 
-	for(nfds_t i = 0; i < MAX_EVENTS; i++) {
+	for(nfds_t i = 0; i < MAX_WATCHED; i++) {
 		state->events[i].fd = -1;
 		state->events[i].events = 0;
 		state->events[i].revents = 0;
