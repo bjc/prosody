@@ -303,8 +303,8 @@ local function describe_command(s)
 	local command_help = getmetatable(def_env[section]).help.commands;
 	command_help[name] = {
 		desc = desc;
-		args = array.collect(args:gmatch("[%w_]+")):map(function (name)
-			return { name = name };
+		args = array.collect(args:gmatch("[%w_]+")):map(function (arg_name)
+			return { name = arg_name };
 		end);
 	};
 end
@@ -315,20 +315,21 @@ end
 -- Help about individual topics is handled by def_env.help
 function commands.help(session, data)
 	local print = session.print;
-	local section = data:match("^help (%w+)");
-	if not section then
-		print [[Commands are divided into multiple sections. For help on a particular section, ]]
-		print [[type: help SECTION (for example, 'help c2s'). Sections are: ]]
-		print [[]]
-		local row = format_table({ { title = "Section", width = 7 }, { title = "Description", width = "100%" } }, session.width)
-		print(row())
-		for section_name, section in it.sorted_pairs(def_env) do
-			local section_mt = getmetatable(section);
-			local section_help = section_mt and section_mt.help;
-			print(row { section_name; section_help and section_help.desc or "" });
-		end
-	else
-		return def_env.help[section]({ session = session });
+
+	local topic = data:match("^help (%w+)");
+	if topic then
+		return def_env.help[topic]({ session = session });
+	end
+
+	print [[Commands are divided into multiple sections. For help on a particular section, ]]
+	print [[type: help SECTION (for example, 'help c2s'). Sections are: ]]
+	print [[]]
+	local row = format_table({ { title = "Section", width = 7 }, { title = "Description", width = "100%" } }, session.width)
+	print(row())
+	for section_name, section in it.sorted_pairs(def_env) do
+		local section_mt = getmetatable(section);
+		local section_help = section_mt and section_mt.help;
+		print(row { section_name; section_help and section_help.desc or "" });
 	end
 
 	print("");
@@ -336,8 +337,8 @@ function commands.help(session, data)
 	print [[In addition to info about commands, the following general topics are available:]]
 
 	print("");
-	for topic_name, topic in it.sorted_pairs(help_topics) do
-		print(topic_name .. " - "..topic.desc);
+	for topic_name, topic_info in it.sorted_pairs(help_topics) do
+		print(topic_name .. " - "..topic_info.desc);
 	end
 end
 
@@ -1803,7 +1804,7 @@ function def_env.user:list(host, pat)
 	return true, "Showing "..(pat and (matches.." of ") or "all " )..total.." users";
 end
 
-def_env.xmpp = new_section("Commands for sending XMPP stanzas");;
+def_env.xmpp = new_section("Commands for sending XMPP stanzas");
 
 describe_command [[xmpp:ping(localhost, remotehost) - Sends a ping to a remote XMPP server and reports the response]]
 local new_id = require "prosody.util.id".medium;
@@ -2396,7 +2397,8 @@ local function new_stats_context(self)
 	return setmetatable({ session = self.session, stats = true, now = time.now() }, stats_mt);
 end
 
-describe_command [[stats:show(pattern) - Show internal statistics, optionally filtering by name with a pattern. Append :cfgraph() or :histogram() for graphs]]
+describe_command [[stats:show(pattern) - Show internal statistics, optionally filtering by name with a pattern.]]
+-- Undocumented currently, you can append :histogram() or :cfgraph() to stats:show() for rendered graphs.
 function def_env.stats:show(name_filter)
 	local statsman = require "prosody.core.statsmanager"
 	local collect = statsman.collect
@@ -2484,14 +2486,14 @@ local function new_item_handlers(command_host)
 							if type(selected_host) ~= "string" then
 								return nil, "Invalid or missing argument '"..command.host_selector.."'";
 							end
-							if not hosts[selected_host] then
+							if not prosody.hosts[selected_host] then
 								return nil, "Unknown host: "..selected_host;
 							end
-							local handler = host_commands[qualified_name][selected_host];
-							if not handler then
+							local host_handler = host_commands[qualified_name][selected_host];
+							if not host_handler then
 								return nil, "This command is not available on "..selected_host;
 							end
-							return handler(...);
+							return host_handler(...);
 						end;
 					};
 				};
