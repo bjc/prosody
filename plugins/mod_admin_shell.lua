@@ -15,6 +15,7 @@ local modulemanager = require "prosody.core.modulemanager";
 local s2smanager = require "prosody.core.s2smanager";
 local portmanager = require "prosody.core.portmanager";
 local helpers = require "prosody.util.helpers";
+local it = require "prosody.util.iterators";
 local server = require "prosody.net.server";
 local st = require "prosody.util.stanza";
 
@@ -62,6 +63,86 @@ end
 local commands = module:shared("commands")
 local def_env = module:shared("env");
 local default_env_mt = { __index = def_env };
+
+local function new_section(section_desc)
+	return setmetatable({}, {
+		help = {
+			desc = section_desc;
+			commands = {};
+		};
+	});
+end
+
+local help_topics = {};
+local function help_topic(name)
+	return function (desc)
+		return function (content)
+			help_topics[name] = {
+				desc = desc;
+				content = content;
+			};
+		end;
+	end
+end
+
+-- Seed with default sections and their description text
+help_topic "console" "Help regarding the console itself" [[
+Hey! Welcome to Prosody's admin console.
+First thing, if you're ever wondering how to get out, simply type 'quit'.
+Secondly, note that we don't support the full telnet protocol yet (it's coming)
+so you may have trouble using the arrow keys, etc. depending on your system.
+
+For now we offer a couple of handy shortcuts:
+!! - Repeat the last command
+!old!new! - repeat the last command, but with 'old' replaced by 'new'
+
+For those well-versed in Prosody's internals, or taking instruction from those who are,
+you can prefix a command with > to escape the console sandbox, and access everything in
+the running server. Great fun, but be careful not to break anything :)
+]];
+
+local available_columns; --forward declaration so it is reachable from the help
+
+help_topic "columns" "Information about customizing session listings" (function (self, print)
+	print [[The columns shown by c2s:show() and s2s:show() can be customizied via the]]
+	print [['columns' argument as described here.]]
+	print [[]]
+	print [[Columns can be specified either as "id jid ipv" or as {"id", "jid", "ipv"}.]]
+	print [[Available columns are:]]
+	local meta_columns = {
+		{ title = "ID"; width = 5 };
+		{ title = "Column Title"; width = 12 };
+		{ title = "Description"; width = 12 };
+	};
+	-- auto-adjust widths
+	for column, spec in pairs(available_columns) do
+		meta_columns[1].width = math.max(meta_columns[1].width or 0, #column);
+		meta_columns[2].width = math.max(meta_columns[2].width or 0, #(spec.title or ""));
+		meta_columns[3].width = math.max(meta_columns[3].width or 0, #(spec.description or ""));
+	end
+	local row = format_table(meta_columns, self.session.width)
+	print(row());
+	for column, spec in iterators.sorted_pairs(available_columns) do
+		print(row({ column, spec.title, spec.description }));
+	end
+	print [[]]
+	print [[Most fields on the internal session structures can also be used as columns]]
+	-- Also, you can pass a table column specification directly, with mapper callback and all
+end);
+
+help_topic "roles"   "Show information about user roles" [[
+Roles may grant access or restrict users from certain operations.
+
+Built-in roles are:
+  prosody:guest      - Guest/anonymous user
+  prosody:registered - Registered user
+  prosody:member     - Provisioned user
+  prosody:admin      - Host administrator
+  prosody:operator - Server administrator
+
+Roles can be assigned using the user management commands (see 'help user').
+]];
+
 
 local function redirect_output(target, session)
 	local env = setmetatable({ print = session.print }, { __index = function (_, k) return rawget(target, k); end });
@@ -143,11 +224,13 @@ local function handle_line(event)
 
 	local result = st.stanza("repl-result");
 
+	module:log("warn", "Processing line: %q", line);
+
 	if line:match("^>") then
 		line = line:gsub("^>", "");
 		useglobalenv = true;
 	else
-		local command = line:match("^%w+") or line:match("%p");
+		local command = line:match("^(%w+) ") or line:match("^%w+$") or line:match("%p");
 		if commands[command] then
 			commands[command](session, line);
 			event.origin.send(result);
@@ -213,11 +296,24 @@ module:hook("admin/repl-input", function (event)
 	return true;
 end);
 
+local function describe_command(s)
+	local section, name, args, desc = s:match("^([%w_]+):([%w_]+)%(([^)]*)%) %- (.+)$");
+	if not section then
+		error("Failed to parse command description: "..s);
+	end
+	local command_help = getmetatable(def_env[section]).help.commands;
+	command_help[name] = {
+		desc = desc;
+		args = array.collect(args:gmatch("[%w_]+")):map(function (name)
+			return { name = name };
+		end);
+	};
+end
+
 -- Console commands --
 -- These are simple commands, not valid standalone in Lua
 
-local available_columns; --forward declaration so it is reachable from the help
-
+-- Help about individual topics is handled by def_env.help
 function commands.help(session, data)
 	local print = session.print;
 	local section = data:match("^help (%w+)");
@@ -227,145 +323,22 @@ function commands.help(session, data)
 		print [[]]
 		local row = format_table({ { title = "Section", width = 7 }, { title = "Description", width = "100%" } }, session.width)
 		print(row())
-		print(row { "c2s"; "Commands to manage local client-to-server sessions" })
-		print(row { "s2s"; "Commands to manage sessions between this server and others" })
-		print(row { "http"; "Commands to inspect HTTP services" }) -- XXX plural but there is only one so far
-		print(row { "module"; "Commands to load/reload/unload modules/plugins" })
-		print(row { "host"; "Commands to activate, deactivate and list virtual hosts" })
-		print(row { "user"; "Commands to create and delete users, and change their passwords" })
-		print(row { "roles"; "Show information about user roles" })
-		print(row { "muc"; "Commands to create, list and manage chat rooms" })
-		print(row { "stats"; "Commands to show internal statistics" })
-		print(row { "server"; "Uptime, version, shutting down, etc." })
-		print(row { "port"; "Commands to manage ports the server is listening on" })
-		print(row { "dns"; "Commands to manage and inspect the internal DNS resolver" })
-		print(row { "xmpp"; "Commands for sending XMPP stanzas" })
-		print(row { "debug"; "Commands for debugging the server" })
-		print(row { "watch"; "Commands for watching live logs from the server" })
-		print(row { "config"; "Reloading the configuration, etc." })
-		print(row { "columns"; "Information about customizing session listings" })
-		print(row { "console"; "Help regarding the console itself" })
-	elseif section == "c2s" then
-		print [[c2s:show(jid, columns) - Show all client sessions with the specified JID (or all if no JID given)]]
-		print [[c2s:show_tls(jid) - Show TLS cipher info for encrypted sessions]]
-		print [[c2s:count() - Count sessions without listing them]]
-		print [[c2s:close(jid) - Close all sessions for the specified JID]]
-		print [[c2s:closeall() - Close all active c2s connections ]]
-	elseif section == "s2s" then
-		print [[s2s:show(domain, columns) - Show all s2s connections for the given domain (or all if no domain given)]]
-		print [[s2s:show_tls(domain) - Show TLS cipher info for encrypted sessions]]
-		print [[s2s:close(from, to) - Close a connection from one domain to another]]
-		print [[s2s:closeall(host) - Close all the incoming/outgoing s2s sessions to specified host]]
-	elseif section == "http" then
-		print [[http:list(hosts) - Show HTTP endpoints]]
-	elseif section == "module" then
-		print [[module:info(module, host) - Show information about a loaded module]]
-		print [[module:load(module, host) - Load the specified module on the specified host (or all hosts if none given)]]
-		print [[module:reload(module, host) - The same, but unloads and loads the module (saving state if the module supports it)]]
-		print [[module:unload(module, host) - The same, but just unloads the module from memory]]
-		print [[module:list(host) - List the modules loaded on the specified host]]
-	elseif section == "host" then
-		print [[host:activate(hostname) - Activates the specified host]]
-		print [[host:deactivate(hostname) - Disconnects all clients on this host and deactivates]]
-		print [[host:list() - List the currently-activated hosts]]
-	elseif section == "user" then
-		print [[user:create(jid, password, role) - Create the specified user account]]
-		print [[user:password(jid, password) - Set the password for the specified user account]]
-		print [[user:roles(jid, host) - Show current roles for an user]]
-		print [[user:setrole(jid, host, role) - Set primary role of a user (see 'help roles')]]
-		print [[user:addrole(jid, host, role) - Add a secondary role to a user]]
-		print [[user:delrole(jid, host, role) - Remove a secondary role from a user]]
-		print [[user:disable(jid) - Disable the specified user account, preventing login]]
-		print [[user:enable(jid) - Enable the specified user account, restoring login access]]
-		print [[user:delete(jid) - Permanently remove the specified user account]]
-		print [[user:list(hostname, pattern) - List users on the specified host, optionally filtering with a pattern]]
-	elseif section == "roles" then
-		print [[Roles may grant access or restrict users from certain operations]]
-		print [[Built-in roles are:]]
-		print [[  prosody:guest      - Guest/anonymous user]]
-		print [[  prosody:registered - Registered user]]
-		print [[  prosody:member     - Provisioned user]]
-		print [[  prosody:admin      - Host administrator]]
-		print [[  prosody:operator - Server administrator]]
-		print [[]]
-		print [[Roles can be assigned using the user management commands (see 'help user').]]
-	elseif section == "muc" then
-		-- TODO `muc:room():foo()` commands
-		print [[muc:create(roomjid, { config }) - Create the specified MUC room with the given config]]
-		print [[muc:list(host) - List rooms on the specified MUC component]]
-		print [[muc:room(roomjid) - Reference the specified MUC room to access MUC API methods]]
-		print [[muc:occupants(roomjid, filter) - List room occupants, optionally filtered on substring or role]]
-		print [[muc:affiliations(roomjid, filter) - List affiliated members of the room, optionally filtered on substring or affiliation]]
-	elseif section == "server" then
-		print [[server:version() - Show the server's version number]]
-		print [[server:uptime() - Show how long the server has been running]]
-		print [[server:memory() - Show details about the server's memory usage]]
-		print [[server:shutdown(reason) - Shut down the server, with an optional reason to be broadcast to all connections]]
-	elseif section == "port" then
-		print [[port:list() - Lists all network ports prosody currently listens on]]
-		print [[port:close(port, interface) - Close a port]]
-	elseif section == "dns" then
-		print [[dns:lookup(name, type, class) - Do a DNS lookup]]
-		print [[dns:addnameserver(nameserver) - Add a nameserver to the list]]
-		print [[dns:setnameserver(nameserver) - Replace the list of name servers with the supplied one]]
-		print [[dns:purge() - Clear the DNS cache]]
-		print [[dns:cache() - Show cached records]]
-	elseif section == "xmpp" then
-		print [[xmpp:ping(localhost, remotehost) -- Sends a ping to a remote XMPP server and reports the response]]
-	elseif section == "config" then
-		print [[config:reload() - Reload the server configuration. Modules may need to be reloaded for changes to take effect.]]
-		print [[config:get([host,] option) - Show the value of a config option.]]
-		print [[config:set([host,] option, value) - Update the value of a config option without writing to the config file.]]
-	elseif section == "stats" then -- luacheck: ignore 542
-		print [[stats:show(pattern) - Show internal statistics, optionally filtering by name with a pattern]]
-		print [[stats:show():cfgraph() - Show a cumulative frequency graph]]
-		print [[stats:show():histogram() - Show a histogram of selected metric]]
-	elseif section == "debug" then
-		print [[debug:async() - Show information about pending asynchronous tasks]]
-		print [[debug:logevents(host) - Enable logging of fired events on host]]
-		print [[debug:events(host, event) - Show registered event handlers]]
-		print [[debug:timers() - Show information about scheduled timers]]
-	elseif section == "watch" then
-		print [[watch:log() - Follow debug logs]]
-		print [[watch:stanzas(target, filter) - Watch live stanzas matching the specified target and filter]]
-	elseif section == "console" then
-		print [[Hey! Welcome to Prosody's admin console.]]
-		print [[First thing, if you're ever wondering how to get out, simply type 'quit'.]]
-		print [[Secondly, note that we don't support the full telnet protocol yet (it's coming)]]
-		print [[so you may have trouble using the arrow keys, etc. depending on your system.]]
-		print [[]]
-		print [[For now we offer a couple of handy shortcuts:]]
-		print [[!! - Repeat the last command]]
-		print [[!old!new! - repeat the last command, but with 'old' replaced by 'new']]
-		print [[]]
-		print [[For those well-versed in Prosody's internals, or taking instruction from those who are,]]
-		print [[you can prefix a command with > to escape the console sandbox, and access everything in]]
-		print [[the running server. Great fun, but be careful not to break anything :)]]
-	elseif section == "columns" then
-		print [[The columns shown by c2s:show() and s2s:show() can be customizied via the]]
-		print [['columns' argument as described here.]]
-		print [[]]
-		print [[Columns can be specified either as "id jid ipv" or as {"id", "jid", "ipv"}.]]
-		print [[Available columns are:]]
-		local meta_columns = {
-			{ title = "ID"; width = 5 };
-			{ title = "Column Title"; width = 12 };
-			{ title = "Description"; width = 12 };
-		};
-		-- auto-adjust widths
-		for column, spec in pairs(available_columns) do
-			meta_columns[1].width = math.max(meta_columns[1].width or 0, #column);
-			meta_columns[2].width = math.max(meta_columns[2].width or 0, #(spec.title or ""));
-			meta_columns[3].width = math.max(meta_columns[3].width or 0, #(spec.description or ""));
+		for section_name, section in it.sorted_pairs(def_env) do
+			local section_mt = getmetatable(section);
+			local section_help = section_mt and section_mt.help;
+			print(row { section_name; section_help and section_help.desc or "" });
 		end
-		local row = format_table(meta_columns, session.width)
-		print(row());
-		for column, spec in iterators.sorted_pairs(available_columns) do
-			print(row({ column, spec.title, spec.description }));
-		end
-		print [[]]
-		print [[Most fields on the internal session structures can also be used as columns]]
-		-- Also, you can pass a table column specification directly, with mapper callback and all
+	else
+		return def_env.help[section]({ session = session });
+	end
+
+	print("");
+
+	print [[In addition to info about commands, the following general topics are available:]]
+
+	print("");
+	for topic_name, topic in it.sorted_pairs(help_topics) do
+		print(topic_name .. " - "..topic.desc);
 	end
 end
 
@@ -379,7 +352,7 @@ local serialize_defaults = module:get_option("console_prettyprint_settings", {
 	table_iterator = "pairs";
 })
 
-def_env.output = {};
+def_env.output = new_section("Configure admin console output");
 function def_env.output:configure(opts)
 	if type(opts) ~= "table" then
 		opts = { preset = opts };
@@ -401,7 +374,57 @@ function def_env.output:configure(opts)
 	self.session.serialize = serialization.new(opts);
 end
 
-def_env.server = {};
+def_env.help = setmetatable({}, {
+	help = {
+		desc = "Show this help about available commands";
+		commands = {};
+	};
+	__index = function (_, section_name)
+		return function (self)
+			local print = self.session.print;
+			local section_mt = getmetatable(def_env[section_name]);
+			local section_help = section_mt and section_mt.help;
+
+			local c = 0;
+
+			if section_help then
+				print("Help: "..section_name);
+				if section_help.desc then
+					print(section_help.desc);
+				end
+				print(("-"):rep(#(section_help.desc or section_name)));
+				print("");
+
+				if section_help.content then
+					print(section_help.content);
+					print("");
+				end
+
+				for command, command_help in it.sorted_pairs(section_help.commands or {}) do
+					c = c + 1;
+					local args = command_help.args:pluck("name"):concat(", ");
+					local desc = command_help.desc or command_help.module and ("Provided by mod_"..command_help.module) or "";
+					print(("%s:%s(%s) - %s"):format(section_name, command, args, desc));
+				end
+			elseif help_topics[section_name] then
+				local topic = help_topics[section_name];
+				if type(topic.content) == "function" then
+					topic.content(self, print);
+				else
+					print(topic.content);
+				end
+				print("");
+				return true, "Showing help topic '"..section_name.."'";
+			else
+				print("Unknown topic: "..section_name);
+			end
+			print("");
+			return true, ("%d command(s) listed"):format(c);
+		end;
+	end;
+});
+
+def_env.server = new_section("Uptime, version, shutting down, etc.");
 
 function def_env.server:insane_reload()
 	prosody.unlock_globals();
@@ -410,10 +433,12 @@ function def_env.server:insane_reload()
 	return true, "Server reloaded";
 end
 
+describe_command [[server:version() - Show the server's version number]]
 function def_env.server:version()
 	return true, tostring(prosody.version or "unknown");
 end
 
+describe_command [[server:uptime() - Show how long the server has been running]]
 function def_env.server:uptime()
 	local t = os.time()-prosody.start_time;
 	local seconds = t%60;
@@ -428,6 +453,7 @@ function def_env.server:uptime()
 		minutes, (minutes ~= 1 and "s") or "", os.date("%c", prosody.start_time));
 end
 
+describe_command [[server:shutdown(reason) - Shut down the server, with an optional reason to be broadcast to all connections]]
 function def_env.server:shutdown(reason, code)
 	prosody.shutdown(reason, code);
 	return true, "Shutdown initiated";
@@ -437,6 +463,7 @@ local function human(kb)
 	return format_number(kb*1024, "B", "b");
 end
 
+describe_command [[server:memory() - Show details about the server's memory usage]]
 function def_env.server:memory()
 	if not has_pposix or not pposix.meminfo then
 		return true, "Lua is using "..human(collectgarbage("count"));
@@ -449,7 +476,7 @@ function def_env.server:memory()
 	return true, "OK";
 end
 
-def_env.module = {};
+def_env.module = new_section("Commands to load/reload/unload modules/plugins");
 
 local function get_hosts_set(hosts)
 	if type(hosts) == "table" then
@@ -495,6 +522,7 @@ local function get_hosts_with_module(hosts, module)
 	return hosts_set;
 end
 
+describe_command [[module:info(module, host) - Show information about a loaded module]]
 function def_env.module:info(name, hosts)
 	if not name then
 		return nil, "module name expected";
@@ -599,6 +627,7 @@ function def_env.module:info(name, hosts)
 	return true;
 end
 
+describe_command [[module:load(module, host) - Load the specified module on the specified host (or all hosts if none given)]]
 function def_env.module:load(name, hosts)
 	hosts = get_hosts_with_module(hosts);
 
@@ -632,6 +661,7 @@ function def_env.module:load(name, hosts)
 	return ok, (ok and "Module loaded onto "..count.." host"..(count ~= 1 and "s" or "")) or ("Last error: "..tostring(err));
 end
 
+describe_command [[module:unload(module, host) - The same, but just unloads the module from memory]]
 function def_env.module:unload(name, hosts)
 	hosts = get_hosts_with_module(hosts, name);
 
@@ -664,6 +694,7 @@ local function _sort_hosts(a, b)
 	else return a:gsub("[^.]+", string.reverse):reverse() < b:gsub("[^.]+", string.reverse):reverse(); end
 end
 
+describe_command [[module:reload(module, host) - The same, but unloads and loads the module (saving state if the module supports it)]]
 function def_env.module:reload(name, hosts)
 	hosts = array.collect(get_hosts_with_module(hosts, name)):sort(_sort_hosts)
 
@@ -687,6 +718,7 @@ function def_env.module:reload(name, hosts)
 	return ok, (ok and "Module reloaded on "..count.." host"..(count ~= 1 and "s" or "")) or ("Last error: "..tostring(err));
 end
 
+describe_command [[module:list(host) - List the modules loaded on the specified host]]
 function def_env.module:list(hosts)
 	hosts = array.collect(set.new({ not hosts and "*" or nil }) + get_hosts_set(hosts)):sort(_sort_hosts);
 
@@ -713,7 +745,8 @@ function def_env.module:list(hosts)
 	end
 end
 
-def_env.config = {};
+def_env.config = new_section("Reloading the configuration, etc.");
+
 function def_env.config:load(filename, format)
 	local config_load = require "prosody.core.configmanager".load;
 	local ok, err = config_load(filename, format);
@@ -723,6 +756,7 @@ function def_env.config:load(filename, format)
 	return true, "Config loaded";
 end
 
+describe_command [[config:get([host,] option) - Show the value of a config option.]]
 function def_env.config:get(host, key)
 	if key == nil then
 		host, key = "*", host;
@@ -731,6 +765,7 @@ function def_env.config:get(host, key)
 	return true, serialize_config(config_get(host, key));
 end
 
+describe_command [[config:set([host,] option, value) - Update the value of a config option without writing to the config file.]]
 function def_env.config:set(host, key, value)
 	if host ~= "*" and not prosody.hosts[host] then
 		host, key, value = "*", host, key;
@@ -738,12 +773,13 @@ function def_env.config:set(host, key, value)
 	return require "prosody.core.configmanager".set(host, key, value);
 end
 
+describe_command [[config:reload() - Reload the server configuration. Modules may need to be reloaded for changes to take effect.]]
 function def_env.config:reload()
 	local ok, err = prosody.reload_config();
 	return ok, (ok and "Config reloaded (you may need to reload modules to take effect)") or tostring(err);
 end
 
-def_env.c2s = {};
+def_env.c2s = new_section("Commands to manage local client-to-server sessions");
 
 local function get_jid(session)
 	if session.username then
@@ -780,6 +816,7 @@ local function show_c2s(callback)
 	end);
 end
 
+describe_command [[c2s:count() - Count sessions without listing them]]
 function def_env.c2s:count()
 	local c2s = get_c2s();
 	return true, "Total: "..  #c2s .." clients";
@@ -1044,6 +1081,7 @@ local function get_colspec(colspec, default)
 	return columns;
 end
 
+describe_command [[c2s:show(jid, columns) - Show all client sessions with the specified JID (or all if no JID given)]]
 function def_env.c2s:show(match_jid, colspec)
 	local print = self.session.print;
 	local columns = get_colspec(colspec, { "id"; "jid"; "role"; "ipv"; "status"; "secure"; "smacks"; "csi" });
@@ -1084,6 +1122,7 @@ function def_env.c2s:show(match_jid, colspec)
 	return true, ("%d c2s sessions shown"):format(total_count);
 end
 
+describe_command [[c2s:show_tls(jid) - Show TLS cipher info for encrypted sessions]]
 function def_env.c2s:show_tls(match_jid)
 	return self:show(match_jid, { "jid"; "id"; "secure"; "encryption" });
 end
@@ -1097,6 +1136,7 @@ local function build_reason(text, condition)
 	end
 end
 
+describe_command [[c2s:close(jid) - Close all sessions for the specified JID]]
 function def_env.c2s:close(match_jid, text, condition)
 	local count = 0;
 	show_c2s(function (jid, session)
@@ -1108,6 +1148,7 @@ function def_env.c2s:close(match_jid, text, condition)
 	return true, "Total: "..count.." sessions closed";
 end
 
+describe_command [[c2s:closeall() - Close all active c2s connections ]]
 function def_env.c2s:closeall(text, condition)
 	local count = 0;
 	--luacheck: ignore 212/jid
@@ -1119,7 +1160,8 @@ function def_env.c2s:closeall(text, condition)
 end
 
 
-def_env.s2s = {};
+def_env.s2s = new_section("Commands to manage sessions between this server and others");
+
 local function _sort_s2s(a, b)
 	local a_local, a_remote = get_s2s_hosts(a);
 	local b_local, b_remote = get_s2s_hosts(b);
@@ -1144,6 +1186,7 @@ local function match_s2s_jid(session, match_jid)
 	return false;
 end
 
+describe_command [[s2s:show(domain, columns) - Show all s2s connections for the given domain (or all if no domain given)]]
 function def_env.s2s:show(match_jid, colspec)
 	local print = self.session.print;
 	local columns = get_colspec(colspec, { "id"; "host"; "dir"; "remote"; "ipv"; "secure"; "s2s_sasl"; "dialback" });
@@ -1184,6 +1227,7 @@ function def_env.s2s:show(match_jid, colspec)
 	return true, ("%d s2s connections shown"):format(total_count);
 end
 
+describe_command [[s2s:show_tls(domain) - Show TLS cipher info for encrypted sessions]]
 function def_env.s2s:show_tls(match_jid)
 	return self:show(match_jid, { "id"; "host"; "dir"; "remote"; "secure"; "encryption"; "cert" });
 end
@@ -1306,6 +1350,7 @@ function def_env.s2s:showcert(domain)
 		.." presented by "..domain..".");
 end
 
+describe_command [[s2s:close(from, to) - Close a connection from one domain to another]]
 function def_env.s2s:close(from, to, text, condition)
 	local print, count = self.session.print, 0;
 	local s2s_sessions = module:shared"/*/s2s/sessions";
@@ -1330,6 +1375,7 @@ function def_env.s2s:close(from, to, text, condition)
 	return true, "Closed "..count.." s2s session"..((count == 1 and "") or "s");
 end
 
+describe_command [[s2s:closeall(host) - Close all the incoming/outgoing s2s sessions to specified host]]
 function def_env.s2s:closeall(host, text, condition)
 	local count = 0;
 	local s2s_sessions = module:shared"/*/s2s/sessions";
@@ -1343,15 +1389,19 @@ function def_env.s2s:closeall(host, text, condition)
 	else return true, "Closed "..count.." s2s session"..((count == 1 and "") or "s"); end
 end
 
-def_env.host = {}; def_env.hosts = def_env.host;
+def_env.host = new_section("Commands to activate, deactivate and list virtual hosts");
 
+describe_command [[host:activate(hostname) - Activates the specified host]]
 function def_env.host:activate(hostname, config)
 	return hostmanager.activate(hostname, config);
 end
+
+describe_command [[host:deactivate(hostname) - Disconnects all clients on this host and deactivates]]
 function def_env.host:deactivate(hostname, reason)
 	return hostmanager.deactivate(hostname, reason);
 end
 
+describe_command [[host:list() - List the currently-activated hosts]]
 function def_env.host:list()
 	local print = self.session.print;
 	local i = 0;
@@ -1372,8 +1422,9 @@ function def_env.host:list()
 	return true, i.." hosts";
 end
 
-def_env.port = {};
+def_env.port = new_section("Commands to manage ports the server is listening on");
 
+describe_command [[port:list() - Lists all network ports prosody currently listens on]]
 function def_env.port:list()
 	local print = self.session.print;
 	local services = portmanager.get_active_services().data;
@@ -1392,6 +1443,7 @@ function def_env.port:list()
 	return true, n_services.." services listening on "..n_ports.." ports";
 end
 
+describe_command [[port:close(port, interface) - Close a port]]
 function def_env.port:close(close_port, close_interface)
 	close_port = assert(tonumber(close_port), "Invalid port number");
 	local n_closed = 0;
@@ -1414,7 +1466,7 @@ function def_env.port:close(close_port, close_interface)
 	return true, "Closed "..n_closed.." ports";
 end
 
-def_env.muc = {};
+def_env.muc = new_section("Commands to create, list and manage chat rooms");
 
 local console_room_mt = {
 	__index = function (self, k) return self.room[k]; end;
@@ -1447,6 +1499,7 @@ end
 
 local muc_util = module:require"muc/util";
 
+describe_command [[muc:create(roomjid, { config }) - Create the specified MUC room with the given config]]
 function def_env.muc:create(room_jid, config)
 	local room_name, host = check_muc(room_jid);
 	if not room_name then
@@ -1458,6 +1511,7 @@ function def_env.muc:create(room_jid, config)
 	return prosody.hosts[host].modules.muc.create_room(room_jid, config);
 end
 
+describe_command [[muc:room(roomjid) - Reference the specified MUC room to access MUC API methods]]
 function def_env.muc:room(room_jid)
 	local room_obj, err = get_muc(room_jid);
 	if not room_obj then
@@ -1466,6 +1520,7 @@ function def_env.muc:room(room_jid)
 	return setmetatable({ room = room_obj }, console_room_mt);
 end
 
+describe_command [[muc:list(host) - List rooms on the specified MUC component]]
 function def_env.muc:list(host)
 	local host_session = prosody.hosts[host];
 	if not host_session or not host_session.modules.muc then
@@ -1480,6 +1535,7 @@ function def_env.muc:list(host)
 	return true, c.." rooms";
 end
 
+describe_command [[muc:occupants(roomjid, filter) - List room occupants, optionally filtered on substring or role]]
 function def_env.muc:occupants(room_jid, filter)
 	local room_obj, err = get_muc(room_jid);
 	if not room_obj then
@@ -1524,6 +1580,7 @@ function def_env.muc:occupants(room_jid, filter)
 	end
 end
 
+describe_command [[muc:affiliations(roomjid, filter) - List affiliated members of the room, optionally filtered on substring or affiliation]]
 function def_env.muc:affiliations(room_jid, filter)
 	local room_obj, err = get_muc(room_jid);
 	if not room_obj then
@@ -1576,7 +1633,9 @@ end
 
 local um = require"prosody.core.usermanager";
 
-def_env.user = {};
+def_env.user = new_section("Commands to create and delete users, and change their passwords");
+
+describe_command [[user:create(jid, password, role) - Create the specified user account]]
 function def_env.user:create(jid, password, role)
 	local username, host = jid_split(jid);
 	if not prosody.hosts[host] then
@@ -1597,6 +1656,7 @@ function def_env.user:create(jid, password, role)
 	return true, ("Created %s with role '%s'"):format(jid, role);
 end
 
+describe_command [[user:disable(jid) - Disable the specified user account, preventing login]]
 function def_env.user:disable(jid)
 	local username, host = jid_split(jid);
 	if not prosody.hosts[host] then
@@ -1612,6 +1672,7 @@ function def_env.user:disable(jid)
 	end
 end
 
+describe_command [[user:enable(jid) - Enable the specified user account, restoring login access]]
 function def_env.user:enable(jid)
 	local username, host = jid_split(jid);
 	if not prosody.hosts[host] then
@@ -1627,6 +1688,7 @@ function def_env.user:enable(jid)
 	end
 end
 
+describe_command [[user:delete(jid) - Permanently remove the specified user account]]
 function def_env.user:delete(jid)
 	local username, host = jid_split(jid);
 	if not prosody.hosts[host] then
@@ -1642,6 +1704,7 @@ function def_env.user:delete(jid)
 	end
 end
 
+describe_command [[user:password(jid, password) - Set the password for the specified user account]]
 function def_env.user:password(jid, password)
 	local username, host = jid_split(jid);
 	if not prosody.hosts[host] then
@@ -1657,6 +1720,7 @@ function def_env.user:password(jid, password)
 	end
 end
 
+describe_command [[user:roles(jid, host) - Show current roles for an user]]
 function def_env.user:role(jid, host)
 	local print = self.session.print;
 	local username, userhost = jid_split(jid);
@@ -1682,6 +1746,7 @@ function def_env.user:role(jid, host)
 end
 def_env.user.roles = def_env.user.role;
 
+describe_command [[user:setrole(jid, host, role) - Set primary role of a user (see 'help roles')]]
 -- user:setrole("someone@example.com", "example.com", "prosody:admin")
 -- user:setrole("someone@example.com", "prosody:admin")
 function def_env.user:setrole(jid, host, new_role)
@@ -1695,6 +1760,7 @@ function def_env.user:setrole(jid, host, new_role)
 	return um.set_user_role(username, host, new_role);
 end
 
+describe_command [[user:addrole(jid, host, role) - Add a secondary role to a user]]
 function def_env.user:addrole(jid, host, new_role)
 	local username, userhost = jid_split(jid);
 	if new_role == nil then host, new_role = userhost, host; end
@@ -1706,6 +1772,7 @@ function def_env.user:addrole(jid, host, new_role)
 	return um.add_user_secondary_role(username, host, new_role);
 end
 
+describe_command [[user:delrole(jid, host, role) - Remove a secondary role from a user]]
 function def_env.user:delrole(jid, host, role_name)
 	local username, userhost = jid_split(jid);
 	if role_name == nil then host, role_name = userhost, host; end
@@ -1717,6 +1784,7 @@ function def_env.user:delrole(jid, host, role_name)
 	return um.remove_user_secondary_role(username, host, role_name);
 end
 
+describe_command [[user:list(hostname, pattern) - List users on the specified host, optionally filtering with a pattern]]
 -- TODO switch to table view, include roles
 function def_env.user:list(host, pat)
 	if not host then
@@ -1736,8 +1804,9 @@ function def_env.user:list(host, pat)
 	return true, "Showing "..(pat and (matches.." of ") or "all " )..total.." users";
 end
 
-def_env.xmpp = {};
+def_env.xmpp = new_section("Commands for sending XMPP stanzas");;
 
+describe_command [[xmpp:ping(localhost, remotehost) - Sends a ping to a remote XMPP server and reports the response]]
 local new_id = require "prosody.util.id".medium;
 function def_env.xmpp:ping(localhost, remotehost, timeout)
 	localhost = select(2, jid_split(localhost));
@@ -1789,7 +1858,7 @@ function def_env.xmpp:ping(localhost, remotehost, timeout)
 	end);
 end
 
-def_env.dns = {};
+def_env.dns = new_section("Commands to manage and inspect the internal DNS resolver");
 local adns = require"prosody.net.adns";
 
 local function get_resolver(session)
@@ -1801,36 +1870,42 @@ local function get_resolver(session)
 	return resolver;
 end
 
+describe_command [[dns:lookup(name, type, class) - Do a DNS lookup]]
 function def_env.dns:lookup(name, typ, class)
 	local resolver = get_resolver(self.session);
 	return resolver:lookup_promise(name, typ, class)
 end
 
+describe_command [[dns:addnameserver(nameserver) - Add a nameserver to the list]]
 function def_env.dns:addnameserver(...)
 	local resolver = get_resolver(self.session);
 	resolver._resolver:addnameserver(...)
 	return true
 end
 
+describe_command [[dns:setnameserver(nameserver) - Replace the list of name servers with the supplied one]]
 function def_env.dns:setnameserver(...)
 	local resolver = get_resolver(self.session);
 	resolver._resolver:setnameserver(...)
 	return true
 end
 
+describe_command [[dns:purge() - Clear the DNS cache]]
 function def_env.dns:purge()
 	local resolver = get_resolver(self.session);
 	resolver._resolver:purge()
 	return true
 end
 
+describe_command [[dns:cache() - Show cached records]]
 function def_env.dns:cache()
 	local resolver = get_resolver(self.session);
 	return true, "Cache:\n"..tostring(resolver._resolver.cache)
 end
 
-def_env.http = {};
+def_env.http = new_section("Commands to inspect HTTP services");
 
+describe_command [[http:list(hosts) - Show HTTP endpoints]]
 function def_env.http:list(hosts)
 	local print = self.session.print;
 	hosts = array.collect(set.new({ not hosts and "*" or nil }) + get_hosts_set(hosts)):sort(_sort_hosts);
@@ -1875,8 +1950,9 @@ function def_env.http:list(hosts)
 	return true;
 end
 
-def_env.watch = {};
+def_env.watch = new_section("Commands for watching live logs from the server");
 
+describe_command [[watch:log() - Follow debug logs]]
 function def_env.watch:log()
 	local writing = false;
 	local sink = logger.add_simple_sink(function (source, level, message)
@@ -1894,6 +1970,7 @@ function def_env.watch:log()
 	end
 end
 
+describe_command [[watch:stanzas(target, filter) - Watch live stanzas matching the specified target and filter]]
 local stanza_watchers = module:require("mod_debug_stanzas/watcher");
 function def_env.watch:stanzas(target_spec, filter_spec)
 	local function handler(event_type, stanza, session)
@@ -1929,8 +2006,9 @@ function def_env.watch:stanzas(target_spec, filter_spec)
 	stanza_watchers.remove(handler);
 end
 
-def_env.debug = {};
+def_env.debug = new_section("Commands for debugging the server");
 
+describe_command [[debug:logevents(host) - Enable logging of fired events on host]]
 function def_env.debug:logevents(host)
 	if host == "*" then
 		helpers.log_events(prosody.events);
@@ -1943,6 +2021,7 @@ function def_env.debug:logevents(host)
 	return true;
 end
 
+describe_command [[debug:events(host, event) - Show registered event handlers]]
 function def_env.debug:events(host, event)
 	local events_obj;
 	if host and host ~= "*" then
@@ -1959,6 +2038,7 @@ function def_env.debug:events(host, event)
 	return true, helpers.show_events(events_obj, event);
 end
 
+describe_command [[debug:timers() - Show information about scheduled timers]]
 function def_env.debug:timers()
 	local print = self.session.print;
 	local add_task = require"prosody.util.timer".add_task;
@@ -2015,6 +2095,7 @@ function def_env.debug:timers()
 	return true;
 end
 
+describe_command [[debug:async() - Show information about pending asynchronous tasks]]
 function def_env.debug:async(runner_id)
 	local print = self.session.print;
 	local time_now = time.now();
@@ -2080,7 +2161,7 @@ end
 -- COMPAT: debug:timers() was timer:info() for some time in trunk
 def_env.timer = { info = def_env.debug.timers };
 
-def_env.stats = {};
+def_env.stats = new_section("Commands to show internal statistics");
 
 local short_units = {
 	seconds = "s",
@@ -2319,6 +2400,7 @@ local function new_stats_context(self)
 	return setmetatable({ session = self.session, stats = true, now = time.now() }, stats_mt);
 end
 
+describe_command [[stats:show(pattern) - Show internal statistics, optionally filtering by name with a pattern. Append :cfgraph() or :histogram() for graphs]]
 function def_env.stats:show(name_filter)
 	local statsman = require "prosody.core.statsmanager"
 	local collect = statsman.collect
