@@ -2159,9 +2159,6 @@ function def_env.debug:async(runner_id)
 	return true, ("%d runners pending"):format(c);
 end
 
--- COMPAT: debug:timers() was timer:info() for some time in trunk
-def_env.timer = { info = def_env.debug.timers };
-
 def_env.stats = new_section("Commands to show internal statistics");
 
 local short_units = {
