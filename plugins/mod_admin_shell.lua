@@ -225,8 +225,6 @@ local function handle_line(event)
 
 	local result = st.stanza("repl-result");
 
-	module:log("warn", "Processing line: %q", line);
-
 	if line:match("^>") then
 		line = line:gsub("^>", "");
 		useglobalenv = true;
@@ -2452,7 +2450,6 @@ local function new_item_handlers(command_host)
 	local function on_command_added(event)
 		local command = event.item;
 		local mod_name = command._provided_by and ("mod_"..command._provided_by) or "<unknown module>";
-		module:log("warn", "**************************************")
 		if not schema.validate(command_metadata_schema, command) or type(command.handler) ~= "function" then
 			module:log("warn", "Ignoring command added by %s: missing or invalid data", mod_name);
 			return;
@@ -2585,7 +2582,6 @@ end
 module:handle_items("shell-command", new_item_handlers());
 
 function module.add_host(host_module)
-	host_module:log("warn", "Loaded on %s", host_module.host);
 	host_module:handle_items("shell-command", new_item_handlers(host_module.host));
 end
 
