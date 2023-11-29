@@ -17,6 +17,7 @@ local portmanager = require "prosody.core.portmanager";
 local helpers = require "prosody.util.helpers";
 local it = require "prosody.util.iterators";
 local server = require "prosody.net.server";
+local schema = require "prosody.util.jsonschema";
 local st = require "prosody.util.stanza";
 
 local _G = _G;
@@ -2422,6 +2423,174 @@ function def_env.stats:show(name_filter)
 	return displayed_stats;
 end
 
+local command_metadata_schema = {
+	type = "object";
+	properties = {
+		section = { type = "string" };
+		section_desc = { type = "string" };
+
+		name = { type = "string" };
+		desc = { type = "string" };
+		help = { type = "string" };
+		args = {
+			type = "array";
+			items = {
+				type = "object";
+				properties = {
+					name = { type = "string", required = true };
+					type = { type = "string", required = false };
+				};
+			};
+		};
+	};
+
+	required = { "name", "section", "desc", "args" };
+};
+
+-- host_commands[section..":"..name][host] = handler
+-- host_commands[section..":"..name][false] = metadata
+local host_commands = {};
+
+local function new_item_handlers(command_host)
+	local function on_command_added(event)
+		local command = event.item;
+		local mod_name = command._provided_by and ("mod_"..command._provided_by) or "<unknown module>";
+		module:log("warn", "**************************************")
+		if not schema.validate(command_metadata_schema, command) or type(command.handler) ~= "function" then
+			module:log("warn", "Ignoring command added by %s: missing or invalid data", mod_name);
+			return;
+		end
+
+		local handler = command.handler;
+
+		if command_host then
+			if type(command.host_selector) ~= "string" then
+				module:log("warn", "Ignoring command %s:%s() added by %s - missing/invalid host_selector", command.section, command.name, mod_name);
+				return;
+			end
+			local qualified_name = command.section..":"..command.name;
+			local host_command_info = host_commands[qualified_name];
+			if not host_command_info then
+				local selector_index;
+				for i, arg in ipairs(command.args) do
+					if arg.name == command.host_selector then
+						selector_index = i + 1; -- +1 to account for 'self'
+						break;
+					end
+				end
+				if not selector_index then
+					module:log("warn", "Command %s() host selector argument '%s' not found - not registering", qualified_name, command.host_selector);
+					return;
+				end
+				host_command_info = {
+					[false] = {
+						host_selector = command.host_selector;
+						handler = function (...)
+							local selected_host = select(2, jid_split((select(selector_index, ...))));
+							if type(selected_host) ~= "string" then
+								return nil, "Invalid or missing argument '"..command.host_selector.."'";
+							end
+							if not hosts[selected_host] then
+								return nil, "Unknown host: "..selected_host;
+							end
+							local handler = host_commands[qualified_name][selected_host];
+							if not handler then
+								return nil, "This command is not available on "..selected_host;
+							end
+							return handler(...);
+						end;
+					};
+				};
+				host_commands[qualified_name] = host_command_info;
+			end
+			if host_command_info[command_host] then
+				module:log("warn", "Command %s() is already registered - overwriting with %s", qualified_name, mod_name);
+			end
+			host_command_info[command_host] = handler;
+		end
+
+		local section_t = def_env[command.section];
+		if not section_t then
+			section_t = {};
+			def_env[command.section] = section_t;
+		end
+
+		if command_host then
+			section_t[command.name] = host_commands[command.section..":"..command.name][false].handler;
+		else
+			section_t[command.name] = command.handler;
+		end
+
+		local section_mt = getmetatable(section_t);
+		if not section_mt then
+			section_mt = {};
+			setmetatable(section_t, section_mt);
+		end
+		local section_help = section_mt.help;
+		if not section_help then
+			section_help = {
+				desc = command.section_desc;
+				commands = {};
+			};
+			section_mt.help = section_help;
+		end
+
+		section_help.commands[command.name] = {
+			desc = command.desc;
+			full = command.help;
+			args = array(command.args);
+			module = command._provided_by;
+		};
+
+		module:log("debug", "Shell command added by mod_%s: %s:%s()", mod_name, command.section, command.name);
+	end
+
+	local function on_command_removed(event)
+		local command = event.item;
+
+		local handler = event.item.handler;
+		if type(handler) ~= "function" or not schema.validate(command_metadata_schema, command) then
+			return;
+		end
+
+		local section_t = def_env[command.section];
+		if not section_t or section_t[command.name] ~= handler then
+			return;
+		end
+
+		section_t[command.name] = nil;
+		if next(section_t) == nil then -- Delete section if empty
+			def_env[command.section] = nil;
+		end
+
+		if command_host then
+			local host_command_info = host_commands[command.section..":"..command.name];
+			if host_command_info then
+				-- Remove our host handler
+				host_command_info[command_host] = nil;
+				-- Clean up entire command entry if there are no per-host handlers left
+				local any_hosts = false;
+				for k in pairs(host_command_info) do
+					if k then -- metadata is false, ignore it
+						any_hosts = true;
+						break;
+					end
+				end
+				if not any_hosts then
+					host_commands[command.section..":"..command.name] = nil;
+				end
+			end
+		end
+	end
+	return on_command_added, on_command_removed;
+end
+
+module:handle_items("shell-command", new_item_handlers());
+
+function module.add_host(host_module)
+	host_module:log("warn", "Loaded on %s", host_module.host);
+	host_module:handle_items("shell-command", new_item_handlers(host_module.host));
+end
 
 function module.unload()
 	stanza_watchers.cleanup();
