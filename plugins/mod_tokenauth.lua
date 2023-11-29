@@ -145,7 +145,7 @@ local function _get_validated_grant_info(username, grant)
 	if type(grant) == "string" then
 		grant = token_store:get_key(username, grant);
 	end
-	if not grant or not grant.created then return nil; end
+	if not grant or not grant.created or not grant.id then return nil; end
 
 	-- Invalidate grants from before last password change
 	local account_info = usermanager.get_account_info(username, module.host);
