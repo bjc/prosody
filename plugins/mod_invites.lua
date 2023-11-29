@@ -210,8 +210,8 @@ module:add_item("shell-command", {
 	args = { { name = "user_jid", type = "string" } };
 	host_selector = "user_jid";
 
-	handler = function (self, user_jid)
-		local username, host = jid_split(user_jid);
+	handler = function (self, user_jid) --luacheck: ignore 212/self
+		local username = jid_split(user_jid);
 		local invite, err = create_account(username);
 		if not invite then return nil, err; end
 		return true, invite.landing_page or invite.uri;
@@ -226,8 +226,8 @@ module:add_item("shell-command", {
 	args = { { name = "user_jid", type = "string" }, { name = "allow_registration" } };
 	host_selector = "user_jid";
 
-	handler = function (self, user_jid, allow_registration)
-		local username, host = jid_split(user_jid);
+	handler = function (self, user_jid, allow_registration) --luacheck: ignore 212/self
+		local username = jid_split(user_jid);
 		local invite, err = create_contact(username, allow_registration);
 		if not invite then return nil, err; end
 		return true, invite.landing_page or invite.uri;
