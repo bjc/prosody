@@ -202,34 +202,37 @@ function use(token) --luacheck: ignore 131/use
 end
 
 --- shell command
-do
-	-- Since the console is global this overwrites the command for
-	-- each host it's loaded on, but this should be fine.
+module:add_item("shell-command", {
+	section = "invite";
+	section_desc = "Create and manage invitations";
+	name = "create_account";
+	desc = "Create an invitation to make an account on this server with the specified JID (supply only a hostname to allow any username)";
+	args = { { name = "user_jid", type = "string" } };
+	host_selector = "user_jid";
 
-	local get_module = require "prosody.core.modulemanager".get_module;
-
-	local console_env = module:shared("/*/admin_shell/env");
-
-	-- luacheck: ignore 212/self
-	console_env.invite = {};
-	function console_env.invite:create_account(user_jid)
+	handler = function (self, user_jid)
 		local username, host = jid_split(user_jid);
-		local mod_invites, err = get_module(host, "invites");
-		if not mod_invites then return nil, err or "mod_invites not loaded on this host"; end
-		local invite, err = mod_invites.create_account(username);
+		local invite, err = create_account(username);
 		if not invite then return nil, err; end
 		return true, invite.landing_page or invite.uri;
-	end
+	end;
+});
 
-	function console_env.invite:create_contact(user_jid, allow_registration)
+module:add_item("shell-command", {
+	section = "invite";
+	section_desc = "Create and manage invitations";
+	name = "create_contact";
+	desc = "Create an invitation to become contacts with the specified user";
+	args = { { name = "user_jid", type = "string" }, { name = "allow_registration" } };
+	host_selector = "user_jid";
+
+	handler = function (self, user_jid, allow_registration)
 		local username, host = jid_split(user_jid);
-		local mod_invites, err = get_module(host, "invites");
-		if not mod_invites then return nil, err or "mod_invites not loaded on this host"; end
-		local invite, err = mod_invites.create_contact(username, allow_registration);
+		local invite, err = create_contact(username, allow_registration);
 		if not invite then return nil, err; end
 		return true, invite.landing_page or invite.uri;
-	end
-end
+	end;
+});
 
 local subcommands = {};
 
