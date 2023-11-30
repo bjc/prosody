@@ -781,8 +781,14 @@ function api:may(action, context, peek)
 end
 
 -- Execute a function, once, but only after startup is complete
-function api:once(f) --luacheck: ignore 212/self
+function api:on_ready(f) --luacheck: ignore 212/self
 	return prosody.started:next(f);
+end
+
+-- COMPAT w/post 0.12 trunk
+function api:once(f)
+	self:log("warn", "This module uses deprecated module:once() - switch to module:on_ready() or (better) expose function module.ready()");
+	return self:on_ready(f);
 end
 
 return api;
