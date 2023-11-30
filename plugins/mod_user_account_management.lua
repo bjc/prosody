@@ -18,6 +18,17 @@ local deleted_accounts = module:open_store("accounts_cleanup");
 
 module:add_feature("jabber:iq:register");
 
+-- Allow us to 'freeze' a session and retrieve properties even after it is
+-- destroyed
+local function capture_session_properties(session)
+	return setmetatable({
+		id = session.id;
+		ip = session.ip;
+		type = session.type;
+		client_id = session.client_id;
+	}, { __index = session });
+end
+
 -- Password change and account deletion handler
 local function handle_registration_stanza(event)
 	local session, stanza = event.origin, event.stanza;
@@ -48,6 +59,8 @@ local function handle_registration_stanza(event)
 				return old_session_close(self, ...);
 			end
 
+			local old_session = capture_session_properties(session);
+
 			if not soft_delete_period then
 				local ok, err = usermanager.delete_user(username, host);
 
@@ -59,7 +72,7 @@ local function handle_registration_stanza(event)
 				end
 
 				log("info", "User removed their account: %s@%s (deleted)", username, host);
-				module:fire_event("user-deregistered", { username = username, host = host, source = "mod_register", session = session });
+				module:fire_event("user-deregistered", { username = username, host = host, source = "mod_register", session = old_session });
 			else
 				local ok, err = usermanager.disable_user(username, host, {
 					reason = "ibr";
@@ -74,13 +87,21 @@ local function handle_registration_stanza(event)
 					return true;
 				end
 
-				deleted_accounts:set(username, {
+				local status = {
 					deleted_at = os.time();
 					pending_until = os.time() + soft_delete_period;
 					client_id = session.client_id;
-				});
+				};
+				deleted_accounts:set(username, status);
 
 				log("info", "User removed their account: %s@%s (disabled, pending deletion)", username, host);
+				module:fire_event("user-deregistered-pending", {
+					username = username;
+					host = host;
+					source = "mod_register";
+					session = old_session;
+					status = status;
+				});
 			end
 		else
 			local username = query:get_child_text("username");
