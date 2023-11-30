@@ -17,8 +17,8 @@ continuation_indent_width: 1
 double_quote_to_single_quote: false
 extra_sep_at_table_end: true
 indent_width: 1
-keep_simple_control_block_one_line: false
-keep_simple_function_one_line: false
+keep_simple_control_block_one_line: true
+keep_simple_function_one_line: true
 line_breaks_after_function_body: 1
 line_separator: input
 single_quote_to_double_quote: false
