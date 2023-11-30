@@ -126,9 +126,10 @@ function provider.enable(username)
 	return accounts:set(username, account);
 end
 
-function provider.disable(username)
+function provider.disable(username, meta)
 	local account = accounts:get(username);
 	account.disabled = true;
+	account.disabled_meta = meta;
 	account.updated = os.time();
 	return accounts:set(username, account);
 end

@@ -163,12 +163,12 @@ local function enable_user(username, host)
 	return ret, err;
 end
 
-local function disable_user(username, host)
+local function disable_user(username, host, meta)
 	local method = hosts[host].users.disable;
 	if not method then return nil, "method not supported"; end
-	local ret, err = method(username);
+	local ret, err = method(username, meta);
 	if ret then
-		prosody.events.fire_event("user-disabled", { username = username, host = host });
+		prosody.events.fire_event("user-disabled", { username = username, host = host, meta = meta });
 	end
 	return ret, err;
 end
