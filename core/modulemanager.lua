@@ -293,6 +293,10 @@ local function do_load_module(host, module_name, state)
 				ok, err = do_load_module(host, module_name);
 			end
 		end
+
+		if module_has_method(pluginenv, "ready") then
+			pluginenv.module:on_ready(pluginenv.module.ready);
+		end
 	end
 	if not ok then
 		modulemap[api_instance.host][module_name] = nil;
