@@ -56,8 +56,10 @@ local function handle_status(session, status, ret, err_msg)
 		return "failure", "temporary-auth-failure", "Connection gone";
 	end
 	if status == "failure" then
-		module:fire_event("authentication-failure", { session = session, condition = ret, text = err_msg });
+		local event = { session = session, condition = ret, text = err_msg };
+		module:fire_event("authentication-failure", event);
 		session.sasl_handler = session.sasl_handler:clean_clone();
+		ret, err_msg = event.condition, event.text;
 	elseif status == "success" then
 		local ok, err = sm_make_authenticated(session, session.sasl_handler.username, session.sasl_handler.role);
 		if ok then
