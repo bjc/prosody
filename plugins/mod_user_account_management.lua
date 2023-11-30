@@ -8,12 +8,13 @@
 
 
 local st = require "prosody.util.stanza";
-local usermanager_set_password = require "prosody.core.usermanager".set_password;
-local usermanager_delete_user = require "prosody.core.usermanager".delete_user;
+local usermanager = require "prosody.core.usermanager";
 local nodeprep = require "prosody.util.encodings".stringprep.nodeprep;
-local jid_bare = require "prosody.util.jid".bare;
+local jid_bare, jid_node = import("prosody.util.jid", "bare", "node");
 
 local compat = module:get_option_boolean("registration_compat", true);
+local soft_delete_period = module:get_option_period("registration_delete_grace_period");
+local deleted_accounts = module:open_store("accounts_cleanup");
 
 module:add_feature("jabber:iq:register");
 
@@ -34,6 +35,12 @@ local function handle_registration_stanza(event)
 		if query.tags[1] and query.tags[1].name == "remove" then
 			local username, host = session.username, session.host;
 
+			if host ~= module.host then -- Sanity check for safety
+				module:log("error", "Host mismatch on deletion request (a bug): %s ~= %s", host, module.host);
+				session.send(st.error_reply(stanza, "cancel", "internal-server-error"));
+				return true;
+			end
+
 			-- This one weird trick sends a reply to this stanza before the user is deleted
 			local old_session_close = session.close;
 			session.close = function(self, ...)
@@ -41,24 +48,47 @@ local function handle_registration_stanza(event)
 				return old_session_close(self, ...);
 			end
 
-			local ok, err = usermanager_delete_user(username, host);
+			if not soft_delete_period then
+				local ok, err = usermanager.delete_user(username, host);
 
-			if not ok then
-				log("debug", "Removing user account %s@%s failed: %s", username, host, err);
-				session.close = old_session_close;
-				session.send(st.error_reply(stanza, "cancel", "service-unavailable", err));
-				return true;
+				if not ok then
+					log("debug", "Removing user account %s@%s failed: %s", username, host, err);
+					session.close = old_session_close;
+					session.send(st.error_reply(stanza, "cancel", "service-unavailable", err));
+					return true;
+				end
+
+				log("info", "User removed their account: %s@%s (deleted)", username, host);
+				module:fire_event("user-deregistered", { username = username, host = host, source = "mod_register", session = session });
+			else
+				local ok, err = usermanager.disable_user(username, host, {
+					reason = "ibr";
+					comment = "Deletion requested by user";
+					when = os.time();
+				});
+
+				if not ok then
+					log("debug", "Removing (disabling) user account %s@%s failed: %s", username, host, err);
+					session.close = old_session_close;
+					session.send(st.error_reply(stanza, "cancel", "service-unavailable", err));
+					return true;
+				end
+
+				deleted_accounts:set(username, {
+					deleted_at = os.time();
+					pending_until = os.time() + soft_delete_period;
+					client_id = session.client_id;
+				});
+
+				log("info", "User removed their account: %s@%s (disabled, pending deletion)", username, host);
 			end
-
-			log("info", "User removed their account: %s@%s", username, host);
-			module:fire_event("user-deregistered", { username = username, host = host, source = "mod_register", session = session });
 		else
 			local username = query:get_child_text("username");
 			local password = query:get_child_text("password");
 			if username and password then
 				username = nodeprep(username);
 				if username == session.username then
-					if usermanager_set_password(username, password, session.host, session.resource) then
+					if usermanager.set_password(username, password, session.host, session.resource) then
 						session.send(st.reply(stanza));
 					else
 						-- TODO unable to write file, file may be locked, etc, what's the correct error?
@@ -85,3 +115,97 @@ if compat then
 	end);
 end
 
+-- This improves UX of soft-deleted accounts by informing the user that the
+-- account has been deleted, rather than just disabled. They can e.g. contact
+-- their admin if this was a mistake.
+module:hook("authentication-failure", function (event)
+	if event.condition ~= "account-disabled" then return; end
+	local session = event.session;
+	local sasl_handler = session and session.sasl_handler;
+	if sasl_handler.username then
+		local status = deleted_accounts:get(sasl_handler.username);
+		if status then
+			event.text = "Account deleted";
+		end
+	end
+end, -1000);
+
+function restore_account(username)
+	local pending, pending_err = deleted_accounts:get(username);
+	if not pending then
+		return nil, pending_err or "Account not pending deletion";
+	end
+	local account_info, err = usermanager.get_account_info(username, module.host);
+	if not account_info then
+		return nil, "Couldn't fetch account info: "..err;
+	end
+	local forget_ok, forget_err = deleted_accounts:set(username, nil);
+	if not forget_ok then
+		return nil, "Couldn't remove account from deletion queue: "..forget_err;
+	end
+	local enable_ok, enable_err = usermanager.enable_user(username, module.host);
+	if not enable_ok then
+		return nil, "Removed account from deletion queue, but couldn't enable it: "..enable_err;
+	end
+	return true, "Account restored";
+end
+
+local cleanup_time = module:measure("cleanup", "times");
+
+function cleanup_soft_deleted_accounts()
+	local cleanup_done = cleanup_time();
+	local success, fail, restored, pending = 0, 0, 0, 0;
+
+	for username in deleted_accounts:users() do
+		module:log("debug", "Processing account cleanup for '%s'", username);
+		local account_info, account_info_err = usermanager.get_account_info(username, module.host);
+		if not account_info then
+			module:log("warn", "Unable to process delayed deletion of user '%s': %s", username, account_info_err);
+			fail = fail + 1;
+		else
+			if account_info.enabled == false then
+				local meta = deleted_accounts:get(username);
+				if meta.pending_until <= os.time() then
+					local ok, err = usermanager.delete_user(username, module.host);
+					if not ok then
+						module:log("warn", "Unable to process delayed deletion of user '%s': %s", username, err);
+						fail = fail + 1;
+					else
+						success = success + 1;
+						deleted_accounts:set(username, nil);
+						module:log("debug", "Deleted account '%s' successfully", username);
+						module:fire_event("user-deregistered", { username = username, host = module.host, source = "mod_register" });
+					end
+				else
+					pending = pending + 1;
+				end
+			else
+				module:log("warn", "Account '%s' is not disabled, removing from deletion queue", username);
+				restored = restored + 1;
+			end
+		end
+	end
+
+	module:log("debug", "%d accounts scheduled for future deletion", pending);
+
+	if success > 0 or fail > 0 then
+		module:log("info", "Completed account cleanup - %d accounts deleted (%d failed, %d restored, %d pending)", success, fail, restored, pending);
+	end
+	cleanup_done();
+end
+
+module:daily("Remove deleted accounts", cleanup_soft_deleted_accounts);
+
+--- shell command
+module:add_item("shell-command", {
+	section = "user";
+	name = "restore";
+	desc = "Restore a user account scheduled for deletion";
+	args = {
+		{ name = "jid", type = "string" };
+	};
+	host_selector = "jid";
+	handler = function (self, jid) --luacheck: ignore 212/self
+		return restore_account(jid_node(jid));
+	end;
+});
