@@ -281,7 +281,15 @@ function api:get_option_period(name, default_value, min, max)
 	elseif type(value) == "string" then
 		ret = human_io.parse_duration(value);
 		if value ~= nil and ret == nil then
-			self:log("error", "Config option '%s' not understood, expecting a period (e.g. \"2 days\")", name);
+			ret = human_io.parse_duration_lax(value);
+			if ret then
+				local num = value:match("%d+");
+				self:log("error", "Config option '%s' is set to ambiguous period '%s' - use full syntax e.g. '%s months' or '%s minutes'", name, value, num, num);
+				-- COMPAT: w/more relaxed behaviour in post-0.12 trunk. Return nil for this case too, eventually.
+			else
+				self:log("error", "Config option '%s' not understood, expecting a period (e.g. \"2 days\")", name);
+				return nil;
+			end
 		end
 	elseif value ~= nil then
 		self:log("error", "Config option '%s' expects a number or a period description string (e.g. \"3 hours\"), not %s", name, type(value));
