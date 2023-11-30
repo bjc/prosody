@@ -47,6 +47,37 @@ describe("util.human.io", function ()
 		local function test(expected, duration)
 			return assert.equal(expected, human_io.parse_duration(duration), ("%q -> %d"):format(duration, expected));
 		end
+		local function should_fail(duration)
+			assert.is_nil(human_io.parse_duration(duration), "invalid duration should fail: %q");
+		end
+		it("works", function ()
+			test(1, "1s");
+			test(60, "1min");
+			test(60, "1 min");
+			test(60, "1 minute");
+			test(120, "2min");
+			test(7200, "2h");
+			test(7200, "2 hours");
+			test(86400, "1d");
+			test(604800, "1w");
+			test(604800, "1week");
+			test(1814400, "3 weeks");
+			test(2678400, "1month");
+			test(2678400, "1 month");
+			test(31536000, "365 days");
+			test(31556952, "1 year");
+
+			should_fail("two weeks");
+			should_fail("1m");
+			should_fail("1mi");
+			should_fail("1mo");
+		end);
+	end);
+
+	describe("parse_duration_lax", function ()
+		local function test(expected, duration)
+			return assert.equal(expected, human_io.parse_duration_lax(duration), ("%q -> %d"):format(duration, expected));
+		end
 		it("works", function ()
 			test(1, "1s");
 			test(60, "1mi");
@@ -66,7 +97,7 @@ describe("util.human.io", function ()
 			test(2678400, "1 month");
 			test(31536000, "365 days");
 			test(31556952, "1 year");
-			return assert.is_nil(human_io.parse_duration("two weeks"), "\"2 weeks\" -> nil");
+			return assert.is_nil(human_io.parse_duration_lax("two weeks"), "\"2 weeks\" -> nil");
 		end);
 	end);
 end);
