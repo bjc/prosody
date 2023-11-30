@@ -75,3 +75,31 @@ scheduled = module:add_timer(1, function()
 	module:log("debug", "Wait %ds", delay);
 	return delay
 end);
+
+module:add_item("shell-command", {
+	section = "cron";
+	section_desc = "View and manage recurring tasks";
+	name = "tasks";
+	desc = "View registered tasks";
+	args = {};
+	handler = function (self, host)
+		local format_table = require "prosody.util.human.io".table;
+		local it = require "util.iterators";
+		local row = format_table({
+			{ title = "Host", width = "2p" };
+			{ title = "Task", width = "3p" };
+			{ title = "Desc", width = "3p" };
+			{ title = "When", width = "1p" };
+			{ title = "Last run", width = "20" };
+		}, self.session.width);
+		local print = self.session.print;
+		print(row());
+		for host in it.sorted_pairs(host and { [host]=true } or active_hosts) do
+			for _, task in ipairs(module:context(host):get_host_items("task")) do
+				print(row { host, task.id, task.name, task.when, task.last and os.date("%Y-%m-%d %R:%S", task.last) or "never" });
+				--self.session.print(require "util.serialization".serialize(task, "debug"));
+				--print("");
+			end
+		end
+	end;
+});
