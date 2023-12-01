@@ -215,6 +215,12 @@ module:hook("stanza/urn:ietf:params:xml:ns:xmpp-sasl:auth", function(event)
 
 	if session.type ~= "c2s_unauthed" or module:get_host_type() ~= "local" then return; end
 
+	-- event for preemptive checks, rate limiting etc
+	module:fire_event("authentication-attempt", event);
+	if event.allowed == false then
+		session.send(build_reply("failure", event.error_condition or "not-authorized", event.error_text));
+		return true;
+	end
 	if session.sasl_handler and session.sasl_handler.selected then
 		session.sasl_handler = nil; -- allow starting a new SASL negotiation before completing an old one
 	end
