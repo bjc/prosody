@@ -109,8 +109,8 @@ function runner_callbacks:error(err)
 	log("error", "Traceback[httpserver]: %s", err);
 	local response = { headers = { content_type = "text/plain" }; body = "" };
 	response.body = events.fire_event("http-error", { code = 500; private_message = err; response = response });
-	self.data.conn:write("HTTP/1.0 500 Internal Server Error\r\n\z\
-		X-Content-Type-Options: nosniff\r\n\z\
+	self.data.conn:write("HTTP/1.0 500 Internal Server Error\r\n\z
+		X-Content-Type-Options: nosniff\r\n\z
 		Content-Type: " .. response.headers.content_type .. "\r\n\r\n");
 	self.data.conn:write(response.body);
 	self.data.conn:close();
