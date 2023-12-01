@@ -167,6 +167,33 @@ Transfer-Encoding: chunked
 				}
 			);
 		end);
+
+		it("should reject very large request heads", function()
+			local finished = false;
+			local success_cb = spy.new(function()
+				finished = true;
+			end)
+			local error_cb = spy.new(function()
+				finished = true;
+			end)
+			local parser = http_parser.new(success_cb, error_cb, "server", function()
+				return { head_size_limit = 1024; body_size_limit = 1024; buffer_size_limit = 2048 };
+			end)
+			parser:feed("GET / HTTP/1.1\r\n");
+			for i = 1, 64 do -- * header line > buffer_size_limit
+				parser:feed(string.format("Header-%04d: Yet-AnotherValue\r\n", i));
+				if finished then
+					-- should hit an error around half-way
+					break
+				end
+			end
+			if not finished then
+				parser:feed("\r\n")
+			end
+			assert.spy(success_cb).was_called(0);
+			assert.spy(error_cb).was_called(1);
+			assert.spy(error_cb).was_called_with("header-too-large");
+		end)
 	end);
 
 	it("should handle large chunked responses", function ()

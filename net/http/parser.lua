@@ -59,7 +59,13 @@ function httpstream.new(success_cb, error_cb, parser_type, options_cb)
 			while buffer:length() > 0 do
 				if state == nil then -- read request
 					local index = buffer:sub(1, headlimit):find("\r\n\r\n", nil, true);
-					if not index then return; end -- not enough data
+					if not index then
+						if buffer:length() > headlimit then
+							return error_cb("header-too-large");
+						end
+						-- not enough data
+						return;
+					end
 					-- FIXME was reason_phrase meant to be passed on somewhere?
 					local method, path, httpversion, status_code, reason_phrase; -- luacheck: ignore reason_phrase
 					local first_line;
