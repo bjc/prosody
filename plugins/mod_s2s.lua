@@ -272,6 +272,12 @@ function module.add_host(module)
 	end, 100);
 	module:hook("s2s-authenticated", make_authenticated, -1);
 	module:hook("s2s-read-timeout", keepalive, -1);
+	module:hook("smacks-ack-delayed", function (event)
+		if event.origin.type == "s2sin" or event.origin.type == "s2sout" then
+			event.origin:close("connection-timeout");
+			return true;
+		end
+	end, -1);
 	module:hook_stanza("http://etherx.jabber.org/streams", "features", function (session, stanza) -- luacheck: ignore 212/stanza
 		local limits = stanza:get_child("limits", "urn:xmpp:stream-limits:0");
 		if limits then
