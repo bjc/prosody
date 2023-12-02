@@ -56,6 +56,7 @@ local skip = {
 	["not.json:6"] = "NYI",
 	["refRemote.json"] = "DEFINITELY NYI",
 	["required.json:0:2"] = "distinguishing objects from arrays",
+	["type.json:0:1"] = "1.0 is not an integer!",
 	["type.json:3:4"] = "distinguishing objects from arrays",
 	["type.json:3:6"] = "null is weird",
 	["type.json:4:3"] = "distinguishing objects from arrays",
