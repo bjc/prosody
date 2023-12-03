@@ -263,7 +263,7 @@ function service:get_default_affiliation(node, actor) --> affiliation
 	if self.config.access_models then
 		local check = self.config.access_models[access_model];
 		if check then
-			local aff = check(actor);
+			local aff = check(actor, node_obj);
 			if aff then
 				return aff;
 			end

@@ -110,6 +110,12 @@ local node_config_form = dataform {
 		};
 	};
 	{
+		type = "list-multi"; -- TODO some way to inject options
+		name = "roster_groups_allowed";
+		var = "pubsub#roster_groups_allowed";
+		label = "Roster groups allowed to subscribe";
+	};
+	{
 		type = "list-single";
 		name = "publish_model";
 		var = "pubsub#publish_model";

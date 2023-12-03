@@ -67,6 +67,7 @@ TRUNK
 - When mod_smacks is enabled, s2s connections not responding to ack requests are closed.
 - Arguments to `prosodyctl shell` that start with ':' are now turned into method calls
 - Support for Type=notify and notify-reload systemd service type added
+- Support for the roster *group* access_model in mod_pep
 
 ## Removed
 

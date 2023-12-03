@@ -5,7 +5,7 @@ local jid_join = require "prosody.util.jid".join;
 local set_new = require "prosody.util.set".new;
 local st = require "prosody.util.stanza";
 local calculate_hash = require "prosody.util.caps".calculate_hash;
-local is_contact_subscribed = require "prosody.core.rostermanager".is_contact_subscribed;
+local rostermanager = require "prosody.core.rostermanager";
 local cache = require "prosody.util.cache";
 local set = require "prosody.util.set";
 local new_id = require "prosody.util.id".medium;
@@ -15,6 +15,8 @@ local usermanager = require "prosody.core.usermanager";
 local xmlns_pubsub = "http://jabber.org/protocol/pubsub";
 local xmlns_pubsub_event = "http://jabber.org/protocol/pubsub#event";
 local xmlns_pubsub_owner = "http://jabber.org/protocol/pubsub#owner";
+
+local is_contact_subscribed = rostermanager.is_contact_subscribed;
 
 local lib_pubsub = module:require "pubsub";
 
@@ -84,6 +86,7 @@ function check_node_config(node, actor, new_config) -- luacheck: ignore 212/node
 		return false;
 	end
 	if new_config["access_model"] ~= "presence"
+	and new_config["access_model"] ~= "roster"
 	and new_config["access_model"] ~= "whitelist"
 	and new_config["access_model"] ~= "open" then
 		return false;
@@ -253,6 +256,20 @@ function get_pep_service(username)
 			presence = function (jid)
 				if subscription_presence(username, jid) then
 					return "member";
+				end
+				return "outcast";
+			end;
+			roster = function (jid, node)
+				jid = jid_bare(jid);
+				local allowed_groups = set_new(node.config.roster_groups_allowed);
+				local roster = rostermanager.load_roster(username, host);
+				if not roster[jid] then
+					return "outcast";
+				end
+				for group in pairs(roster[jid].groups) do
+					if allowed_groups:contains(group) then
+						return "member";
+					end
 				end
 				return "outcast";
 			end;
