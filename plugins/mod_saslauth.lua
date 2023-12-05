@@ -87,9 +87,12 @@ local function sasl_process_cdata(session, stanza)
 			return true;
 		end
 	end
-	local status, ret, err_msg = session.sasl_handler:process(text);
+	local sasl_handler = session.sasl_handler;
+	local status, ret, err_msg = sasl_handler:process(text);
 	status, ret, err_msg = handle_status(session, status, ret, err_msg);
-	local s = build_reply(status, ret, err_msg);
+	local event = { session = session, message = ret, error_text = err_msg };
+	module:fire_event("sasl/"..session.base_type.."/"..status, event);
+	local s = build_reply(status, event.message, event.error_text);
 	session.send(s);
 	return true;
 end
