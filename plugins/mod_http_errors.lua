@@ -35,13 +35,13 @@ local html = [[
 <meta charset="utf-8">
 <title>{title}</title>
 <style>
-body{margin-top:14%;text-align:center;background-color:#f8f8f8;font-family:sans-serif}
+:root{color-scheme:light dark}
+body{margin-top:14%;text-align:center;font-family:sans-serif}
 h1{font-size:xx-large}
 p{font-size:x-large}
 p.warning>span{font-size:large;background-color:yellow}
 p.extra{font-size:large;font-family:courier}
 @media(prefers-color-scheme:dark){
-body{background-color:#161616;color:#eee}
 p.warning>span{background-color:inherit;color:yellow}
 }
 </style>
