@@ -171,6 +171,12 @@ function restore_account(username)
 	return true, "Account restored";
 end
 
+-- Automatically clear pending deletion if an account is re-enabled
+module:context("*"):hook("user-enabled", function (event)
+	if event.host ~= module.host then return; end
+	deleted_accounts:set(event.username, nil);
+end);
+
 local cleanup_time = module:measure("cleanup", "times");
 
 function cleanup_soft_deleted_accounts()
