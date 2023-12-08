@@ -129,11 +129,22 @@ do
 					if k:match("^ENV_") then
 						return os.getenv(k:sub(5));
 					end
+					if k == "Lua" then
+						return _G;
+					end
 					local val = rawget_option(config_table, env.__currenthost or "*", k);
+
 					if val ~= nil then
 						return val;
 					end
-					return rawget(_G, k);
+
+					local g_val = rawget(_G, k);
+
+					if g_val ~= nil then
+						t_insert(warnings, ("%s:%d: direct usage of the Lua API is deprecated - replace `%s` with `Lua.%s`"):format(config_file, get_line_number(config_file), k, k));
+					end
+
+					return g_val;
 				end,
 				__newindex = function (_, k, v)
 					local host = env.__currenthost or "*";
