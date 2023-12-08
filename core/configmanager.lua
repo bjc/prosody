@@ -13,6 +13,7 @@ local format, math_max, t_insert = string.format, math.max, table.insert;
 
 local envload = require"prosody.util.envload".envload;
 local deps = require"prosody.util.dependencies";
+local it = require"prosody.util.iterators";
 local resolve_relative_path = require"prosody.util.paths".resolve_relative_path;
 local glob_to_pattern = require"prosody.util.paths".glob_to_pattern;
 local path_sep = package.config:sub(1,1);
@@ -115,6 +116,51 @@ do
 			end
 		end
 	end
+
+	local config_option_proxy_mt = {
+		__index = setmetatable({
+			append = function (self, value)
+				local original_option = self:value();
+				if original_option == nil then
+					original_option = {};
+				end
+				if type(value) ~= "table" then
+					error("'append' operation expects a list of values to append to the existing list", 2);
+				end
+				if value[1] ~= nil then
+					for _, v in ipairs(value) do
+						t_insert(original_option, v);
+					end
+				else
+					for k, v in pairs(value) do
+						original_option[k] = v;
+					end
+				end
+				set(self.config_table, self.host, self.option_name, original_option);
+				return self;
+			end;
+			value = function (self)
+				return rawget_option(self.config_table, self.host, self.option_name);
+			end;
+			values = function (self)
+				return it.values(self:value());
+			end;
+		}, {
+			__index = function (t, k)
+				error("Unknown config option operation: '"..k.."'", 2);
+			end;
+		});
+
+		__call = function (self, v2)
+			local v = self:value() or {};
+			if type(v) == "table" and type(v2) == "table" then
+				return self:append(v2);
+			end
+
+			error("Invalid syntax - missing '=' perhaps?", 2);
+		end;
+	};
+
 	parser = {};
 	function parser.load(data, config_file, config_table)
 		local set_options = {}; -- set_options[host.."/"..option_name] = true (when the option has been set already in this file)
@@ -134,11 +180,18 @@ do
 					end
 					local val = rawget_option(config_table, env.__currenthost or "*", k);
 
-					if val ~= nil then
+					local g_val = rawget(_G, k);
+
+					if val ~= nil or g_val == nil then
+						if type(val) == "table" then
+							return setmetatable({
+								config_table = config_table;
+								host = env.__currenthost or "*";
+								option_name = k;
+							}, config_option_proxy_mt);
+						end
 						return val;
 					end
-
-					local g_val = rawget(_G, k);
 
 					if g_val ~= nil then
 						t_insert(warnings, ("%s:%d: direct usage of the Lua API is deprecated - replace `%s` with `Lua.%s`"):format(config_file, get_line_number(config_file), k, k));
