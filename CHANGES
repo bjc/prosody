@@ -33,6 +33,7 @@ TRUNK
 - New role and permissions framework and API
 - Ability to disable and enable user accounts
 - Full DANE support for s2s
+- A "grace period" is now supported for deletion requests via in-band registration
 
 ### Storage
 
@@ -46,6 +47,13 @@ TRUNK
 - Acceptable interval can be specified for number options
 - Method for parsing time periods / intervals from config
 - Method for retrieving integer settings from config
+- It is now easy for modules to expose a Prosody shell command, by adding a shell-command item
+- Modules can now implement a module.ready method which will be called after server initialization
+
+### Configuration
+
+- The configuration file now supports referring and appending to options previously set
+- Direct usage of the Lua API in the config file is deprecated, but can now be accessed via Lua.* instead
 
 ## Changes
 
