@@ -146,7 +146,7 @@ do
 				return it.values(self:value());
 			end;
 		}, {
-			__index = function (t, k)
+			__index = function (t, k) --luacheck: ignore 212/t
 				error("Unknown config option operation: '"..k.."'", 2);
 			end;
 		});
@@ -194,7 +194,15 @@ do
 					end
 
 					if g_val ~= nil then
-						t_insert(warnings, ("%s:%d: direct usage of the Lua API is deprecated - replace `%s` with `Lua.%s`"):format(config_file, get_line_number(config_file), k, k));
+						t_insert(
+							warnings,
+							("%s:%d: direct usage of the Lua API is deprecated - replace `%s` with `Lua.%s`"):format(
+								config_file,
+								get_line_number(config_file),
+								k,
+								k
+							)
+						);
 					end
 
 					return g_val;
