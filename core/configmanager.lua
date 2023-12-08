@@ -62,6 +62,16 @@ local function set(config_table, host, key, value)
 	return false;
 end
 
+local function rawget_option(config_table, host, key)
+	if host and key then
+		local hostconfig = rawget(config_table, host);
+		if not hostconfig then
+			return nil;
+		end
+		return rawget(hostconfig, key);
+	end
+end
+
 function _M.set(host, key, value)
 	return set(config, host, key, value);
 end
@@ -118,6 +128,10 @@ do
 				__index = function (_, k)
 					if k:match("^ENV_") then
 						return os.getenv(k:sub(5));
+					end
+					local val = rawget_option(config_table, env.__currenthost or "*", k);
+					if val ~= nil then
+						return val;
 					end
 					return rawget(_G, k);
 				end,
