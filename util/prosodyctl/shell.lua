@@ -80,8 +80,17 @@ local function start(arg) --luacheck: ignore 212/arg
 
 	if arg[1] then
 		if arg[2] then
-			-- prosodyctl shell module reload foo bar.com --> module:reload("foo", "bar.com")
-			arg[1] = string.format("%s:%s("..string.rep("%q", #arg-2,", ")..")", unpack(arg));
+			local fmt = { "%s"; ":%s("; ")" };
+			for i = 3, #arg do
+				if arg[i]:sub(1, 1) == ":" then
+					table.insert(fmt, i, ")%s(");
+				elseif i > 3 and fmt[i - 1] == "%q" then
+					table.insert(fmt, i, ", %q");
+				else
+					table.insert(fmt, i, "%q");
+				end
+			end
+			arg[1] = string.format(table.concat(fmt), table.unpack(arg));
 		end
 
 		client.events.add_handler("connected", function()
