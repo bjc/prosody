@@ -1,4 +1,5 @@
 
+-- luacheck: ignore 411/a
 
 -- Mock util.time
 local now = 0; -- wibbly-wobbly... timey-wimey... stuff
