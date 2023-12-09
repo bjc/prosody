@@ -41,6 +41,7 @@ describe("util.http", function()
 		end);
 
 		it("should encode special characters with escaping", function()
+			-- luacheck: ignore 631
 			assert.are.equal(http.formencode({ { name = "one two", value = "1"}, { name = "two one&", value = "2" } }), "one+two=1&two+one%26=2", "Form encoded");
 		end);
 	end);
