@@ -3,7 +3,6 @@ local server = require "prosody.net.server";
 local st = require "prosody.util.stanza";
 local path = require "prosody.util.paths";
 local parse_args = require "prosody.util.argparse".parse;
-local unpack = table.unpack or _G.unpack;
 local tc = require "prosody.util.termcolours";
 local isatty = require "prosody.util.pposix".isatty;
 local term_width = require"prosody.util.human.io".term_width;
