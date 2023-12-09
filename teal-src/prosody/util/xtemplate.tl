@@ -23,8 +23,16 @@ local type filter_coll = { string : filter_t }
 local function render(template : string, root : st.stanza_t, escape : escape_t, filters : filter_coll) : string
 	escape = escape or st.xml_escape;
 
-	return (s_gsub(template, "%b{}", function(block : string) : string
+	return (s_gsub(template, "(%s*)(%b{})(%s*)", function(pre_blank : string, block : string, post_blank : string) : string
 		local inner = s_sub(block, 2, -2);
+		if inner:sub(1, 1) == "-" then
+			pre_blank = "";
+			inner = inner:sub(2);
+		end
+		if inner:sub(-1, -1) == "-" then
+			post_blank = "";
+			inner = inner:sub(1, -2);
+		end
 		local path, pipe, pos = s_match(inner, "^([^|]+)(|?)()");
 		if not path is string then return end
 		local value : string | st.stanza_t
@@ -87,14 +95,14 @@ local function render(template : string, root : st.stanza_t, escape : escape_t, 
 
 		if value is string then
 			if not is_escaped then value = escape(value); end
-			return value;
+			return pre_blank .. value .. post_blank;
 		elseif st.is_stanza(value) then
 			value = value:get_text();
 			if value then
-				return escape(value);
+				return pre_blank .. escape(value) .. post_blank;
 			end
 		end
-		return "";
+		return pre_blank .. post_blank;
 	end));
 end
 
