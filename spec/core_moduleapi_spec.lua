@@ -11,8 +11,8 @@ local api = require "core.moduleapi";
 
 local module = setmetatable({}, {__index = api});
 local opt = nil;
-function module:log() end
-function module:get_option(name)
+function module.log(_self) end
+function module.get_option(_self, name)
 	if name == "opt" then
 		return opt;
 	else
@@ -20,7 +20,7 @@ function module:get_option(name)
 	end
 end
 
-function test_option_value(value, returns)
+local function test_option_value(value, returns)
 	opt = value;
 	assert(module:get_option_number("opt") == returns.number, "number doesn't match");
 	assert(module:get_option_string("opt") == returns.string, "string doesn't match");
