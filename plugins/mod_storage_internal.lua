@@ -180,6 +180,7 @@ function archive:find(username, query)
 				i = i - 1
 				return list[i]
 			end
+			query.before, query.after = query.after, query.before;
 		end
 		if query.key then
 			iter = it.filter(function(item)
