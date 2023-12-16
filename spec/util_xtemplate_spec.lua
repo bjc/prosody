@@ -31,5 +31,13 @@ describe("util.xtemplate", function ()
 			assert.same(" Hello", xtemplate.render(" {greeting-} ", st.stanza("root"):text_tag("greeting", "Hello")))
 			assert.same("Hello", xtemplate.render(" {-greeting-} ", st.stanza("root"):text_tag("greeting", "Hello")))
 		end)
+		describe("each", function ()
+			it("makes sense", function ()
+				local x = st.stanza("root"):tag("foo"):tag("bar")
+				for i = 1, 5 do x:text_tag("i", tostring(i)); end
+				x:reset();
+				assert.same("12345", xtemplate.render("{foo/bar|each(i){{#}}}", x));
+			end)
+		end)
 	end)
 end)
