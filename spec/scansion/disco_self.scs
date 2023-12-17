@@ -1,0 +1,26 @@
+# Basic login and initial presence
+
+[Client] Romeo
+	jid: discoverer@localhost
+	password: password
+
+---------
+
+Romeo connects
+
+Romeo sends:
+	<iq type="get" id="info1">
+		<query xmlns="http://jabber.org/protocol/disco#info"/>
+	</iq>
+
+Romeo receives:
+	<iq type="result" id="info1">
+		<query xmlns="http://jabber.org/protocol/disco#info" scansion:strict="false">
+			<identity xmlns="http://jabber.org/protocol/disco#info" category="account" type="registered"/>
+			<feature var="http://jabber.org/protocol/disco#info"/>
+			<feature var="http://jabber.org/protocol/disco#items"/>
+		</query>
+	</iq>
+
+Romeo disconnects
+
