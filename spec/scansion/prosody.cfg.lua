@@ -1,15 +1,5 @@
 --luacheck: ignore
 
--- Mock time functions to simplify tests --
-local time = require "util.time";
-function _G.os.time()
-	return 1219439344;
-end
-function time.now()
-	return 1219439344.5;
-end
--------------------------------------------
-
 admins = { "admin@localhost" }
 
 network_backend = ENV_PROSODY_NETWORK_BACKEND or "epoll"

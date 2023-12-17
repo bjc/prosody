@@ -15,7 +15,7 @@ Romeo sends:
 
 Romeo receives:
 	<iq type='result' id='a' from='localhost'>
-		<query xmlns='jabber:iq:last' seconds='0'/>
+		<query xmlns='jabber:iq:last' seconds='{scansion:any}'/>
 	</iq>
 
 Romeo disconnects

@@ -17,8 +17,8 @@ Romeo receives:
 	<iq type='result' id='lx2' from='localhost'>
 		<services xmlns='urn:xmpp:extdisco:2'>
 			<service host='default.example' transport='udp' port='9876' type='stun'/>
-			<service port='9876' type='turn' restricted='1' password='yHYYBDN7M3mdlug0LTdJbW0GvvQ=' transport='udp' host='default.example' username='1219525744'/>
-			<service port='9876' type='turn' restricted='1' password='1Uc6QfrDhIlbK97rGCUQ/cUICxs=' transport='udp' host='default.example' username='1219525744'/>
+			<service port='9876' type='turn' restricted='1' password='{scansion:any}' transport='udp' host='default.example' username='{scansion:any}'/>
+			<service port='9876' type='turn' restricted='1' password='{scansion:any}' transport='udp' host='default.example' username='{scansion:any}'/>
 			<service port='2121' type='ftp' restricted='1' password='password' transport='tcp' host='default.example' username='john'/>
 			<service port='21' type='ftp' restricted='1' password='password' transport='tcp' host='ftp.example.com' username='john'/>
 		</services>
@@ -47,8 +47,8 @@ Romeo sends:
 Romeo receives:
 	<iq type='result' id='lx4' from='localhost'>
 		<credentials xmlns='urn:xmpp:extdisco:2'>
-			<service port='9876' type='turn' restricted='1' password='yHYYBDN7M3mdlug0LTdJbW0GvvQ=' transport='udp' host='default.example' username='1219525744'/>
-			<service port='9876' type='turn' restricted='1' password='1Uc6QfrDhIlbK97rGCUQ/cUICxs=' transport='udp' host='default.example' username='1219525744'/>
+			<service port='9876' type='turn' restricted='1' password='{scansion:any}' transport='udp' host='default.example' username='{scansion:any}'/>
+			<service port='9876' type='turn' restricted='1' password='{scansion:any}' transport='udp' host='default.example' username='{scansion:any}'/>
 		</credentials>
 	</iq>
 
