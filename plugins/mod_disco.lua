@@ -172,6 +172,8 @@ module:hook("iq-get/bare/http://jabber.org/protocol/disco#info:query", function(
 	if not stanza.attr.to or (expose_admins and is_admin) or is_contact_subscribed(username, module.host, jid_bare(stanza.attr.from)) then
 		if node and node ~= "" then
 			local reply = st.reply(stanza):tag('query', {xmlns='http://jabber.org/protocol/disco#info', node=node});
+			reply:tag("feature", { var = "http://jabber.org/protocol/disco#info" }):up();
+			reply:tag("feature", { var = "http://jabber.org/protocol/disco#items" }):up();
 			if not reply.attr.from then reply.attr.from = origin.username.."@"..origin.host; end -- COMPAT To satisfy Psi when querying own account
 			local node_event = { origin = origin, stanza = stanza, reply = reply, node = node, exists = false};
 			local ret = module:fire_event("account-disco-info-node", node_event);
@@ -192,6 +194,8 @@ module:hook("iq-get/bare/http://jabber.org/protocol/disco#info:query", function(
 		else
 			reply:tag('identity', {category='account', type='registered'}):up();
 		end
+		reply:tag("feature", { var = "http://jabber.org/protocol/disco#info" }):up();
+		reply:tag("feature", { var = "http://jabber.org/protocol/disco#items" }):up();
 		module:fire_event("account-disco-info", { origin = origin, reply = reply });
 		origin.send(reply);
 		return true;
