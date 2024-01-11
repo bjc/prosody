@@ -67,6 +67,7 @@
     <implements rdf:resource="https://datatracker.ietf.org/doc/draft-cridland-xmpp-session/">
       <!-- since=0.6.0 note=Added in hg:0bbbc9042361 -->
     </implements>
+    <implements rdf:resource="https://datatracker.ietf.org/doc/draft-ietf-dance-client-auth"/>
     <implements rdf:resource="http://www.unicode.org/reports/tr39/"/>
     <implements>
       <xmpp:SupportedXep>

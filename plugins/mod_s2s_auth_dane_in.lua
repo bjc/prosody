@@ -24,6 +24,11 @@ local function ensure_secure(r)
 	return r;
 end
 
+local function ensure_nonempty(r)
+	assert(r[1], "empty");
+	return r;
+end
+
 local function flatten(a)
 	local seen = {};
 	local ret = {};
@@ -90,10 +95,12 @@ module:hook("s2s-check-certificate", function(event)
 		return promise.all(tlsas):next(flatten);
 	end
 
-	local ret = async.wait_for(promise.all({
-		resolver:lookup_promise("_xmpps-server._tcp." .. dns_domain, "SRV"):next(ensure_secure):next(fetch_tlsa);
-		resolver:lookup_promise("_xmpp-server._tcp." .. dns_domain, "SRV"):next(ensure_secure):next(fetch_tlsa);
-	}):next(flatten));
+	local ret = async.wait_for(resolver:lookup_promise("_xmpp-server." .. dns_domain, "TLSA"):next(ensure_secure):next(ensure_nonempty):catch(function()
+		return promise.all({
+			resolver:lookup_promise("_xmpps-server._tcp." .. dns_domain, "SRV"):next(ensure_secure):next(fetch_tlsa);
+			resolver:lookup_promise("_xmpp-server._tcp." .. dns_domain, "SRV"):next(ensure_secure):next(fetch_tlsa);
+		}):next(flatten);
+	end));
 
 	if not ret then
 		return
