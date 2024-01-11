@@ -24,6 +24,20 @@ local function ensure_secure(r)
 	return r;
 end
 
+local function flatten(a)
+	local seen = {};
+	local ret = {};
+	for _, rrset in ipairs(a) do
+		for _, rr in ipairs(rrset) do
+			if not seen[tostring(rr)] then
+				table.insert(ret, rr);
+				seen[tostring(rr)] = true;
+			end
+		end
+	end
+	return ret;
+end
+
 local lazy_tlsa_mt = {
 	__index = function(t, i)
 		if i == 1 then
@@ -73,36 +87,30 @@ module:hook("s2s-check-certificate", function(event)
 			if rr.srv.target == "." then return {}; end
 			table.insert(tlsas, resolver:lookup_promise(("_%d._tcp.%s"):format(rr.srv.port, rr.srv.target), "TLSA"):next(ensure_secure));
 		end
-		return promise.all(tlsas);
+		return promise.all(tlsas):next(flatten);
 	end
 
 	local ret = async.wait_for(promise.all({
 		resolver:lookup_promise("_xmpps-server._tcp." .. dns_domain, "SRV"):next(ensure_secure):next(fetch_tlsa);
 		resolver:lookup_promise("_xmpp-server._tcp." .. dns_domain, "SRV"):next(ensure_secure):next(fetch_tlsa);
-	}));
+	}):next(flatten));
 
 	if not ret then
 		return
 	end
 
 	local found_supported = false;
-	for _, by_proto in ipairs(ret) do
-		for _, by_srv in ipairs(by_proto) do
-			for _, by_target in ipairs(by_srv) do
-				for _, rr in ipairs(by_target) do
-					if rr.tlsa.use == 3 and by_select_match[rr.tlsa.select] and rr.tlsa.match <= 2 then
-						found_supported = true;
-						if rr.tlsa.data == by_select_match[rr.tlsa.select][rr.tlsa.match] then
-							module:log("debug", "%s matches", rr)
-							session.cert_chain_status = "valid";
-							session.cert_identity_status = "valid";
-							return true;
-						end
-					else
-						log("debug", "Unsupported DANE TLSA record: %s", rr);
-					end
-				end
+	for _, rr in ipairs(ret) do
+		if rr.tlsa.use == 3 and by_select_match[rr.tlsa.select] and rr.tlsa.match <= 2 then
+			found_supported = true;
+			if rr.tlsa.data == by_select_match[rr.tlsa.select][rr.tlsa.match] then
+				module:log("debug", "%s matches", rr)
+				session.cert_chain_status = "valid";
+				session.cert_identity_status = "valid";
+				return true;
 			end
+		else
+			log("debug", "Unsupported DANE TLSA record: %s", rr);
 		end
 	end
 
