@@ -249,24 +249,7 @@ function module.command(arg)
 end
 
 function subcommands.generate(arg)
-
-	local sm = require "prosody.core.storagemanager";
-	local mm = require "prosody.core.modulemanager";
-
-	local host = table.remove(arg, 1); -- pop host
-	assert(prosody.hosts[host], "Host "..tostring(host).." does not exist");
-	sm.initialize_host(host);
-	module.host = host; --luacheck: ignore 122/module
-	token_storage = module:open_store("invite_token", "map");
-
-	local opts = argparse.parse(arg, {
-		short_params = { h = "help"; ["?"] = "help"; g = "group" };
-		value_params = { group = true; reset = true; role = true };
-		array_params = { group = true; role = true };
-	});
-
-
-	if opts.help then
+	local function help()
 		print("usage: prosodyctl mod_" .. module.name .. " generate DOMAIN --reset USERNAME")
 		print("usage: prosodyctl mod_" .. module.name .. " generate DOMAIN [--admin] [--role ROLE] [--group GROUPID]...")
 		print()
@@ -290,6 +273,30 @@ function subcommands.generate(arg)
 		print()
 		print("--reset and the other options cannot be mixed.")
 		return 2
+	end
+
+	local earlyopts = argparse.parse(arg, { short_params = { h = "help"; ["?"] = "help" } });
+	if earlyopts.help or next(earlyopts) ~= nil then
+		return help();
+	end
+
+	local sm = require "prosody.core.storagemanager";
+	local mm = require "prosody.core.modulemanager";
+
+	local host = table.remove(arg, 1); -- pop host
+	assert(prosody.hosts[host], "Host "..tostring(host).." does not exist");
+	sm.initialize_host(host);
+	module.host = host; --luacheck: ignore 122/module
+	token_storage = module:open_store("invite_token", "map");
+
+	local opts = argparse.parse(arg, {
+		short_params = { h = "help"; ["?"] = "help"; g = "group" };
+		value_params = { group = true; reset = true; role = true };
+		array_params = { group = true; role = true };
+	});
+
+	if opts.help then
+		return help();
 	end
 
 	-- Load mod_invites
