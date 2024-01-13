@@ -249,9 +249,10 @@ function module.command(arg)
 end
 
 function subcommands.generate(arg)
-	local function help()
+	local function help(short)
 		print("usage: prosodyctl mod_" .. module.name .. " generate DOMAIN --reset USERNAME")
 		print("usage: prosodyctl mod_" .. module.name .. " generate DOMAIN [--admin] [--role ROLE] [--group GROUPID]...")
+		if short then return 2 end
 		print()
 		print("This command has two modes: password reset and new account.")
 		print("If --reset is given, the command operates in password reset mode and in new account mode otherwise.")
@@ -284,7 +285,7 @@ function subcommands.generate(arg)
 	local mm = require "prosody.core.modulemanager";
 
 	local host = table.remove(arg, 1); -- pop host
-	assert(prosody.hosts[host], "Host "..tostring(host).." does not exist");
+	if not host then return help(true) end
 	sm.initialize_host(host);
 	module.host = host; --luacheck: ignore 122/module
 	token_storage = module:open_store("invite_token", "map");
