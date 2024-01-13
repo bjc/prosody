@@ -4,6 +4,7 @@ local url = require "socket.url";
 local jid_node = require "prosody.util.jid".node;
 local jid_split = require "prosody.util.jid".split;
 local argparse = require "prosody.util.argparse";
+local human_io = require "prosody.util.human.io";
 
 local default_ttl = module:get_option_period("invite_expiry", "1 week");
 
@@ -283,6 +284,7 @@ function subcommands.generate(arg)
 		print("    --role ROLE       Grant the given ROLE to the new user")
 		print("    --group GROUPID   Add the user to the group with the given ID")
 		print("                      Can be specified multiple times")
+		print("    --expires-after T Time until the invite expires (e.g. '1 week')")
 		print()
 		print("--group can be specified multiple times; the user will be added to all groups.")
 		print()
@@ -332,7 +334,7 @@ function subcommands.generate(arg)
 		invite = assert(invites.create_account(nil, {
 			roles = roles,
 			groups = groups
-		}));
+		}, opts.expires_after and human_io.parse_duration(opts.expires_after)));
 	end
 
 	print(invite.landing_page or invite.uri);
