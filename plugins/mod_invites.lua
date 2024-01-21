@@ -277,7 +277,7 @@ function subcommands.generate(arg)
 	end
 
 	local earlyopts = argparse.parse(arg, { short_params = { h = "help"; ["?"] = "help" } });
-	if earlyopts.help or next(earlyopts) ~= nil then
+	if earlyopts.help or not earlyopts[1] then
 		return help();
 	end
 
