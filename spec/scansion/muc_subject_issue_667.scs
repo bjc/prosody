@@ -42,6 +42,21 @@ Romeo receives:
 		<body>Hello everyone</body>
 	</message>
 
+# this should be treated as a normal message
+Romeo sends:
+	<message to="issue667@conference.localhost" type="groupchat">
+		<subject>New thread</subject>
+		<thread>498acea5-5894-473f-b4c6-c77319d11c75</thread>
+		<store xmlns="urn:xmpp:hints"/>
+	</message>
+
+Romeo receives:
+	<message type="groupchat" from="issue667@conference.localhost/Romeo">
+		<subject>New thread</subject>
+		<thread>498acea5-5894-473f-b4c6-c77319d11c75</thread>
+		<store xmlns="urn:xmpp:hints"/>
+	</message>
+
 # Resync
 Romeo sends:
 	<presence to="issue667@conference.localhost/Romeo">
@@ -61,6 +76,13 @@ Romeo receives:
 	<message type="groupchat" from="issue667@conference.localhost/Romeo">
 		<subject>Greetings</subject>
 		<body>Hello everyone</body>
+	</message>
+
+Romeo receives:
+	<message type="groupchat" from="issue667@conference.localhost/Romeo">
+		<subject>New thread</subject>
+		<thread>498acea5-5894-473f-b4c6-c77319d11c75</thread>
+		<store xmlns="urn:xmpp:hints"/>
 	</message>
 
 # the still empty subject
@@ -112,6 +134,13 @@ Romeo receives:
 	<message type="groupchat" from="issue667@conference.localhost/Romeo">
 		<subject>Greetings</subject>
 		<body>Hello everyone</body>
+	</message>
+
+Romeo receives:
+	<message type="groupchat" from="issue667@conference.localhost/Romeo">
+		<subject>New thread</subject>
+		<thread>498acea5-5894-473f-b4c6-c77319d11c75</thread>
+		<store xmlns="urn:xmpp:hints"/>
 	</message>
 
 Romeo receives:
