@@ -46,6 +46,7 @@ TRUNK
 - Ability to disable and enable user accounts
 - Full DANE support for s2s
 - A "grace period" is now supported for deletion requests via in-band registration
+- No longer check certificate Common Names per RFC 9525
 
 ### Storage
 
