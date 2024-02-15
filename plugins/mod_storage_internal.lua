@@ -200,15 +200,11 @@ function archive:find(username, query)
 		end
 		if query.start then
 			if not query.reverse then
-				local wi, exact = binary_search(list, function(item)
+				local wi = binary_search(list, function(item)
 					local when = item.when or datetime.parse(item.attr.stamp);
 					return query.start - when;
 				end);
-				if exact then
-					i = wi - 1;
-				elseif wi then
-					i = wi;
-				end
+				i = wi - 1;
 			else
 				iter = it.filter(function(item)
 					local when = item.when or datetime.parse(item.attr.stamp);
