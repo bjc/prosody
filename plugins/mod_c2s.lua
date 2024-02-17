@@ -252,6 +252,9 @@ end
 local function disconnect_user_sessions(reason, leave_resource)
 	return function (event)
 		local username, host, resource = event.username, event.host, event.resource;
+		if not (hosts[host] and hosts[host].type == "local") then
+			return -- not a local VirtualHost so no sessions
+		end
 		local user = hosts[host].sessions[username];
 		if user and user.sessions then
 			for r, session in pairs(user.sessions) do
