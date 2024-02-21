@@ -1,7 +1,6 @@
 module:set_global();
 
 local cert_verify_identity = require "prosody.util.x509".verify_identity;
-local NULL = {};
 local log = module._log;
 
 local measure_cert_statuses = module:metric("counter", "checked", "", "Certificate validation results",
@@ -23,8 +22,12 @@ module:hook("s2s-check-certificate", function(event)
 	-- Is there any interest in printing out all/the number of errors here?
 	if not chain_valid then
 		log("debug", "certificate chain validation result: invalid");
-		for depth, t in pairs(errors or NULL) do
-			log("debug", "certificate error(s) at depth %d: %s", depth-1, table.concat(t, ", "))
+		if type(errors) == "table" then
+			for depth, t in pairs(errors) do
+				log("debug", "certificate error(s) at depth %d: %s", depth-1, table.concat(t, ", "));
+			end
+		else
+			log("debug", "certificate error: %s", errors);
 		end
 		session.cert_chain_status = "invalid";
 		session.cert_chain_errors = errors;
