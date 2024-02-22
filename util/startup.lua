@@ -392,6 +392,8 @@ function startup.load_secondary_libraries()
 
 	require "prosody.util.stanza"
 	require "prosody.util.jid"
+
+	prosody.features = require "prosody.core.features".available;
 end
 
 function startup.init_http_client()
