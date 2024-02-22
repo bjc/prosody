@@ -21,5 +21,8 @@ return {
 		"getopt-interval";
 		"getopt-period";
 		"getopt-integer";
+
+		-- new module.ready()
+		"module-ready";
 	};
 };
