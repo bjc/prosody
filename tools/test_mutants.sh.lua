@@ -33,7 +33,7 @@ if [[ "$SPEC_FILE" == "" || ! -f "$SPEC_FILE" ]]; then
 	exit 1;
 fi
 
-if ! busted "$SPEC_FILE"; then
+if ! busted --helper=loader "$SPEC_FILE"; then
 	echo "EE: Tests fail on original source. Fix it"\!;
 	exit 1;
 fi
