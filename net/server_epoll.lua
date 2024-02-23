@@ -29,6 +29,7 @@ local new_id = require "prosody.util.id".short;
 local xpcall = require "prosody.util.xpcall".xpcall;
 local sslconfig = require "prosody.util.sslconfig";
 local tls_impl = require "prosody.net.tls_luasec";
+local have_signal, signal = pcall(require, "prosody.util.signal");
 
 local poller = require "prosody.util.poll"
 local EEXIST = poller.EEXIST;
@@ -1143,6 +1144,19 @@ local function loop(once)
 	return quitting;
 end
 
+local hook_signal;
+if have_signal and signal.signalfd then
+	local function dispatch(self)
+		return self:on("signal", signal.signalfd_read(self:getfd()));
+	end
+
+	function hook_signal(signum, cb)
+		local watch = watchfd(signal.signalfd(signum), dispatch);
+		watch.listeners = { onsignal = cb };
+		return watch;
+	end
+end
+
 return {
 	get_backend = function () return "epoll"; end;
 	addserver = addserver;
@@ -1168,6 +1182,7 @@ return {
 	set_config = function (newconfig)
 		cfg = setmetatable(newconfig, default_config);
 	end;
+	hook_signal = hook_signal;
 
 	tls_builder = function(basedir)
 		return sslconfig._new(tls_impl.new_context, basedir)
