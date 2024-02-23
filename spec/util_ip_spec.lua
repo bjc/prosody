@@ -36,6 +36,8 @@ describe("util.ip", function()
 
 			assert.are.equal(match(_"8.8.8.8", _"8.8.0.0", 16), true);
 			assert.are.equal(match(_"8.8.4.4", _"8.8.0.0", 16), true);
+
+			assert.are.equal(match(_"fe80::1", _"fec0::", 10), false);
 		end);
 	end);
 
@@ -98,6 +100,8 @@ describe("util.ip", function()
 			assert_cpl6("abcd::1", "abcd::1", 128);
 			assert_cpl6("abcd::abcd", "abcd::", 112);
 			assert_cpl6("abcd::abcd", "abcd::abcd:abcd", 96);
+
+			assert_cpl6("fe80::1", "fec0::", 9);
 		end);
 	end);
 
