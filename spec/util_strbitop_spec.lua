@@ -67,7 +67,7 @@ describe("util.strbitop", function ()
 			assert(ret1 == ret2, ("parameter order should not make a difference to the result (%s, %s) = %d, reversed = %d"):format(a, b, ret1, ret2));
 			return ret1;
 		end
-		local hex = require "util.hex";
+
 		it("works on single bytes", function ()
 			assert.equal(0, test("00000000", "11111111"));
 			assert.equal(1, test("10000000", "11111111"));
