@@ -6,7 +6,7 @@
 --
 
 local net = require "prosody.util.net";
-local hex = require "prosody.util.hex";
+local strbit = require "prosody.util.strbitop";
 
 local ip_methods = {};
 
@@ -27,13 +27,6 @@ ip_mt.__eq = function (ipA, ipB)
 	end
 	return ipA.packed == ipB.packed;
 end
-
-local hex2bits = {
-	["0"] = "0000", ["1"] = "0001", ["2"] = "0010", ["3"] = "0011",
-	["4"] = "0100", ["5"] = "0101", ["6"] = "0110", ["7"] = "0111",
-	["8"] = "1000", ["9"] = "1001", ["A"] = "1010", ["B"] = "1011",
-	["C"] = "1100", ["D"] = "1101", ["E"] = "1110", ["F"] = "1111",
-};
 
 local function new_ip(ipStr, proto)
 	local zone;
@@ -66,27 +59,18 @@ function ip_methods:normal()
 	return net.ntop(self.packed);
 end
 
-function ip_methods.bits(ip)
-	return hex.encode(ip.packed):upper():gsub(".", hex2bits);
-end
-
-function ip_methods.bits_full(ip)
+-- Returns the longest packed representation, i.e. IPv4 will be mapped
+function ip_methods.packed_full(ip)
 	if ip.proto == "IPv4" then
 		ip = ip.toV4mapped;
 	end
-	return ip.bits;
+	return ip.packed;
 end
 
 local match;
 
 local function commonPrefixLength(ipA, ipB)
-	ipA, ipB = ipA.bits_full, ipB.bits_full;
-	for i = 1, 128 do
-		if ipA:sub(i,i) ~= ipB:sub(i,i) then
-			return i-1;
-		end
-	end
-	return 128;
+	return strbit.common_prefix_bits(ipA.packed_full, ipB.packed_full);
 end
 
 -- Instantiate once
@@ -238,7 +222,7 @@ function match(ipA, ipB, bits)
 			bits = bits + (128 - 32);
 		end
 	end
-	return ipA.bits:sub(1, bits) == ipB.bits:sub(1, bits);
+	return strbit.common_prefix_bits(ipA.packed, ipB.packed) >= bits;
 end
 
 local function is_ip(obj)
