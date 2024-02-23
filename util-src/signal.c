@@ -32,6 +32,10 @@
 
 #include <signal.h>
 #include <stdlib.h>
+#ifdef __linux__
+#include <unistd.h>
+#include <sys/signalfd.h>
+#endif
 
 #include "lua.h"
 #include "lauxlib.h"
@@ -368,11 +372,41 @@ static int l_kill(lua_State *L) {
 
 #endif
 
+#ifdef __linux__
+static int l_signalfd(lua_State *L) {
+	sigset_t mask;
+
+	sigemptyset(&mask);
+	sigaddset(&mask, luaL_checkinteger(L, 1));
+
+	sigprocmask(SIG_BLOCK, &mask, NULL); /* TODO check err */
+
+	lua_pushinteger(L, signalfd(-1, &mask, SFD_NONBLOCK));
+	return 1;
+}
+
+static int l_signalfd_read(lua_State *L) {
+	const int sigfd = luaL_checkinteger(L, 1);
+	struct signalfd_siginfo siginfo;
+
+	if(read(sigfd, &siginfo, sizeof(siginfo)) < 0) {
+		return 0;
+	}
+
+	lua_pushinteger(L, siginfo.ssi_signo);
+	return 1;
+}
+#endif
+
 static const struct luaL_Reg lsignal_lib[] = {
 	{"signal", l_signal},
 	{"raise", l_raise},
 #if defined(__unix__) || defined(__APPLE__)
 	{"kill", l_kill},
+#endif
+#ifdef __linux__
+	{"signalfd", l_signalfd},
+	{"signalfd_read", l_signalfd_read},
 #endif
 	{NULL, NULL}
 };
