@@ -2,6 +2,10 @@ module:set_global();
 
 local async = require "prosody.util.async";
 
+local cron_initial_delay = module:get_option_number("cron_initial_delay", 1);
+local cron_check_delay = module:get_option_number("cron_check_delay", 3600);
+local cron_spread_factor = module:get_option_number("cron_spread_factor", 0);
+
 local record map_store<K,V>
 	-- TODO move to somewhere sensible
 	get : function (map_store<K,V>, string, K) : V
@@ -90,10 +94,14 @@ local function run_task(task : task_spec)
 	task:save(started_at);
 end
 
+local function spread(t : number, factor : number) : number
+	return t * (1 - factor + 2*factor*math.random());
+end
+
 local task_runner : async.runner_t<task_spec> = async.runner(run_task);
-scheduled = module:add_timer(1, function() : integer
+scheduled = module:add_timer(cron_initial_delay, function() : number
 	module:log("info", "Running periodic tasks");
-	local delay = 3600;
+	local delay = spread(cron_check_delay, cron_spread_factor);
 	for host in pairs(active_hosts) do
 		module:log("debug", "Running periodic tasks for host %s", host);
 		for _, task in ipairs(module:context(host):get_host_items("task") as { task_spec } ) do
