@@ -1015,6 +1015,8 @@ function check_auth_policy(event)
 		-- In practice most cases are configuration mistakes or forgotten
 		-- certificate renewals. We think it's better to let the other party
 		-- know about the problem so that they can fix it.
+		--
+		-- Note: Bounce message must not include name of server, as it may leak half your JID in semi-anon MUCs.
 		session:close({ condition = "not-authorized", text = "Your server's certificate "..reason },
 			nil, "Remote server's certificate "..reason);
 		return false;
