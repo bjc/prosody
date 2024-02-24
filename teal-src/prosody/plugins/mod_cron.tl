@@ -108,7 +108,7 @@ scheduled = module:add_timer(cron_initial_delay, function() : number
 			task_runner:run(task);
 		end
 	end
-	module:log("debug", "Wait %ds", delay);
+	module:log("debug", "Wait %gs", delay);
 	return delay;
 end);
 

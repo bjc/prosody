@@ -62,7 +62,7 @@ scheduled = module:add_timer(cron_initial_delay, function()
 		module:log("debug", "Running periodic tasks for host %s", host);
 		for _, task in ipairs(module:context(host):get_host_items("task")) do task_runner:run(task); end
 	end
-	module:log("debug", "Wait %ds", delay);
+	module:log("debug", "Wait %gs", delay);
 	return delay
 end);
 
