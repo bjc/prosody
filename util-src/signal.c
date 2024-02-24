@@ -373,27 +373,64 @@ static int l_kill(lua_State *L) {
 #endif
 
 #ifdef __linux__
-static int l_signalfd(lua_State *L) {
+struct lsignalfd {
+	int fd;
 	sigset_t mask;
+};
 
-	sigemptyset(&mask);
-	sigaddset(&mask, luaL_checkinteger(L, 1));
+static int l_signalfd(lua_State *L) {
+	struct lsignalfd *sfd = lua_newuserdata(L, sizeof(struct lsignalfd));
 
-	sigprocmask(SIG_BLOCK, &mask, NULL); /* TODO check err */
+	sigemptyset(&sfd->mask);
+	sigaddset(&sfd->mask, luaL_checkinteger(L, 1));
 
-	lua_pushinteger(L, signalfd(-1, &mask, SFD_NONBLOCK));
+	sigprocmask(SIG_BLOCK, &sfd->mask, NULL); /* TODO check err */
+
+	sfd->fd = signalfd(-1, &sfd->mask, SFD_NONBLOCK);
+
+	if(sfd->fd == -1) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	luaL_setmetatable(L, "signalfd");
+	return 1;
+}
+
+static int l_signalfd_getfd(lua_State *L) {
+	struct lsignalfd *sfd = luaL_checkudata(L, 1, "signalfd");
+
+	if (sfd->fd == -1) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	lua_pushinteger(L, sfd->fd);
 	return 1;
 }
 
 static int l_signalfd_read(lua_State *L) {
-	const int sigfd = luaL_checkinteger(L, 1);
+	struct lsignalfd *sfd = luaL_checkudata(L, 1, "signalfd");
 	struct signalfd_siginfo siginfo;
 
-	if(read(sigfd, &siginfo, sizeof(siginfo)) < 0) {
+	if(read(sfd->fd, &siginfo, sizeof(siginfo)) < 0) {
 		return 0;
 	}
 
 	lua_pushinteger(L, siginfo.ssi_signo);
+	return 1;
+}
+
+static int l_signalfd_close(lua_State *L) {
+	struct lsignalfd *sfd = luaL_checkudata(L, 1, "signalfd");
+
+	if(close(sfd->fd) != 0) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	sfd->fd = -1;
+	lua_pushboolean(L, 1);
 	return 1;
 }
 #endif
@@ -406,7 +443,6 @@ static const struct luaL_Reg lsignal_lib[] = {
 #endif
 #ifdef __linux__
 	{"signalfd", l_signalfd},
-	{"signalfd_read", l_signalfd_read},
 #endif
 	{NULL, NULL}
 };
@@ -414,6 +450,23 @@ static const struct luaL_Reg lsignal_lib[] = {
 int luaopen_prosody_util_signal(lua_State *L) {
 	luaL_checkversion(L);
 	int i = 0;
+
+#ifdef __linux__
+	luaL_newmetatable(L, "signalfd");
+	lua_pushcfunction(L, l_signalfd_close);
+	lua_setfield(L, -2, "__gc");
+	lua_createtable(L, 0, 1);
+	{
+		lua_pushcfunction(L, l_signalfd_getfd);
+		lua_setfield(L, -2, "getfd");
+		lua_pushcfunction(L, l_signalfd_read);
+		lua_setfield(L, -2, "read");
+		lua_pushcfunction(L, l_signalfd_close);
+		lua_setfield(L, -2, "close");
+	}
+	lua_setfield(L, -2, "__index");
+	lua_pop(L, 1);
+#endif
 
 	/* add the library */
 	lua_newtable(L);

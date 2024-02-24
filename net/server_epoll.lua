@@ -1147,12 +1147,13 @@ end
 local hook_signal;
 if have_signal and signal.signalfd then
 	local function dispatch(self)
-		return self:on("signal", signal.signalfd_read(self:getfd()));
+		return self:on("signal", self.conn:read());
 	end
 
 	function hook_signal(signum, cb)
 		local watch = watchfd(signal.signalfd(signum), dispatch);
 		watch.listeners = { onsignal = cb };
+		watch.close = nil; -- revert to default
 		return watch;
 	end
 end
