@@ -58,7 +58,7 @@ local function serve(opts)
 	local cache = new_cache(opts.cache_size or 256);
 	local cache_max_file_size = tonumber(opts.cache_max_file_size) or 1024
 	-- luacheck: ignore 431
-	local base_path = opts.path;
+	local base_path = assert(opts.path, "invalid argument to net.http.files.path(), missing required 'path'");
 	local dir_indices = opts.index_files or { "index.html", "index.htm" };
 	local directory_index = opts.directory_index;
 	local function serve_file(event, path)
