@@ -1151,7 +1151,12 @@ if have_signal and signal.signalfd then
 	end
 
 	function hook_signal(signum, cb)
-		local watch = watchfd(signal.signalfd(signum), dispatch);
+		local sigfd = signal.signalfd(signum);
+		if not sigfd then
+			log("error", "Could not hook signal %d", signum);
+			return nil, "failed";
+		end
+		local watch = watchfd(sigfd, dispatch);
 		watch.listeners = { onsignal = cb };
 		watch.close = nil; -- revert to default
 		return watch;
