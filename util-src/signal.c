@@ -384,7 +384,10 @@ static int l_signalfd(lua_State *L) {
 	sigemptyset(&sfd->mask);
 	sigaddset(&sfd->mask, luaL_checkinteger(L, 1));
 
-	sigprocmask(SIG_BLOCK, &sfd->mask, NULL); /* TODO check err */
+	if (sigprocmask(SIG_BLOCK, &sfd->mask, NULL) != 0) {
+		lua_pushnil(L);
+		return 1;
+	};
 
 	sfd->fd = signalfd(-1, &sfd->mask, SFD_NONBLOCK);
 
