@@ -1159,6 +1159,7 @@ if have_signal and signal.signalfd then
 		local watch = watchfd(sigfd, dispatch);
 		watch.listeners = { onsignal = cb };
 		watch.close = nil; -- revert to default
+		watch:noise("Signal handler %d ready", signum);
 		return watch;
 	end
 end
