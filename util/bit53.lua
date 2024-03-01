@@ -27,6 +27,9 @@ return {
 		end
 		return ret;
 	end;
+	bnot   = function (x)
+		return ~x;
+	end;
 	rshift = function (a, n) return a >> n end;
 	lshift = function (a, n) return a << n end;
 };

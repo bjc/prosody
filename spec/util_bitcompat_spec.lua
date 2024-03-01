@@ -24,4 +24,8 @@ describe("util.bitcompat", function ()
 	it("lshift works", function ()
 		assert.equal(0xFF00, bit.lshift(0xFF, 8));
 	end);
+
+	it("bnot works", function ()
+		assert.equal(0x0000FF00, bit.band(0xFFFFFFFF, bit.bnot(0xFFFF00FF)));
+	end);
 end);
