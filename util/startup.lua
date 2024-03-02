@@ -671,6 +671,48 @@ function startup.make_dummy_hosts()
 	end
 end
 
+function startup.hook_posix_signals()
+	if prosody.platform ~= "posix" then return end
+	local have_signal, signal = pcall(require, "prosody.util.signal");
+	if not have_signal then
+		log("warn", "Couldn't load signal library, won't respond to SIGTERM");
+		return
+	end
+	signal.signal("SIGTERM", function()
+		log("warn", "Received SIGTERM");
+		prosody.main_thread:run(function()
+			prosody.unlock_globals();
+			prosody.shutdown("Received SIGTERM");
+			prosody.lock_globals();
+		end);
+	end);
+
+	signal.signal("SIGHUP", function()
+		log("info", "Received SIGHUP");
+		prosody.main_thread:run(function() prosody.reload_config(); end);
+		-- this also reloads logging
+	end);
+
+	signal.signal("SIGINT", function()
+		log("info", "Received SIGINT");
+		prosody.main_thread:run(function()
+			prosody.unlock_globals();
+			prosody.shutdown("Received SIGINT");
+			prosody.lock_globals();
+		end);
+	end);
+
+	signal.signal("SIGUSR1", function()
+		log("info", "Received SIGUSR1");
+		fire_event("signal/SIGUSR1");
+	end);
+
+	signal.signal("SIGUSR2", function()
+		log("info", "Received SIGUSR2");
+		fire_event("signal/SIGUSR2");
+	end);
+end
+
 function startup.cleanup()
 	prosody.log("info", "Shutdown status: Cleaning up");
 	prosody.events.fire_event("server-cleanup");
@@ -748,6 +790,7 @@ function startup.prosody()
 	startup.init_http_client();
 	startup.init_data_store();
 	startup.init_global_protection();
+	startup.hook_posix_signals();
 	startup.prepare_to_start();
 	startup.notify_started();
 end
