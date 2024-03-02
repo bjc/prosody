@@ -704,12 +704,12 @@ function startup.hook_posix_signals()
 
 	signal.signal("SIGUSR1", function()
 		log("info", "Received SIGUSR1");
-		fire_event("signal/SIGUSR1");
+		prosody.events.fire_event("signal/SIGUSR1");
 	end);
 
 	signal.signal("SIGUSR2", function()
 		log("info", "Received SIGUSR2");
-		fire_event("signal/SIGUSR2");
+		prosody.events.fire_event("signal/SIGUSR2");
 	end);
 end
 
