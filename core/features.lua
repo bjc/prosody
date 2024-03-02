@@ -26,5 +26,8 @@ return {
 
 		-- new module.ready()
 		"module-ready";
+
+		-- SIGUSR1 and 2 events
+		"signal-events";
 	};
 };
