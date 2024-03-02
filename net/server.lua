@@ -87,11 +87,6 @@ else
 	end
 end
 
-if server_type == "epoll" and os.getenv "PROSODY_EPOLL_SIGNALS" ~= "1" then
-	-- Until we can track down why this only works for me
-	server.hook_signal = nil;
-end
-
 -- If server.hook_signal exists, replace signal.signal()
 local has_signal, signal = pcall(require, "prosody.util.signal");
 if has_signal then
