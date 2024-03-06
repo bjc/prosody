@@ -282,6 +282,7 @@ module:add_item("shell-command", {
 	host_selector = "service_jid";
 
 	handler = function (self, service_jid) --luacheck: ignore 212/self
+		-- luacheck: ignore 431/service
 		local service = get_service(service_jid);
 		local nodes = select(2, assert(service:get_nodes(true)));
 		local count = 0;
