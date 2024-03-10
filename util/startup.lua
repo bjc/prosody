@@ -790,9 +790,9 @@ function startup.prosody()
 	startup.init_http_client();
 	startup.init_data_store();
 	startup.init_global_protection();
+	startup.hook_posix_signals();
 	startup.prepare_to_start();
 	startup.notify_started();
-	startup.hook_posix_signals();
 end
 
 return startup;
