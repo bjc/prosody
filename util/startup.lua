@@ -531,21 +531,30 @@ function startup.force_console_logging()
 	config.set("*", "log", { { levels = { min = log_level or "info" }, to = "console" } });
 end
 
+local function check_posix()
+	if prosody.platform ~= "posix" then return end
+
+	local want_pposix_version = "0.4.0";
+	local have_pposix, pposix = pcall(require, "prosody.util.pposix");
+
+	if pposix._VERSION ~= want_pposix_version then
+		print(string.format("Unknown version (%s) of binary pposix module, expected %s",
+			tostring(pposix._VERSION), want_pposix_version));
+		os.exit(1);
+	end
+	if have_pposix and pposix then
+		return pposix;
+	end
+end
+
 function startup.switch_user()
 	-- Switch away from root and into the prosody user --
 	-- NOTE: This function is only used by prosodyctl.
 	-- The prosody process is built with the assumption that
 	-- it is already started as the appropriate user.
 
-	local want_pposix_version = "0.4.0";
-	local have_pposix, pposix = pcall(require, "prosody.util.pposix");
-
-	if have_pposix and pposix then
-		if pposix._VERSION ~= want_pposix_version then
-			print(string.format("Unknown version (%s) of binary pposix module, expected %s",
-				tostring(pposix._VERSION), want_pposix_version));
-			os.exit(1);
-		end
+	local pposix = check_posix()
+	if pposix then
 		prosody.current_uid = pposix.getuid();
 		local arg_root = prosody.opts.root;
 		if prosody.current_uid == 0 and config.get("*", "run_as_root") ~= true and not arg_root then
@@ -671,6 +680,93 @@ function startup.make_dummy_hosts()
 	end
 end
 
+function startup.posix_umask()
+	if prosody.platform ~= "posix" then return end
+	local pposix = require "prosody.util.pposix";
+	local umask = config.get("*", "umask") or "027";
+	pposix.umask(umask);
+end
+
+function startup.check_user()
+	local pposix = check_posix();
+	if not pposix then return end
+	-- Don't even think about it!
+	if pposix.getuid() == 0 and not config.get("*", "run_as_root") then
+		log("error", "Danger, Will Robinson! Prosody doesn't need to be run as root, so don't do it!");
+		log("error", "For more information on running Prosody as root, see https://prosody.im/doc/root");
+		prosody.shutdown("Refusing to run as root", 1);
+	end
+end
+
+local function remove_pidfile()
+	local pidfile = prosody.pidfile;
+	if prosody.pidfile_handle then
+		prosody.pidfile_handle:close();
+		os.remove(pidfile);
+		prosody.pidfile, prosody.pidfile_handle = nil, nil;
+	end
+end
+
+function startup.write_pidfile()
+	local pposix = check_posix();
+	if not pposix then return end
+	local lfs = require "lfs";
+	local stat = lfs.attributes;
+	local pidfile = config.get("*", "pidfile") or nil;
+	if not pidfile then return end
+	pidfile = config.resolve_relative_path(prosody.paths.data, pidfile);
+	local mode = stat(pidfile) and "r+" or "w+";
+	local pidfile_handle, err = io.open(pidfile, mode);
+	if not pidfile_handle then
+		log("error", "Couldn't write pidfile at %s; %s", pidfile, err);
+		prosody.shutdown("Couldn't write pidfile", 1);
+	else
+		prosody.pidfile = pidfile;
+		if not lfs.lock(pidfile_handle, "w") then -- Exclusive lock
+			local other_pid = pidfile_handle:read("*a");
+			log("error", "Another Prosody instance seems to be running with PID %s, quitting", other_pid);
+			prosody.pidfile_handle = nil;
+			prosody.shutdown("Prosody already running", 1);
+		else
+			pidfile_handle:close();
+			pidfile_handle, err = io.open(pidfile, "w+");
+			if not pidfile_handle then
+				log("error", "Couldn't write pidfile at %s; %s", pidfile, err);
+				prosody.shutdown("Couldn't write pidfile", 1);
+			else
+				if lfs.lock(pidfile_handle, "w") then
+					pidfile_handle:write(tostring(pposix.getpid()));
+					pidfile_handle:flush();
+					prosody.pidfile_handle = pidfile_handle;
+				end
+			end
+		end
+	end
+	prosody.events.add_handler("server-stopped", remove_pidfile);
+end
+
+local function remove_log_sinks()
+	local lm = require "prosody.core.loggingmanager";
+	lm.register_sink_type("console", nil);
+	lm.register_sink_type("stdout", nil);
+	lm.reload_logging();
+end
+
+function startup.posix_daemonize()
+	if not prosody.opts.daemonize then return end
+	local pposix = check_posix();
+	log("info", "Prosody is about to detach from the console, disabling further console output");
+	remove_log_sinks();
+	local ok, ret = pposix.daemonize();
+	if not ok then
+		log("error", "Failed to daemonize: %s", ret);
+	elseif ret and ret > 0 then
+		os.exit(0);
+	else
+		log("info", "Successfully daemonized to PID %d", pposix.getpid());
+	end
+end
+
 function startup.hook_posix_signals()
 	if prosody.platform ~= "posix" then return end
 	local have_signal, signal = pcall(require, "prosody.util.signal");
@@ -765,6 +861,7 @@ function startup.prosody()
 	-- These actions are in a strict order, as many depend on
 	-- previous steps to have already been performed
 	prosody.process_type = "prosody";
+	startup.check_user();
 	startup.parse_args();
 	startup.init_global_state();
 	startup.read_config();
@@ -790,6 +887,8 @@ function startup.prosody()
 	startup.init_http_client();
 	startup.init_data_store();
 	startup.init_global_protection();
+	startup.posix_daemonize();
+	startup.write_pidfile();
 	startup.hook_posix_signals();
 	startup.prepare_to_start();
 	startup.notify_started();
