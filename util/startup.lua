@@ -861,11 +861,11 @@ function startup.prosody()
 	-- These actions are in a strict order, as many depend on
 	-- previous steps to have already been performed
 	prosody.process_type = "prosody";
-	startup.check_user();
 	startup.parse_args();
 	startup.init_global_state();
 	startup.read_config();
 	startup.init_logging();
+	startup.check_user();
 	startup.init_gc();
 	startup.init_errors();
 	startup.sanity_check();
