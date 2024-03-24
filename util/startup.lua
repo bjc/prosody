@@ -694,7 +694,7 @@ function startup.check_user()
 	if pposix.getuid() == 0 and not config.get("*", "run_as_root") then
 		log("error", "Danger, Will Robinson! Prosody doesn't need to be run as root, so don't do it!");
 		log("error", "For more information on running Prosody as root, see https://prosody.im/doc/root");
-		prosody.shutdown("Refusing to run as root", 1);
+		os.exit(1); -- Refusing to run as root
 	end
 end
 
