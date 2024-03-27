@@ -719,20 +719,20 @@ function startup.write_pidfile()
 	local pidfile_handle, err = io.open(pidfile, mode);
 	if not pidfile_handle then
 		log("error", "Couldn't write pidfile at %s; %s", pidfile, err);
-		prosody.shutdown("Couldn't write pidfile", 1);
+		os.exit(1);
 	else
 		prosody.pidfile = pidfile;
 		if not lfs.lock(pidfile_handle, "w") then -- Exclusive lock
 			local other_pid = pidfile_handle:read("*a");
 			log("error", "Another Prosody instance seems to be running with PID %s, quitting", other_pid);
 			prosody.pidfile_handle = nil;
-			prosody.shutdown("Prosody already running", 1);
+			os.exit(1);
 		else
 			pidfile_handle:close();
 			pidfile_handle, err = io.open(pidfile, "w+");
 			if not pidfile_handle then
 				log("error", "Couldn't write pidfile at %s; %s", pidfile, err);
-				prosody.shutdown("Couldn't write pidfile", 1);
+				os.exit(1);
 			else
 				if lfs.lock(pidfile_handle, "w") then
 					pidfile_handle:write(tostring(pposix.getpid()));
