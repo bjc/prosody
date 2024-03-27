@@ -735,6 +735,57 @@ local function check(arg)
 			end
 		end
 
+		-- Check hostname validity
+		do
+			local idna = require "prosody.util.encodings".idna;
+			local invalid_hosts = {};
+			local alabel_hosts = {};
+			for host in it.filter("*", pairs(configmanager.getconfig())) do
+				local _, h, _ = jid_split(host);
+				if not h or not idna.to_ascii(h) then
+					table.insert(invalid_hosts, host);
+				else
+					for label in h:gmatch("[^%.]+") do
+						if label:match("^xn%-%-") then
+							table.insert(alabel_hosts, host);
+							break;
+						end
+					end
+				end
+			end
+
+			if #invalid_hosts > 0 then
+				table.sort(invalid_hosts);
+				print("");
+				print("    Your configuration contains invalid host names:");
+				print("        "..table.concat(invalid_hosts, "\n        "));
+				print("");
+				print("    Clients may not be able to log in to these hosts, or you may not be able to");
+				print("    communicate with remote servers.");
+				print("    Use a valid domain name to correct this issue.");
+			end
+
+			if #alabel_hosts > 0 then
+				table.sort(alabel_hosts);
+				print("");
+				print("    Your configuration contains incorrectly-encoded hostnames:");
+				for _, ahost in ipairs(alabel_hosts) do
+					print(("        '%s' (should be '%s')"):format(ahost, idna.to_unicode(ahost)));
+				end
+				print("");
+				print("    Clients may not be able to log in to these hosts, or you may not be able to");
+				print("    communicate with remote servers.");
+				print("    To correct this issue, use the Unicode version of the domain in Prosody's config file.");
+			end
+
+			if #invalid_hosts > 0 or #alabel_hosts > 0 then
+				print("");
+				print("WARNING: Changing the name of a VirtualHost in Prosody's config file");
+				print("         WILL NOT migrate any existing data (user accounts, etc.) to the new name.");
+				ok = false;
+			end
+		end
+
 		print("Done.\n");
 	end
 	function checks.dns()
