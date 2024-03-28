@@ -16,20 +16,26 @@ module:hook("muc-build-occupant-presence", function (event)
 	local hats = aff_data and aff_data.hats;
 	if not hats then return; end
 	local hats_el;
+	local legacy_hats_el;
 	for hat_id, hat_data in pairs(hats) do
 		if hat_data.active then
 			if not hats_el then
 				hats_el = st.stanza("hats", { xmlns = xmlns_hats });
 			end
 			hats_el:tag("hat", { uri = hat_id, title = hat_data.title }):up();
+
 			if hats_compat then
 				if not hats_el then
-					hats_el = st.stanza("hats", { xmlns = xmlns_hats_legacy });
+					legacy_hats_el = st.stanza("hats", { xmlns = xmlns_hats_legacy });
 				end
-				hats_el:tag("hat", { uri = hat_id, title = hat_data.title }):up();
+				legacy_hats_el:tag("hat", { uri = hat_id, title = hat_data.title }):up();
 			end
 		end
 	end
 	if not hats_el then return; end
 	event.stanza:add_direct_child(hats_el);
+
+	if legacy_hats_el then
+		event.stanza:add_direct_child(legacy_hats_el);
+	end
 end);
