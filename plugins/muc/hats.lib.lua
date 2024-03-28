@@ -1,7 +1,10 @@
 local st = require "prosody.util.stanza";
 local muc_util = module:require "muc/util";
 
-local xmlns_hats = "xmpp:prosody.im/protocol/hats:1";
+local hats_compat = module:get_option_boolean("muc_hats_compat", true); -- COMPAT for pre-XEP namespace, TODO reconsider default for next release
+
+local xmlns_hats_legacy = "xmpp:prosody.im/protocol/hats:1";
+local xmlns_hats = "urn:xmpp:hats:0";
 
 -- Strip any hats claimed by the client (to prevent spoofing)
 muc_util.add_filtered_namespace(xmlns_hats);
@@ -19,6 +22,12 @@ module:hook("muc-build-occupant-presence", function (event)
 				hats_el = st.stanza("hats", { xmlns = xmlns_hats });
 			end
 			hats_el:tag("hat", { uri = hat_id, title = hat_data.title }):up();
+			if hats_compat then
+				if not hats_el then
+					hats_el = st.stanza("hats", { xmlns = xmlns_hats_legacy });
+				end
+				hats_el:tag("hat", { uri = hat_id, title = hat_data.title }):up();
+			end
 		end
 	end
 	if not hats_el then return; end
