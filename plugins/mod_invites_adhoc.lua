@@ -67,7 +67,7 @@ module:provides("adhoc", new_adhoc("Create new contact invite", "urn:xmpp:invite
 			--TODO: check errors
 			return {
 				status = "completed";
-				form = {
+				result = {
 					layout = invite_result_form;
 					values = {
 						uri = invite.uri;
@@ -88,7 +88,7 @@ module:provides("adhoc", new_adhoc("Create new account invite", "urn:xmpp:invite
 			--TODO: check errors
 			return {
 				status = "completed";
-				form = {
+				result = {
 					layout = invite_result_form;
 					values = {
 						uri = invite.uri;
