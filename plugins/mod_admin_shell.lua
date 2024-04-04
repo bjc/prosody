@@ -867,6 +867,18 @@ available_columns = {
 			end
 		end;
 	};
+	created = {
+		title = "Connection Created";
+		description = "Time when connection was created";
+		width = #"YYYY MM DD HH:MM:SS";
+		align = "right";
+		key = "conn";
+		mapper = function(conn)
+			if conn then
+				return os.date("%F %T", math.floor(conn.created));
+			end
+		end;
+	};
 	dir = {
 		title = "Dir";
 		description = "Direction of server-to-server connection";
