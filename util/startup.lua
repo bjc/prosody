@@ -809,6 +809,39 @@ function startup.hook_posix_signals()
 	end);
 end
 
+function startup.systemd_notify()
+	local notify_socket_name = os.getenv("NOTIFY_SOCKET");
+	if not notify_socket_name then return end
+	local have_unix, unix = pcall(require, "socket.unix");
+	if not have_unix or type(unix) ~= "table" then
+		log("error", "LuaSocket without UNIX socket support, can't notify systemd.")
+		return os.exit(1);
+	end
+	log("debug", "Will notify on socket %q", notify_socket_name);
+	notify_socket_name = notify_socket_name:gsub("^@", "\0");
+	local notify_socket = unix.dgram();
+	local ok, err = notify_socket:setpeername(notify_socket_name);
+	if not ok then
+		log("error", "Could not connect to systemd notification socket %q: %q", notify_socket_name, err);
+		return os.exit(1);
+	end
+	local time = require "prosody.util.time";
+
+	prosody.notify_socket = notify_socket;
+	prosody.events.add_handler("server-started", function()
+		notify_socket:send("READY=1");
+	end);
+	prosody.events.add_handler("config-reloading", function()
+		notify_socket:send(string.format("RELOADING=1\nMONOTONIC_USEC=%d", math.floor(time.monotonic() * 1000000)));
+	end);
+	prosody.events.add_handler("config-reloaded", function()
+		notify_socket:send("READY=1");
+	end);
+	prosody.events.add_handler("server-stopping", function()
+		notify_socket:send("STOPPING=1");
+	end);
+end
+
 function startup.cleanup()
 	prosody.log("info", "Shutdown status: Cleaning up");
 	prosody.events.fire_event("server-cleanup");
@@ -890,6 +923,7 @@ function startup.prosody()
 	startup.posix_daemonize();
 	startup.write_pidfile();
 	startup.hook_posix_signals();
+	startup.systemd_notify();
 	startup.prepare_to_start();
 	startup.notify_started();
 end
