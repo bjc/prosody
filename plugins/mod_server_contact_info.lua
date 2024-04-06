@@ -7,6 +7,7 @@
 --
 
 local array = require "prosody.util.array";
+local it = require "prosody.util.iterators";
 local jid = require "prosody.util.jid";
 local url = require "socket.url";
 
@@ -32,7 +33,7 @@ local contact_config = module:get_option("contact_info", {
 
 local fields = {};
 
-for key, field_var in pairs(address_types) do
+for key, field_var in it.sorted_pairs(address_types) do
 	if contact_config[key] then
 		table.insert(fields, {
 			type = "list-multi";
