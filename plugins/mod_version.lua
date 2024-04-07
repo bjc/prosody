@@ -22,9 +22,9 @@ if not module:get_option_boolean("hide_os_type") then
 		local os_version_command = module:get_option_string("os_version_command");
 		local ok, pposix = pcall(require, "prosody.util.pposix");
 		if not os_version_command and (ok and pposix and pposix.uname) then
-			local ok, uname = pposix.uname();
-			if not ok then
-				module:log("debug", "Could not retrieve OS name: %s", uname);
+			local uname, err = pposix.uname();
+			if not uname then
+				module:log("debug", "Could not retrieve OS name: %s", err);
 			else
 				platform = uname.sysname;
 			end
