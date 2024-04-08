@@ -831,7 +831,7 @@ function startup.systemd_notify()
 	prosody.events.add_handler("server-started", function()
 		notify_socket:send("READY=1");
 	end);
-	prosody.events.add_handler("config-reloading", function()
+	prosody.events.add_handler("reloading-config", function()
 		notify_socket:send(string.format("RELOADING=1\nMONOTONIC_USEC=%d", math.floor(time.monotonic() * 1000000)));
 	end);
 	prosody.events.add_handler("config-reloaded", function()
