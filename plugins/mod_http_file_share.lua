@@ -452,7 +452,7 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 	return response:send_file(handle);
 end
 
-if expiry >= 0 and not external_base_url then
+if expiry < math.huge and not external_base_url then
 	-- TODO HTTP DELETE to the external endpoint?
 	local array = require "prosody.util.array";
 	local async = require "prosody.util.async";
