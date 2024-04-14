@@ -80,8 +80,12 @@ local answer_mt = {
 			h = h .. s_format(", Bogus: %s", self.bogus);
 		end
 		local t = { h };
+		local qname = self.canonname or self.qname;
+		if self.canonname then
+			table.insert(t, self.qname .. "\t" .. classes[self.qclass] .. "\tCNAME\t" .. self.canonname);
+		end
 		for i = 1, #self do
-			t[i+1]=self.qname.."\t"..classes[self.qclass].."\t"..types[self.qtype].."\t"..tostring(self[i]);
+			table.insert(t, qname .. "\t" .. classes[self.qclass] .. "\t" .. types[self.qtype] .. "\t" .. tostring(self[i]));
 		end
 		local _string = t_concat(t, "\n");
 		self._string = _string;
