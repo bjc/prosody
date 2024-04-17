@@ -335,6 +335,8 @@ module:hook("stream-features", function(event)
 						log("debug", "Channel binding 'tls-exporter' supported");
 						sasl_handler:add_cb_handler("tls-exporter", sasl_tls_exporter);
 						channel_bindings:add("tls-exporter");
+					else
+						log("debug", "Channel binding 'tls-exporter' not supported");
 					end
 				elseif origin.conn.ssl_peerfinished and origin.conn:ssl_peerfinished() then
 					log("debug", "Channel binding 'tls-unique' supported");
