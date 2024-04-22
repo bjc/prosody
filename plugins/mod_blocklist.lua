@@ -262,7 +262,22 @@ local function drop_stanza(event)
 	local to, from = attr.to, attr.from;
 	to = to and jid_split(to);
 	if to and from then
-		return is_blocked(to, from);
+		if is_blocked(to, from) then
+			return true;
+		end
+
+		-- Check mediated MUC inviter
+		if stanza.name == "message" then
+			local invite = stanza:find("{http://jabber.org/protocol/muc#user}x/invite");
+			if invite then
+				from = jid_prep(invite.attr.from);
+				if is_blocked(to, from) then
+					return true;
+				end
+			end
+		end
+
+		return false;
 	end
 end
 
