@@ -276,8 +276,6 @@ local function drop_stanza(event)
 				end
 			end
 		end
-
-		return false;
 	end
 end
 
