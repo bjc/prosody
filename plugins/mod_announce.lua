@@ -6,11 +6,15 @@
 -- COPYING file in the source package for more information.
 --
 
-local st, jid = require "prosody.util.stanza", require "prosody.util.jid";
+local usermanager = require "prosody.core.usermanager";
+local id = require "prosody.util.id";
+local jid = require "prosody.util.jid";
+local st = require "prosody.util.stanza";
 
 local hosts = prosody.hosts;
 
 function send_to_online(message, host)
+	host = host or module.host;
 	local sessions;
 	if host then
 		sessions = { [host] = hosts[host] };
@@ -30,6 +34,28 @@ function send_to_online(message, host)
 		end
 	end
 
+	return c;
+end
+
+function send_to_all(message, host)
+	host = host or module.host;
+	local c = 0;
+	for username in usermanager.users(host) do
+		message.attr.to = username.."@"..host;
+		module:send(st.clone(message));
+		c = c + 1;
+	end
+	return c;
+end
+
+function send_to_role(message, role, host)
+	host = host or module.host;
+	local c = 0;
+	for _, recipient_jid in ipairs(usermanager.get_jids_with_role(role, host)) do
+		message.attr.to = recipient_jid;
+		module:send(st.clone(message));
+		c = c + 1;
+	end
 	return c;
 end
 
@@ -82,8 +108,10 @@ function announce_handler(_, data, state)
 		local fields = announce_layout:data(data.form);
 
 		module:log("info", "Sending server announcement to all online users");
-		local message = st.message({type = "headline"}, fields.announcement):up()
-			:tag("subject"):text(fields.subject or "Announcement");
+		local message = st.message({type = "headline"}, fields.announcement):up();
+		if fields.subject and fields.subject ~= "" then
+			message:text_tag("subject", fields.subject);
+		end
 
 		local count = send_to_online(message, data.to);
 
@@ -99,3 +127,57 @@ local adhoc_new = module:require "adhoc".new;
 local announce_desc = adhoc_new("Send Announcement to Online Users", "http://jabber.org/protocol/admin#announce", announce_handler, "admin");
 module:provides("adhoc", announce_desc);
 
+module:add_item("shell-command", {
+	section = "announce";
+	section_desc = "Broadcast announcements to users";
+	name = "all";
+	desc = "Send announcement to all users on the host";
+	args = {
+		{ name = "host", type = "string" };
+		{ name = "text", type = "string" };
+	};
+	host_selector = "host";
+	handler = function(self, host, text)
+		local msg = st.message({ from = host, id = id.short() })
+			:text_tag("body", text);
+		local count = send_to_all(msg, host);
+		return true, ("Announcement sent to %d users"):format(count);
+	end;
+});
+
+module:add_item("shell-command", {
+	section = "announce";
+	section_desc = "Broadcast announcements to users";
+	name = "online";
+	desc = "Send announcement to all online users on the host";
+	args = {
+		{ name = "host", type = "string" };
+		{ name = "text", type = "string" };
+	};
+	host_selector = "host";
+	handler = function(self, host, text)
+		local msg = st.message({ from = host, id = id.short(), type = "headline" })
+			:text_tag("body", text);
+		local count = send_to_online(msg, host);
+		return true, ("Announcement sent to %d users"):format(count);
+	end;
+});
+
+module:add_item("shell-command", {
+	section = "announce";
+	section_desc = "Broadcast announcements to users";
+	name = "role";
+	desc = "Send announcement to users with a specific role on the host";
+	args = {
+		{ name = "host", type = "string" };
+		{ name = "role", type = "string" };
+		{ name = "text", type = "string" };
+	};
+	host_selector = "host";
+	handler = function(self, host, role, text)
+		local msg = st.message({ from = host, id = id.short() })
+			:text_tag("body", text);
+		local count = send_to_role(msg, role, host);
+		return true, ("Announcement sent to %d users"):format(count);
+	end;
+});
