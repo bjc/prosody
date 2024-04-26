@@ -137,7 +137,7 @@ module:add_item("shell-command", {
 		{ name = "text", type = "string" };
 	};
 	host_selector = "host";
-	handler = function(self, host, text)
+	handler = function(self, host, text) --luacheck: ignore 212/self
 		local msg = st.message({ from = host, id = id.short() })
 			:text_tag("body", text);
 		local count = send_to_all(msg, host);
@@ -155,7 +155,7 @@ module:add_item("shell-command", {
 		{ name = "text", type = "string" };
 	};
 	host_selector = "host";
-	handler = function(self, host, text)
+	handler = function(self, host, text) --luacheck: ignore 212/self
 		local msg = st.message({ from = host, id = id.short(), type = "headline" })
 			:text_tag("body", text);
 		local count = send_to_online(msg, host);
@@ -174,7 +174,7 @@ module:add_item("shell-command", {
 		{ name = "text", type = "string" };
 	};
 	host_selector = "host";
-	handler = function(self, host, role, text)
+	handler = function(self, host, role, text) --luacheck: ignore 212/self
 		local msg = st.message({ from = host, id = id.short() })
 			:text_tag("body", text);
 		local count = send_to_role(msg, role, host);
