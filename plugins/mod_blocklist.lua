@@ -335,8 +335,13 @@ local prio_in, prio_out = 100, 100;
 module:hook("presence/bare", drop_stanza, prio_in);
 module:hook("presence/full", drop_stanza, prio_in);
 
-module:hook("message/bare", bounce_message, prio_in);
-module:hook("message/full", bounce_message, prio_in);
+if module:get_option_boolean("bounce_blocked_messages", false) then
+	module:hook("message/bare", bounce_message, prio_in);
+	module:hook("message/full", bounce_message, prio_in);
+else
+	module:hook("message/bare", drop_stanza, prio_in);
+	module:hook("message/full", drop_stanza, prio_in);
+end
 
 module:hook("iq/bare", bounce_iq, prio_in);
 module:hook("iq/full", bounce_iq, prio_in);
