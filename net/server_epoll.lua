@@ -35,6 +35,38 @@ local poller = require "prosody.util.poll"
 local EEXIST = poller.EEXIST;
 local ENOENT = poller.ENOENT;
 
+-- systemd socket activation
+local SD_LISTEN_FDS_START = 3;
+local SD_LISTEN_FDS = tonumber(os.getenv("LISTEN_FDS")) or 0;
+
+local inherited_sockets = setmetatable({}, {
+	__index = function(t, k)
+		local serv_mt = debug.getregistry()["tcp{server}"];
+		for i = 1, SD_LISTEN_FDS do
+			local serv = socket.tcp();
+			if serv:getfd() ~= _SOCKETINVALID then
+				-- If LuaSocket allocated a FD for then we can't really close it and it would leak.
+				log("error", "LuaSocket not compatible with socket activation. Upgrade LuaSocket or disable socket activation.");
+				setmetatable(t, nil);
+				break
+			end
+			serv:setfd(SD_LISTEN_FDS_START + i - 1);
+			debug.setmetatable(serv, serv_mt);
+			serv:settimeout(0);
+			local ip, port = serv:getsockname();
+			t[ip .. ":" .. port] = serv;
+			if ip == "0.0.0.0" then
+				-- LuaSocket treats '*' as an alias for '0.0.0.0'
+				t["*:" .. port] = serv;
+			end
+		end
+
+		-- Disable lazy-loading mechanism once performed
+		setmetatable(t, nil);
+		return t[k];
+	end;
+});
+
 local poll = assert(poller.new());
 
 local _ENV = nil;
@@ -944,6 +976,14 @@ local function wrapserver(conn, addr, port, listeners, config)
 end
 
 local function listen(addr, port, listeners, config)
+	local inherited = inherited_sockets[addr .. ":" .. port];
+	if inherited then
+		local conn = wrapserver(inherited, addr, port, listeners, config);
+		-- sockets created by systemd must not be :close() since we may not have
+		-- privileges to create them
+		conn.destroy = interface.del;
+		return conn;
+	end
 	local conn, err = socket.bind(addr, port, cfg.tcp_backlog);
 	if not conn then return conn, err; end
 	conn:settimeout(0);

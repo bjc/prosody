@@ -68,6 +68,7 @@ TRUNK
 - Arguments to `prosodyctl shell` that start with ':' are now turned into method calls
 - Support for Type=notify and notify-reload systemd service type added
 - Support for the roster *group* access_model in mod_pep
+- Support for systemd socket activation in server_epoll
 
 ## Removed
 
