@@ -15,8 +15,12 @@ local usermanager = require "prosody.core.usermanager";
 local interpolation = require "prosody.util.interpolation";
 local signal = require "prosody.util.signal";
 local set = require "prosody.util.set";
+local path = require"prosody.util.paths";
 local lfs = require "lfs";
 local type = type;
+
+local have_socket_unix, socket_unix = pcall(require, "socket.unix");
+have_socket_unix = have_socket_unix and type(socket_unix) == "table"; -- was a function in older LuaSocket
 
 local nodeprep, nameprep = stringprep.nodeprep, stringprep.nameprep;
 
@@ -177,11 +181,31 @@ local function start(source_dir, lua)
 	if ret then
 		return false, "already-running";
 	end
+	local notify_socket;
+	if have_socket_unix then
+		local notify_path = path.join(prosody.paths.data, "notify.sock");
+		os.remove(notify_path);
+		lua = string.format("NOTIFY_SOCKET=%q %s", notify_path, lua);
+		notify_socket = socket_unix.dgram();
+		local ok = notify_socket:setsockname(notify_path);
+		if not ok then return false, "notify-failed"; end
+	end
 	if not source_dir then
 		os.execute(lua .. "./prosody -D");
 	else
 		os.execute(lua .. source_dir.."/../../bin/prosody -D");
 	end
+
+	if notify_socket then
+		for i = 1, 5 do
+			notify_socket:settimeout(i);
+			if notify_socket:receivefrom() == "READY=1" then
+				return true;
+			end
+		end
+		return false, "not-ready";
+	end
+
 	return true;
 end
 
