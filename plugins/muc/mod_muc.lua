@@ -86,6 +86,12 @@ room_mt.get_registered_nick = register.get_registered_nick;
 room_mt.get_registered_jid = register.get_registered_jid;
 room_mt.handle_register_iq = register.handle_register_iq;
 
+local restrict_pm = module:require "muc/restrict_pm";
+room_mt.get_allow_pm = restrict_pm.get_allow_pm;
+room_mt.set_allow_pm = restrict_pm.set_allow_pm;
+room_mt.get_allow_modpm = restrict_pm.get_allow_modpm;
+room_mt.set_allow_modpm = restrict_pm.set_allow_modpm;
+
 local presence_broadcast = module:require "muc/presence_broadcast";
 room_mt.get_presence_broadcast = presence_broadcast.get;
 room_mt.set_presence_broadcast = presence_broadcast.set;
@@ -293,6 +299,8 @@ local function set_room_defaults(room, lang)
 	room:set_language(lang or module:get_option_string("muc_room_default_language"));
 	room:set_presence_broadcast(module:get_option_enum("muc_room_default_presence_broadcast", room:get_presence_broadcast(), "visitor", "participant",
 		"moderator"));
+	room:set_allow_pm(module:get_option_enum("muc_room_default_allow_pm", room:get_allow_pm(), "visitor", "participant", "moderator"));
+	room:set_allow_modpm(module:get_option_boolean("muc_room_default_always_allow_moderator_pms", room:get_allow_modpm()));
 end
 
 function create_room(room_jid, config)
