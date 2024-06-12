@@ -103,6 +103,8 @@ storage = "memory"
 
 mam_smart_enable = true
 
+bounce_blocked_messages = true
+
 -- For the "sql" backend, you can uncomment *one* of the below to configure:
 --sql = { driver = "SQLite3", database = "prosody.sqlite" } -- Default. 'database' is the filename.
 --sql = { driver = "MySQL", database = "prosody", username = "prosody", password = "secret", host = "localhost" }
