@@ -69,6 +69,7 @@ Alice receives:
 		  </option>
 		  <value>open</value>
 		</field>
+		<field type="list-multi" var="pubsub#roster_groups_allowed" label="Roster groups allowed to subscribe"/>
 		<field var="pubsub#publish_model" label="Specify the publisher model" type="list-single">
 		  <option label="publishers">
 		    <value>publishers</value>
