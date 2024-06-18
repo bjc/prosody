@@ -16,6 +16,10 @@ TRUNK
 
 ### MUC
 
+- Component admins are no longer room owners by default. This can be reverted
+  to the old behaviour with `component_admins_as_room_owners = true`, but this
+  has known incompatibilities with some clients. Instead, use the shell or
+  ad-hoc commands to gain ownership of rooms when necessary.
 - Permissions updates:
   - Room creation restricted to local users (of the parent host) by default
     - restrict_room_creation = true restricts to admins, false disables all restrictions
