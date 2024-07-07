@@ -705,7 +705,10 @@ local function handleserver( server, addr, port, pattern, listener, sslctx, star
 				debug( "maximal connections reached, refuse client connection; accept delay:", delay )
 				return EV_TIMEOUT, delay  -- delay for next accept attempt
 			end
-			local client_ip, client_port = client:getpeername( )
+			local client_ip, client_port = addr, port;
+			if client.getpeername then -- Only IP sockets have this method, UNIX sockets don't
+				client_ip, client_port = client:getpeername( )
+			end
 			interface._connections = interface._connections + 1  -- increase connection count
 			local clientinterface = handleclient( client, client_ip, client_port, interface, pattern, listener, sslctx )
 			--vdebug( "client id:", clientinterface, "startssl:", startssl )
@@ -725,6 +728,17 @@ local function handleserver( server, addr, port, pattern, listener, sslctx, star
 	setmetatable(interface, interface_mt)
 	interfacelist[ interface ] = true
 	interface:_start_session()
+	return interface
+end
+
+local function wrapserver(conn, addr, port, listeners, config)
+	config = config or {}
+	if config.sslctx and not has_luasec then
+		debug "fatal error: luasec not found"
+		return nil, "luasec not found"
+	end
+	local interface = handleserver( conn, addr, port, config.read_size, listeners, config.tls_ctx, config.tls_direct)  -- new server handler
+	debug( "new server created with id:", tostring(interface))
 	return interface
 end
 
@@ -917,6 +931,7 @@ return {
 	listen = listen,
 	addclient = addclient,
 	wrapclient = wrapclient,
+	wrapserver = wrapserver,
 	setquitting = setquitting,
 	closeall = closeallservers,
 	get_backend = get_backend,
