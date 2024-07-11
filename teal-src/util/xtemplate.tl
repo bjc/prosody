@@ -46,7 +46,10 @@ local function render(template : string, root : st.stanza_t, escape : escape_t, 
 			if tmpl then tmpl = s_sub(tmpl, 2, -2); end
 			if args then args = s_sub(args, 2, -2); end
 
-			if func == "each" and tmpl and st.is_stanza(value) then
+			if func == "each" and tmpl then
+				if not st.is_stanza(value) then
+					return "";
+				end
 				if not args then value, args = root, path; end
 				local ns, name = s_match(args, "^(%b{})(.*)$");
 				if ns then ns = s_sub(ns, 2, -2); else name, ns = args, nil; end

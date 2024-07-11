@@ -31,7 +31,8 @@ local function render(template, root, escape, filters)
 			if tmpl then tmpl = s_sub(tmpl, 2, -2); end
 			if args then args = s_sub(args, 2, -2); end
 
-			if func == "each" and tmpl and st.is_stanza(value) then
+			if func == "each" and tmpl then
+				if not st.is_stanza(value) then return "" end
 				if not args then value, args = root, path; end
 				local ns, name = s_match(args, "^(%b{})(.*)$");
 				if ns then
