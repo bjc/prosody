@@ -38,6 +38,10 @@ describe("util.xtemplate", function ()
 				x:reset();
 				assert.same("12345", xtemplate.render("{foo/bar|each(i){{#}}}", x));
 			end)
+			it("handles missing inputs", function ()
+				local x = st.stanza("root");
+				assert.same("", xtemplate.render("{foo/bar|each(i){{#}}}", x));
+			end)
 		end)
 	end)
 end)
