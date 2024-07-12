@@ -84,8 +84,18 @@ end
 finalisers.certificate = finalisers.key;
 finalisers.cafile = finalisers.key;
 finalisers.capath = finalisers.key;
--- XXX: copied from core/certmanager.lua, but this seems odd, because it would remove a dhparam function from the config
-finalisers.dhparam = finalisers.key;
+
+function finalisers.dhparam(value, config)
+	if type(value) == "string" then
+		if value:sub(1, 10) == "-----BEGIN" then
+			-- literal value
+			return value;
+		else
+			-- assume a filename
+			return resolve_path(config._basedir, value);
+		end
+	end
+end
 
 -- protocol = "x" should enable only that protocol
 -- protocol = "x+" should enable x and later versions

@@ -54,7 +54,10 @@ local function new_context(cfg, builder)
 	-- LuaSec expects dhparam to be a callback that takes two arguments.
 	-- We ignore those because it is mostly used for having a separate
 	-- set of params for EXPORT ciphers, which we don't have by default.
-	if type(cfg.dhparam) == "string" then
+	if type(cfg.dhparam) == "string" and cfg.dhparam:sub(1, 10) == "-----BEGIN" then
+		local dhparam = cfg.dhparam;
+		cfg.dhparam = function() return dhparam; end
+	elseif type(cfg.dhparam) == "string" then
 		local f, err = io_open(cfg.dhparam);
 		if not f then return nil, "Could not open DH parameters: "..err end
 		local dhparam = f:read("*a");
