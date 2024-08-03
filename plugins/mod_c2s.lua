@@ -30,6 +30,12 @@ local stream_close_timeout = module:get_option_period("c2s_close_timeout", 5);
 local opt_keepalives = module:get_option_boolean("c2s_tcp_keepalives", module:get_option_boolean("tcp_keepalives", true));
 local stanza_size_limit = module:get_option_integer("c2s_stanza_size_limit", 1024*256,10000);
 
+local advertised_idle_timeout = 14*60; -- default in all net.server implementations
+local network_settings = module:get_option("network_settings");
+if type(network_settings) == "table" and type(network_settings.read_timeout) == "number" then
+	advertised_idle_timeout = network_settings.read_timeout;
+end
+
 local measure_connections = module:metric("gauge", "connections", "", "Established c2s connections", {"host", "type", "ip_family"});
 
 local sessions = module:shared("sessions");
@@ -130,10 +136,16 @@ function stream_callbacks._streamopened(session, attr)
 	local features = st.stanza("stream:features");
 	hosts[session.host].events.fire_event("stream-features", { origin = session, features = features, stream = attr });
 	if features.tags[1] or session.full_jid then
-		if stanza_size_limit then
+		if stanza_size_limit or advertised_idle_timeout then
 			features:reset();
-			features:tag("limits", { xmlns = "urn:xmpp:stream-limits:0" })
-				:text_tag("max-bytes", string.format("%d", stanza_size_limit)):up();
+			local limits = features:tag("limits", { xmlns = "urn:xmpp:stream-limits:0" });
+			if stanza_size_limit then
+				limits:text_tag("max-bytes", string.format("%d", stanza_size_limit));
+			end
+			if advertised_idle_timeout then
+				limits:text_tag("idle-seconds", string.format("%d", advertised_idle_timeout));
+			end
+			limits:reset();
 		end
 		send(features);
 	else

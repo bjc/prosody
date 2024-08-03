@@ -43,6 +43,12 @@ local secure_domains, insecure_domains =
 local require_encryption = module:get_option_boolean("s2s_require_encryption", true);
 local stanza_size_limit = module:get_option_integer("s2s_stanza_size_limit", 1024*512, 10000);
 
+local advertised_idle_timeout = 14*60; -- default in all net.server implementations
+local network_settings = module:get_option("network_settings");
+if type(network_settings) == "table" and type(network_settings.read_timeout) == "number" then
+	advertised_idle_timeout = network_settings.read_timeout;
+end
+
 local measure_connections_inbound = module:metric(
 	"gauge", "connections_inbound", "",
 	"Established incoming s2s connections",
@@ -258,10 +264,15 @@ function module.add_host(module)
 	module:hook("route/remote", route_to_existing_session, -1);
 	module:hook("route/remote", route_to_new_session, -10);
 	module:hook("s2sout-stream-features", function (event)
+		if not (stanza_size_limit or advertised_idle_timeout) then return end
+		local limits = event.features:tag("limits", { xmlns = "urn:xmpp:stream-limits:0" })
 		if stanza_size_limit then
-			event.features:tag("limits", { xmlns = "urn:xmpp:stream-limits:0" })
-				:text_tag("max-bytes", string.format("%d", stanza_size_limit)):up();
+			limits:text_tag("max-bytes", string.format("%d", stanza_size_limit));
 		end
+		if advertised_idle_timeout then
+			limits:text_tag("idle-seconds", string.format("%d", advertised_idle_timeout));
+		end
+		limits:up();
 	end);
 	module:hook_tag("urn:xmpp:bidi", "bidi", function(session, stanza)
 		-- Advertising features on bidi connections where no <stream:features> is sent in the other direction
@@ -551,10 +562,16 @@ function stream_callbacks._streamopened(session, attr)
 			end
 
 			if ( session.type == "s2sin" or session.type == "s2sout" ) or features.tags[1] then
-				if stanza_size_limit then
+				if stanza_size_limit or advertised_idle_timeout then
 					features:reset();
-					features:tag("limits", { xmlns = "urn:xmpp:stream-limits:0" })
-						:text_tag("max-bytes", string.format("%d", stanza_size_limit)):up();
+					local limits = features:tag("limits", { xmlns = "urn:xmpp:stream-limits:0" });
+					if stanza_size_limit then
+						limits:text_tag("max-bytes", string.format("%d", stanza_size_limit));
+					end
+					if advertised_idle_timeout then
+						limits:text_tag("idle-seconds", string.format("%d", advertised_idle_timeout));
+					end
+					features:reset();
 				end
 
 				log("debug", "Sending stream features: %s", features);
