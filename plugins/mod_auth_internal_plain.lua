@@ -22,6 +22,9 @@ local provider = {};
 function provider.test_password(username, password)
 	log("debug", "test password for user '%s'", username);
 	local credentials = accounts:get(username) or {};
+	if credentials.disabled then
+		return nil, "Account disabled.";
+	end
 	password = saslprep(password);
 	if not password then
 		return nil, "Password fails SASLprep.";
