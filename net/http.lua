@@ -317,6 +317,9 @@ local function request(self, u, ex, callback)
 		if ex and ex.use_dane ~= nil then
 			use_dane = ex.use_dane;
 		end
+		if not sslctx then
+			error("Attempt to make HTTPS request but no 'sslctx' provided in options");
+		end
 	end
 
 	if self.pool then
