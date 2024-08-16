@@ -12,9 +12,9 @@ local xmlns_bidi = "urn:xmpp:bidi";
 
 local require_encryption = module:get_option_boolean("s2s_require_encryption", true);
 
-local offers_sent = module:metric("counter", "offers_sent", "", "Bidirectional connection offers sent");
-local offers_recv = module:metric("counter", "offers_recv", "", "Bidirectional connection offers received");
-local offers_taken = module:metric("counter", "offers_taken", "", "Bidirectional connection offers taken");
+local offers_sent = module:metric("counter", "offers_sent", "", "Bidirectional connection offers sent", {});
+local offers_recv = module:metric("counter", "offers_recv", "", "Bidirectional connection offers received", {});
+local offers_taken = module:metric("counter", "offers_taken", "", "Bidirectional connection offers taken", {});
 
 module:hook("s2s-stream-features", function(event)
 	local origin, features = event.origin, event.features;
