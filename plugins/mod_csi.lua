@@ -34,8 +34,8 @@ module:hook_global("stats-update", function()
 	count:with_labels("active"):set(0);
 	count:with_labels("inactive"):set(0);
 	count:with_labels("flushing"):set(0);
-	for user, user_session in pairs(sessions) do
-		for resource, session in pairs(user_session.sessions) do
+	for _, user_session in pairs(sessions) do
+		for _, session in pairs(user_session.sessions) do
 			if session.state == "inactive" or session.state == "active" or session.state == "flushing" then
 				count:with_labels(session.state):add(1);
 			end
