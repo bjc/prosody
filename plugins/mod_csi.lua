@@ -1,4 +1,3 @@
-local statsmanager = require "prosody.core.statsmanager";
 local st = require "prosody.util.stanza";
 local xmlns_csi = "urn:xmpp:csi:0";
 local csi_feature = st.stanza("csi", { xmlns = xmlns_csi });
@@ -29,17 +28,19 @@ module:hook("stanza/"..xmlns_csi..":inactive", refire_event("csi-client-inactive
 module:hook_global("stats-update", function()
 	local sessions = prosody.hosts[module.host].sessions;
 	if not sessions then return end
-	statsmanager.cork();
-	-- Can't do :clear() on host-scoped measures?
-	count:with_labels("active"):set(0);
-	count:with_labels("inactive"):set(0);
-	count:with_labels("flushing"):set(0);
+	local active, inactive, flushing = 0, 0, 0;
 	for _, user_session in pairs(sessions) do
 		for _, session in pairs(user_session.sessions) do
-			if session.state == "inactive" or session.state == "active" or session.state == "flushing" then
-				count:with_labels(session.state):add(1);
+			if session.state == "inactive" then
+				inactive = inactive + 1;
+			elseif session.state == "active" then
+				inactive = inactive + 1;
+			elseif session.state == "flushing" then
+				inactive = inactive + 1;
 			end
 		end
 	end
-	statsmanager.uncork();
+	count:with_labels("active"):set(active);
+	count:with_labels("inactive"):set(inactive);
+	count:with_labels("flushing"):set(flushing);
 end);
