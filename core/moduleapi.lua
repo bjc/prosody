@@ -653,6 +653,7 @@ end
 function api:metric(type_, name, unit, description, label_keys, conf)
 	local metric = require "prosody.core.statsmanager".metric;
 	local is_scoped = self.host ~= "*"
+	label_keys = label_keys or {};
 	if is_scoped then
 		-- prepend `host` label to label keys if this is not a global module
 		local orig_labels = label_keys
