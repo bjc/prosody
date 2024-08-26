@@ -986,7 +986,7 @@ end
 -- Complete the sentence "Your certificate " with what's wrong
 local function friendly_cert_error(session) --> string
 	if session.cert_chain_status == "invalid" then
-		if session.cert_chain_errors then
+		if type(session.cert_chain_errors) == "table" then
 			local cert_errors = set.new(session.cert_chain_errors[1]);
 			if cert_errors:contains("certificate has expired") then
 				return "has expired";
@@ -1006,6 +1006,7 @@ local function friendly_cert_error(session) --> string
 				return "does not match any DANE TLSA records";
 			end
 		end
+		-- TODO cert_chain_errors can be a string, handle that
 		return "is not trusted"; -- for some other reason
 	elseif session.cert_identity_status == "invalid" then
 		return "is not valid for this name";
