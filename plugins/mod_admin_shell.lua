@@ -978,7 +978,7 @@ available_columns = {
 				return capitalize(cert_status);
 			end
 			-- no certificate status,
-			if session.cert_chain_errors then
+			if type(session.cert_chain_errors) == "table" then
 				local cert_errors = set.new(session.cert_chain_errors[1]);
 				if cert_errors:contains("certificate has expired") then
 					return "Expired";
@@ -989,6 +989,7 @@ available_columns = {
 				-- TODO borrow more logic from mod_s2s/friendly_cert_error()
 				return "Untrusted";
 			end
+			-- TODO cert_chain_errors can be a string, handle that
 			return "Unknown";
 		end;
 	};
