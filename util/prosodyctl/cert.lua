@@ -163,7 +163,7 @@ local function copy(from, to, umask, owner, group)
 	local attrs = lfs.attributes(to);
 	if attrs then -- Move old file out of the way
 		local backup = to..".bkp~"..os.date("%FT%T", attrs.change);
-		os.rename(to, backup);
+		assert(os.rename(to, backup));
 	end
 	-- FIXME friendlier error handling, maybe move above backup back?
 	local input = assert(io.open(from));

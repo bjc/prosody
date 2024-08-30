@@ -193,7 +193,7 @@ function get(token, username)
 		type = token_info and token_info.type or "roster";
 		uri = token_info and token_info.uri or get_uri("roster", username.."@"..module.host, token);
 		additional_data = token_info and token_info.additional_data or nil;
-		reusable = token_info.reusable;
+		reusable = token_info and token_info.reusable or false;
 	}, valid_invite_mt);
 end
 
