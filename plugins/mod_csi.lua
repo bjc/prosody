@@ -3,7 +3,7 @@ local xmlns_csi = "urn:xmpp:csi:0";
 local csi_feature = st.stanza("csi", { xmlns = xmlns_csi });
 
 local change = module:metric("counter", "changes", "events", "CSI state changes", {"csi_state"});
-local count = module:metric("gauge", "state", "sessions", "", { "state" });
+local count = module:metric("gauge", "state", "sessions", "", { "csi_state" });
 
 module:hook("stream-features", function (event)
 	if event.origin.username then
