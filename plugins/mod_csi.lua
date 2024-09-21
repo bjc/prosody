@@ -34,9 +34,9 @@ module:hook_global("stats-update", function()
 			if session.state == "inactive" then
 				inactive = inactive + 1;
 			elseif session.state == "active" then
-				inactive = inactive + 1;
+				active = active + 1;
 			elseif session.state == "flushing" then
-				inactive = inactive + 1;
+				flushing = flushing + 1;
 			end
 		end
 	end
