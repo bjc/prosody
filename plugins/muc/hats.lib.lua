@@ -25,7 +25,7 @@ module:hook("muc-build-occupant-presence", function (event)
 			hats_el:tag("hat", { uri = hat_id, title = hat_data.title }):up();
 
 			if hats_compat then
-				if not hats_el then
+				if not legacy_hats_el then
 					legacy_hats_el = st.stanza("hats", { xmlns = xmlns_hats_legacy });
 				end
 				legacy_hats_el:tag("hat", { uri = hat_id, title = hat_data.title }):up();
