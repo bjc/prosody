@@ -37,10 +37,9 @@ local record lib
 		"unexpected-request"
 	end
 
-	record stanza_t
+	record stanza_t is { stanza_t | string }
 		name : string
 		attr : { string : string }
-		{ stanza_t | string }
 		tags : { stanza_t }
 
 		query : function ( stanza_t, string ) : stanza_t
@@ -77,10 +76,9 @@ local record lib
 		indent : function ( stanza_t, integer, string ) : stanza_t
 	end
 
-	record serialized_stanza_t
+	record serialized_stanza_t is { serialized_stanza_t | string }
 		name : string
 		attr : { string : string }
-		{ serialized_stanza_t | string }
 	end
 
 	record message_attr
