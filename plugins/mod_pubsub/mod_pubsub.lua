@@ -190,10 +190,22 @@ module:hook("host-disco-items", function (event)
 end);
 
 local admin_aff = module:get_option_enum("default_admin_affiliation", "owner", "publisher", "member", "outcast", "none");
+
 module:default_permission("prosody:admin", ":service-admin");
-local function get_affiliation(jid)
+module:default_permission("prosody:admin", ":create-node");
+
+local function get_affiliation(jid, _, action)
 	local bare_jid = jid_bare(jid);
-	if bare_jid == module.host or module:may(":service-admin", bare_jid) then
+	if bare_jid == module.host then
+		-- The host itself (i.e. local modules) is treated as an admin.
+		-- Check this first as to avoid sendig a host JID to :may()
+		return admin_aff;
+	end
+	if action == "create" and module:may(":create-node", bare_jid) then
+		-- Only one affiliation is allowed to create nodes by default
+		return "owner";
+	end
+	if module:may(":service-admin", bare_jid) then
 		return admin_aff;
 	end
 end
