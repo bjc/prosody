@@ -70,11 +70,7 @@ local function render(template, root, escape, filters)
 				end
 			elseif filters and filters[func] then
 				local f = filters[func];
-				if args == nil then
-					value, is_escaped = f(value, tmpl);
-				else
-					value, is_escaped = f(args, value, tmpl);
-				end
+				value, is_escaped = f(value, args, tmpl);
 			else
 				error("No such filter function: " .. func);
 			end

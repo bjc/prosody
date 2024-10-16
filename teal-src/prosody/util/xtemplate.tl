@@ -17,7 +17,7 @@ local t_concat = table.concat;
 local st = require "prosody.util.stanza";
 
 local type escape_t = function (string) : string
-local type filter_t = function (string, string | st.stanza_t, string) : string | st.stanza_t, boolean
+local type filter_t = function (string | st.stanza_t, string | st.stanza_t, string) : string | st.stanza_t, boolean
 local type filter_coll = { string : filter_t }
 
 local function render(template : string, root : st.stanza_t, escape : escape_t, filters : filter_coll) : string
@@ -85,11 +85,7 @@ local function render(template : string, root : st.stanza_t, escape : escape_t, 
 				end
 			elseif filters and filters[func] then
 				local f = filters[func];
-				if args == nil then
-					value, is_escaped = f(value, tmpl);
-				else
-					value, is_escaped = f(args, value, tmpl);
-				end
+				value, is_escaped = f(value, args, tmpl);
 			else
 				error("No such filter function: " .. func);
 			end
