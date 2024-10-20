@@ -74,6 +74,7 @@ TRUNK
 - Support for Type=notify and notify-reload systemd service type added
 - Support for the roster *group* access_model in mod_pep
 - Support for systemd socket activation in server_epoll
+- mod_invites_adhoc gained a command for creating password resets
 
 ## Removed
 

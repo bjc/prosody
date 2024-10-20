@@ -2,6 +2,7 @@
 local dataforms = require "prosody.util.dataforms";
 local datetime = require "prosody.util.datetime";
 local split_jid = require "prosody.util.jid".split;
+local adhocutil = require "prosody.util.adhoc";
 
 local new_adhoc = module:require("adhoc").new;
 
@@ -98,3 +99,32 @@ module:provides("adhoc", new_adhoc("Create new account invite", "urn:xmpp:invite
 				};
 			};
 		end, "admin"));
+
+local password_reset_form = dataforms.new({
+	title = "Generate Password Reset Invite";
+	{
+		name = "accountjid";
+		type = "jid-single";
+		required = true;
+		label = "The XMPP ID for the account to generate a password reset invite for";
+	};
+});
+
+module:provides("adhoc", new_adhoc("Create password reset invite", "xmpp:prosody.im/mod_invites_adhoc#password-reset",
+		adhocutil.new_simple_form(password_reset_form,
+		function (fields, err)
+			if err then return { status = "completed"; error = { message = "Fill in the form correctly" } }; end
+			local username = split_jid(fields.accountjid);
+			local invite = invites.create_account_reset(username);
+			return {
+				status = "completed";
+				result = {
+					layout = invite_result_form;
+					values = {
+						uri = invite.uri;
+						url = invite.landing_page;
+						expire = datetime.datetime(invite.expires);
+					};
+				};
+			};
+	end), "admin"));
