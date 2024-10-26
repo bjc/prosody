@@ -592,15 +592,15 @@ end, function(fields, err, data)
 		return generate_error_message(err);
 	end
 	local ok_list, err_list = {}, {};
-	for _, module in ipairs(fields.modules) do
-		local ok, err = modulemanager.reload(module_host, module);
+	for _, module_ in ipairs(fields.modules) do
+		local ok, err = modulemanager.reload(module_host, module_);
 		if ok then
-			ok_list[#ok_list + 1] = module;
+			ok_list[#ok_list + 1] = module_;
 		else
-			err_list[#err_list + 1] = module .. "(Error: " .. tostring(err) .. ")";
+			err_list[#err_list + 1] = module_ .. "(Error: " .. tostring(err) .. ")";
 		end
+		module:log("info", "mod_%s reloaded by %s", module_, jid.bare(data.from));
 	end
-	module:log("info", "mod_%s reloaded by %s", fields.module, jid.bare(data.from));
 	local info = (#ok_list > 0 and ("The following modules were successfully reloaded on host "..module_host..":\n"..t_concat(ok_list, "\n")) or "")
 		.. ((#ok_list > 0 and #err_list > 0) and "\n" or "") ..
 		(#err_list > 0 and ("Failed to reload the following modules on host "..module_host..":\n"..t_concat(err_list, "\n")) or "");
@@ -742,15 +742,15 @@ end, function(fields, err, data)
 		return generate_error_message(err);
 	end
 	local ok_list, err_list = {}, {};
-	for _, module in ipairs(fields.modules) do
-		local ok, err = modulemanager.unload(module_host, module);
+	for _, module_ in ipairs(fields.modules) do
+		local ok, err = modulemanager.unload(module_host, module_);
 		if ok then
-			ok_list[#ok_list + 1] = module;
+			ok_list[#ok_list + 1] = module_;
 		else
-			err_list[#err_list + 1] = module .. "(Error: " .. tostring(err) .. ")";
+			err_list[#err_list + 1] = module_ .. "(Error: " .. tostring(err) .. ")";
 		end
+		module:log("info", "mod_%s unloaded by %s", module_, jid.bare(data.from));
 	end
-	module:log("info", "mod_%s unloaded by %s", fields.module, jid.bare(data.from));
 	local info = (#ok_list > 0 and ("The following modules were successfully unloaded on host "..module_host..":\n"..t_concat(ok_list, "\n")) or "")
 		.. ((#ok_list > 0 and #err_list > 0) and "\n" or "") ..
 		(#err_list > 0 and ("Failed to unload the following modules on host "..module_host..":\n"..t_concat(err_list, "\n")) or "");
