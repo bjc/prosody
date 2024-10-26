@@ -1,5 +1,5 @@
 -- Source: https://www.iana.org/assignments/dns-parameters/dns-parameters.xml
--- Generated on 2023-01-20
+-- Generated on 2024-10-26
 return {
 	classes = {
 		["IN"] = 1; [1] = "IN";
@@ -79,6 +79,7 @@ return {
 		["LP"] = 107; [107] = "LP";
 		["EUI48"] = 108; [108] = "EUI48";
 		["EUI64"] = 109; [109] = "EUI64";
+		["NXNAME"] = 128; [128] = "NXNAME";
 		["TKEY"] = 249; [249] = "TKEY";
 		["TSIG"] = 250; [250] = "TSIG";
 		["IXFR"] = 251; [251] = "IXFR";
@@ -91,6 +92,10 @@ return {
 		["AVC"] = 258; [258] = "AVC";
 		["DOA"] = 259; [259] = "DOA";
 		["AMTRELAY"] = 260; [260] = "AMTRELAY";
+		["RESINFO"] = 261; [261] = "RESINFO";
+		["WALLET"] = 262; [262] = "WALLET";
+		["CLA"] = 263; [263] = "CLA";
+		["IPN"] = 264; [264] = "IPN";
 		["TA"] = 32768; [32768] = "TA";
 		["DLV"] = 32769; [32769] = "DLV";
 	};
