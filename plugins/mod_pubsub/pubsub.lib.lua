@@ -33,11 +33,11 @@ local pubsub_errors = errors.init("pubsub", xmlns_pubsub_errors, {
 	["invalid-item"] = { "modify", "bad-request", "invalid item" };
 	["persistent-items-unsupported"] = { "cancel", "feature-not-implemented", nil, "persistent-items" };
 });
-local function pubsub_error_reply(stanza, error)
+local function pubsub_error_reply(stanza, error, context)
 	if type(error) == "table" and type(error.pubsub_condition) == "string" then
 		error.extra = { namespace = xmlns_pubsub_errors; condition = error.pubsub_condition }
 	end
-	local reply = st.error_reply(stanza, pubsub_errors.wrap(error));
+	local reply = st.error_reply(stanza, pubsub_errors.wrap(error, context));
 	return reply;
 end
 _M.pubsub_error_reply = pubsub_error_reply;
@@ -680,7 +680,7 @@ function handlers.set_publish(origin, stanza, publish, service)
 	if item then
 		item.attr.publisher = service.config.normalize_jid(stanza.attr.from);
 	end
-	local ok, ret = service:publish(node, stanza.attr.from, id, item, required_config);
+	local ok, ret, context = service:publish(node, stanza.attr.from, id, item, required_config);
 	local reply;
 	if ok then
 		if type(ok) == "string" then
@@ -691,7 +691,7 @@ function handlers.set_publish(origin, stanza, publish, service)
 				:tag("publish", { node = node })
 					:tag("item", { id = id });
 	else
-		reply = pubsub_error_reply(stanza, ret);
+		reply = pubsub_error_reply(stanza, ret, context);
 	end
 	origin.send(reply);
 	return true;
