@@ -1,4 +1,3 @@
-local t_unpack = table.unpack;
 local time_now = os.time;
 
 local jid_prep = require "prosody.util.jid".prep;
@@ -18,7 +17,7 @@ local _M = {};
 local handlers = {};
 _M.handlers = handlers;
 
-local pubsub_errors = {
+local pubsub_errors = errors.init("pubsub", xmlns_pubsub_errors, {
 	["conflict"] = { "cancel", "conflict" };
 	["invalid-jid"] = { "modify", "bad-request", nil, "invalid-jid" };
 	["jid-required"] = { "modify", "bad-request", nil, "jid-required" };
@@ -33,16 +32,12 @@ local pubsub_errors = {
 	["precondition-not-met"] = { "cancel", "conflict", nil, "precondition-not-met" };
 	["invalid-item"] = { "modify", "bad-request", "invalid item" };
 	["persistent-items-unsupported"] = { "cancel", "feature-not-implemented", nil, "persistent-items" };
-};
+});
 local function pubsub_error_reply(stanza, error)
-	local e = pubsub_errors[error];
-	if not e and errors.is_err(error) then
-		e = { error.type, error.condition, error.text, error.pubsub_condition };
+	if type(error) == "table" and type(error.pubsub_condition) == "string" then
+		error.extra = { namespace = xmlns_pubsub_errors; condition = error.pubsub_condition }
 	end
-	local reply = st.error_reply(stanza, t_unpack(e, 1, 3));
-	if e[4] then
-		reply:tag(e[4], { xmlns = xmlns_pubsub_errors }):up();
-	end
+	local reply = st.error_reply(stanza, pubsub_errors.wrap(error));
 	return reply;
 end
 _M.pubsub_error_reply = pubsub_error_reply;
