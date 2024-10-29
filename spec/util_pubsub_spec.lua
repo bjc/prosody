@@ -108,7 +108,7 @@ describe("util.pubsub", function ()
 		it("fails to publish to a node with differing config", function ()
 			local ok, err = service:publish("node", true, "1", "item 2", { myoption = false });
 			assert.falsy(ok);
-			assert.equals("precondition-not-met", err.pubsub_condition);
+			assert.equals("precondition-not-met", err);
 		end);
 
 		it("allows to publish to a node with differing config when only defaults are suggested", function ()
