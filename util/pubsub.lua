@@ -1,6 +1,5 @@
 local events = require "prosody.util.events";
 local cache = require "prosody.util.cache";
-local errors = require "prosody.util.error";
 
 local service_mt = {};
 
@@ -562,11 +561,7 @@ function service:publish(node, actor, id, item, requested_config) --> ok, err
 		-- Check that node has the requested config before we publish
 		local ok, field = check_preconditions(node_obj.config, requested_config);
 		if not ok then
-			local err = errors.new({
-				type = "cancel", condition = "conflict", text = "Field does not match: "..field;
-			});
-			err.pubsub_condition = "precondition-not-met";
-			return false, err;
+			return false, "precondition-not-met", { field = field };
 		end
 	end
 	if not self.config.itemcheck(item) then

@@ -34,10 +34,11 @@ local pubsub_errors = errors.init("pubsub", xmlns_pubsub_errors, {
 	["persistent-items-unsupported"] = { "cancel", "feature-not-implemented", nil, "persistent-items" };
 });
 local function pubsub_error_reply(stanza, error, context)
-	if type(error) == "table" and type(error.pubsub_condition) == "string" then
-		error.extra = { namespace = xmlns_pubsub_errors; condition = error.pubsub_condition }
+	local err = pubsub_errors.wrap(error, context);
+	if error == "precondition-not-met" and type(context) == "table" and type(context.field) == "string" then
+		err.text = "Field does not match: " .. context.field;
 	end
-	local reply = st.error_reply(stanza, pubsub_errors.wrap(error, context));
+	local reply = st.error_reply(stanza, err);
 	return reply;
 end
 _M.pubsub_error_reply = pubsub_error_reply;
