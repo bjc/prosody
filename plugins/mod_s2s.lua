@@ -153,7 +153,7 @@ local function bounce_sendq(session, reason)
 	if session.had_stream then -- set when a stream is opened by the remote
 		error_type, condition = "wait", "remote-server-timeout";
 	end
-	if errors.is_err(reason) then
+	if errors.is_error(reason) then
 		error_type, condition, reason_text = reason.type, reason.condition, reason.text;
 	elseif type(reason) == "string" then
 		reason_text = reason;

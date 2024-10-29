@@ -29,10 +29,10 @@ describe("util.error", function ()
 
 	end);
 
-	describe("is_err()", function ()
+	describe("is_error()", function ()
 		it("works", function ()
-			assert.truthy(errors.is_err(errors.new()));
-			assert.falsy(errors.is_err("not an error"));
+			assert.truthy(errors.is_error(errors.new()));
+			assert.falsy(errors.is_error("not an error"));
 		end);
 	end);
 
@@ -40,7 +40,7 @@ describe("util.error", function ()
 		it("works", function ()
 			local ok, err = errors.coerce(nil, "it dun goofed");
 			assert.is_nil(ok);
-			assert.truthy(errors.is_err(err))
+			assert.truthy(errors.is_error(err))
 		end);
 	end);
 
@@ -50,7 +50,7 @@ describe("util.error", function ()
 			local m = st.message({ type = "chat" });
 			local e = st.error_reply(m, "modify", "bad-request", nil, "error.example"):tag("extra", { xmlns = "xmpp:example.test" });
 			local err = errors.from_stanza(e);
-			assert.truthy(errors.is_err(err));
+			assert.truthy(errors.is_error(err));
 			assert.equal("modify", err.type);
 			assert.equal("bad-request", err.condition);
 			assert.equal(e, err.context.stanza);
@@ -187,7 +187,7 @@ describe("util.error", function ()
 				end
 				local ok, err = reg.coerce(test());
 				assert.is_nil(ok);
-				assert.is_truthy(errors.is_err(err));
+				assert.is_truthy(errors.is_error(err));
 				assert.equal("forbidden", err.condition);
 			end);
 
@@ -208,7 +208,7 @@ describe("util.error", function ()
 				end
 				local ok, err = reg.coerce(test());
 				assert.is_nil(ok);
-				assert.is_truthy(errors.is_err(err));
+				assert.is_truthy(errors.is_error(err));
 				assert.equal("internal-server-error", err.condition);
 				assert.equal("Oh no", err.text);
 			end);

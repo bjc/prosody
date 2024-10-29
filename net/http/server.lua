@@ -206,7 +206,7 @@ local function handle_result(request, response, result)
 		end
 	elseif result_type == "string" then
 		body = result;
-	elseif errors.is_err(result) then
+	elseif errors.is_error(result) then
 		response.status_code = result.code or 500;
 		body = events.fire_event("http-error", { request = request, response = response, code = result.code or 500, error = result });
 	elseif promise.is_promise(result) then
