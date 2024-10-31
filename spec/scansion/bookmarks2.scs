@@ -77,7 +77,7 @@ Juliet receives:
 	<message type='headline' from="${Juliet's JID}">
 		<event xmlns='http://jabber.org/protocol/pubsub#event'>
 			<items node='urn:xmpp:bookmarks:1'>
-				<item id='theplay@conference.shakespeare.lit' publisher="${Juliet's JID}">
+				<item id='theplay@conference.shakespeare.lit'>
 					<conference xmlns='urn:xmpp:bookmarks:1'
 					            name='The Play&apos;s the Thing'
 					            autojoin='true'>
@@ -135,7 +135,7 @@ Juliet receives:
 	<message type='headline' from="${Juliet's JID}">
 		<event xmlns='http://jabber.org/protocol/pubsub#event'>
 			<items node='urn:xmpp:bookmarks:1'>
-				<item id='orchard@conference.shakespeare.lit' publisher="${Juliet's JID}">
+				<item id='orchard@conference.shakespeare.lit'>
 					<conference xmlns='urn:xmpp:bookmarks:1'
 					            name='The Orchard'
 					            autojoin='true'>
