@@ -1,0 +1,181 @@
+# Pubsub: Bookmarks 2.0
+
+[Client] Juliet
+	jid: admin@localhost
+	password: password
+
+// admin@localhost is assumed to have node creation privileges
+
+---------
+
+Juliet connects
+
+-- Generated with https://gitlab.com/xmpp-rs/xmpp-parsers:
+-- cargo run --example=generate-caps https://code.matthewwild.co.uk/scansion/ <<< "<query xmlns='http://jabber.org/protocol/disco#info'><identity category='client' name='scansion' type='bot'/><feature var='http://jabber.org/protocol/disco#info'/><feature var='urn:xmpp:bookmarks:1+notify'/></query>"
+Juliet sends:
+	<presence id='presence0'>
+		<c xmlns='http://jabber.org/protocol/caps'
+		   hash='sha-1'
+		   node='https://code.matthewwild.co.uk/scansion/'
+		   ver='CPuQARM1gCTq2f6/ZjHUzWL2QHg='/>
+		<c xmlns='urn:xmpp:caps'>
+			<hash xmlns='urn:xmpp:hashes:2' algo='sha-256'>OTy9GPCvBZRvqzOHmD/ThA1WbBH3tNoeKbdqKQCRPHc=</hash>
+			<hash xmlns='urn:xmpp:hashes:2' algo='sha3-256'>f/rxDeTf6HyjQ382V3GEG/UfAs5IeclC05jBSBnVQCI=</hash>
+			<hash xmlns='urn:xmpp:hashes:2' algo='blake2b-256'>ucfqg/NrLj0omE+26hYMrbpcmxHcU4Z3hfAQIF+6tt0=</hash>
+		</c>
+	</presence>
+
+Juliet receives:
+	<iq from="${Juliet's JID}" id='disco' type='get'>
+		<query xmlns='http://jabber.org/protocol/disco#info' node='https://code.matthewwild.co.uk/scansion/#CPuQARM1gCTq2f6/ZjHUzWL2QHg='/>
+	</iq>
+
+Juliet sends:
+	<iq to="${Juliet's JID}" id='disco' type='result'>
+		<query xmlns='http://jabber.org/protocol/disco#info' node='https://code.matthewwild.co.uk/scansion/#CPuQARM1gCTq2f6/ZjHUzWL2QHg='>
+			<identity category='client' name='scansion' type='bot'/>
+			<feature var='http://jabber.org/protocol/disco#info'/>
+			<feature var='urn:xmpp:bookmarks:1+notify'/>
+		</query>
+	</iq>
+
+Juliet sends:
+	<iq type='set' id='pub0'>
+		<pubsub xmlns='http://jabber.org/protocol/pubsub'>
+			<publish node='urn:xmpp:bookmarks:1'>
+				<item id='theplay@conference.shakespeare.lit'>
+					<conference xmlns='urn:xmpp:bookmarks:1'
+					            name='The Play&apos;s the Thing'
+					            autojoin='true'>
+						<nick>JC</nick>
+					</conference>
+				</item>
+			</publish>
+			<publish-options>
+				<x xmlns='jabber:x:data' type='submit'>
+					<field var='FORM_TYPE' type='hidden'>
+						<value>http://jabber.org/protocol/pubsub#publish-options</value>
+					</field>
+					<field var='pubsub#persist_items'>
+						<value>true</value>
+					</field>
+					<field var='pubsub#max_items'>
+						<value>255</value>
+					</field>
+					<field var='pubsub#send_last_published_item'>
+						<value>never</value>
+					</field>
+					<field var='pubsub#access_model'>
+						<value>whitelist</value>
+					</field>
+				</x>
+			</publish-options>
+		</pubsub>
+	</iq>
+
+Juliet receives:
+	<message type='headline' from="${Juliet's JID}">
+		<event xmlns='http://jabber.org/protocol/pubsub#event'>
+			<items node='urn:xmpp:bookmarks:1'>
+				<item id='theplay@conference.shakespeare.lit' publisher="${Juliet's JID}">
+					<conference xmlns='urn:xmpp:bookmarks:1'
+					            name='The Play&apos;s the Thing'
+					            autojoin='true'>
+						<nick>JC</nick>
+					</conference>
+				</item>
+			</items>
+		</event>
+	</message>
+
+Juliet receives:
+	<iq type='result' id='pub0'>
+		<pubsub xmlns='http://jabber.org/protocol/pubsub'>
+			<publish node='urn:xmpp:bookmarks:1'>
+				<item id='theplay@conference.shakespeare.lit'/>
+			</publish>
+		</pubsub>
+	</iq>
+
+Juliet sends:
+	<iq type='set' id='pub1'>
+		<pubsub xmlns='http://jabber.org/protocol/pubsub'>
+			<publish node='urn:xmpp:bookmarks:1'>
+				<item id='orchard@conference.shakespeare.lit'>
+					<conference xmlns='urn:xmpp:bookmarks:1'
+					            name='The Orchard'
+					            autojoin='true'>
+						<nick>JC</nick>
+					</conference>
+				</item>
+			</publish>
+			<publish-options>
+				<x xmlns='jabber:x:data' type='submit'>
+					<field var='FORM_TYPE' type='hidden'>
+						<value>http://jabber.org/protocol/pubsub#publish-options</value>
+					</field>
+					<field var='pubsub#persist_items'>
+						<value>true</value>
+					</field>
+					<field var='pubsub#max_items'>
+						<value>255</value>
+					</field>
+					<field var='pubsub#send_last_published_item'>
+						<value>never</value>
+					</field>
+					<field var='pubsub#access_model'>
+						<value>whitelist</value>
+					</field>
+				</x>
+			</publish-options>
+		</pubsub>
+	</iq>
+
+Juliet receives:
+	<message type='headline' from="${Juliet's JID}">
+		<event xmlns='http://jabber.org/protocol/pubsub#event'>
+			<items node='urn:xmpp:bookmarks:1'>
+				<item id='orchard@conference.shakespeare.lit' publisher="${Juliet's JID}">
+					<conference xmlns='urn:xmpp:bookmarks:1'
+					            name='The Orchard'
+					            autojoin='true'>
+						<nick>JC</nick>
+					</conference>
+				</item>
+			</items>
+		</event>
+	</message>
+
+Juliet receives:
+	<iq type='result' id='pub1'>
+		<pubsub xmlns='http://jabber.org/protocol/pubsub'>
+			<publish node='urn:xmpp:bookmarks:1'>
+				<item id='orchard@conference.shakespeare.lit'/>
+			</publish>
+		</pubsub>
+	</iq>
+
+Juliet sends:
+	<iq type='set' id='retract0'>
+		<pubsub xmlns='http://jabber.org/protocol/pubsub'>
+			<retract node='urn:xmpp:bookmarks:1' notify='1'>
+				<item id='theplay@conference.shakespeare.lit'/>
+			</retract>
+		</pubsub>
+	</iq>
+
+Juliet receives:
+	<message type='headline' from="${Juliet's JID}">
+		<event xmlns='http://jabber.org/protocol/pubsub#event'>
+			<items node='urn:xmpp:bookmarks:1'>
+				<retract id='theplay@conference.shakespeare.lit'/>
+			</items>
+		</event>
+	</message>
+
+Juliet receives:
+	<iq type='result' id='retract0'/>
+
+Juliet disconnects
+
+// vim: syntax=xml:
