@@ -1785,6 +1785,8 @@ function def_env.user:addrole(jid, host, new_role)
 		return nil, "No such host: "..host;
 	elseif prosody.hosts[userhost] and not um.user_exists(username, userhost) then
 		return nil, "No such user";
+	elseif userhost ~= host then
+		return nil, "Can't add roles outside users own host"
 	end
 	return um.add_user_secondary_role(username, host, new_role);
 end
@@ -1797,6 +1799,8 @@ function def_env.user:delrole(jid, host, role_name)
 		return nil, "No such host: "..host;
 	elseif prosody.hosts[userhost] and not um.user_exists(username, userhost) then
 		return nil, "No such user";
+	elseif userhost ~= host then
+		return nil, "Can't remove roles outside users own host"
 	end
 	return um.remove_user_secondary_role(username, host, role_name);
 end
