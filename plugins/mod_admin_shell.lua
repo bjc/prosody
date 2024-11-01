@@ -1770,7 +1770,11 @@ function def_env.user:setrole(jid, host, new_role)
 	elseif prosody.hosts[userhost] and not um.user_exists(username, userhost) then
 		return nil, "No such user";
 	end
-	return um.set_user_role(username, host, new_role);
+	if userhost == host then
+		return um.set_user_role(username, userhost, new_role);
+	else
+		return um.set_jid_role(jid, host, new_role);
+	end
 end
 
 describe_command [[user:addrole(jid, host, role) - Add a secondary role to a user]]
