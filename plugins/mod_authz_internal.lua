@@ -265,7 +265,7 @@ function get_jid_role(jid)
 end
 
 function set_jid_role(jid, role_name) -- luacheck: ignore 212
-	return false;
+	return false, "not-implemented";
 end
 
 function get_jids_with_role(role_name)
