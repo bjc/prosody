@@ -79,12 +79,12 @@ local measure_upload_cache_size = module:measure("upload_cache", "amount");
 local measure_quota_cache_size = module:measure("quota_cache", "amount");
 local measure_total_storage_usage = module:measure("total_storage", "amount", { unit = "bytes" });
 
-module:on_ready(function ()
+do
 	local total, err = persist_stats:get(nil, "total");
 	if not err then
 		total_storage_usage = tonumber(total) or 0;
 	end
-end)
+end
 
 module:hook_global("stats-update", function ()
 	measure_upload_cache_size(upload_cache:count());
