@@ -494,14 +494,16 @@ module:hook("pre-resource-unbind", function (event)
 			return
 		end
 
-		session.log("debug", "Destroying session for hibernating too long");
-		session_registry[jid.join(session.username, session.host, session.resumption_token)] = nil;
-		old_session_registry:set(session.username, session.resumption_token,
-			{ h = session.handled_stanza_count; t = os.time() });
-		session.resumption_token = nil;
-		session.resending_unacked = true; -- stop outgoing_stanza_filter from re-queueing anything anymore
-		sessionmanager.destroy_session(session, "Hibernating too long");
-		sessions_expired(1);
+		prosody.main_thread:run(function ()
+			session.log("debug", "Destroying session for hibernating too long");
+			session_registry[jid.join(session.username, session.host, session.resumption_token)] = nil;
+			old_session_registry:set(session.username, session.resumption_token,
+				{ h = session.handled_stanza_count; t = os.time() });
+			session.resumption_token = nil;
+			session.resending_unacked = true; -- stop outgoing_stanza_filter from re-queueing anything anymore
+			sessionmanager.destroy_session(session, "Hibernating too long");
+			sessions_expired(1);
+		end);
 	end);
 	if session.conn then
 		local conn = session.conn;
