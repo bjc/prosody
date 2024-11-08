@@ -314,7 +314,7 @@ local function on_publish_legacy_pep(event)
 
 	local ok, err = publish_to_pep(session.full_jid, bookmarks, true);
 	if not ok then
-		module:log("error", "Failed to publish to PEP bookmarks for %s@%s: %s", session.username, session.host, err);
+		module:log("error", "Failed to sync legacy bookmarks to PEP for %s@%s: %s", session.username, session.host, err);
 		session.send(st.error_reply(stanza, "cancel", "internal-server-error", "Failed to store bookmarks to PEP"));
 		return true;
 	end
@@ -340,7 +340,7 @@ local function on_publish_private_xml(event)
 
 	local ok, err = publish_to_pep(session.full_jid, bookmarks, true);
 	if not ok then
-		module:log("error", "Failed to publish to PEP bookmarks for %s@%s: %s", session.username, session.host, err);
+		module:log("error", "Failed to sync private XML bookmarks to PEP for %s@%s: %s", session.username, session.host, err);
 		session.send(st.error_reply(stanza, "cancel", "internal-server-error", "Failed to store bookmarks to PEP"));
 		return true;
 	end
