@@ -202,23 +202,28 @@ local node_metadata_form = dataform {
 	};
 	{
 		type = "text-single";
-		name = "pubsub#title";
+		name = "title";
+		var = "pubsub#title";
 	};
 	{
 		type = "text-single";
-		name = "pubsub#description";
+		name = "description";
+		var = "pubsub#description";
 	};
 	{
 		type = "text-single";
-		name = "pubsub#type";
+		name = "payload_type";
+		var = "pubsub#type";
 	};
 	{
 		type = "text-single";
-		name = "pubsub#access_model";
+		name = "access_model";
+		var = "pubsub#access_model";
 	};
 	{
 		type = "text-single";
-		name = "pubsub#publish_model";
+		name = "publish_model";
+		var = "pubsub#publish_model";
 	};
 };
 _M.node_metadata_form = node_metadata_form;
@@ -297,13 +302,7 @@ function _M.handle_disco_info_node(event, service)
 	end
 	event.exists = true;
 	reply:tag("identity", { category = "pubsub", type = "leaf" }):up();
-	reply:add_child(node_metadata_form:form({
-		["pubsub#title"] = meta.title;
-		["pubsub#description"] = meta.description;
-		["pubsub#type"] = meta.payload_type;
-		["pubsub#access_model"] = meta.access_model;
-		["pubsub#publish_model"] = meta.publish_model;
-	}, "result"));
+	reply:add_child(node_metadata_form:form(meta, "result"));
 end
 
 function _M.handle_disco_items_node(event, service)
