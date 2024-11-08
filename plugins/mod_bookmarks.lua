@@ -167,10 +167,15 @@ local function publish_to_pep(jid, bookmarks, synchronise)
 		if synchronise then
 			-- If we set zero legacy bookmarks, purge the bookmarks 2 node.
 			module:log("debug", "No bookmark in the set, purging instead.");
-			return service:purge(namespace, jid, true);
-		else
-			return true;
+			local ok, err = service:purge(namespace, jid, true);
+			-- It's okay if no node exists when purging, user has
+			-- no bookmarks anyway.
+			if not ok and err ~= "item-not-found" then
+				module:log("error", "Failed to clear items from bookmarks 2 node: %s", err);
+				return ok, err;
+			end
 		end
+		return true;
 	end
 
 	-- Retrieve the current bookmarks2.
@@ -309,7 +314,7 @@ local function on_publish_legacy_pep(event)
 
 	local ok, err = publish_to_pep(session.full_jid, bookmarks, true);
 	if not ok then
-		module:log("error", "Failed to publish to PEP bookmarks for %s@%s: %s", session.username, session.host, err);
+		module:log("error", "Failed to sync legacy bookmarks to PEP for %s@%s: %s", session.username, session.host, err);
 		session.send(st.error_reply(stanza, "cancel", "internal-server-error", "Failed to store bookmarks to PEP"));
 		return true;
 	end
@@ -335,7 +340,7 @@ local function on_publish_private_xml(event)
 
 	local ok, err = publish_to_pep(session.full_jid, bookmarks, true);
 	if not ok then
-		module:log("error", "Failed to publish to PEP bookmarks for %s@%s: %s", session.username, session.host, err);
+		module:log("error", "Failed to sync private XML bookmarks to PEP for %s@%s: %s", session.username, session.host, err);
 		session.send(st.error_reply(stanza, "cancel", "internal-server-error", "Failed to store bookmarks to PEP"));
 		return true;
 	end
