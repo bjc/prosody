@@ -290,27 +290,20 @@ end
 
 function _M.handle_disco_info_node(event, service)
 	local stanza, reply, node = event.stanza, event.reply, event.node;
-	local ok, ret = service:get_nodes(stanza.attr.from);
+	local ok, meta = service:get_node_metadata(node, stanza.attr.from);
 	if not ok then
-		event.origin.send(pubsub_error_reply(stanza, ret));
-		return true;
-	end
-	local node_obj = ret[node];
-	if not node_obj then
-		event.origin.send(pubsub_error_reply(stanza, "item-not-found"));
+		event.origin.send(pubsub_error_reply(stanza, meta));
 		return true;
 	end
 	event.exists = true;
 	reply:tag("identity", { category = "pubsub", type = "leaf" }):up();
-	if node_obj.config then
-		reply:add_child(node_metadata_form:form({
-			["pubsub#title"] = node_obj.config.title;
-			["pubsub#description"] = node_obj.config.description;
-			["pubsub#type"] = node_obj.config.payload_type;
-			["pubsub#access_model"] = node_obj.config.access_model;
-			["pubsub#publish_model"] = node_obj.config.publish_model;
-		}, "result"));
-	end
+	reply:add_child(node_metadata_form:form({
+		["pubsub#title"] = meta.title;
+		["pubsub#description"] = meta.description;
+		["pubsub#type"] = meta.payload_type;
+		["pubsub#access_model"] = meta.access_model;
+		["pubsub#publish_model"] = meta.publish_model;
+	}, "result"));
 end
 
 function _M.handle_disco_items_node(event, service)

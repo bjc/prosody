@@ -256,6 +256,13 @@ function module.load()
 		broadcaster = simple_broadcast;
 		itemcheck = is_item_stanza;
 		check_node_config = check_node_config;
+		metadata_subset = {
+			"title";
+			"description";
+			"payload_type";
+			"access_model";
+			"publish_model";
+		};
 		get_affiliation = get_affiliation;
 
 		jid = module.host;
