@@ -605,4 +605,14 @@ describe("util.pubsub", function ()
 		end);
 
 	end)
+
+	describe("metadata", function()
+		it("works", function()
+			local service = pubsub.new { metadata_subset = { "title" } };
+			assert.truthy(service:create("node", true, { title = "Hello", secret = "hidden" }))
+			local ok, meta = service:get_node_metadata("node", "nobody");
+			assert.truthy(ok, meta);
+			assert.same({ title = "Hello" }, meta);
+		end)
+	end);
 end);

@@ -11,6 +11,7 @@ local default_config = {
 	itemcheck = function () return true; end;
 	get_affiliation = function () end;
 	normalize_jid = function (jid) return jid; end;
+	metadata_subset = {};
 	capabilities = {
 		outcast = {
 			create = false;
@@ -45,6 +46,7 @@ local default_config = {
 			get_subscription = true;
 			get_subscriptions = true;
 			get_items = false;
+			get_metadata = true;
 
 			subscribe_other = false;
 			unsubscribe_other = false;
@@ -67,6 +69,7 @@ local default_config = {
 			get_subscription = true;
 			get_subscriptions = true;
 			get_items = true;
+			get_metadata = true;
 
 			subscribe_other = false;
 			unsubscribe_other = false;
@@ -90,6 +93,7 @@ local default_config = {
 			get_subscription = true;
 			get_subscriptions = true;
 			get_items = true;
+			get_metadata = true;
 
 			subscribe_other = false;
 			unsubscribe_other = false;
@@ -115,6 +119,7 @@ local default_config = {
 			get_subscription = true;
 			get_subscriptions = true;
 			get_items = true;
+			get_metadata = true;
 
 
 			subscribe_other = true;
@@ -870,6 +875,20 @@ function service:get_node_config(node, actor) --> (true, config) or (false, err)
 	end
 
 	return true, config_table;
+end
+
+function service:get_node_metadata(node, actor)
+	if not self:may(node, actor, "get_metadata") then
+		return false, "forbidden";
+	end
+
+	local ok, config = self:get_node_config(node, true);
+	if not ok then return ok, config; end
+	local meta = {};
+	for _, k in ipairs(self.config.metadata_subset) do
+		meta[k] = config[k];
+	end
+	return true, meta;
 end
 
 return {
