@@ -612,6 +612,8 @@ function interface:write(data)
 				-- Try to flush buffer to make room
 				self:onwritable();
 				if not buffer:write(prev_buffer) then
+					self:on("disconnect", "no space left in buffer");
+					self:destroy();
 					return false;
 				end
 			end
@@ -622,6 +624,8 @@ function interface:write(data)
 			end
 			self:onwritable();
 			if not buffer:write(data) then
+				self:on("disconnect", "no space left in buffer");
+				self:destroy();
 				return false;
 			end
 		end
@@ -631,6 +635,8 @@ function interface:write(data)
 		end
 		self:onwritable();
 		if not buffer:write(data) then
+			self:on("disconnect", "no space left in buffer");
+			self:destroy();
 			return false;
 		end
 	end
