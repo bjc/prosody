@@ -227,7 +227,7 @@ function route_to_new_session(event)
 	-- Store in buffer
 	host_session.bounce_sendq = bounce_sendq;
 	host_session.sendq = queue.new(sendq_size);
-	host_session.sendq:push(stanza);
+	host_session.sendq:push(st.clone(stanza));
 	log("debug", "stanza [%s] queued until connection complete", stanza.name);
 	-- FIXME Cleaner solution to passing extra data from resolvers to net.server
 	-- This mt-clone allows resolvers to add extra data, currently used for DANE TLSA records
