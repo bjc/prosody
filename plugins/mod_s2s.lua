@@ -135,7 +135,7 @@ local bouncy_stanzas = { message = true, presence = true, iq = true };
 local function bounce_sendq(session, reason)
 	local sendq = session.sendq;
 	if not sendq then return; end
-	session.log("info", "Sending error replies for %d queued stanzas because of failed outgoing connection to %s", #sendq, session.to_host);
+	session.log("info", "Sending error replies for %d queued stanzas because of failed outgoing connection to %s", sendq.items(), session.to_host);
 	local dummy = {
 		type = "s2sin";
 		send = function ()
@@ -366,7 +366,7 @@ function mark_connected(session)
 
 	if session.direction == "outgoing" then
 		if sendq then
-			session.log("debug", "sending %d queued stanzas across new outgoing connection to %s", #sendq, session.to_host);
+			session.log("debug", "sending %d queued stanzas across new outgoing connection to %s", sendq.items(), session.to_host);
 			local send = session.sends2s;
 			for stanza in sendq:consume() do
 				-- TODO check send success
