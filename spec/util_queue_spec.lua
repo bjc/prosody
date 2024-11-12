@@ -137,4 +137,23 @@ describe("util.queue", function()
 			assert.equal(c, 6);
 		end);
 	end);
+	describe("replace()", function ()
+		it("should work", function ()
+			local q = queue.new(10);
+			for i = 1, 5 do
+				q:push(i);
+			end
+			q:replace(6);
+			local c = 0;
+			for i in q:consume() do
+				c = c + 1;
+				if c > 1 then
+					assert.is_equal(c, i);
+				elseif c == 1 then
+					assert.is_equal(6, i);
+				end
+			end
+			assert.is_equal(5, c);
+		end);
+	end);
 end);
