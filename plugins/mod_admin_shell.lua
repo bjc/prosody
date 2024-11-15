@@ -658,7 +658,10 @@ function def_env.module:load(name, hosts)
 		end
 	end
 
-	return ok, (ok and "Module loaded onto "..count.." host"..(count ~= 1 and "s" or "")) or ("Last error: "..tostring(err));
+	if not ok then
+		return ok, "Last error: "..tostring(err);
+	end
+	return ok, "Module loaded onto "..count.." host"..(count ~= 1 and "s" or "");
 end
 
 describe_command [[module:unload(module, host) - The same, but just unloads the module from memory]]
