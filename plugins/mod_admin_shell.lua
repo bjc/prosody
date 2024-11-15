@@ -631,6 +631,7 @@ describe_command [[module:load(module, host) - Load the specified module on the 
 function def_env.module:load(name, hosts)
 	hosts = get_hosts_with_module(hosts);
 
+	local already_loaded = set.new();
 	-- Load the module for each host
 	local ok, err, count, mod = true, nil, 0;
 	for host in hosts do
@@ -655,11 +656,16 @@ function def_env.module:load(name, hosts)
 					self.session.print("Note: Module will not be loaded after restart unless enabled in configuration");
 				end
 			end
+		else
+			already_loaded:add(host);
 		end
 	end
 
 	if not ok then
 		return ok, "Last error: "..tostring(err);
+	end
+	if already_loaded == hosts then
+		return ok, "Module already loaded";
 	end
 	return ok, "Module loaded onto "..count.." host"..(count ~= 1 and "s" or "");
 end
