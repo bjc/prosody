@@ -304,10 +304,10 @@ function room_mt:publicise_occupant_status(occupant, x, nick, actor, reason, pre
 	-- General populace
 	for occupant_nick, n_occupant in self:each_occupant() do
 		if occupant_nick ~= occupant.nick then
-			local pr = get_p(n_occupant);
 			if broadcast_roles[occupant.role or "none"] or force_unavailable then
-				self:route_to_occupant(n_occupant, pr);
+				self:route_to_occupant(n_occupant, get_p(n_occupant));
 			elseif prev_role and broadcast_roles[prev_role] then
+				local pr = get_p(n_occupant);
 				pr.attr.type = 'unavailable';
 				self:route_to_occupant(n_occupant, pr);
 			end
@@ -339,16 +339,14 @@ function room_mt:send_occupant_list(to, filter)
 	local broadcast_bare_jids = {}; -- Track which bare JIDs we have sent presence for
 	for occupant_jid, occupant in self:each_occupant() do
 		broadcast_bare_jids[occupant.bare_jid] = true;
-		if filter == nil or filter(occupant_jid, occupant) then
+		if (filter == nil or filter(occupant_jid, occupant)) and (to_bare == occupant.bare_jid or broadcast_roles[occupant.role or "none"]) then
 			local x = st.stanza("x", {xmlns='http://jabber.org/protocol/muc#user'});
 			self:build_item_list(occupant, x, is_anonymous and to_bare ~= occupant.bare_jid); -- can always see your own jids
 			local pres = st.clone(occupant:get_presence());
 			pres.attr.to = to;
 			pres:add_child(x);
 			module:fire_event("muc-build-occupant-presence", { room = self, occupant = occupant, stanza = pres });
-			if to_bare == occupant.bare_jid or broadcast_roles[occupant.role or "none"] then
-				self:route_stanza(pres);
-			end
+			self:route_stanza(pres);
 		end
 	end
 	if broadcast_roles.none then
