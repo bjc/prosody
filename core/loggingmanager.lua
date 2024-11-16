@@ -20,7 +20,7 @@ local config = require "prosody.core.configmanager";
 local logger = require "prosody.util.logger";
 
 local have_pposix, pposix = pcall(require, "prosody.util.pposix");
-have_pposix = have_pposix and pposix._VERSION == "0.4.0";
+have_pposix = have_pposix and pposix._VERSION == "0.4.1";
 
 local _ENV = nil;
 -- luacheck: std none
