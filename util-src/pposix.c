@@ -13,7 +13,7 @@
 * POSIX support functions for Lua
 */
 
-#define MODULE_VERSION "0.4.0"
+#define MODULE_VERSION "0.4.1"
 
 
 #if defined(__linux__)
@@ -654,6 +654,46 @@ static int lc_abort(lua_State *L) {
 	return 0;
 }
 
+const char *pipe_flag_names[] = {
+	"cloexec",
+	"direct",
+	"nonblock"
+};
+const int pipe_flag_values[] = {
+	O_CLOEXEC,
+	O_DIRECT,
+	O_NONBLOCK
+};
+
+
+static int lc_pipe(lua_State *L) {
+	int fds[2];
+	int nflags = lua_gettop(L);
+
+#if defined(__linux__)
+	int flags=0;
+	for(int i = 1; i<=nflags; i++) {
+		int flag_index = luaL_checkoption(L, i, NULL, pipe_flag_names);
+		flags |= pipe_flag_values[flag_index];
+	}
+
+	if(pipe2(fds, flags) == -1) {
+#else
+	if(nflags != 0) {
+		luaL_argerror(L, 1, "Flags are not supported on this platform");
+	}
+	if(pipe(fds) == -1) {
+#endif
+		luaL_pushfail(L);
+		lua_pushstring(L, strerror(errno));
+		return 2;
+	}
+
+	lua_pushinteger(L, fds[0]);
+	lua_pushinteger(L, fds[1]);
+	return 2;
+}
+
 static int lc_uname(lua_State *L) {
 	struct utsname uname_info;
 
@@ -869,6 +909,8 @@ int luaopen_prosody_util_pposix(lua_State *L) {
 		{ "umask", lc_umask },
 
 		{ "mkdir", lc_mkdir },
+
+		{ "pipe", lc_pipe },
 
 		{ "setrlimit", lc_setrlimit },
 		{ "getrlimit", lc_getrlimit },
