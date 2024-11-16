@@ -56,7 +56,7 @@ module:hook("iq/self/jabber:iq:roster:query", function(event)
 					roster:up(); -- move out from item
 				end
 			end
-			roster.tags[1].attr.ver = server_ver;
+			roster.tags[1].attr.ver = tostring(server_ver);
 		end
 		session.send(roster);
 		session.interested = true; -- resource is interested in roster updates
