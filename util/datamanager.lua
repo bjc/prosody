@@ -509,7 +509,7 @@ end
 
 local function list_open(username, host, datastore)
 	if not index_magic then
-		log("debug", "Falling back from lazy loading to to loading full list for %s storage for user: %s@%s", datastore, username or "nil", host or "nil");
+		log("debug", "Falling back from lazy loading to loading full list for %s storage for user: %s@%s", datastore, username or "nil", host or "nil");
 		return list_load(username, host, datastore);
 	end
 	local filename = getpath(username, host, datastore, "list");
