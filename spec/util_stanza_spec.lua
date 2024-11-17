@@ -580,6 +580,7 @@ describe("util.stanza", function()
 		it("handles namespaced attributes", function()
 			local s = st.stanza("root", { ["urn:example:namespace\1attr"] = "value" }, { e = "urn:example:namespace" });
 			assert.equal("value", s:find("@e:attr"), "finds prefixed attr")
+			assert.equal("value", s:find("@{urn:example:namespace}attr"), "finds clark attr")
 		end)
 	end);
 end);
