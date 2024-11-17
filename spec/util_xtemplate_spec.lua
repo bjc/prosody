@@ -10,7 +10,7 @@ describe("util.xtemplate", function ()
 		end)
 		it("supports conditionals", function ()
 			local atom_tmpl = "{@pubsub:title|and{*{@pubsub:title}*\n\n}}{summary|or{{author/name|and{{author/name} posted }}{title}}}";
-			local atom_data = st.stanza("entry", { xmlns = "http://www.w3.org/2005/Atom" });
+			local atom_data = st.stanza("entry", { xmlns = "http://www.w3.org/2005/Atom" }, {["pubsub"] = "http://jabber.org/protocol/pubsub"});
 			assert.same("", xtemplate.render(atom_tmpl, atom_data));
 
 			atom_data:text_tag("title", "an Entry")
@@ -22,8 +22,7 @@ describe("util.xtemplate", function ()
 			atom_data:text_tag("summary", "Juliet just posted a new entry");
 			assert.same("Juliet just posted a new entry", xtemplate.render(atom_tmpl, atom_data));
 
-			atom_data.attr["xmlns:pubsub"] = "http://jabber.org/protocol/pubsub";
-			atom_data.attr["pubsub:title"] = "Juliets musings";
+			atom_data.attr["http://jabber.org/protocol/pubsub\1title"] = "Juliets musings";
 			assert.same("*Juliets musings*\n\nJuliet just posted a new entry", xtemplate.render(atom_tmpl, atom_data));
 		end)
 		it("can strip surrounding whitespace", function ()

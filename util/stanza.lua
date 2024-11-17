@@ -277,6 +277,10 @@ function stanza_mt:find(path)
 		local xmlns, name, text;
 		local char = s_sub(path, pos, pos);
 		if char == "@" then
+			local prefix, attr = s_match(path, "^([^:]+):(.*)", pos+1);
+			if prefix and self.namespaces and self.namespaces[prefix] then
+				return self.attr[self.namespaces[prefix] .. "\1" .. attr];
+			end
 			return self.attr[s_sub(path, pos + 1)];
 		elseif char == "{" then
 			xmlns, pos = s_match(path, "^([^}]+)}()", pos + 1);

@@ -577,5 +577,9 @@ describe("util.stanza", function()
 			assert.equal("text", s:find("{urn:example:not:same}child/nested#"), "finds nested text")
 			assert.is_nil(s:find("child"), "respects namespaces")
 		end);
+		it("handles namespaced attributes", function()
+			local s = st.stanza("root", { ["urn:example:namespace\1attr"] = "value" }, { e = "urn:example:namespace" });
+			assert.equal("value", s:find("@e:attr"), "finds prefixed attr")
+		end)
 	end);
 end);
