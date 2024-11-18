@@ -587,7 +587,7 @@ function do_resume(session, stanza)
 
 	local id = stanza.attr.previd;
 	local original_session = session_registry[registry_key(session, id)];
-	if original_session.destroyed then
+	if original_session and original_session.destroyed then
 		original_session.log("error", "Tried to resume a destroyed session. This should not happen! %s", debug.traceback());
 		session_registry[registry_key(session, id)] = nil;
 		original_session = nil;
