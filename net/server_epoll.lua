@@ -973,9 +973,6 @@ function interface:resume_writes()
 	self:noise("Resume writes");
 	self._write_lock = nil;
 	if self.writebuffer and #self.writebuffer ~= 0 then
-		if cfg.opportunistic_writes then
-			return self:onwritable();
-		end
 		self:setwritetimeout();
 		self:set(nil, true);
 	end
