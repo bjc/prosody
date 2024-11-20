@@ -694,6 +694,37 @@ static int lc_pipe(lua_State *L) {
 	return 2;
 }
 
+/* This helper function is adapted from Lua 5.3's liolib.c */
+static int stdio_fclose (lua_State *L) {
+	int res = -1;
+	luaL_Stream *p = ((luaL_Stream *)luaL_checkudata(L, 1, LUA_FILEHANDLE));
+	if (p->f == NULL) {
+		return 0;
+	}
+	res = fclose(p->f);
+	p->f = NULL;
+	return luaL_fileresult(L, (res == 0), NULL);
+}
+
+static int lc_fdopen(lua_State *L) {
+	int fd = luaL_checkinteger(L, 1);
+	const char *mode = luaL_checkstring(L, 2);
+
+	luaL_Stream *file = (luaL_Stream *)lua_newuserdata(L, sizeof(luaL_Stream));
+	file->closef = stdio_fclose;
+	file->f = fdopen(fd, mode);
+
+	if (!file->f) {
+		luaL_pushfail(L);
+		lua_pushstring(L, strerror(errno));
+		return 2;
+	}
+
+	luaL_getmetatable(L, LUA_FILEHANDLE);
+	lua_setmetatable(L, -2);
+	return 1;
+}
+
 static int lc_uname(lua_State *L) {
 	struct utsname uname_info;
 
@@ -911,6 +942,7 @@ int luaopen_prosody_util_pposix(lua_State *L) {
 		{ "mkdir", lc_mkdir },
 
 		{ "pipe", lc_pipe },
+		{ "fdopen", lc_fdopen },
 
 		{ "setrlimit", lc_setrlimit },
 		{ "getrlimit", lc_getrlimit },
