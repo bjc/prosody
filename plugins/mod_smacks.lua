@@ -541,13 +541,17 @@ module:hook("pre-resource-unbind", function (event)
 			return
 		end
 
-		prosody.main_thread:run(function ()
-			session.log("debug", "Destroying session for hibernating too long");
-			save_old_session(session);
-			session.resumption_token = nil;
-			sessionmanager.destroy_session(session, "Hibernating too long");
-			sessions_expired(1);
-		end);
+		session.thread:run({
+			event = "callback";
+			name = "mod_smacks/destroy_hibernating";
+			callback = function ()
+				session.log("debug", "Destroying session for hibernating too long");
+				save_old_session(session);
+				session.resumption_token = nil;
+				sessionmanager.destroy_session(session, "Hibernating too long");
+				sessions_expired(1);
+			end;
+		});
 	end);
 	if session.conn then
 		local conn = session.conn;
