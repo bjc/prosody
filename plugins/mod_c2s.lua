@@ -45,6 +45,7 @@ local hosts = prosody.hosts;
 local stream_callbacks = { default_ns = "jabber:client" };
 local listener = {};
 local runner_callbacks = {};
+local session_events = {};
 
 local m_tls_params = module:metric(
 	"counter", "encrypted", "",
@@ -76,11 +77,11 @@ local stream_xmlns_attr = {xmlns='urn:ietf:params:xml:ns:xmpp-streams'};
 
 function stream_callbacks.streamopened(session, attr)
 	-- run _streamopened in async context
-	session.thread:run({ stream = "opened", attr = attr });
+	session.thread:run({ event = "streamopened", attr = attr });
 end
 
-function stream_callbacks._streamopened(session, attr)
-	local send = session.send;
+function session_events.streamopened(session, event)
+	local send, attr = session.send, event.attr;
 	if not attr.to then
 		session:close{ condition = "improper-addressing",
 			text = "A 'to' attribute is required on stream headers" };
@@ -162,12 +163,17 @@ end
 
 function stream_callbacks.streamclosed(session, attr)
 	-- run _streamclosed in async context
-	session.thread:run({ stream = "closed", attr = attr });
+	session.thread:run({ event = "streamclosed", attr = attr });
 end
 
-function stream_callbacks._streamclosed(session)
+function session_events.streamclosed(session)
 	session.log("debug", "Received </stream:stream>");
 	session:close(false);
+end
+
+function session_events.callback(session, event)
+	session.log("debug", "Running session callback %s", event.name);
+	event.callback(session, event);
 end
 
 function stream_callbacks.error(session, error, data)
@@ -350,13 +356,11 @@ function listener.onconnect(conn)
 		session.stream:reset();
 	end
 
-	session.thread = runner(function (stanza)
-		if st.is_stanza(stanza) then
-			core_process_stanza(session, stanza);
-		elseif stanza.stream == "opened" then
-			stream_callbacks._streamopened(session, stanza.attr);
-		elseif stanza.stream == "closed" then
-			stream_callbacks._streamclosed(session, stanza.attr);
+	session.thread = runner(function (item)
+		if st.is_stanza(item) then
+			core_process_stanza(session, item);
+		else
+			session_events[item.event](session, item);
 		end
 	end, runner_callbacks, session);
 

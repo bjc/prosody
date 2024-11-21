@@ -89,6 +89,7 @@ local m_tls_params = module:metric(
 local sessions = module:shared("sessions");
 
 local runner_callbacks = {};
+local session_events = {};
 
 local listener = {};
 
@@ -469,10 +470,11 @@ local xmlns_xmpp_streams = "urn:ietf:params:xml:ns:xmpp-streams";
 
 function stream_callbacks.streamopened(session, attr)
 	-- run _streamopened in async context
-	session.thread:run({ stream = "opened", attr = attr });
+	session.thread:run({ event = "streamopened", attr = attr });
 end
 
-function stream_callbacks._streamopened(session, attr)
+function session_events.streamopened(session, event)
+	local attr = event.attr;
 	session.version = tonumber(attr.version) or 0;
 	session.had_stream = true; -- Had a stream opened at least once
 
@@ -613,14 +615,19 @@ function stream_callbacks._streamopened(session, attr)
 	end
 end
 
-function stream_callbacks._streamclosed(session)
+function session_events.streamclosed(session)
 	(session.log or log)("debug", "Received </stream:stream>");
 	session:close(false);
 end
 
+function session_events.callback(session, event)
+	session.log("debug", "Running session callback %s", event.name);
+	event.callback(session, event);
+end
+
 function stream_callbacks.streamclosed(session, attr)
 	-- run _streamclosed in async context
-	session.thread:run({ stream = "closed", attr = attr });
+	session.thread:run({ event = "streamclosed", attr = attr });
 end
 
 -- Some stream conditions indicate a problem on our end, e.g. that we sent
@@ -784,13 +791,11 @@ end
 local function initialize_session(session)
 	local stream = new_xmpp_stream(session, stream_callbacks, stanza_size_limit);
 
-	session.thread = runner(function (stanza)
-		if st.is_stanza(stanza) then
-			core_process_stanza(session, stanza);
-		elseif stanza.stream == "opened" then
-			stream_callbacks._streamopened(session, stanza.attr);
-		elseif stanza.stream == "closed" then
-			stream_callbacks._streamclosed(session, stanza.attr);
+	session.thread = runner(function (item)
+		if st.is_stanza(item) then
+			core_process_stanza(session, item);
+		else
+			session_events[item.event](session, item);
 		end
 	end, runner_callbacks, session);
 
