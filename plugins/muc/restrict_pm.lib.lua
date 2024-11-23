@@ -1,7 +1,7 @@
 -- Based on code from mod_muc_restrict_pm in prosody-modules@d82c0383106a
 -- by Nicholas George <wirlaburla@worlio.com>
 
-local st = require "util.stanza";
+local st = require "prosody.util.stanza";
 local muc_util = module:require "muc/util";
 local valid_roles = muc_util.valid_roles;
 
