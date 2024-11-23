@@ -1,4 +1,4 @@
--- Implementation of https://xmpp.org/extensions/inbox/occupant-id.html
+-- Implementation of https://xmpp.org/extensions/xep-0421.html
 -- XEP-0421: Anonymous unique occupant identifiers for MUCs
 
 -- (C) 2020 Maxime “pep” Buquet <pep@bouah.net>
