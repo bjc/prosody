@@ -15,11 +15,11 @@ local base64 = require "prosody.util.encodings".base64;
 local set = require "prosody.util.set";
 local errors = require "prosody.util.error";
 local hex = require "prosody.util.hex";
-local pem2der = require"util.x509".pem2der;
-local hashes = require"util.hashes";
+local pem2der = require"prosody.util.x509".pem2der;
+local hashes = require "prosody.util.hashes";
 local ssl = require "ssl"; -- FIXME Isolate LuaSec from the rest of the code
 
-local certmanager = require "core.certmanager";
+local certmanager = require "prosody.core.certmanager";
 local pm_get_tls_config_at = require "prosody.core.portmanager".get_tls_config_at;
 local usermanager_get_sasl_handler = require "prosody.core.usermanager".get_sasl_handler;
 
