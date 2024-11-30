@@ -1,22 +1,22 @@
 local record lib
 	record Set<T>
-		add : function<T> (Set<T>, T)
-		contains : function<T> (Set<T>, T) : boolean
-		contains_set : function<T> (Set<T>, Set<T>) : boolean
-		items :  function<T> (Set<T>) : function<T> (Set<T>, T) : T
-		remove : function<T> (Set<T>, T)
-		add_list : function<T> (Set<T>, { T })
-		include : function<T> (Set<T>, Set<T>)
-		exclude : function<T> (Set<T>, Set<T>)
-		empty : function<T> (Set<T>) : boolean
+		add : function (Set, T)
+		contains : function (Set, T) : boolean
+		contains_set : function (Set, Set) : boolean
+		items :  function (Set) : function (Set, T) : T
+		remove : function (Set, T)
+		add_list : function (Set, { T })
+		include : function (Set, Set)
+		exclude : function (Set, Set)
+		empty : function (Set) : boolean
 	end
 
 	new : function<T> ({ T }) : Set<T>
 	is_set : function (any) : boolean
-	union : function<T> (Set<T>, Set<T>) : Set <T>
-	difference : function<T> (Set<T>, Set<T>) : Set <T>
-	intersection : function<T> (Set<T>, Set<T>) : Set <T>
-	xor : function<T> (Set<T>, Set<T>) : Set <T>
+	union : function (Set, Set) : Set
+	difference : function (Set, Set) : Set
+	intersection : function (Set, Set) : Set
+	xor : function (Set, Set) : Set
 end
 
 return lib
