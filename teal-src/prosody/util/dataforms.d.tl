@@ -5,7 +5,7 @@ local record lib
 		title : string
 		instructions : string
 
-		record form_field
+		record form_field is { form_field }
 
 			enum field_type
 				"boolean"
@@ -35,7 +35,6 @@ local record lib
 			options : table
 		end
 
-		{ form_field }
 
 		enum form_type
 			"form"
