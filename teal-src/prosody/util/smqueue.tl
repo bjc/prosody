@@ -12,12 +12,11 @@ local record lib
 			"head"
 			"pop"
 		end
-		push : function (smqueue, T)
-		ack : function (smqueue, integer) : { T }, ack_errors
+		push : function (smqueue<T>, T)
+		ack : function (smqueue<T>, integer) : { T }, ack_errors
 		resumable : function (smqueue<T>) : boolean
 		resume : function (smqueue<T>)  : queue.queue.iterator, any, integer
-		type consume_iter = function (smqueue<T>) : T
-		consume : function (smqueue<T>) : consume_iter
+		consume : function (smqueue<T>) : function() : T
 
 		table : function (smqueue<T>) : { T }
 	end
@@ -26,13 +25,13 @@ end
 
 local type smqueue = lib.smqueue;
 
-function smqueue:push(v)
+function smqueue:push(v : T)
 	self._head = self._head + 1;
 	-- Wraps instead of errors
 	assert(self._queue:push(v));
 end
 
-function smqueue:ack(h : integer) : { any }, smqueue.ack_errors
+function smqueue:ack(h : integer) : { T }, smqueue.ack_errors
 	if h < self._tail then
 		return nil, "tail";
 	elseif h > self._head then
@@ -66,13 +65,13 @@ function smqueue:resume() : queue.queue.iterator, any, integer
 	return self._queue:items();
 end
 
-function smqueue:consume() : queue.queue.consume_iter
-	return self._queue:consume()
+function smqueue:consume() : (function() : T)
+	return self._queue:consume() as (function() : T)
 end
 
 -- Compatibility layer, plain ol' table
-function smqueue:table() : { any }
-	local t : { any } = {};
+function smqueue:table() : { T }
+	local t : { T } = {};
 	for i, v in self:resume() do
 		t[i] = v;
 	end
@@ -91,7 +90,7 @@ local queue_mt = {
 	__freeze = freeze;
 }
 
-function lib.new<T>(size : integer) : queue.queue<T>
+function lib.new<T>(size : integer) : smqueue<T>
 	assert(size>0);
 	return setmetatable({ _head = 0; _tail = 0; _queue = queue.new(size, true) }, queue_mt);
 end
