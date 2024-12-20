@@ -70,10 +70,22 @@ local function check_turn_service(turn_service, ping_service)
 	local ip = require "prosody.util.ip";
 	local stun = require "prosody.net.stun";
 
+	local result = { warnings = {} };
+
 	-- Create UDP socket for communication with the server
 	local sock = assert(require "socket".udp());
-	sock:setsockname("*", 0);
-	sock:setpeername(turn_service.host, turn_service.port);
+	do
+		local ok, err = sock:setsockname("*", 0);
+		if not ok then
+			result.error = "Unable to perform TURN test: setsockname: "..tostring(err);
+			return result;
+		end
+		ok, err = sock:setpeername(turn_service.host, turn_service.port);
+		if not ok then
+			result.error = "Unable to perform TURN test: setpeername: "..tostring(err);
+			return result;
+		end
+	end
 	sock:settimeout(10);
 
 	-- Helper function to receive a packet
@@ -84,8 +96,6 @@ local function check_turn_service(turn_service, ping_service)
 		end
 		return stun.new_packet():deserialize(raw_packet);
 	end
-
-	local result = { warnings = {} };
 
 	-- Send a "binding" query, i.e. a request for our external IP/port
 	local bind_query = stun.new_packet("binding", "request");
