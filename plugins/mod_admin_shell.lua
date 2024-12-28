@@ -2431,12 +2431,15 @@ describe_command [[stats:show(pattern) - Show internal statistics, optionally fi
 -- Undocumented currently, you can append :histogram() or :cfgraph() to stats:show() for rendered graphs.
 function def_env.stats:show(name_filter)
 	local statsman = require "prosody.core.statsmanager"
+	local metric_registry = statsman.get_metric_registry();
+	if not metric_registry then
+		return nil, [[Statistics disabled. Try `statistics = "internal"` in the global section of the config file and restart.]];
+	end
 	local collect = statsman.collect
 	if collect then
 		-- force collection if in manual mode
 		collect()
 	end
-	local metric_registry = statsman.get_metric_registry();
 	local displayed_stats = new_stats_context(self);
 	for family_name, metric_family in iterators.sorted_pairs(metric_registry:get_metric_families()) do
 		if not name_filter or family_name:match(name_filter) then
