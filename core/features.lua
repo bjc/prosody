@@ -6,6 +6,8 @@ return {
 		"mod_bookmarks";
 		-- mod_server_info bundled
 		"mod_server_info";
+		-- mod_flags bundled
+		"mod_flags";
 		-- Roles, module.may and per-session authz
 		"permissions";
 		-- prosody.* namespace
