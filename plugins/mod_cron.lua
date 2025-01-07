@@ -8,6 +8,10 @@ local cron_spread_factor = module:get_option_number("cron_spread_factor", 0);
 
 local active_hosts = {}
 
+if prosody.process_type == "prosodyctl" then
+	return; -- Yes, it happens...
+end
+
 function module.add_host(host_module)
 
 	local last_run_times = host_module:open_store("cron", "map");
