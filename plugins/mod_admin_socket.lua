@@ -54,7 +54,12 @@ end);
 
 local conn, sock;
 
-local listeners = adminstream.server(sessions, fire_admin_event).listeners;
+local admin_server = adminstream.server(sessions, fire_admin_event);
+local listeners = admin_server.listeners;
+
+module:hook_object_event(admin_server.events, "disconnected", function (event)
+	return module:fire_event("admin-disconnected", event);
+end);
 
 local function accept_connection()
 	module:log("debug", "accepting...");
