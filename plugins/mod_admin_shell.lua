@@ -211,6 +211,7 @@ module:hook("admin/repl-requested-input", function (event)
 		return true;
 	end
 	input_promise.resolve(event.stanza:get_text());
+	return true;
 end);
 
 function console:new_session(admin_session)
