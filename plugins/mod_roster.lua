@@ -15,10 +15,11 @@ local jid_prep = require "prosody.util.jid".prep;
 local tonumber = tonumber;
 local pairs = pairs;
 
-local rm_load_roster = require "prosody.core.rostermanager".load_roster;
-local rm_remove_from_roster = require "prosody.core.rostermanager".remove_from_roster;
-local rm_add_to_roster = require "prosody.core.rostermanager".add_to_roster;
-local rm_roster_push = require "prosody.core.rostermanager".roster_push;
+local rostermanager = require "prosody.core.rostermanager";
+local rm_load_roster = rostermanager.load_roster;
+local rm_remove_from_roster = rostermanager.remove_from_roster;
+local rm_add_to_roster = rostermanager.add_to_roster;
+local rm_roster_push = rostermanager.roster_push;
 
 module:add_feature("jabber:iq:roster");
 
@@ -147,3 +148,168 @@ module:hook_global("user-deleted", function(event)
 		end
 	end
 end, 300);
+
+-- API/commands
+
+-- Make a *one-way* subscription. User will see when contact is online,
+-- contact will not see when user is online.
+function subscribe(user_jid, contact_jid)
+	local user_username, user_host = jid_split(user_jid);
+	local contact_username, contact_host = jid_split(contact_jid);
+
+	-- Update user's roster to say subscription request is pending. Bare hosts (e.g. components) don't have rosters.
+	if user_username ~= nil then
+		rostermanager.set_contact_pending_out(user_username, user_host, contact_jid);
+	end
+
+	if prosody.hosts[contact_host] then -- Sending to a local host?
+		-- Update contact's roster to say subscription request is pending...
+		rostermanager.set_contact_pending_in(contact_username, contact_host, user_jid);
+		-- Update contact's roster to say subscription request approved...
+		rostermanager.subscribed(contact_username, contact_host, user_jid);
+		-- Update user's roster to say subscription request approved. Bare hosts (e.g. components) don't have rosters.
+		if user_username ~= nil then
+			rostermanager.process_inbound_subscription_approval(user_username, user_host, contact_jid);
+		end
+	else
+		-- Send a subscription request
+		local sub_request = st.presence({ from = user_jid, to = contact_jid, type = "subscribe" });
+		module:send(sub_request);
+	end
+
+	return true;
+end
+
+-- Make a mutual subscription between jid1 and jid2. Each JID will see
+-- when the other one is online.
+function subscribe_both(jid1, jid2)
+	local ok1, err1 = subscribe(jid1, jid2);
+	local ok2, err2 = subscribe(jid2, jid1);
+	return ok1 and ok2, err1 or err2;
+end
+
+-- Unsubscribes user from contact (not contact from user, if subscribed).
+function unsubscribe(user_jid, contact_jid)
+	local user_username, user_host = jid_split(user_jid);
+	local contact_username, contact_host = jid_split(contact_jid);
+
+	-- Update user's roster to say subscription is cancelled...
+	rostermanager.unsubscribe(user_username, user_host, contact_jid);
+	if prosody.hosts[contact_host] then -- Local host?
+		-- Update contact's roster to say subscription is cancelled...
+		rostermanager.unsubscribed(contact_username, contact_host, user_jid);
+	end
+	return true;
+end
+
+-- Cancel any subscription in either direction.
+function unsubscribe_both(jid1, jid2)
+	local ok1 = unsubscribe(jid1, jid2);
+	local ok2 = unsubscribe(jid2, jid1);
+	return ok1 and ok2;
+end
+
+module:add_item("shell-command", {
+	section = "roster";
+	section_desc = "View and manage user rosters (contact lists)";
+	name = "show";
+	desc = "Show a user's current roster";
+	args = {
+		{ name = "jid", type = "string" };
+		{ name = "sub", type = "string" };
+	};
+	host_selector = "jid";
+	handler = function(self, jid, sub) --luacheck: ignore 212/self
+		local print = self.session.print;
+		local it = require "prosody.util.iterators";
+
+		local roster = assert(rm_load_roster(jid_split(jid)));
+
+		local function sort_func(a, b)
+			if type(a) == "string" and type(b) == "string" then
+				return a < b;
+			else
+				return a == false;
+			end
+		end
+
+		local count = 0;
+		if sub == "pending" then
+			local pending_subs = roster[false].pending or {};
+			for pending_jid in it.sorted_pairs(pending_subs) do
+				print(pending_jid);
+			end
+		else
+			for contact, item in it.sorted_pairs(roster, sort_func) do
+				if contact and (not sub or sub == item.subscription) then
+					count = count + 1;
+					print(contact, ("sub=%s\task=%s"):format(item.subscription or "none", item.ask or "none"));
+				end
+			end
+		end
+
+		return true, ("Showing %d entries"):format(count);
+	end;
+});
+
+module:add_item("shell-command", {
+	section = "roster";
+	section_desc = "View and manage user rosters (contact lists)";
+	name = "subscribe";
+	desc = "Subscribe a user to another JID";
+	args = {
+		{ name = "jid", type = "string" };
+		{ name = "contact", type = "string" };
+	};
+	host_selector = "jid";
+	handler = function(self, jid, contact) --luacheck: ignore 212/self
+		return subscribe(jid, contact);
+	end;
+});
+
+module:add_item("shell-command", {
+	section = "roster";
+	section_desc = "View and manage user rosters (contact lists)";
+	name = "subscribe_both";
+	desc = "Subscribe a user and a contact JID to each other";
+	args = {
+		{ name = "jid", type = "string" };
+		{ name = "contact", type = "string" };
+	};
+	host_selector = "jid";
+	handler = function(self, jid, contact) --luacheck: ignore 212/self
+		return subscribe_both(jid, contact);
+	end;
+});
+
+
+module:add_item("shell-command", {
+	section = "roster";
+	section_desc = "View and manage user rosters (contact lists)";
+	name = "unsubscribe";
+	desc = "Unsubscribe a user from another JID";
+	args = {
+		{ name = "jid", type = "string" };
+		{ name = "contact", type = "string" };
+	};
+	host_selector = "jid";
+	handler = function(self, jid, contact) --luacheck: ignore 212/self
+		return unsubscribe(jid, contact);
+	end;
+});
+
+module:add_item("shell-command", {
+	section = "roster";
+	section_desc = "View and manage user rosters (contact lists)";
+	name = "unsubscribe_both";
+	desc = "Unubscribe a user and a contact JID from each other";
+	args = {
+		{ name = "jid", type = "string" };
+		{ name = "contact", type = "string" };
+	};
+	host_selector = "jid";
+	handler = function(self, jid, contact) --luacheck: ignore 212/self
+		return unsubscribe_both(jid, contact);
+	end;
+});
+
