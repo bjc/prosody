@@ -168,34 +168,9 @@ function commands.deluser(arg)
 		show_usage([[deluser JID]], [[Permanently remove the specified user account from Prosody]]);
 		return opts.help and 0 or 1;
 	end
-	local user, host = jid_split(arg[1]);
-	if not user and host then
-		show_message [[Failed to understand JID, please supply the JID to the user account you want to delete]]
-		show_usage [[deluser user@host]]
-		return 1;
-	end
 
-	if not host then
-		show_message [[Please specify a JID, including a host. e.g. alice@example.com]];
-		return 1;
-	end
-
-	if not prosody.hosts[host] then
-		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
-		prosody.hosts[host] = startup.make_host(host); --luacheck: ignore 122
-	end
-
-	if not prosodyctl.user_exists { user = user, host = host } then
-		show_message [[That user does not exist on this server]]
-		return 1;
-	end
-
-	local ok, msg = prosodyctl.deluser { user = user, host = host };
-
-	if ok then return 0; end
-
-	show_message(error_messages[msg])
-	return 1;
+	local shell = require "prosody.util.prosodyctl.shell";
+	return shell.shell({ ("user:delete(%q)"):format(arg[1]) });
 end
 
 local function has_init_system() --> which
