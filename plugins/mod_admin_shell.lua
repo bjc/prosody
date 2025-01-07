@@ -1790,12 +1790,15 @@ function def_env.user:password(jid, password)
 	elseif not um.user_exists(username, host) then
 		return nil, "No such user";
 	end
-	local ok, err = um.set_password(username, password, host, nil);
-	if ok then
-		return true, "User password changed";
-	else
-		return nil, "Could not change password for user: "..err;
-	end
+
+	return promise.resolve(password or self.session.request_input("password")):next(function (password_)
+		local ok, err = um.set_password(username, password_, host, nil);
+		if ok then
+			return "User password changed";
+		else
+			return promise.reject("Could not change password for user: "..err);
+		end
+	end);
 end
 
 describe_command [[user:roles(jid, host) - Show current roles for an user]]
