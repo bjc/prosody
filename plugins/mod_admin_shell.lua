@@ -25,6 +25,8 @@ local _G = _G;
 local prosody = _G.prosody;
 
 local unpack = table.unpack;
+local cache = require "prosody.util.cache";
+local new_short_id = require "prosody.util.id".short;
 local iterators = require "prosody.util.iterators";
 local keys, values = iterators.keys, iterators.values;
 local jid_bare, jid_split, jid_join, jid_resource, jid_compare = import("prosody.util.jid", "bare", "prepped_split", "join", "resource", "compare");
@@ -170,6 +172,47 @@ local function send_repl_output(session, line, attr)
 	return session.send(st.stanza("repl-output", attr):text(tostring(line)));
 end
 
+local function request_repl_input(session, input_type)
+	if input_type ~= "password" then
+		return promise.reject("internal error - unsupported input type "..tostring(input_type));
+	end
+	local pending_inputs = session.pending_inputs;
+	if not pending_inputs then
+		pending_inputs = cache.new(5, function (input_id, input_promise) --luacheck: ignore 212/input_id
+			input_promise.reject();
+		end);
+		session.pending_inputs = pending_inputs;
+	end
+
+	local input_id = new_short_id();
+	local p = promise.new(function (resolve, reject)
+		pending_inputs:set(input_id, { resolve = resolve, reject = reject });
+	end):finally(function ()
+		pending_inputs:set(input_id, nil);
+	end);
+	session.send(st.stanza("repl-request-input", { type = input_type, id = input_id }));
+	module:log("warn", "REQUESTED INPUT %s", input_type);
+	return p;
+end
+
+module:hook("admin-disconnected", function (event)
+	local pending_inputs = event.session.pending_inputs;
+	if not pending_inputs then return; end
+	for input_promise in pending_inputs:values() do
+		input_promise.reject();
+	end
+end);
+
+module:hook("admin/repl-requested-input", function (event)
+	local input_id = event.stanza.attr.id;
+	local input_promise = event.origin.pending_inputs:get(input_id);
+	if not input_promise then
+		event.origin.send(st.stanza("repl-result", { type = "error" }):text("Internal error - unexpected input"));
+		return true;
+	end
+	input_promise.resolve(event.stanza:get_text());
+end);
+
 function console:new_session(admin_session)
 	local session = {
 		send = function (t)
@@ -184,6 +227,9 @@ function console:new_session(admin_session)
 		end;
 		write = function (t)
 			return send_repl_output(admin_session, t, { eol = "0" });
+		end;
+		request_input = function (input_type)
+			return request_repl_input(admin_session, input_type);
 		end;
 		serialize = tostring;
 		disconnect = function () admin_session:close(); end;
