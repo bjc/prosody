@@ -157,38 +157,9 @@ function commands.passwd(arg)
 		show_usage([[passwd JID]], [[Set the password for the specified user account in Prosody]]);
 		return opts.help and 0 or 1;
 	end
-	local user, host = jid_split(arg[1]);
-	if not user and host then
-		show_message [[Failed to understand JID, please supply the JID you want to set the password for]]
-		show_usage [[passwd user@host]]
-		return 1;
-	end
 
-	if not host then
-		show_message [[Please specify a JID, including a host. e.g. alice@example.com]];
-		return 1;
-	end
-
-	if not prosody.hosts[host] then
-		show_warning("The host '%s' is not listed in the configuration file (or is not enabled).", host)
-		show_warning("The user will not be able to log in until this is changed.");
-		prosody.hosts[host] = startup.make_host(host); --luacheck: ignore 122
-	end
-
-	if not prosodyctl.user_exists { user = user, host = host } then
-		show_message [[That user does not exist, use prosodyctl adduser to create a new user]]
-		return 1;
-	end
-
-	local password = read_password();
-	if not password then return 1; end
-
-	local ok, msg = prosodyctl.passwd { user = user, host = host, password = password };
-
-	if ok then return 0; end
-
-	show_message(error_messages[msg])
-	return 1;
+	local shell = require "prosody.util.prosodyctl.shell";
+	return shell.shell({ ("user:password(%q, nil)"):format(arg[1]) });
 end
 
 function commands.deluser(arg)
