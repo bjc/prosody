@@ -1724,12 +1724,13 @@ function def_env.user:create(jid, password, role)
 		role = module:get_option_string("default_provisioned_role", "prosody:member");
 	end
 
-	local ok, err = um.create_user_with_role(username, password, host, role);
-	if not ok then
-		return nil, "Could not create user: "..err;
-	end
-
-	return true, ("Created %s with role '%s'"):format(jid, role);
+	return promise.resolve(password or self.session.request_input("password")):next(function (password_)
+		local ok, err = um.create_user_with_role(username, password_, host, role);
+		if not ok then
+			return nil, "Could not create user: "..err;
+		end
+		return ("Created %s with role '%s'"):format(jid, role);
+	end);
 end
 
 describe_command [[user:disable(jid) - Disable the specified user account, preventing login]]
