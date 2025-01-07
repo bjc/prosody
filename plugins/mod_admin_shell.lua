@@ -1728,7 +1728,7 @@ function def_env.user:create(jid, password, role)
 	return promise.resolve(password or self.session.request_input("password")):next(function (password_)
 		local ok, err = um.create_user_with_role(username, password_, host, role);
 		if not ok then
-			return nil, "Could not create user: "..err;
+			return promise.reject("Could not create user: "..err);
 		end
 		return ("Created %s with role '%s'"):format(jid, role);
 	end);
