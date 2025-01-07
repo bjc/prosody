@@ -185,9 +185,12 @@ local function new_connection(socket_path, listeners)
 end
 
 local function new_server(sessions, stanza_handler)
-	local listeners = {};
+	local s = {
+		events = events.new();
+		listeners = {};
+	};
 
-	function listeners.onconnect(conn)
+	function s.listeners.onconnect(conn)
 		log("debug", "New connection");
 		local session = sessionlib.new("admin");
 		sessionlib.set_id(session);
@@ -241,29 +244,28 @@ local function new_server(sessions, stanza_handler)
 		sessions[conn] = session;
 	end
 
-	function listeners.onincoming(conn, data)
+	function s.listeners.onincoming(conn, data)
 		local session = sessions[conn];
 		if session then
 			session.data(data);
 		end
 	end
 
-	function listeners.ondisconnect(conn, err)
+	function s.listeners.ondisconnect(conn, err)
 		local session = sessions[conn];
 		if session then
 			session.log("info", "Admin client disconnected: %s", err or "connection closed");
 			session.conn = nil;
 			sessions[conn]  = nil;
+			s.events.fire_event("disconnected", { session = session });
 		end
 	end
 
-	function listeners.onreadtimeout(conn)
+	function s.listeners.onreadtimeout(conn)
 		return conn:send(" ");
 	end
 
-	return {
-		listeners = listeners;
-	};
+	return s;
 end
 
 local function new_client()
