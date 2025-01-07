@@ -266,25 +266,33 @@ local function handle_line(event)
 		end
 	end
 
+	local function send_result(taskok, message)
+		if not message then
+			if type(taskok) ~= "string" and useglobalenv then
+				taskok = session.serialize(taskok);
+			end
+			result:text("Result: "..tostring(taskok));
+		elseif (not taskok) and message then
+			result.attr.type = "error";
+			result:text("Error: "..tostring(message));
+		else
+			result:text("OK: "..tostring(message));
+		end
+
+		event.origin.send(result);
+	end
+
 	local taskok, message = chunk();
 
 	if promise.is_promise(taskok) then
-		taskok, message = async.wait_for(taskok);
-	end
-
-	if not message then
-		if type(taskok) ~= "string" and useglobalenv then
-			taskok = session.serialize(taskok);
-		end
-		result:text("Result: "..tostring(taskok));
-	elseif (not taskok) and message then
-		result.attr.type = "error";
-		result:text("Error: "..tostring(message));
+		taskok:next(function (resolved_message)
+			send_result(true, resolved_message);
+		end, function (rejected_message)
+			send_result(nil, rejected_message);
+		end);
 	else
-		result:text("OK: "..tostring(message));
+		send_result(taskok, message);
 	end
-
-	event.origin.send(result);
 end
 
 module:hook("admin/repl-input", function (event)
