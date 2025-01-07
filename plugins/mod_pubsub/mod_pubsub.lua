@@ -208,7 +208,7 @@ local function get_affiliation(jid, _, action)
 		-- Only one affiliation is allowed to create nodes by default
 		return "owner";
 	end
-	if module:may(":service-admin", bare_jid) then
+	if module:could(":service-admin", bare_jid) then
 		return admin_aff;
 	end
 end
