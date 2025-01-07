@@ -185,7 +185,10 @@ module:hook("host-disco-items", function (event)
 		return;
 	end
 	for node, node_obj in pairs(ret) do
-		reply:tag("item", { jid = module.host, node = node, name = node_obj.config.title }):up();
+		local ok, meta = service:get_node_metadata(node, stanza.attr.from);
+		if ok then
+			reply:tag("item", { jid = module.host, node = node, name = meta.title }):up();
+		end
 	end
 end);
 
