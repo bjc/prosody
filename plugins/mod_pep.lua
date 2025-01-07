@@ -531,3 +531,6 @@ module:hook_global("user-deleted", function(event)
 	recipients[username] = nil;
 end);
 
+module:require("mod_pubsub/commands").add_commands(function (service_jid)
+	return get_pep_service((jid_split(service_jid)));
+end);
