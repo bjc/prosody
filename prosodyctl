@@ -473,6 +473,19 @@ function commands.about(arg)
 	print("");
 end
 
+function commands.version(arg)
+	local flags = { short_params = { h = "help"; ["?"] = "help", v = "verbose" } };
+	local opts = parse_args(arg, flags);
+	if opts.help then
+		show_usage("version [-v]", [[Show current Prosody version, or more]]);
+		return 0;
+	elseif opts.verbose then
+		return commands.about(arg);
+	end
+
+	print("Prosody "..(prosody.version or "(unknown version)"));
+end
+
 function commands.reload(arg)
 	local opts = parse_args(arg, only_help);
 	if opts.help then
@@ -618,7 +631,7 @@ local command_runner = async.runner(function ()
 
 	if not commands[command] then -- Show help for all commands
 		function show_usage(usage, desc)
-			print(string.format(" %-11s    %s", usage, desc));
+			print(string.format(" %-14s    %s", usage, desc));
 		end
 
 		print("prosodyctl - Manage a Prosody server");
@@ -637,8 +650,8 @@ local command_runner = async.runner(function ()
 			"Plugin management:",
 				"install"; "remove"; "list";
 			"Informative:",
-				"about",
 				"check",
+				"version",
 			"Other:",
 				"cert",
 		};
