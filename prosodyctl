@@ -649,7 +649,7 @@ local command_runner = async.runner(function ()
 		print("");
 		print("Where COMMAND may be one of:");
 
-		local hidden_commands = require "prosody.util.set".new{ "register", "unregister" };
+		local hidden_commands = require "prosody.util.set".new{ "register", "unregister", "lua_paths" };
 		local commands_order = {
 			"Process management:",
 				"start"; "stop"; "restart"; "reload"; "status";
