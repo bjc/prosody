@@ -180,5 +180,4 @@ end
 
 return {
 	shell = start;
-	check_host = check_host;
 };
