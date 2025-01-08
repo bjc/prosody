@@ -486,6 +486,15 @@ function commands.version(arg)
 	print("Prosody "..(prosody.version or "(unknown version)"));
 end
 
+function commands.lua_paths()
+	local function shell_escape(s)
+		return "'" .. tostring(s):gsub("'",[['\'']]) .. "'";
+	end
+
+	print("LUA_PATH="..shell_escape(package.path));
+	print("LUA_CPATH="..shell_escape(package.cpath));
+end
+
 function commands.reload(arg)
 	local opts = parse_args(arg, only_help);
 	if opts.help then
