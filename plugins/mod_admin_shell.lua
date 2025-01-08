@@ -2543,7 +2543,7 @@ local host_commands = {};
 local function new_item_handlers(command_host)
 	local function on_command_added(event)
 		local command = event.item;
-		local mod_name = command._provided_by and ("mod_"..command._provided_by) or "<unknown module>";
+		local mod_name = event.source and ("mod_"..event.source.name) or "<unknown module>";
 		if not schema.validate(command_metadata_schema, command) or type(command.handler) ~= "function" then
 			module:log("warn", "Ignoring command added by %s: missing or invalid data", mod_name);
 			return;
