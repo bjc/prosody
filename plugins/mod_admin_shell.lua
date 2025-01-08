@@ -2630,7 +2630,7 @@ local function new_item_handlers(command_host)
 			module = command._provided_by;
 		};
 
-		module:log("debug", "Shell command added by mod_%s: %s:%s()", mod_name, command.section, command.name);
+		module:log("debug", "Shell command added by %s: %s:%s()", mod_name, command.section, command.name);
 	end
 
 	local function on_command_removed(event)
