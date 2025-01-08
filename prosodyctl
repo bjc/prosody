@@ -78,8 +78,6 @@ local read_password = human_io.read_password;
 local call_luarocks = prosodyctl.call_luarocks;
 local error_messages = prosodyctl.error_messages;
 
-local jid_split = require "prosody.util.jid".prepped_split;
-
 local prosodyctl_timeout = (configmanager.get("*", "prosodyctl_timeout") or 5) * 2;
 -----------------------
 local commands = {};
