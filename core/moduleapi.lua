@@ -431,8 +431,16 @@ function api:handle_items(item_type, added_cb, removed_cb, existing)
 	self:hook("item-added/"..item_type, added_cb);
 	self:hook("item-removed/"..item_type, removed_cb);
 	if existing ~= false then
-		for _, item in ipairs(self:get_host_items(item_type)) do
-			added_cb({ item = item });
+		local modulemanager = require"prosody.core.modulemanager";
+		local modules = modulemanager.get_modules(self.host);
+
+		for _, module in pairs(modules) do
+			local mod = module.module;
+			if mod.items and mod.items[item_type] then
+				for _, item in ipairs(mod.items[item_type]) do
+					added_cb({ source = mod; item = item });
+				end
+			end
 		end
 	end
 end
