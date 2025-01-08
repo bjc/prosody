@@ -14,11 +14,11 @@ local t_concat = table.concat;
 local have_dbisql, dbisql = pcall(require, "prosody.util.sql");
 local have_sqlite, sqlite = pcall(require, "prosody.util.sqlite3");
 if not have_dbisql then
-	module:log("debug", "Could not load LuaDBI, error was: %s", dbisql)
+	module:log("debug", "Could not load LuaDBI: %s", dbisql)
 	dbisql = nil;
 end
 if not have_sqlite then
-	module:log("debug", "Could not load LuaSQLite3, error was: %s", sqlite)
+	module:log("debug", "Could not load LuaSQLite3: %s", sqlite)
 	sqlite = nil;
 end
 if not (have_dbisql or have_sqlite) then
