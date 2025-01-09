@@ -66,6 +66,20 @@ local loader = pluginloader.init({
 			end
 		end
 
+		if metadata.lua then
+			local supported = false;
+			for supported_lua_version in metadata.lua:gmatch("[^, ]+") do
+				if supported_lua_version == lua_version then
+					supported = true;
+					break;
+				end
+			end
+			if not supported then
+				log("warn", "Not loading module, we have Lua %s but the module requires one of (%s): %s", lua_version, metadata.lua, path);
+				return; -- Don't load this module
+			end
+		end
+
 		if metadata.conflicts then
 			local conflicts_features = set.new(array.collect(metadata.conflicts:gmatch("[^, ]+")));
 			local conflicted_features = set.intersection(conflicts_features, core_features);
