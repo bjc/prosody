@@ -26,7 +26,7 @@ local xpcall = require "prosody.util.xpcall".xpcall;
 local debug_traceback = debug.traceback;
 local setmetatable, rawget = setmetatable, rawget;
 local ipairs, pairs, type, t_insert = ipairs, pairs, type, table.insert;
-local lua_version = _VERSION:match("5%.%d$");
+local lua_version = _VERSION:match("5%.%d+$");
 
 local autoload_modules = {
 	prosody.platform,
