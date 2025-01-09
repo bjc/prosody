@@ -6,6 +6,14 @@ local jid_split = require "prosody.util.jid".split;
 local argparse = require "prosody.util.argparse";
 local human_io = require "prosody.util.human.io";
 
+local url_escape = require "util.http".urlencode;
+local render_url = require "util.interpolation".new("%b{}", url_escape, {
+	urlescape = url_escape;
+	noscheme = function (urlstring)
+		return (urlstring:gsub("^[^:]+:", ""));
+	end;
+});
+
 local default_ttl = module:get_option_period("invite_expiry", "1 week");
 
 local token_storage;
@@ -201,6 +209,34 @@ function use(token) --luacheck: ignore 131/use
 	local invite = get(token);
 	return invite and invite:use();
 end
+
+-- Point at e.g. a deployment of https://github.com/modernxmpp/easy-xmpp-invitation
+-- This URL must always be absolute, as it is shared standalone
+local invite_url_template = module:get_option_string("invites_page");
+local invites_page_supports = module:get_option_set("invites_page_supports", { "account", "contact", "account-and-contact" });
+
+local function add_landing_url(invite)
+	if not invite_url_template or invite.landing_page then return; end
+
+	-- Determine whether this type of invitation is supported by the landing page
+	local invite_type;
+	if invite.type == "register" then
+		invite_type = "account";
+	elseif invite.type == "roster" then
+		if invite.allow_registration then
+			invite_type = "account-and-contact";
+		else
+			invite_type = "contact-only";
+		end
+	end
+	if not invites_page_supports:contains(invite_type) then
+		return; -- Invitation type unsupported
+	end
+
+	invite.landing_page = render_url(invite_url_template, { host = module.host, invite = invite });
+end
+
+module:hook("invite-created", add_landing_url, -1);
 
 --- shell command
 module:add_item("shell-command", {
