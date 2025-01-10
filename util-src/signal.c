@@ -30,10 +30,14 @@
 #define _GNU_SOURCE
 #endif
 
+#ifdef __linux__
+#define HAVE_SIGNALFD
+#endif
+
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
-#ifdef __linux__
+#ifdef HAVE_SIGNALFD
 #include <sys/signalfd.h>
 #endif
 
@@ -375,12 +379,12 @@ static int l_kill(lua_State *L) {
 struct lsignalfd {
 	int fd;
 	sigset_t mask;
-#ifndef __linux__
+#ifndef HAVE_SIGNALFD
 	int write_fd;
 #endif
 };
 
-#ifndef __linux__
+#ifndef HAVE_SIGNALFD
 #define MAX_SIGNALFD 32
 struct lsignalfd signalfds[MAX_SIGNALFD];
 static int signalfd_num = 0;
@@ -400,7 +404,7 @@ static int l_signalfd(lua_State *L) {
 	sigemptyset(&sfd->mask);
 	sigaddset(&sfd->mask, sig);
 
-#ifdef __linux__
+#ifdef HAVE_SIGNALFD
 	if (sigprocmask(SIG_BLOCK, &sfd->mask, NULL) != 0) {
 		lua_pushnil(L);
 		return 1;
@@ -455,7 +459,7 @@ static int l_signalfd_getfd(lua_State *L) {
 
 static int l_signalfd_read(lua_State *L) {
 	struct lsignalfd *sfd = luaL_checkudata(L, 1, "signalfd");
-#ifdef __linux__
+#ifdef HAVE_SIGNALFD
 	struct signalfd_siginfo siginfo;
 
 	if(read(sfd->fd, &siginfo, sizeof(siginfo)) < 0) {
@@ -487,7 +491,7 @@ static int l_signalfd_close(lua_State *L) {
 		return 1;
 	}
 
-#ifndef __linux__
+#ifndef HAVE_SIGNALFD
 
 	if(close(sfd->write_fd) != 0) {
 		lua_pushboolean(L, 0);
