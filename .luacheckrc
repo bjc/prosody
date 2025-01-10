@@ -116,6 +116,7 @@ files["plugins/"] = {
 	};
 	globals = {
 		-- Methods that can be set on module API
+		"module.ready",
 		"module.unload",
 		"module.add_host",
 		"module.load",
