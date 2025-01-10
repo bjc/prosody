@@ -32,8 +32,8 @@
 
 #include <signal.h>
 #include <stdlib.h>
-#ifdef __linux__
 #include <unistd.h>
+#ifdef __linux__
 #include <sys/signalfd.h>
 #endif
 
@@ -372,18 +372,35 @@ static int l_kill(lua_State *L) {
 
 #endif
 
-#ifdef __linux__
 struct lsignalfd {
 	int fd;
 	sigset_t mask;
+#ifndef __linux__
+	int write_fd;
+#endif
 };
+
+#ifndef __linux__
+#define MAX_SIGNALFD 32
+struct lsignalfd signalfds[MAX_SIGNALFD];
+static int signalfd_num = 0;
+static void signal2fd(int sig) {
+	for(int i = 0; i < signalfd_num; i++) {
+		if(sigismember(&signalfds[i].mask, sig)) {
+			write(signalfds[i].write_fd, &sig, sizeof(sig));
+		}
+	}
+}
+#endif
 
 static int l_signalfd(lua_State *L) {
 	struct lsignalfd *sfd = lua_newuserdata(L, sizeof(struct lsignalfd));
+	int sig = luaL_checkinteger(L, 1);
 
 	sigemptyset(&sfd->mask);
-	sigaddset(&sfd->mask, luaL_checkinteger(L, 1));
+	sigaddset(&sfd->mask, sig);
 
+#ifdef __linux__
 	if (sigprocmask(SIG_BLOCK, &sfd->mask, NULL) != 0) {
 		lua_pushnil(L);
 		return 1;
@@ -395,6 +412,30 @@ static int l_signalfd(lua_State *L) {
 		lua_pushnil(L);
 		return 1;
 	}
+
+#else
+
+	if(signalfd_num >= MAX_SIGNALFD) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	if(signal(sig, signal2fd) == SIG_ERR) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	int pipefd[2];
+
+	if(pipe(pipefd) == -1) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	sfd->fd = pipefd[0];
+	sfd->write_fd = pipefd[1];
+	signalfds[signalfd_num++] = *sfd;
+#endif
 
 	luaL_setmetatable(L, "signalfd");
 	return 1;
@@ -414,14 +455,28 @@ static int l_signalfd_getfd(lua_State *L) {
 
 static int l_signalfd_read(lua_State *L) {
 	struct lsignalfd *sfd = luaL_checkudata(L, 1, "signalfd");
+#ifdef __linux__
 	struct signalfd_siginfo siginfo;
 
 	if(read(sfd->fd, &siginfo, sizeof(siginfo)) < 0) {
 		return 0;
 	}
 
+
 	lua_pushinteger(L, siginfo.ssi_signo);
 	return 1;
+
+#else
+	int signo;
+
+	if(read(sfd->fd, &signo, sizeof(int)) < 0) {
+		return 0;
+	}
+
+	lua_pushinteger(L, signo);
+	return 1;
+#endif
+
 }
 
 static int l_signalfd_close(lua_State *L) {
@@ -432,11 +487,25 @@ static int l_signalfd_close(lua_State *L) {
 		return 1;
 	}
 
+#ifndef __linux__
+
+	if(close(sfd->write_fd) != 0) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	for(int i = signalfd_num; i > 0; i--) {
+		if(signalfds[i].fd == sfd->fd) {
+			signalfds[i] = signalfds[signalfd_num--];
+		}
+	}
+
+#endif
+
 	sfd->fd = -1;
 	lua_pushboolean(L, 1);
 	return 1;
 }
-#endif
 
 static const struct luaL_Reg lsignal_lib[] = {
 	{"signal", l_signal},
@@ -444,9 +513,7 @@ static const struct luaL_Reg lsignal_lib[] = {
 #if defined(__unix__) || defined(__APPLE__)
 	{"kill", l_kill},
 #endif
-#ifdef __linux__
 	{"signalfd", l_signalfd},
-#endif
 	{NULL, NULL}
 };
 
@@ -454,7 +521,6 @@ int luaopen_prosody_util_signal(lua_State *L) {
 	luaL_checkversion(L);
 	int i = 0;
 
-#ifdef __linux__
 	luaL_newmetatable(L, "signalfd");
 	lua_pushcfunction(L, l_signalfd_close);
 	lua_setfield(L, -2, "__gc");
@@ -469,7 +535,6 @@ int luaopen_prosody_util_signal(lua_State *L) {
 	}
 	lua_setfield(L, -2, "__index");
 	lua_pop(L, 1);
-#endif
 
 	/* add the library */
 	lua_newtable(L);
