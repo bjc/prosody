@@ -8,7 +8,7 @@ local roles = require "prosody.util.roles";
 local config_global_admin_jids = module:context("*"):get_option_set("admins", {}) / normalize;
 local config_admin_jids = module:get_option_inherited_set("admins", {}) / normalize;
 local host = module.host;
-local host_suffix = host:gsub("^[^%.]+%.", "");
+local host_suffix = module:get_option_string("parent_host", (host:gsub("^[^%.]+%.", "")));
 
 local hosts = prosody.hosts;
 local is_anon_host = module:get_option_string("authentication") == "anonymous";
