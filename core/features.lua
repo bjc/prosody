@@ -8,6 +8,8 @@ return {
 		"mod_server_info";
 		-- mod_flags bundled
 		"mod_flags";
+		-- mod_cloud_notify bundled
+		"mod_cloud_notify";
 		-- Roles, module.may and per-session authz
 		"permissions";
 		-- prosody.* namespace
