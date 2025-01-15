@@ -3,7 +3,7 @@
 -- First try the bit32 lib
 -- Lua 5.3 has it with compat enabled
 -- Lua 5.2 has it by default
-if _G.bit32 then
+if rawget(_G, "bit32") then
 	return _G.bit32;
 end
 
