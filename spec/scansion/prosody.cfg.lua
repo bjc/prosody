@@ -1,6 +1,6 @@
 --luacheck: ignore
 
-admins = { "admin@localhost" }
+admins = FileLines("admins.txt")
 
 network_backend = ENV_PROSODY_NETWORK_BACKEND or "epoll"
 network_settings = Lua.require"prosody.util.json".decode(ENV_PROSODY_NETWORK_SETTINGS or "{}")

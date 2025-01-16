@@ -60,6 +60,7 @@ TRUNK
 
 - The configuration file now supports referring and appending to options previously set
 - Direct usage of the Lua API in the config file is deprecated, but can now be accessed via Lua.* instead
+- Convenience functions for reading values from files
 
 ## Changes
 
