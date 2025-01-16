@@ -191,7 +191,6 @@ local function request_repl_input(session, input_type)
 		pending_inputs:set(input_id, nil);
 	end);
 	session.send(st.stanza("repl-request-input", { type = input_type, id = input_id }));
-	module:log("warn", "REQUESTED INPUT %s", input_type);
 	return p;
 end
 
