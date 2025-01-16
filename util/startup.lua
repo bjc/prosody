@@ -266,8 +266,13 @@ function startup.init_global_state()
 	full_sessions = prosody.full_sessions;
 	hosts = prosody.hosts;
 
-	prosody.paths = { source = CFG_SOURCEDIR, config = CFG_CONFIGDIR or ".",
-	                  plugins = CFG_PLUGINDIR or "plugins", data = "data" };
+	prosody.paths = {
+		source = CFG_SOURCEDIR;
+		config = CFG_CONFIGDIR or ".";
+		plugins = CFG_PLUGINDIR or "plugins";
+		data = "data";
+		secrets = os.getenv("CREDENTIALS_DIRECTORY");
+	};
 
 	prosody.arg = _G.arg;
 
