@@ -141,6 +141,10 @@ files["prosody.cfg.lua"] = {
 		"component",
 		"Include",
 		"include",
+		"FileContents",
+		"FileLine",
+		"FileLines",
+		"Credential",
 		"RunScript"
 	};
 }
