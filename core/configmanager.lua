@@ -361,8 +361,8 @@ do
 		env.FileLine = filereader(config_path, "*l");
 		env.FileLines = linereader(config_path);
 
-		if _G.prosody.paths.secrets then
-			env.Credential = filereader(_G.prosody.paths.secrets, "*a");
+		if _G.prosody.paths.credentials then
+			env.Credential = filereader(_G.prosody.paths.credentials, "*a");
 		elseif _G.prosody.process_type == "prosody" then
 			env.Credential = function() error("Credential() requires the $CREDENTIALS_DIRECTORY environment variable to be set", 2) end
 		else
