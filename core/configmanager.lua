@@ -199,6 +199,7 @@ do
 			FileLine = true,
 			FileLines = true,
 			Secret = true,
+			Credential = true,
 			Include = true, include = true, RunScript = true }, {
 				__index = function (_, k)
 					if k:match("^ENV_") then
@@ -361,17 +362,18 @@ do
 		env.FileLines = linereader(config_path);
 
 		if _G.prosody.paths.secrets then
-			env.Secret = filereader(_G.prosody.paths.secrets, "*a");
+			env.Credential = filereader(_G.prosody.paths.secrets, "*a");
 		elseif _G.prosody.process_type == "prosody" then
-			env.Secret = function() error("Secret() requires the $CREDENTIALS_DIRECTORY environment variable to be set", 2) end
+			env.Credential = function() error("Credential() requires the $CREDENTIALS_DIRECTORY environment variable to be set", 2) end
 		else
-			env.Secret = function()
-				t_insert(warnings, ("%s:%d: Secret() requires the $CREDENTIALS_DIRECTORY environment variable to be set")
+			env.Credential = function()
+				t_insert(warnings, ("%s:%d: Credential() requires the $CREDENTIALS_DIRECTORY environment variable to be set")
 						:format(config_file, get_line_number(config_file)));
 				return nil;
 			end
 
 		end
+		env.Secret = env.Credential; -- COMPAT remove after all the early adopters s/Secret/Credential/
 
 		local chunk, err = envload(data, "@"..config_file, env);
 
