@@ -198,7 +198,6 @@ do
 			FileContents = true,
 			FileLine = true,
 			FileLines = true,
-			Secret = true,
 			Credential = true,
 			Include = true, include = true, RunScript = true }, {
 				__index = function (_, k)
@@ -373,7 +372,6 @@ do
 			end
 
 		end
-		env.Secret = env.Credential; -- COMPAT remove after all the early adopters s/Secret/Credential/
 
 		local chunk, err = envload(data, "@"..config_file, env);
 
