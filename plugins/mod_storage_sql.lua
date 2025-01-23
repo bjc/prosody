@@ -38,6 +38,20 @@ local function iterator(result)
 	end, result, nil;
 end
 
+-- COMPAT Support for UPSERT is not in all versions of all compatible databases.
+local function has_upsert(engine)
+	if engine.params.driver == "SQLite3" then
+		-- SQLite3 >= 3.24.0
+		return (engine.sqlite_version[2] or 0) >= 24;
+	elseif engine.params.driver == "PostgreSQL" then
+		-- PostgreSQL >= 9.5
+		-- Versions without support have long since reached end of life.
+		return true;
+	end
+	-- We don't support UPSERT on MySQL/MariaDB, they seem to have a completely different syntax, uncertaint from which versions.
+	return false
+end
+
 local default_params = { driver = "SQLite3" };
 
 local engine;
@@ -225,7 +239,7 @@ function map_store:set_keys(username, keydatas)
 		LIMIT 1;
 		]];
 		for key, data in pairs(keydatas) do
-			if type(key) == "string" and key ~= "" and engine.params.driver ~= "MySQL" and data ~= self.remove then
+			if type(key) == "string" and key ~= "" and has_upsert(engine) and data ~= self.remove then
 				local t, value = assert(serialize(data));
 				engine:insert(upsert_sql, host, username or "", self.store, key, t, value, t, value);
 			elseif type(key) == "string" and key ~= "" then
@@ -932,6 +946,14 @@ function module.load()
 					local option = row[1]:lower();
 					local opt, val = option:match("^([^=]+)=(.*)$");
 					compile_options[opt or option] = tonumber(val) or val or true;
+				end
+				-- COMPAT Need to check SQLite3 version because SQLCipher 3.x was based on SQLite3 prior to 3.24.0 when UPSERT was introduced
+				for row in engine:select("SELECT sqlite_version()") do
+					local version = {};
+					for n in row[1]:gmatch("%d+") do
+						table.insert(version, tonumber(n));
+					end
+					engine.sqlite_version = version;
 				end
 				engine.sqlite_compile_options = compile_options;
 
