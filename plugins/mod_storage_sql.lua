@@ -1025,7 +1025,7 @@ function module.command(arg)
 		end
 		print("");
 		print("Ensure you have working backups of the above databases before continuing! ");
-		if not hi.show_yesno("Continue with the database upgrade? [yN]") then
+		if false == hi.show_yesno("Continue with the database upgrade? [yN]") then
 			print("Ok, no upgrade. But you do have backups, don't you? ...don't you?? :-)");
 			return;
 		end
