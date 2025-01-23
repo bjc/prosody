@@ -46,6 +46,7 @@ TRUNK
 - New 'keyval+' combined keyval/map store type
 - Performance improvements in internal archive stores
 - Ability to use SQLite3 storage using LuaSQLite3 instead of LuaDBI
+- SQLCipher support
 
 ### Module API
 

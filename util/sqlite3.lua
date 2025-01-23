@@ -114,6 +114,12 @@ function engine:connect()
 	if not dbh then return nil, err; end
 	self.conn = dbh;
 	self.prepared = {};
+	if params.password then
+		local ok, err = self:execute(("PRAGMA key='%s'"):format((params.password:gsub("'", "''"))));
+		if not ok then
+			return ok, err;
+		end
+	end
 	local ok, err = self:set_encoding();
 	if not ok then
 		return ok, err;

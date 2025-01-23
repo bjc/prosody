@@ -84,6 +84,12 @@ function engine:connect()
 	dbh:autocommit(false); -- don't commit automatically
 	self.conn = dbh;
 	self.prepared = {};
+	if params.password then
+		local ok, err = self:execute(("PRAGMA key='%s'"):format(dbh:quote(params.password)));
+		if not ok then
+			return ok, err;
+		end
+	end
 	local ok, err = self:set_encoding();
 	if not ok then
 		return ok, err;
