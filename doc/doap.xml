@@ -734,6 +734,15 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0357.html"/>
+        <xmpp:version>0.4.1</xmpp:version>
+        <xmpp:since>trunk</xmpp:since>
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:note>mod_cloud_notify</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0359.html"/>
         <xmpp:version>0.7.0</xmpp:version>
         <xmpp:status>complete</xmpp:status>
