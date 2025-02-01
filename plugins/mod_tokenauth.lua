@@ -133,7 +133,7 @@ local function clear_expired_grant_tokens(grant, now)
 	now = now or os.time();
 	for secret, token_info in pairs(grant.tokens) do
 		local expires = token_info.expires;
-		if expires and expires < now then
+		if expires and expires <= now then
 			grant.tokens[secret] = nil;
 			updated = true;
 		end
@@ -155,7 +155,7 @@ local function _get_validated_grant_info(username, grant)
 		module:log("debug", "Token grant %s of %s issued before last password change, invalidating it now", grant.id, username);
 		token_store:set_key(username, grant.id, nil);
 		return nil, "not-authorized";
-	elseif grant.expires and grant.expires < now then
+	elseif grant.expires and grant.expires <= now then
 		module:log("debug", "Token grant %s of %s expired, cleaning up", grant.id, username);
 		token_store:set_key(username, grant.id, nil);
 		return nil, "expired";
@@ -169,14 +169,14 @@ local function _get_validated_grant_info(username, grant)
 
 	local found_expired = false
 	for secret_hash, token_info in pairs(grant.tokens) do
-		if token_info.expires and token_info.expires < now then
+		if token_info.expires and token_info.expires <= now then
 			module:log("debug", "Token %s of grant %s of %s has expired, cleaning it up", secret_hash:sub(-8), grant.id, username);
 			grant.tokens[secret_hash] = nil;
 			found_expired = true;
 		end
 	end
 
-	if not grant.expires and next(grant.tokens) == nil and grant.accessed + empty_grant_lifetime < now then
+	if not grant.expires and next(grant.tokens) == nil and grant.accessed + empty_grant_lifetime <= now then
 		module:log("debug", "Token %s of %s grant has no tokens, discarding", grant.id, username);
 		token_store:set_key(username, grant.id, nil);
 		return nil, "expired";
@@ -212,7 +212,7 @@ local function _get_validated_token_info(token_id, token_user, token_host, token
 
 	-- Check expiry
 	local now = os.time();
-	if token_info.expires and token_info.expires < now then
+	if token_info.expires and token_info.expires <= now then
 		module:log("debug", "Token has expired, cleaning it up");
 		grant.tokens[secret_hash] = nil;
 		token_store:set_key(token_user, token_id, grant);
