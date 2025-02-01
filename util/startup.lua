@@ -814,12 +814,12 @@ function startup.hook_posix_signals()
 	end);
 end
 
-function startup.systemd_notify()
+function startup.notification_socket()
 	local notify_socket_name = os.getenv("NOTIFY_SOCKET");
 	if not notify_socket_name then return end
 	local have_unix, unix = pcall(require, "socket.unix");
 	if not have_unix or type(unix) ~= "table" then
-		log("error", "LuaSocket without UNIX socket support, can't notify systemd.")
+		log("error", "LuaSocket without UNIX socket support, can't notify process manager.")
 		return os.exit(1);
 	end
 	log("debug", "Will notify on socket %q", notify_socket_name);
@@ -827,7 +827,7 @@ function startup.systemd_notify()
 	local notify_socket = unix.dgram();
 	local ok, err = notify_socket:setpeername(notify_socket_name);
 	if not ok then
-		log("error", "Could not connect to systemd notification socket %q: %q", notify_socket_name, err);
+		log("error", "Could not connect to notification socket %q: %q", notify_socket_name, err);
 		return os.exit(1);
 	end
 	local time = require "prosody.util.time";
@@ -928,7 +928,7 @@ function startup.prosody()
 	startup.posix_daemonize();
 	startup.write_pidfile();
 	startup.hook_posix_signals();
-	startup.systemd_notify();
+	startup.notification_socket();
 	startup.prepare_to_start();
 	startup.notify_started();
 end
