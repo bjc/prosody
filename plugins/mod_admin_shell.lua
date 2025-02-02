@@ -141,7 +141,7 @@ Built-in roles are:
   prosody:registered - Registered user
   prosody:member     - Provisioned user
   prosody:admin      - Host administrator
-  prosody:operator - Server administrator
+  prosody:operator   - Server administrator
 
 Roles can be assigned using the user management commands (see 'help user').
 ]];
