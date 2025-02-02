@@ -456,7 +456,7 @@ def_env.help = setmetatable({}, {
 
 				for command, command_help in it.sorted_pairs(section_help.commands or {}) do
 					c = c + 1;
-					local args = command_help.args:pluck("name"):concat(", ");
+					local args = array.pluck(command_help.args, "name"):concat(", ");
 					local desc = command_help.desc or command_help.module and ("Provided by mod_"..command_help.module) or "";
 					print(("%s:%s(%s) - %s"):format(section_name, command, args, desc));
 				end
