@@ -510,7 +510,6 @@ function commands.reload(arg)
 	if shell.available() then
 		if arg[1] and arg[1]:match"^mod_" then
 			-- TODO reword the usage text, document
-			local shell = require "prosody.util.prosodyctl.shell";
 			arg[1] = arg[1]:match("^mod_(.*)"); -- strip mod_ prefix
 			table.insert(arg, 1, "module");
 			table.insert(arg, 2, "reload");
