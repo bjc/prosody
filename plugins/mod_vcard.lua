@@ -35,6 +35,7 @@ local function handle_vcard(event)
 		if not to then
 			if vcards:set(session.username, st.preserialize(stanza.tags[1])) then
 				session.send(st.reply(stanza));
+				module:fire_event("vcard-updated", event);
 			else
 				-- TODO unable to write file, file may be locked, etc, what's the correct error?
 				session.send(st.error_reply(stanza, "wait", "internal-server-error"));
