@@ -303,7 +303,11 @@ function commands.stop(arg)
 
 	service_command_warning("stop");
 
-	if not prosodyctl.isrunning() then
+	local ok, running = prosodyctl.isrunning();
+	if not ok then
+		show_message(error_messages[running]);
+		return 1;
+	elseif not running then
 		show_message("Prosody is not running");
 		return 1;
 	end
