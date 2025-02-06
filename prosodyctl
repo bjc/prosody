@@ -181,7 +181,7 @@ local function has_init_system() --> which
 end
 
 local function service_command_warning(service_command)
-	if true or prosody.installed and configmanager.get("*", "prosodyctl_service_warnings") ~= false then
+	if prosody.installed and configmanager.get("*", "prosodyctl_service_warnings") ~= false then
 		show_warning("ERROR: Use of 'prosodyctl %s' is disabled in this installation because", service_command);
 
 		local init = has_init_system()
