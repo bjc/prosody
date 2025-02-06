@@ -515,9 +515,11 @@ function commands.reload(arg)
 		return shell.shell({ "config", "reload" });
 	end
 
-	service_command_warning("reload");
-
-	if not prosodyctl.isrunning() then
+	local ok, running = prosodyctl.isrunning();
+	if not ok then
+		show_message(error_messages[running]);
+		return 1;
+	elseif not running then
 		show_message("Prosody is not running");
 		return 1;
 	end
