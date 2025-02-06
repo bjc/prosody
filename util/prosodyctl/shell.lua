@@ -64,6 +64,13 @@ local function printbanner()
 	print("https://prosody.im/doc/console\n");
 end
 
+local function check()
+	local lfs = require "lfs";
+	local socket_path = path.resolve_relative_path(prosody.paths.data, config.get("*", "admin_socket") or "prosody.sock");
+	local state = lfs.attributes(socket_path, "mode");
+	return state == "socket";
+end
+
 local function start(arg) --luacheck: ignore 212/arg
 	local client = adminstream.client();
 	local opts, err, where = parse_args(arg);
@@ -180,4 +187,5 @@ end
 
 return {
 	shell = start;
+	available = check;
 };
