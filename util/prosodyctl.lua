@@ -40,6 +40,7 @@ local error_messages = setmetatable({
 		["unable-to-save-data"] = "Unable to store, perhaps you don't have permission?";
 		["no-pidfile"] = "There is no 'pidfile' option in the configuration file, see https://prosody.im/doc/prosodyctl#pidfile for help";
 		["invalid-pidfile"] = "The 'pidfile' option in the configuration file is not a string, see https://prosody.im/doc/prosodyctl#pidfile for help";
+		["pidfile-not-locked"] = "Stale pidfile found. Prosody is probably not running.";
 		["no-posix"] = "The mod_posix module is not enabled in the Prosody config file, see https://prosody.im/doc/prosodyctl for more info";
 		["no-such-method"] = "This module has no commands";
 		["not-running"] = "Prosody is not running";
@@ -143,8 +144,14 @@ local function getpid()
 		return false, "pidfile-read-failed", err;
 	end
 
+	-- Check for a lock on the file
 	local locked, err = lfs.lock(file, "w"); -- luacheck: ignore 211/err
 	if locked then
+		-- Prosody keeps the pidfile locked while it is running.
+		-- We successfully locked the file, which means Prosody is not
+		-- running and the pidfile is stale (somehow it was not
+		-- cleaned up). We'll abort here, to avoid sending signals to
+		-- a non-Prosody PID.
 		file:close();
 		return false, "pidfile-not-locked";
 	end
