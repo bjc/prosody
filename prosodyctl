@@ -316,7 +316,7 @@ function commands.stop(arg)
 	if ok then
 		local i=1;
 		while true do
-			local ok, running = prosodyctl.isrunning();
+			local ok, running = prosodyctl.isrunning(); --luacheck: ignore 421
 			if ok and not running then
 				break;
 			elseif i == 5 then
