@@ -116,6 +116,10 @@ module:depends "muc_unique"
 module:require "muc/hats";
 module:require "muc/lock";
 
+if module:get_option_boolean("muc_vcard", true) ~= false then
+	module:require "muc/vcard";
+end
+
 module:default_permissions("prosody:admin", {
 	":automatic-ownership";
 	":create-room";
