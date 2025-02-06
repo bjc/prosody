@@ -273,6 +273,7 @@ local function disconnect_user_sessions(reason, leave_resource)
 		if not (hosts[host] and hosts[host].type == "local") then
 			return -- not a local VirtualHost so no sessions
 		end
+		module:log("debug", "Disconnecting %s sessions of %s@%s (%s)", not leave_resource and "all" or "other", username, host, reason.text);
 		local user = hosts[host].sessions[username];
 		if user and user.sessions then
 			for r, session in pairs(user.sessions) do
