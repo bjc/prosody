@@ -181,16 +181,30 @@ local function has_init_system() --> which
 end
 
 local function service_command_warning(service_command)
-	if prosody.installed and configmanager.get("*", "prosodyctl_service_warnings") ~= false then
-		show_warning("WARNING: Use of prosodyctl start/stop/restart/reload is not recommended");
-		show_warning("         if Prosody is managed by an init system - use that directly instead.");
+	if true or prosody.installed and configmanager.get("*", "prosodyctl_service_warnings") ~= false then
+		show_warning("ERROR: Use of 'prosodyctl %s' is disabled in this installation because", service_command);
+
 		local init = has_init_system()
-		if init == "systemd" then
-			show_warning("         e.g. systemctl %s prosody", service_command);
-		elseif init == "rc.d" then
-			show_warning("         e.g. /etc/init.d/prosody %s", service_command);
+		if init then
+			show_warning("       we detected that this system uses %s for managing services.", init);
+			show_warning("");
+			show_warning("       To avoid problems, use that directly instead. For example:");
+			show_warning("");
+			if init == "systemd" then
+				show_warning("          systemctl %s prosody", service_command);
+			elseif init == "rc.d" then
+				show_warning("          /etc/init.d/prosody %s", service_command);
+			end
+		else
+			show_warning("       it may conflict with your system's service manager.");
+			show_warning("");
 		end
-		show_warning("");
+
+		show_warning("       Proceeding to use prosodyctl may cause process management issues.");
+		show_warning("       You can pass --force to override this warning, or set");
+		show_warning("       prosodyctl_service_warnings = false in your global config.");
+
+		os.exit(1);
 	end
 end
 
@@ -200,7 +214,9 @@ function commands.start(arg)
 		show_usage([[start]], [[Start Prosody]]);
 		return 0;
 	end
-	service_command_warning("start");
+	if not opts.force then
+		service_command_warning("start");
+	end
 	local ok, ret = prosodyctl.isrunning();
 	if not ok then
 		show_message(error_messages[ret]);
@@ -301,7 +317,9 @@ function commands.stop(arg)
 		return 0;
 	end
 
-	service_command_warning("stop");
+	if not opts.force then
+		service_command_warning("stop");
+	end
 
 	local ok, running = prosodyctl.isrunning();
 	if not ok then
@@ -343,7 +361,9 @@ function commands.restart(arg)
 		return 1;
 	end
 
-	service_command_warning("restart");
+	if not opts.force then
+		service_command_warning("restart");
+	end
 
 	commands.stop(arg);
 	return commands.start(arg);
@@ -528,6 +548,10 @@ function commands.reload(arg)
 	elseif not running then
 		show_message("Prosody is not running");
 		return 1;
+	end
+
+	if not opts.force then
+		service_command_warning("reload");
 	end
 
 	local ok, ret = prosodyctl.reload();
