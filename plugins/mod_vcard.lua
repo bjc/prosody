@@ -12,11 +12,17 @@ local sha1 = require "prosody.util.hashes".sha1;
 local st = require "prosody.util.stanza"
 local jid_split = require "prosody.util.jid".split;
 
-local vcards = module:open_store();
+local store_name = module:get_option_string("vcard_store_name");
+
+local is_component = module:get_host_type() == "component";
+if is_component and not store_name and module:get_option_string("component_module") == "muc" then
+	store_name = "vcard_muc";
+end
+
+local vcards = module:open_store(store_name);
 
 module:add_feature("vcard-temp");
 
-local is_component = module:get_host_type() == "component";
 
 local function handle_vcard(event)
 	local session, stanza = event.origin, event.stanza;
