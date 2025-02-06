@@ -6,6 +6,8 @@
 -- COPYING file in the source package for more information.
 --
 
+local base64 = require "prosody.util.encodings".base64;
+local sha1 = require "prosody.util.hashes".sha1;
 local st = require "prosody.util.stanza"
 local jid_split = require "prosody.util.jid".split;
 
@@ -46,3 +48,14 @@ end
 
 module:hook("iq/bare/vcard-temp:vCard", handle_vcard);
 module:hook("iq/host/vcard-temp:vCard", handle_vcard);
+
+function get_avatar_hash(username)
+	local vcard = st.deserialize(vcards:get(username));
+	if not vcard then return end
+	local photo = vcard:get_child("PHOTO");
+	if not photo then return end
+
+	local photo_b64 = photo:get_child_text("BINVAL");
+	local photo_raw = photo_b64 and base64.decode(photo_b64);
+	return (sha1(photo_raw, true));
+end
