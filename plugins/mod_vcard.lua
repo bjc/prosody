@@ -7,6 +7,7 @@
 --
 
 local base64 = require "prosody.util.encodings".base64;
+local jid = require "prosody.util.jid";
 local sha1 = require "prosody.util.hashes".sha1;
 local st = require "prosody.util.stanza"
 local jid_split = require "prosody.util.jid".split;
@@ -14,6 +15,8 @@ local jid_split = require "prosody.util.jid".split;
 local vcards = module:open_store();
 
 module:add_feature("vcard-temp");
+
+local is_component = module:get_host_type() == "component";
 
 local function handle_vcard(event)
 	local session, stanza = event.origin, event.stanza;
@@ -23,7 +26,7 @@ local function handle_vcard(event)
 		if to then
 			local node = jid_split(to);
 			vCard = st.deserialize(vcards:get(node)); -- load vCard for user or server
-		else
+		elseif not is_component then
 			vCard = st.deserialize(vcards:get(session.username));-- load user's own vCard
 		end
 		if vCard then
@@ -32,8 +35,9 @@ local function handle_vcard(event)
 			session.send(st.error_reply(stanza, "cancel", "item-not-found"));
 		end
 	else -- stanza.attr.type == "set"
-		if not to then
-			if vcards:set(session.username, st.preserialize(stanza.tags[1])) then
+		if not to or (is_component and event.allow_vcard_modification) then
+			local node = is_component and jid.node(stanza.attr.to) or session.username;
+			if vcards:set(node, st.preserialize(stanza.tags[1])) then
 				session.send(st.reply(stanza));
 				module:fire_event("vcard-updated", event);
 			else
