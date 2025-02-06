@@ -516,6 +516,9 @@ function commands.reload(arg)
 			return shell.shell(arg);
 		end
 		return shell.shell({ "config", "reload" });
+	elseif arg[1] then
+		show_message("Admin socket not found - is it enabled and is Prosody running?");
+		return 1;
 	end
 
 	local ok, running = prosodyctl.isrunning();
