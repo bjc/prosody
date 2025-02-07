@@ -74,11 +74,17 @@ local function new_async_socket(sock, resolver)
 	return handler;
 end
 
+local function measure(_qclass, _qtype)
+	return measure;
+end
+
 function async_resolver_methods:lookup(handler, qname, qtype, qclass)
 	local resolver = self._resolver;
+	local m = measure(qclass or "IN", qtype or "A");
 	return coroutine.wrap(function (peek)
 				if peek then
 					log("debug", "Records for %s already cached, using those...", qname);
+					m();
 					handler(peek);
 					return;
 				end
@@ -89,6 +95,7 @@ function async_resolver_methods:lookup(handler, qname, qtype, qclass)
 					log("debug", "Reply for %s (%s)", qname, coroutine.running());
 				end
 				if ok then
+					m();
 					ok, err = pcall(handler, resolver:peek(qname, qtype, qclass));
 				else
 					log("error", "Error sending DNS query: %s", err);
@@ -129,4 +136,5 @@ return {
 	end;
 	resolver = new_async_resolver;
 	new_async_socket = new_async_socket;
+	instrument = function(measure_) measure = measure_; end;
 };

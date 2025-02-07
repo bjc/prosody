@@ -425,6 +425,19 @@ function startup.init_async()
 	async.set_schedule_function(timer.add_task);
 end
 
+function startup.instrument()
+	local statsmanager = require "prosody.core.statsmanager";
+	local timed = require"prosody.util.openmetrics".timed;
+
+	local adns = require "prosody.net.adns";
+	if adns.instrument then
+		local m = statsmanager.metric("histogram", "prosody_dns", "seconds", "DNS lookups", { "qclass"; "qtype" }, {
+				buckets = { 1 / 1024; 1 / 256; 1 / 64; 1 / 16; 1 / 4; 1; 4 };
+		});
+		adns.instrument(function(qclass, qtype) return timed(m:with_labels(qclass, qtype)); end);
+	end
+end
+
 function startup.init_data_store()
 	require "prosody.core.storagemanager";
 end
@@ -922,6 +935,7 @@ function startup.prosody()
 	startup.load_secondary_libraries();
 	startup.init_promise();
 	startup.init_async();
+	startup.instrument();
 	startup.init_http_client();
 	startup.init_data_store();
 	startup.init_global_protection();

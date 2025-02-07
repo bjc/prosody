@@ -20,7 +20,6 @@ local libunbound = require"lunbound";
 local promise = require"prosody.util.promise";
 local new_id = require "prosody.util.id".short;
 
-local gettime = require"socket".gettime;
 local dns_utils = require"prosody.util.dns";
 local classes, types, errors = dns_utils.classes, dns_utils.types, dns_utils.errors;
 local parsers = dns_utils.parsers;
@@ -116,21 +115,26 @@ local function prep_answer(a)
 	return setmetatable(a, answer_mt);
 end
 
+local function measure(_qclass, _qtype)
+	return measure;
+end
+
 local function lookup(callback, qname, qtype, qclass)
 	if not unbound then initialize(); end
 	qtype = qtype and s_upper(qtype) or "A";
 	qclass = qclass and s_upper(qclass) or "IN";
 	local ntype, nclass = types[qtype], classes[qclass];
-	local startedat = gettime();
+
+	local m;
 	local ret;
 	local log_query = logger.init("unbound.query"..new_id());
 	local function callback_wrapper(a, err)
-		local gotdataat = gettime();
+		m();
 		waiting_queries[ret] = nil;
 		if a then
 			prep_answer(a);
-			log_query("debug", "Results for %s %s %s: %s (%s, %f sec)", qname, qclass, qtype, a.rcode == 0 and (#a .. " items") or a.status,
-				a.secure and "Secure" or a.bogus or "Insecure", gotdataat - startedat); -- Insecure as in unsigned
+			log_query("debug", "Results for %s %s %s: %s (%s)", qname, qclass, qtype, a.rcode == 0 and (#a .. " items") or a.status,
+				a.secure and "Secure" or a.bogus or "Insecure"); -- Insecure as in unsigned
 		else
 			log_query("error", "Results for %s %s %s: %s", qname, qclass, qtype, tostring(err));
 		end
@@ -138,6 +142,7 @@ local function lookup(callback, qname, qtype, qclass)
 		if not ok then log_query("error", "Error in callback: %s", cerr); end
 	end
 	log_query("debug", "Resolve %s %s %s", qname, qclass, qtype);
+	m = measure(qclass, qtype);
 	local err;
 	ret, err = unbound:resolve_async(callback_wrapper, qname, ntype, nclass);
 	if ret then
@@ -224,6 +229,8 @@ local wrapper = {
 		closeall = function () end;
 	};
 }
+
+_M.instrument = function(measure_) measure = measure_; end;
 
 function _M.resolver() return wrapper; end
 
