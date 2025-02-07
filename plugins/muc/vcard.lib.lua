@@ -21,6 +21,7 @@ end
 
 local function send_avatar_hash(room, to)
 	local hash = get_avatar_hash(room);
+	if not hash and to then return; end -- Don't announce when no avatar
 
 	local presence_vcard = st.presence({to = to, from = room.jid})
 		:tag("x", { xmlns = "vcard-temp:x:update" })
