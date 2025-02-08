@@ -42,7 +42,7 @@ end
 local function has_upsert(engine)
 	if engine.params.driver == "SQLite3" then
 		-- SQLite3 >= 3.24.0
-		return (engine.sqlite_version[2] or 0) >= 24;
+		return engine.sqlite_version and (engine.sqlite_version[2] or 0) >= 24;
 	elseif engine.params.driver == "PostgreSQL" then
 		-- PostgreSQL >= 9.5
 		-- Versions without support have long since reached end of life.
