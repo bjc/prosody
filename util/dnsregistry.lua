@@ -1,5 +1,5 @@
 -- Source: https://www.iana.org/assignments/dns-parameters/dns-parameters.xml
--- Generated on 2024-10-26
+-- Generated on 2025-02-09
 return {
 	classes = {
 		["IN"] = 1; [1] = "IN";
@@ -72,6 +72,7 @@ return {
 		["ZONEMD"] = 63; [63] = "ZONEMD";
 		["SVCB"] = 64; [64] = "SVCB";
 		["HTTPS"] = 65; [65] = "HTTPS";
+		["DSYNC"] = 66; [66] = "DSYNC";
 		["SPF"] = 99; [99] = "SPF";
 		["NID"] = 104; [104] = "NID";
 		["L32"] = 105; [105] = "L32";
