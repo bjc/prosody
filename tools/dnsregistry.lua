@@ -19,6 +19,7 @@ for registry in registries:childtags("registry") do
 	local registry_name = registry_mapping[registry.attr.id];
 	if registry_name then
 		print("\t" .. registry_name .. " = {");
+		local duplicates = {};
 		for record in registry:childtags("record") do
 			local record_name = record:get_child_text("name");
 			local record_type = record:get_child_text("type");
@@ -37,7 +38,9 @@ for registry in registries:childtags("registry") do
 			elseif registry_name == "types" and record_type and record_code then
 				print(("\t\t[%q] = %d; [%d] = %q;"):format(record_type, record_code, record_code, record_type))
 			elseif registry_name == "errors" and record_code and record_name then
-				print(("\t\t[%d] = %q; [%q] = %q;"):format(record_code, record_name, record_name, record_desc or record_name));
+				local dup = duplicates[record_code] and "-- " or "";
+				print(("\t\t%s[%d] = %q; [%q] = %q;"):format(dup, record_code, record_name, record_name, record_desc or record_name));
+				duplicates[record_code] = true;
 			end
 		end
 		print("\t};");
