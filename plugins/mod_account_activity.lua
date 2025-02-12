@@ -1,4 +1,4 @@
-local jid = require "util.jid";
+local jid = require "prosody.util.jid";
 local time = os.time;
 
 local store = module:open_store(nil, "keyval+");
@@ -47,6 +47,49 @@ module:add_item("shell-command", {
 });
 
 module:add_item("shell-command", {
+	section = "user";
+	section_desc = "View user activity data";
+	name = "list_inactive";
+	desc = "List inactive user accounts";
+	args = {
+		{ name = "host"; type = "string" };
+		{ name = "duration"; type = "string" };
+	};
+	host_selector = "host";
+	handler = function(self, host, duration) --luacheck: ignore 212/self
+		local um = require "prosody.core.usermanager";
+		local duration_sec = require "prosody.util.human.io".parse_duration(duration);
+		if not duration_sec then
+			return false, ("Invalid duration %q - try something like \"30d\""):format(duration);
+		end
+
+		local now = os.time();
+		local n_inactive, n_unknown = 0, 0;
+
+		for username in um.users(host) do
+			local last_active = store:get_key(username, "timestamp");
+			if not last_active then
+				local created_at = um.get_account_info(username, host).created;
+				if created_at and (now - created_at) > duration_sec then
+					self.session.print(username, "");
+					n_inactive = n_inactive + 1;
+				elseif not created_at then
+					n_unknown = n_unknown + 1;
+				end
+			elseif (now - last_active) > duration_sec then
+				self.session.print(username, os.date("%Y-%m-%dT%T", last_active));
+				n_inactive = n_inactive + 1;
+			end
+		end
+
+		if n_unknown > 0 then
+			return true, ("%d accounts inactive since %s (%d unknown)"):format(n_inactive, os.date("%Y-%m-%dT%T", now - duration_sec), n_unknown);
+		end
+		return true, ("%d accounts inactive since %s"):format(n_inactive, os.date("%Y-%m-%dT%T", now - duration_sec));
+	end;
+});
+
+module:add_item("shell-command", {
 	section = "migrate";
 	section_desc = "Perform data migrations";
 	name = "account_activity_lastlog2";
@@ -57,9 +100,9 @@ module:add_item("shell-command", {
 		local lastlog2 = module:open_store("lastlog2", "keyval+");
 		local n_updated, n_errors, n_skipped = 0, 0, 0;
 
-		local async = require "util.async";
+		local async = require "prosody.util.async";
 
-		local p = require "util.promise".new(function (resolve)
+		local p = require "prosody.util.promise".new(function (resolve)
 			local async_runner = async.runner(function ()
 				local n = 0;
 				for username in lastlog2:items() do
