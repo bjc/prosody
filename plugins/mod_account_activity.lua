@@ -1,4 +1,4 @@
-local jid = require "util.jid";
+local jid = require "prosody.util.jid";
 local time = os.time;
 
 local store = module:open_store(nil, "keyval+");
@@ -57,9 +57,9 @@ module:add_item("shell-command", {
 		local lastlog2 = module:open_store("lastlog2", "keyval+");
 		local n_updated, n_errors, n_skipped = 0, 0, 0;
 
-		local async = require "util.async";
+		local async = require "prosody.util.async";
 
-		local p = require "util.promise".new(function (resolve)
+		local p = require "prosody.util.promise".new(function (resolve)
 			local async_runner = async.runner(function ()
 				local n = 0;
 				for username in lastlog2:items() do
