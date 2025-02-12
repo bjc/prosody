@@ -18,6 +18,8 @@ local resolve_relative_path = require"prosody.util.paths".resolve_relative_path;
 local glob_to_pattern = require"prosody.util.paths".glob_to_pattern;
 local path_sep = package.config:sub(1,1);
 local get_traceback_table = require "prosody.util.debug".get_traceback_table;
+local errors = require "prosody.util.error";
+local log = require "prosody.util.logger".init("config");
 
 local encodings = deps.softreq"prosody.util.encodings";
 local nameprep = encodings and encodings.stringprep.nameprep or function (host) return host:lower(); end
@@ -32,6 +34,7 @@ local parser = nil;
 
 local config_mt = { __index = function (t, _) return rawget(t, "*"); end};
 local config = setmetatable({ ["*"] = { } }, config_mt);
+local delayed_warnings = {};
 local files = {};
 
 -- When host not found, use global
@@ -42,6 +45,10 @@ function _M.getconfig()
 end
 
 function _M.get(host, key)
+	if host and key and delayed_warnings[host.."/"..key] then
+		local warning = delayed_warnings[host.."/"..key];
+		log("warn", "%s", warning.text);
+	end
 	return config[host][key];
 end
 function _M.rawget(host, key)
@@ -243,6 +250,10 @@ do
 						t_insert(warnings, ("%s:%d: Duplicate option '%s'"):format(config_file, get_line_number(config_file), k));
 					end
 					set_options[option_path] = true;
+					if errors.is_error(v) then
+						delayed_warnings[option_path] = v;
+						return;
+					end
 					set(config_table, env.__currenthost or "*", k, v);
 				end
 		});
@@ -366,9 +377,11 @@ do
 			env.Credential = function() error("Credential() requires the $CREDENTIALS_DIRECTORY environment variable to be set", 2) end
 		else
 			env.Credential = function()
-				t_insert(warnings, ("%s:%d: Credential() requires the $CREDENTIALS_DIRECTORY environment variable to be set")
-						:format(config_file, get_line_number(config_file)));
-				return nil;
+				return errors.new({
+						type = "continue",
+						text = ("%s:%d: Credential() requires the $CREDENTIALS_DIRECTORY environment variable to be set")
+							:format(config_file, get_line_number(config_file));
+					});
 			end
 
 		end
