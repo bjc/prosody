@@ -54,11 +54,12 @@ function handle_normal_presence(origin, stanza)
 		if priority < -128 then priority = -128 end
 		if priority > 127 then priority = 127 end
 	else priority = 0; end
+
+	local node, host = origin.username, origin.host;
+	local roster = origin.roster;
 	if full_sessions[origin.full_jid] then -- if user is still connected
 		origin.send(stanza); -- reflect their presence back to them
 	end
-	local roster = origin.roster;
-	local node, host = origin.username, origin.host;
 	local user = bare_sessions[node.."@"..host];
 	for _, res in pairs(user and user.sessions or NULL) do -- broadcast to all resources
 		if res ~= origin and res.presence then -- to resource
@@ -72,6 +73,13 @@ function handle_normal_presence(origin, stanza)
 			core_post_stanza(origin, stanza, true);
 		end
 	end
+
+	-- It's possible that after the network activity above, the origin
+	-- has been disconnected (particularly if something happened while
+	-- sending the reflection). So we abort further presence processing
+	-- in that case.
+	if not origin.type then return; end
+
 	stanza.attr.to = nil;
 	if stanza.attr.type == nil and not origin.presence then -- initial presence
 		module:fire_event("presence/initial", { origin = origin, stanza = stanza } );
