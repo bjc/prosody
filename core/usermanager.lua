@@ -244,7 +244,7 @@ local function add_user_secondary_role(user, host, role_name)
 	local role, err = hosts[host].authz.add_user_secondary_role(user, role_name);
 	if role then
 		prosody.events.fire_event("user-role-added", {
-			username = user, host = host, role = role;
+			username = user, host = host, role_name = role_name, role = role;
 		});
 	end
 	return role, err;
