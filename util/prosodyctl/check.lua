@@ -632,6 +632,12 @@ local function check(arg)
 			print("    Both mod_pep_simple and mod_pep are enabled but they conflict");
 			print("    with each other. Remove one.");
 		end
+		if all_modules:contains("posix") then
+			print("");
+			print("    mod_posix is loaded in your configuration file, but it has");
+			print("    been deprecated. You can safely remove it.");
+		end
+
 		for host, host_config in pairs(config) do --luacheck: ignore 213/host
 			if type(rawget(host_config, "storage")) == "string" and rawget(host_config, "default_storage") then
 				print("");
