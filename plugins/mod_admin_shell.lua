@@ -1855,7 +1855,11 @@ function def_env.user:addrole(jid, host, new_role)
 	elseif userhost ~= host then
 		return nil, "Can't add roles outside users own host"
 	end
-	return um.add_user_secondary_role(username, host, new_role);
+	local role, err = um.add_user_secondary_role(username, host, new_role);
+	if not role then
+		return nil, err;
+	end
+	return true, "Role added";
 end
 
 describe_command [[user:delrole(jid, host, role) - Remove a secondary role from a user]]
@@ -1869,7 +1873,11 @@ function def_env.user:delrole(jid, host, role_name)
 	elseif userhost ~= host then
 		return nil, "Can't remove roles outside users own host"
 	end
-	return um.remove_user_secondary_role(username, host, role_name);
+	local ok, err = um.remove_user_secondary_role(username, host, role_name);
+	if not ok then
+		return nil, err;
+	end
+	return true, "Role removed";
 end
 
 describe_command [[user:list(hostname, pattern) - List users on the specified host, optionally filtering with a pattern]]
