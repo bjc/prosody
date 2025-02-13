@@ -58,7 +58,7 @@ module:add_item("shell-command", {
 	host_selector = "host";
 	handler = function(self, host, duration) --luacheck: ignore 212/self
 		local um = require "prosody.core.usermanager";
-		local duration_sec = require "prosody.util.human.io".parse_duration(duration);
+		local duration_sec = require "prosody.util.human.io".parse_duration(duration or "");
 		if not duration_sec then
 			return false, ("Invalid duration %q - try something like \"30d\""):format(duration);
 		end
