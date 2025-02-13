@@ -1822,8 +1822,6 @@ function def_env.user:role(jid, host)
 
 	local primary_role_desc = primary_role and primary_role.name or "<none>";
 
-	local secondary_roles = um.get_user_secondary_roles(username, host);
-
 	print(primary_role and primary_role.name or "<none>");
 
 	local n_secondary = 0;
