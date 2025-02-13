@@ -161,7 +161,7 @@ end
 function set_user_role(user, role_name)
 	local role = role_registry[role_name];
 	if not role then
-		return error("Cannot assign default user an unknown role: "..tostring(role_name));
+		return error("Cannot assign user an unknown role: "..tostring(role_name));
 	end
 	local keys_update = {
 		_default = role_name;
@@ -182,7 +182,7 @@ end
 function add_user_secondary_role(user, role_name)
 	local role = role_registry[role_name];
 	if not role then
-		return error("Cannot assign default user an unknown role: "..tostring(role_name));
+		return error("Cannot assign user an unknown role: "..tostring(role_name));
 	end
 	local ok, err = role_map_store:set(user, role_name, true);
 	if not ok then
