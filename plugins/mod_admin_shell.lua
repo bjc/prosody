@@ -349,7 +349,7 @@ module:hook("admin/repl-input", function (event)
 	return true;
 end);
 
-local function describe_command(s)
+local function describe_command(s, hidden)
 	local section, name, args, desc = s:match("^([%w_]+):([%w_]+)%(([^)]*)%) %- (.+)$");
 	if not section then
 		error("Failed to parse command description: "..s);
@@ -360,7 +360,12 @@ local function describe_command(s)
 		args = array.collect(args:gmatch("[%w_]+")):map(function (arg_name)
 			return { name = arg_name };
 		end);
+		hidden = hidden;
 	};
+end
+
+local function hidden_command(s)
+	return describe_command(s, true);
 end
 
 -- Console commands --
@@ -455,10 +460,12 @@ def_env.help = setmetatable({}, {
 				end
 
 				for command, command_help in it.sorted_pairs(section_help.commands or {}) do
-					c = c + 1;
-					local args = array.pluck(command_help.args, "name"):concat(", ");
-					local desc = command_help.desc or command_help.module and ("Provided by mod_"..command_help.module) or "";
-					print(("%s:%s(%s) - %s"):format(section_name, command, args, desc));
+					if not command_help.hidden then
+						c = c + 1;
+						local args = array.pluck(command_help.args, "name"):concat(", ");
+						local desc = command_help.desc or command_help.module and ("Provided by mod_"..command_help.module) or "";
+						print(("%s:%s(%s) - %s"):format(section_name, command, args, desc));
+					end
 				end
 			elseif help_topics[section_name] then
 				local topic = help_topics[section_name];
@@ -1800,9 +1807,8 @@ function def_env.user:password(jid, password)
 	end);
 end
 
-describe_command [[user:roles(jid, host) - Show current roles for an user]]
+describe_command [[user:role(jid, host) - Show primary role for a user]]
 function def_env.user:role(jid, host)
-	local print = self.session.print;
 	local username, userhost = jid_split(jid);
 	if host == nil then host = userhost; end
 	if not prosody.hosts[host] then
@@ -1814,22 +1820,29 @@ function def_env.user:role(jid, host)
 	local primary_role = um.get_user_role(username, host);
 	local secondary_roles = um.get_user_secondary_roles(username, host);
 
+	local primary_role_desc = primary_role and primary_role.name or "<none>";
+
+	local secondary_roles = um.get_user_secondary_roles(username, host);
+
 	print(primary_role and primary_role.name or "<none>");
 
-	local count = primary_role and 1 or 0;
+	local n_secondary = 0;
 	for role_name in pairs(secondary_roles or {}) do
-		count = count + 1;
+		n_secondary = n_secondary + 1;
 		print(role_name.." (secondary)");
 	end
 
-	return true, count == 1 and "1 role" or count.." roles";
+	if n_secondary > 0 then
+		return true, primary_role_desc.." (primary)";
+	end
+	return true, primary_role_desc;
 end
 def_env.user.roles = def_env.user.role;
 
-describe_command [[user:setrole(jid, host, role) - Set primary role of a user (see 'help roles')]]
--- user:setrole("someone@example.com", "example.com", "prosody:admin")
--- user:setrole("someone@example.com", "prosody:admin")
-function def_env.user:setrole(jid, host, new_role)
+describe_command [[user:set_role(jid, host, role) - Set primary role of a user (see 'help roles')]]
+-- user:set_role("someone@example.com", "example.com", "prosody:admin")
+-- user:set_role("someone@example.com", "prosody:admin")
+function def_env.user:set_role(jid, host, new_role)
 	local username, userhost = jid_split(jid);
 	if new_role == nil then host, new_role = userhost, host; end
 	if not prosody.hosts[host] then
@@ -1844,7 +1857,7 @@ function def_env.user:setrole(jid, host, new_role)
 	end
 end
 
-describe_command [[user:addrole(jid, host, role) - Add a secondary role to a user]]
+hidden_command [[user:addrole(jid, host, role) - Add a secondary role to a user]]
 function def_env.user:addrole(jid, host, new_role)
 	local username, userhost = jid_split(jid);
 	if new_role == nil then host, new_role = userhost, host; end
@@ -1855,10 +1868,14 @@ function def_env.user:addrole(jid, host, new_role)
 	elseif userhost ~= host then
 		return nil, "Can't add roles outside users own host"
 	end
-	return um.add_user_secondary_role(username, host, new_role);
+	local role, err = um.add_user_secondary_role(username, host, new_role);
+	if not role then
+		return nil, err;
+	end
+	return true, "Role added";
 end
 
-describe_command [[user:delrole(jid, host, role) - Remove a secondary role from a user]]
+hidden_command [[user:delrole(jid, host, role) - Remove a secondary role from a user]]
 function def_env.user:delrole(jid, host, role_name)
 	local username, userhost = jid_split(jid);
 	if role_name == nil then host, role_name = userhost, host; end
@@ -1869,7 +1886,11 @@ function def_env.user:delrole(jid, host, role_name)
 	elseif userhost ~= host then
 		return nil, "Can't remove roles outside users own host"
 	end
-	return um.remove_user_secondary_role(username, host, role_name);
+	local ok, err = um.remove_user_secondary_role(username, host, role_name);
+	if not ok then
+		return nil, err;
+	end
+	return true, "Role removed";
 end
 
 describe_command [[user:list(hostname, pattern) - List users on the specified host, optionally filtering with a pattern]]
