@@ -258,6 +258,24 @@ module:add_item("shell-command", {
 module:add_item("shell-command", {
 	section = "invite";
 	section_desc = "Create and manage invitations";
+	name = "create_reset";
+	desc = "Create a password reset link for the specified user";
+	args = { { name = "user_jid", type = "string" }, { name = "duration", type = "string" } };
+	host_selector = "user_jid";
+
+	handler = function (self, user_jid, duration) --luacheck: ignore 212/self
+		local username = jid_split(user_jid);
+		local duration_sec = require "prosody.util.human.io".parse_duration(duration or "1d");
+		local invite, err = create_account_reset(username, duration_sec);
+		if not invite then return nil, err; end
+		self.session.print(invite.landing_page or invite.uri);
+		return true, ("Password reset link for %s valid until %s"):format(user_jid, os.date("%Y-%m-%d %T", invite.expires));
+	end;
+});
+
+module:add_item("shell-command", {
+	section = "invite";
+	section_desc = "Create and manage invitations";
 	name = "create_contact";
 	desc = "Create an invitation to become contacts with the specified user";
 	args = { { name = "user_jid", type = "string" }, { name = "allow_registration" } };
