@@ -364,6 +364,10 @@ local function describe_command(s, hidden)
 	};
 end
 
+local function hidden_command(s)
+	return describe_command(s, true);
+end
+
 -- Console commands --
 -- These are simple commands, not valid standalone in Lua
 
@@ -1803,9 +1807,8 @@ function def_env.user:password(jid, password)
 	end);
 end
 
-describe_command [[user:roles(jid, host) - Show current roles for an user]]
+describe_command [[user:role(jid, host) - Show primary role for a user]]
 function def_env.user:role(jid, host)
-	local print = self.session.print;
 	local username, userhost = jid_split(jid);
 	if host == nil then host = userhost; end
 	if not prosody.hosts[host] then
@@ -1817,15 +1820,22 @@ function def_env.user:role(jid, host)
 	local primary_role = um.get_user_role(username, host);
 	local secondary_roles = um.get_user_secondary_roles(username, host);
 
+	local primary_role_desc = primary_role and primary_role.name or "<none>";
+
+	local secondary_roles = um.get_user_secondary_roles(username, host);
+
 	print(primary_role and primary_role.name or "<none>");
 
-	local count = primary_role and 1 or 0;
+	local n_secondary = 0;
 	for role_name in pairs(secondary_roles or {}) do
-		count = count + 1;
+		n_secondary = n_secondary + 1;
 		print(role_name.." (secondary)");
 	end
 
-	return true, count == 1 and "1 role" or count.." roles";
+	if n_secondary > 0 then
+		return true, primary_role_desc.." (primary)";
+	end
+	return true, primary_role_desc;
 end
 def_env.user.roles = def_env.user.role;
 
@@ -1847,7 +1857,7 @@ function def_env.user:setrole(jid, host, new_role)
 	end
 end
 
-describe_command [[user:addrole(jid, host, role) - Add a secondary role to a user]]
+hidden_command [[user:addrole(jid, host, role) - Add a secondary role to a user]]
 function def_env.user:addrole(jid, host, new_role)
 	local username, userhost = jid_split(jid);
 	if new_role == nil then host, new_role = userhost, host; end
@@ -1865,7 +1875,7 @@ function def_env.user:addrole(jid, host, new_role)
 	return true, "Role added";
 end
 
-describe_command [[user:delrole(jid, host, role) - Remove a secondary role from a user]]
+hidden_command [[user:delrole(jid, host, role) - Remove a secondary role from a user]]
 function def_env.user:delrole(jid, host, role_name)
 	local username, userhost = jid_split(jid);
 	if role_name == nil then host, role_name = userhost, host; end
