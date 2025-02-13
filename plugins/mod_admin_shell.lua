@@ -1839,10 +1839,10 @@ function def_env.user:role(jid, host)
 end
 def_env.user.roles = def_env.user.role;
 
-describe_command [[user:setrole(jid, host, role) - Set primary role of a user (see 'help roles')]]
--- user:setrole("someone@example.com", "example.com", "prosody:admin")
--- user:setrole("someone@example.com", "prosody:admin")
-function def_env.user:setrole(jid, host, new_role)
+describe_command [[user:set_role(jid, host, role) - Set primary role of a user (see 'help roles')]]
+-- user:set_role("someone@example.com", "example.com", "prosody:admin")
+-- user:set_role("someone@example.com", "prosody:admin")
+function def_env.user:set_role(jid, host, new_role)
 	local username, userhost = jid_split(jid);
 	if new_role == nil then host, new_role = userhost, host; end
 	if not prosody.hosts[host] then
