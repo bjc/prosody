@@ -258,6 +258,24 @@ module:add_item("shell-command", {
 module:add_item("shell-command", {
 	section = "invite";
 	section_desc = "Create and manage invitations";
+	name = "create_reset";
+	desc = "Create a password reset link for the specified user";
+	args = { { name = "user_jid", type = "string" }, { name = "duration", type = "string" } };
+	host_selector = "user_jid";
+
+	handler = function (self, user_jid, duration) --luacheck: ignore 212/self
+		local username = jid_split(user_jid);
+		local duration_sec = require "prosody.util.human.io".parse_duration(duration or "1d");
+		local invite, err = create_account_reset(username, duration_sec);
+		if not invite then return nil, err; end
+		self.session.print(invite.landing_page or invite.uri);
+		return true, ("Password reset link for %s valid until %s"):format(user_jid, os.date("%Y-%m-%d %T", invite.expires));
+	end;
+});
+
+module:add_item("shell-command", {
+	section = "invite";
+	section_desc = "Create and manage invitations";
 	name = "create_contact";
 	desc = "Create an invitation to become contacts with the specified user";
 	args = { { name = "user_jid", type = "string" }, { name = "allow_registration" } };
@@ -268,6 +286,146 @@ module:add_item("shell-command", {
 		local invite, err = create_contact(username, allow_registration);
 		if not invite then return nil, err; end
 		return true, invite.landing_page or invite.uri;
+	end;
+});
+
+module:add_item("shell-command", {
+	section = "invite";
+	section_desc = "Create and manage invitations";
+	name = "show";
+	desc = "Show details of an account invitation token";
+	args = { { name = "host", type = "string" }, { name = "token", type = "string" } };
+	host_selector = "host";
+
+	handler = function (self, host, token) --luacheck: ignore 212/self 212/host
+		local invite, err = get_account_invite_info(token);
+		if not invite then return nil, err; end
+
+		local print = self.session.print;
+
+		if invite.type == "roster" then
+			print("Invitation to register and become a contact of "..invite.jid);
+		elseif invite.type == "register" then
+			local jid_user, jid_host = jid_split(invite.jid);
+			if invite.additional_data and invite.additional_data.allow_reset then
+				print("Password reset for "..invite.additional_data.allow_reset.."@"..jid_host);
+			elseif jid_user then
+				print("Invitation to register on "..jid_host.." with username '"..jid_user.."'");
+			else
+				print("Invitation to register on "..jid_host);
+			end
+		else
+			print("Unknown invitation type");
+		end
+
+		if invite.inviter then
+			print("Creator:", invite.inviter);
+		end
+
+		print("Created:", os.date("%Y-%m-%d %T", invite.created_at));
+		print("Expires:", os.date("%Y-%m-%d %T", invite.expires));
+
+		print("");
+
+		if invite.uri then
+			print("XMPP URI:", invite.uri);
+		end
+
+		if invite.landing_page then
+			print("Web link:", invite.landing_page);
+		end
+
+		if invite.additional_data then
+			print("");
+			if invite.additional_data.roles then
+				if invite.additional_data.roles[1] then
+					print("Role:", invite.additional_data.roles[1]);
+				end
+				if invite.additional_data.roles[2] then
+					print("Secondary roles:", table.concat(invite.additional_data.roles, ", ", 2, #invite.additional_data.roles));
+				end
+			end
+			if invite.additional_data.groups then
+				print("Groups:", table.concat(invite.additional_data.groups, ", "));
+			end
+			if invite.additional_data.note then
+				print("Comment:", invite.additional_data.note);
+			end
+		end
+
+		return true, "Invitation valid";
+	end;
+});
+
+module:add_item("shell-command", {
+	section = "invite";
+	section_desc = "Create and manage invitations";
+	name = "delete";
+	desc = "Delete/revoke an invitation token";
+	args = { { name = "host", type = "string" }, { name = "token", type = "string" } };
+	host_selector = "host";
+
+	handler = function (self, host, token) --luacheck: ignore 212/self 212/host
+		local invite, err = delete_account_invite(token);
+		if not invite then return nil, err; end
+		return true, "Invitation deleted";
+	end;
+});
+
+module:add_item("shell-command", {
+	section = "invite";
+	section_desc = "Create and manage invitations";
+	name = "list";
+	desc = "List pending invitations which allow account registration";
+	args = { { name = "host", type = "string" } };
+	host_selector = "host";
+
+	handler = function (self, host) -- luacheck: ignore 212/host
+		local print_row = human_io.table({
+			{
+				title = "Token";
+				key = "invite";
+				width = 24;
+				mapper = function (invite)
+					return invite.token;
+				end;
+			};
+			{
+				title = "Expires";
+				key = "invite";
+				width = 20;
+				mapper = function (invite)
+					return os.date("%Y-%m-%dT%T", invite.expires);
+				end;
+			};
+			{
+				title = "Description";
+				key = "invite";
+				width = "100%";
+				mapper = function (invite)
+					if invite.type == "roster" then
+						return "Contact with "..invite.jid;
+					elseif invite.type == "register" then
+						local jid_user, jid_host = jid_split(invite.jid);
+						if invite.additional_data and invite.additional_data.allow_reset then
+							return "Password reset for "..invite.additional_data.allow_reset.."@"..jid_host;
+						end
+						if jid_user then
+							return "Register on "..jid_host.." with username "..jid_user;
+						end
+						return "Register on "..jid_host;
+					end
+				end;
+			};
+		}, self.session.width);
+
+		self.session.print(print_row());
+		local count = 0;
+		for _, invite in pending_account_invites() do
+			count = count + 1;
+			self.session.print(print_row({ invite = invite }));
+		end
+		return true, ("%d pending invites"):format(count);
 	end;
 });
 
