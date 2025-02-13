@@ -349,7 +349,7 @@ module:hook("admin/repl-input", function (event)
 	return true;
 end);
 
-local function describe_command(s)
+local function describe_command(s, hidden)
 	local section, name, args, desc = s:match("^([%w_]+):([%w_]+)%(([^)]*)%) %- (.+)$");
 	if not section then
 		error("Failed to parse command description: "..s);
@@ -360,6 +360,7 @@ local function describe_command(s)
 		args = array.collect(args:gmatch("[%w_]+")):map(function (arg_name)
 			return { name = arg_name };
 		end);
+		hidden = hidden;
 	};
 end
 
@@ -455,10 +456,12 @@ def_env.help = setmetatable({}, {
 				end
 
 				for command, command_help in it.sorted_pairs(section_help.commands or {}) do
-					c = c + 1;
-					local args = array.pluck(command_help.args, "name"):concat(", ");
-					local desc = command_help.desc or command_help.module and ("Provided by mod_"..command_help.module) or "";
-					print(("%s:%s(%s) - %s"):format(section_name, command, args, desc));
+					if not command_help.hidden then
+						c = c + 1;
+						local args = array.pluck(command_help.args, "name"):concat(", ");
+						local desc = command_help.desc or command_help.module and ("Provided by mod_"..command_help.module) or "";
+						print(("%s:%s(%s) - %s"):format(section_name, command, args, desc));
+					end
 				end
 			elseif help_topics[section_name] then
 				local topic = help_topics[section_name];
