@@ -245,7 +245,7 @@
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0090.html"/>
         <xmpp:version>1.2</xmpp:version>
         <xmpp:since>0.1.0</xmpp:since>
-        <xmpp:until>trunk</xmpp:until>
+        <xmpp:until>13.0.0</xmpp:until>
         <xmpp:status>removed</xmpp:status>
         <xmpp:note>mod_time</xmpp:note>
       </xmpp:SupportedXep>
@@ -736,7 +736,7 @@
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0357.html"/>
         <xmpp:version>0.4.1</xmpp:version>
-        <xmpp:since>trunk</xmpp:since>
+        <xmpp:since>13.0.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_cloud_notify</xmpp:note>
       </xmpp:SupportedXep>
@@ -857,7 +857,7 @@
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0440.html"/>
         <xmpp:version>0.4.2</xmpp:version>
-        <xmpp:since>trunk</xmpp:since>
+        <xmpp:since>13.0.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
       </xmpp:SupportedXep>
     </implements>
@@ -881,7 +881,7 @@
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0478.html"/>
         <xmpp:version>0.2.0</xmpp:version>
-        <xmpp:since>trunk</xmpp:since>
+        <xmpp:since>13.0.0</xmpp:since>
       </xmpp:SupportedXep>
     </implements>
   </Project>
