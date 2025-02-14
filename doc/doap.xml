@@ -840,7 +840,7 @@
     <implements>
       <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0421.html"/>
-        <xmpp:version>0.2.0</xmpp:version>
+        <xmpp:version>1.0.0</xmpp:version>
         <xmpp:since>0.12.0</xmpp:since>
         <xmpp:status>complete</xmpp:status>
         <xmpp:note>mod_muc</xmpp:note>
