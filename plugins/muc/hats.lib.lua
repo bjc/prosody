@@ -1,7 +1,7 @@
 local st = require "prosody.util.stanza";
 local muc_util = module:require "muc/util";
 
-local hats_compat = module:get_option_boolean("muc_hats_compat", true); -- COMPAT for pre-XEP namespace, TODO reconsider default for next release
+local hats_compat = module:get_option_boolean("muc_hats_compat", false); -- COMPAT for pre-XEP namespace
 
 local xmlns_hats_legacy = "xmpp:prosody.im/protocol/hats:1";
 local xmlns_hats = "urn:xmpp:hats:0";
