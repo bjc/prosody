@@ -189,10 +189,6 @@ local core_defaults = {
 		single_ecdh_use = tls.features.options.single_ecdh_use;
 		no_renegotiation = tls.features.options.no_renegotiation;
 	};
-	verifyext = {
-		"lsec_continue", -- Continue past certificate verification errors
-		"lsec_ignore_purpose", -- Validate client certificates as if they were server certificates
-	};
 	curve = tls.features.algorithms.ec and not tls.features.capabilities.curves_list and "secp384r1";
 	curveslist = {
 		"X25519",

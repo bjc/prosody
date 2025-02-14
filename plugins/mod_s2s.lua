@@ -1097,6 +1097,10 @@ module:provides("net", {
 		-- FIXME This only applies to Direct TLS, which we don't use yet.
 		-- This gets applied for real in mod_tls
 		verify = { "peer", "client_once", };
+		verifyext = {
+			"lsec_continue", -- Continue past certificate verification errors
+			"lsec_ignore_purpose", -- Validate client certificates as if they were server certificates
+		};
 	};
 	multiplex = {
 		protocol = "xmpp-server";
@@ -1111,6 +1115,10 @@ module:provides("net", {
 	encryption = "ssl";
 	ssl_config = {
 		verify = { "peer", "client_once", };
+		verifyext = {
+			"lsec_continue", -- Continue past certificate verification errors
+			"lsec_ignore_purpose", -- Validate client certificates as if they were server certificates
+		};
 	};
 	multiplex = {
 		protocol = "xmpp-server";
