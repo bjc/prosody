@@ -82,6 +82,7 @@ TRUNK
 - Support for the roster *group* access_model in mod_pep
 - Support for systemd socket activation in server_epoll
 - mod_invites_adhoc gained a command for creating password resets
+- mod_cloud_notify imported from community modules for push notification support
 
 ## Removed
 
