@@ -9,6 +9,8 @@
 -- If there are any errors, it will let you know what and where
 -- they are, otherwise it will keep quiet.
 --
+-- Upgrading from a previous release? Check https://prosody.im/doc/upgrading
+--
 -- The only thing left to do is rename this file to remove the .dist ending, and fill in the
 -- blanks. Good luck, and happy Jabbering!
 
@@ -51,6 +53,8 @@ modules_enabled = {
 		"vcard_legacy"; -- Conversion between legacy vCard and PEP Avatar, vcard
 
 	-- Nice to have
+		"account_activity"; -- Record time when an account was last used
+		"cloud_notify"; -- Push notifications for mobile devices
 		"csi_simple"; -- Simple but effective traffic optimizations for mobile devices
 		"invites"; -- Create and manage invites
 		"invites_adhoc"; -- Allow admins/users to create invitations via their client
@@ -75,7 +79,6 @@ modules_enabled = {
 	-- Other specific functionality
 		--"announce"; -- Send announcement to all online users
 		--"groups"; -- Shared roster support
-		--"legacyauth"; -- Legacy authentication. Only used by some old clients and bots.
 		--"mimicking"; -- Prevent address spoofing
 		--"motd"; -- Send a message to users when they log in
 		--"proxy65"; -- Enables a file transfer proxy service which clients behind NAT can use
@@ -92,7 +95,6 @@ modules_disabled = {
 	-- "offline"; -- Store offline messages
 	-- "c2s"; -- Handle client connections
 	-- "s2s"; -- Handle server-to-server connections
-	-- "posix"; -- POSIX functionality, sends server to background, etc.
 }
 
 
