@@ -78,7 +78,7 @@ module:add_item("shell-command", {
 	args = {};
 	handler = function(self, filter_host)
 		local format_table = require("prosody.util.human.io").table;
-		local it = require("util.iterators");
+		local it = require("prosody.util.iterators");
 		local row = format_table({
 			{ title = "Host"; width = "2p" };
 			{ title = "Task"; width = "3p" };
