@@ -325,7 +325,7 @@ local function check(arg)
 	local ok = true;
 	local function contains_match(hayset, needle) for member in hayset do if member:find(needle) then return true end end end
 	local function disabled_hosts(host, conf) return host ~= "*" and conf.enabled ~= false; end
-	local function enabled_hosts() return it.filter(disabled_hosts, pairs(configmanager.getconfig())); end
+	local function enabled_hosts() return it.filter(disabled_hosts, it.sorted_pairs(configmanager.getconfig())); end
 	local checks = {};
 	function checks.disabled()
 		local disabled_hosts_set = set.new();
