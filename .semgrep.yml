@@ -28,3 +28,12 @@ rules:
   message: Use :get_text() to read text, or pass a value here to add text
   severity: WARNING
   languages: [lua]
+- id: require-unprefixed-module
+  patterns:
+    - pattern: require("$X")
+    - metavariable-regex:
+        metavariable: $X
+        regex: '^(core|net|util)\.'
+  message: Prefix required module path with 'prosody.'
+  severity: ERROR
+  languages: [lua]
