@@ -796,8 +796,8 @@ local function check(arg)
 
 			if #invalid_hosts > 0 or #alabel_hosts > 0 then
 				print("");
-				print("WARNING: Changing the name of a VirtualHost in Prosody's config file");
-				print("         WILL NOT migrate any existing data (user accounts, etc.) to the new name.");
+				print("    WARNING: Changing the name of a VirtualHost in Prosody's config file");
+				print("             WILL NOT migrate any existing data (user accounts, etc.) to the new name.");
 				ok = false;
 			end
 		end
