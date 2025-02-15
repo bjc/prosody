@@ -325,7 +325,12 @@ local function check(arg)
 	local ok = true;
 	local function contains_match(hayset, needle) for member in hayset do if member:find(needle) then return true end end end
 	local function disabled_hosts(host, conf) return host ~= "*" and conf.enabled ~= false; end
-	local function enabled_hosts() return it.filter(disabled_hosts, pairs(configmanager.getconfig())); end
+	local function is_user_host(host, conf) return host ~= "*" and conf.component_module == nil; end
+	local function is_component_host(host, conf) return host ~= "*" and conf.component_module ~= nil; end
+	local function enabled_hosts() return it.filter(disabled_hosts, it.sorted_pairs(configmanager.getconfig())); end
+	local function enabled_user_hosts() return it.filter(is_user_host, it.sorted_pairs(configmanager.getconfig())); end
+	local function enabled_components() return it.filter(is_component_host, it.sorted_pairs(configmanager.getconfig())); end
+
 	local checks = {};
 	function checks.disabled()
 		local disabled_hosts_set = set.new();
@@ -796,9 +801,25 @@ local function check(arg)
 
 			if #invalid_hosts > 0 or #alabel_hosts > 0 then
 				print("");
-				print("WARNING: Changing the name of a VirtualHost in Prosody's config file");
-				print("         WILL NOT migrate any existing data (user accounts, etc.) to the new name.");
+				print("    WARNING: Changing the name of a VirtualHost in Prosody's config file");
+				print("             WILL NOT migrate any existing data (user accounts, etc.) to the new name.");
 				ok = false;
+			end
+		end
+
+		-- Check features
+		do
+			local missing_features = {};
+			for host in enabled_user_hosts() do
+				local all_features = checks.features(host, true);
+				if not all_features then
+					table.insert(missing_features, host);
+				end
+			end
+			if #missing_features > 0 then
+				print("");
+				print("    Some of your hosts may be missing features due to a lack of configuration.");
+				print("    For more details, use the 'prosodyctl check features' command.");
 			end
 		end
 
@@ -907,7 +928,11 @@ local function check(arg)
 
 		local unknown_addresses = set.new();
 
-		for jid in enabled_hosts() do
+		local function is_valid_domain(domain)
+			return idna.to_ascii(domain) ~= nil;
+		end
+
+		for jid in it.filter(is_valid_domain, enabled_hosts()) do
 			local all_targets_ok, some_targets_ok = true, false;
 			local node, host = jid_split(jid);
 
@@ -1450,6 +1475,217 @@ local function check(arg)
 			end
 		end
 	end
+
+	function checks.features(host, quiet)
+		if not quiet then
+			print("Feature report");
+		end
+
+		local common_subdomains = {
+			http_file_share = "share";
+			muc = "groups";
+		};
+
+		local function print_feature_status(feature, host)
+			if quiet then return; end
+			print("", feature.ok and "OK" or "(!)", feature.name);
+			if not feature.ok then
+				if feature.lacking_modules then
+					table.sort(feature.lacking_modules);
+					print("", "", "Suggested modules: ");
+					for _, module in ipairs(feature.lacking_modules) do
+						print("", "", ("  - %s: https://prosody.im/doc/modules/mod_%s"):format(module, module));
+					end
+				end
+				if feature.lacking_components then
+					table.sort(feature.lacking_components);
+					for _, component_module in ipairs(feature.lacking_components) do
+						local subdomain = common_subdomains[component_module];
+						if subdomain then
+							print("", "", "Suggested component:");
+							print("");
+							print("", "", "", ("Component %q %q"):format(subdomain.."."..host, component_module));
+							print("", "", "", ("-- Documentation: https://prosody.im/doc/modules/mod_%s"):format(component_module));
+						else
+							print("", "", ("Suggested component: %s"):format(component_module));
+						end
+					end
+					print("");
+					print("", "", "If you have already configured any these components, they may not be");
+					print("", "", "linked correctly to "..host..". For more info see https://prosody.im/doc/components");
+				end
+			end
+			print("");
+		end
+
+		local all_ok = true;
+
+		local config = configmanager.getconfig();
+
+		local f, s, v;
+		if check_host then
+			f, s, v = it.values({ check_host });
+		else
+			f, s, v = enabled_user_hosts();
+		end
+
+		for host in f, s, v do
+			local modules_enabled = set.new(config["*"].modules_enabled);
+			modules_enabled:include(set.new(config[host].modules_enabled));
+
+			-- { [component_module] = { hostname1, hostname2, ... } }
+			local host_components = setmetatable({}, { __index = function (t, k) return rawset(t, k, {})[k]; end });
+
+			do
+				local hostapi = api(host);
+
+				-- Find implicitly linked components
+				for other_host in enabled_components() do
+					local parent_host = other_host:match("^[^.]+%.(.+)$");
+					if parent_host == host then
+						local component_module = configmanager.get(other_host, "component_module");
+						if component_module then
+							table.insert(host_components[component_module], other_host);
+						end
+					end
+				end
+
+				-- And components linked explicitly
+				for _, disco_item in ipairs(hostapi:get_option_array("disco_items", {})) do
+					local other_host = disco_item[1];
+					local component_module = configmanager.get(other_host, "component_module");
+					if component_module then
+						table.insert(host_components[component_module], other_host);
+					end
+				end
+			end
+
+			local current_feature;
+
+			local function check_module(suggested, alternate, ...)
+				if set.intersection(modules_enabled, set.new({suggested, alternate, ...})):empty() then
+					current_feature.lacking_modules = current_feature.lacking_modules or {};
+					table.insert(current_feature.lacking_modules, suggested);
+				end
+			end
+
+			local function check_component(suggested, alternate, ...)
+				local found;
+				for _, component_module in ipairs({ suggested, alternate, ... }) do
+					found = #host_components[component_module] > 0;
+					if found then break; end
+				end
+				if not found then
+					current_feature.lacking_components = current_feature.lacking_components or {};
+					table.insert(current_feature.lacking_components, suggested);
+				end
+			end
+
+			local features = {
+				{
+					name = "Basic functionality";
+					check = function ()
+						check_module("disco");
+						check_module("roster");
+						check_module("saslauth");
+						check_module("tls");
+						check_module("pep");
+					end;
+				};
+				{
+					name = "Multi-device sync";
+					check = function ()
+						check_module("carbons");
+						check_module("mam");
+						check_module("bookmarks");
+					end;
+				};
+				{
+					name = "Mobile optimizations";
+					check = function ()
+						check_module("smacks");
+						check_module("csi_simple", "csi_battery_saver");
+					end;
+				};
+				{
+					name = "Web connections";
+					check = function ()
+						check_module("bosh");
+						check_module("websocket");
+					end;
+				};
+				{
+					name = "User profiles";
+					check = function ()
+						check_module("vcard_legacy", "vcard");
+					end;
+				};
+				{
+					name = "Blocking";
+					check = function ()
+						check_module("blocklist");
+					end;
+				};
+				{
+					name = "Push notifications";
+					check = function ()
+						check_module("cloud_notify");
+					end;
+				};
+				{
+					name = "Audio/video calls";
+					check = function ()
+						check_module(
+							"turn_external",
+							"external_services",
+							"turncredentials",
+							"extdisco"
+						);
+					end;
+				};
+				{
+					name = "File sharing";
+					check = function ()
+						check_component("http_file_share", "http_upload");
+					end;
+				};
+				{
+					name = "Group chats";
+					check = function ()
+						check_component("muc");
+					end;
+				};
+			};
+
+			if not quiet then
+				print(host);
+			end
+
+			for _, feature in ipairs(features) do
+				current_feature = feature;
+				feature.check();
+				feature.ok = not feature.lacking_modules and not feature.lacking_components;
+				-- For improved presentation, we group the (ok) and (not ok) features
+				if feature.ok then
+					print_feature_status(feature, host);
+				end
+			end
+
+			for _, feature in ipairs(features) do
+				if not feature.ok then
+					all_ok = false;
+					print_feature_status(feature, host);
+				end
+			end
+
+			if not quiet then
+				print("");
+			end
+		end
+
+		return all_ok;
+	end
+
 	if what == nil or what == "all" then
 		local ret;
 		ret = checks.disabled();
