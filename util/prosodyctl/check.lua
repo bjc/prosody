@@ -928,7 +928,11 @@ local function check(arg)
 
 		local unknown_addresses = set.new();
 
-		for jid in enabled_hosts() do
+		local function is_valid_domain(domain)
+			return idna.to_ascii(domain) ~= nil;
+		end
+
+		for jid in it.filter(is_valid_domain, enabled_hosts()) do
 			local all_targets_ok, some_targets_ok = true, false;
 			local node, host = jid_split(jid);
 
