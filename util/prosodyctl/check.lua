@@ -1476,7 +1476,7 @@ local function check(arg)
 		end
 	end
 
-	function checks.features(host, quiet)
+	function checks.features(check_host, quiet)
 		if not quiet then
 			print("Feature report");
 		end

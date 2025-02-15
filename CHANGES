@@ -11,6 +11,7 @@ TRUNK
 - Add 'watch log' command to follow live debug logs at runtime (even if disabled)
 - mod_announce: Add shell commands to send messages to all users, online users, or limited by roles
 - New mod_account_activity plugin records last login/logout time of a user account
+- New 'prosodyctl check features' recommends configuration improvements
 
 ### Networking
 
