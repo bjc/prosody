@@ -224,6 +224,7 @@ function handle_slot_request(event)
 	end
 
 	total_storage_usage = total_storage_usage + filesize;
+	persist_stats:set(nil, "total", total_storage_usage);
 	module:log("debug", "Total storage usage: %s / %s", B(total_storage_usage), B(total_storage_limit));
 
 	local cached_quota = quota_cache:get(uploader);
