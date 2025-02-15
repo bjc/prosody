@@ -5,13 +5,13 @@
 -- This file is MIT/X11 licensed.
 
 local os_time = os.time;
-local st = require"util.stanza";
-local jid = require"util.jid";
-local dataform = require"util.dataforms".new;
-local hashes = require"util.hashes";
-local random = require"util.random";
-local cache = require"util.cache";
-local watchdog = require "util.watchdog";
+local st = require"prosody.util.stanza";
+local jid = require"prosody.util.jid";
+local dataform = require"prosody.util.dataforms".new;
+local hashes = require"prosody.util.hashes";
+local random = require"prosody.util.random";
+local cache = require"prosody.util.cache";
+local watchdog = require "prosody.util.watchdog";
 
 local xmlns_push = "urn:xmpp:push:0";
 

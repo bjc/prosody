@@ -6,8 +6,8 @@ local jid_split = require "prosody.util.jid".split;
 local argparse = require "prosody.util.argparse";
 local human_io = require "prosody.util.human.io";
 
-local url_escape = require "util.http".urlencode;
-local render_url = require "util.interpolation".new("%b{}", url_escape, {
+local url_escape = require "prosody.util.http".urlencode;
+local render_url = require "prosody.util.interpolation".new("%b{}", url_escape, {
 	urlescape = url_escape;
 	noscheme = function (urlstring)
 		return (urlstring:gsub("^[^:]+:", ""));
