@@ -1524,7 +1524,7 @@ local function check(arg)
 						end
 					end
 					print("");
-					print("", "", "If you have already configured any these components, they may not be");
+					print("", "", "If you have already configured any of these components, they may not be");
 					print("", "", "linked correctly to "..host..". For more info see https://prosody.im/doc/components");
 				end
 				if feature.lacking_component_modules then
