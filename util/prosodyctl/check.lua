@@ -1702,7 +1702,7 @@ local function check(arg)
 				{
 					name = "File sharing";
 					check = function ()
-						check_component("http_file_share", "http_upload");
+						check_component("http_file_share", "http_upload", "http_upload_external");
 					end;
 				};
 				{
