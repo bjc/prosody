@@ -367,6 +367,8 @@ function module.add_host(module)
 		};
 	});
 
+	module:depends("http_altconnect", true);
+
 	module:hook("c2s-read-timeout", keepalive, -0.9);
 end
 

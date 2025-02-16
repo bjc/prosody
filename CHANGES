@@ -62,6 +62,7 @@ TRUNK
 - Method for retrieving integer settings from config
 - It is now easy for modules to expose a Prosody shell command, by adding a shell-command item
 - Modules can now implement a module.ready method which will be called after server initialization
+- module:depends() now accepts a second parameter 'soft' to enable soft dependencies
 
 ### Configuration
 
@@ -84,6 +85,7 @@ TRUNK
 - Support for systemd socket activation in server_epoll
 - mod_invites_adhoc gained a command for creating password resets
 - mod_cloud_notify imported from community modules for push notification support
+- mod_http_altconnect imported from community modules, simplifying web clients
 
 ## Removed
 

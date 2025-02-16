@@ -136,10 +136,14 @@ function api:require(lib)
 	return f();
 end
 
-function api:depends(name)
+function api:depends(name, soft)
 	local modulemanager = require"prosody.core.modulemanager";
 	if self:get_option_inherited_set("modules_disabled", {}):contains(name) then
-		error("Dependency on disabled module mod_"..name);
+		if not soft then
+			error("Dependency on disabled module mod_"..name);
+		end
+		self:log("debug", "Not loading disabled soft dependency mod_%s", name);
+		return nil, "disabled";
 	end
 	if not self.dependencies then
 		self.dependencies = {};

@@ -1486,6 +1486,10 @@ local function check(arg)
 			muc = "groups";
 		};
 
+		local recommended_component_modules = {
+			muc = { "muc_mam" };
+		};
+
 		local function print_feature_status(feature, host)
 			if quiet then return; end
 			print("", feature.ok and "OK" or "(!)", feature.name);
@@ -1501,11 +1505,20 @@ local function check(arg)
 					table.sort(feature.lacking_components);
 					for _, component_module in ipairs(feature.lacking_components) do
 						local subdomain = common_subdomains[component_module];
+						local recommended_mods = recommended_component_modules[component_module];
 						if subdomain then
 							print("", "", "Suggested component:");
 							print("");
-							print("", "", "", ("Component %q %q"):format(subdomain.."."..host, component_module));
 							print("", "", "", ("-- Documentation: https://prosody.im/doc/modules/mod_%s"):format(component_module));
+							print("", "", "", ("Component %q %q"):format(subdomain.."."..host, component_module));
+							if recommended_mods then
+								print("", "", "", "    modules_enabled = {");
+								table.sort(recommended_mods);
+								for _, mod in ipairs(recommended_mods) do
+									print("", "", "", ("        %q;"):format(mod));
+								end
+								print("", "", "", "    }");
+							end
 						else
 							print("", "", ("Suggested component: %s"):format(component_module));
 						end
@@ -1513,6 +1526,30 @@ local function check(arg)
 					print("");
 					print("", "", "If you have already configured any these components, they may not be");
 					print("", "", "linked correctly to "..host..". For more info see https://prosody.im/doc/components");
+				end
+				if feature.lacking_component_modules then
+					table.sort(feature.lacking_component_modules, function (a, b)
+						return a.host < b.host;
+					end);
+					for _, problem in ipairs(feature.lacking_component_modules) do
+						local hostapi = api(problem.host);
+						local current_modules_enabled = hostapi:get_option_array("modules_enabled", {});
+						print("", "", ("Component %q is missing the following modules: %s"):format(problem.host, table.concat(problem.missing_mods)));
+						print("");
+						print("","", "Add the missing modules to your modules_enabled under the Component, like this:");
+						print("");
+						print("");
+						print("", "", "", ("-- Documentation: https://prosody.im/doc/modules/mod_%s"):format(problem.component_module));
+						print("", "", "", ("Component %q %q"):format(problem.host, problem.component_module));
+						print("", "", "", ("    modules_enabled = {"));
+						for _, mod in ipairs(current_modules_enabled) do
+							print("", "", "", ("        %q;"):format(mod));
+						end
+						for _, mod in ipairs(problem.missing_mods) do
+							print("", "", "", ("        %q; -- Add this!"):format(mod));
+						end
+						print("", "", "", ("    }"));
+					end
 				end
 			end
 			print("");
@@ -1572,8 +1609,27 @@ local function check(arg)
 			local function check_component(suggested, alternate, ...)
 				local found;
 				for _, component_module in ipairs({ suggested, alternate, ... }) do
-					found = #host_components[component_module] > 0;
-					if found then break; end
+					found = host_components[component_module][1];
+					if found then
+						local enabled_component_modules = api(found):get_option_inherited_set("modules_enabled");
+						local recommended_mods = recommended_component_modules[component_module];
+						local missing_mods = {};
+						for _, mod in ipairs(recommended_mods) do
+							if not enabled_component_modules:contains(mod) then
+								table.insert(missing_mods, mod);
+							end
+						end
+						if #missing_mods > 0 then
+							if not current_feature.lacking_component_modules then
+								current_feature.lacking_component_modules = {};
+							end
+							table.insert(current_feature.lacking_component_modules, {
+								host = found;
+								component_module = component_module;
+								missing_mods = missing_mods;
+							});
+						end
+					end
 				end
 				if not found then
 					current_feature.lacking_components = current_feature.lacking_components or {};
@@ -1664,7 +1720,11 @@ local function check(arg)
 			for _, feature in ipairs(features) do
 				current_feature = feature;
 				feature.check();
-				feature.ok = not feature.lacking_modules and not feature.lacking_components;
+				feature.ok = (
+					not feature.lacking_modules and
+					not feature.lacking_components and
+					not feature.lacking_component_modules
+				);
 				-- For improved presentation, we group the (ok) and (not ok) features
 				if feature.ok then
 					print_feature_status(feature, host);
