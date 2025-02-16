@@ -84,6 +84,7 @@ TRUNK
 - Support for systemd socket activation in server_epoll
 - mod_invites_adhoc gained a command for creating password resets
 - mod_cloud_notify imported from community modules for push notification support
+- mod_http_altconnect imported from community modules, simplifying web clients
 
 ## Removed
 
