@@ -239,6 +239,11 @@ end
 module:hook("invite-created", add_landing_url, -1);
 
 --- shell command
+-- COMPAT: Dynamic groups are work in progress as of 13.0, so we'll use the
+-- presence of mod_invites_groups (a community module) to determine whether to
+-- expose our support for invites to groups.
+local have_group_invites = module:get_option_inherited_set("modules_enabled"):contains("invites_groups");
+
 module:add_item("shell-command", {
 	section = "invite";
 	section_desc = "Create and manage invitations";
@@ -249,7 +254,7 @@ module:add_item("shell-command", {
 	};
 	host_selector = "user_jid";
 	flags = {
-		array_params = { role = true, group = true };
+		array_params = { role = true, group = have_group_invites };
 		value_params = { expires_after = true };
 	};
 
