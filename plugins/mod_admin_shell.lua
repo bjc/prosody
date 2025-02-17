@@ -265,13 +265,24 @@ local function process_cmd_line(arg_line)
 
 	local section_mt = getmetatable(def_env[section_name]);
 	local section_help = section_mt and section_mt.help;
-	local command_help = section_help.commands[command];
+	local command_help = section_help and section_help.commands[command];
+
+	if not command_help then
+		return nil, "Command not found. Is the necessary module loaded?";
+	end
 
 	local fmt = { "%s"; ":%s("; ")" };
 
-	local flags;
 	if command_help.flags then
-		flags = parse_args(args, command_help.flags);
+		local flags, flags_err, flags_err_extra = parse_args(args, command_help.flags);
+		if not flags then
+			if flags_err == "missing-value" then
+				return nil, "Expected value after "..flags_err_extra;
+			elseif flags_err == "param-not-found" then
+				return nil, "Unknown parameter: "..flags_err_extra;
+			end
+			return nil, flags_err;
+		end
 
 		table.remove(flags, 2);
 		table.remove(flags, 1);
@@ -380,6 +391,10 @@ local function handle_line(event)
 		-- Input is a serialized array of strings, typically from
 		-- a command-line invocation of 'prosodyctl shell something'
 		source, flags = process_cmd_line(line);
+		if not source then
+			send_result(false, flags);
+			return;
+		end
 	end
 
 	local chunkname = "=console";
@@ -2713,8 +2728,13 @@ local function new_item_handlers(command_host)
 			section_mt.help = section_help;
 		end
 
-		if command.flags and command.flags.stop_on_positional == nil then
-			command.flags.stop_on_positional = false;
+		if command.flags then
+			if command.flags.stop_on_positional == nil then
+				command.flags.stop_on_positional = false;
+			end
+			if command.flags.strict == nil then
+				command.flags.strict = true;
+			end
 		end
 
 		section_help.commands[command.name] = {
