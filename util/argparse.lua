@@ -2,6 +2,8 @@ local function parse(arg, config)
 	local short_params = config and config.short_params or {};
 	local value_params = config and config.value_params or {};
 	local array_params = config and config.array_params or {};
+	local kv_params = config and config.kv_params or {};
+	local strict = config and config.strict;
 	local stop_on_positional = not config or config.stop_on_positional ~= false;
 
 	local parsed_opts = {};
@@ -33,9 +35,11 @@ local function parse(arg, config)
 				return nil, "param-not-found", raw_param;
 			end
 
+			local uparam = param:match("^[^=]*"):gsub("%-", "_");
+
 			local param_k, param_v;
-			if value_params[param] or array_params[param] then
-				param_k, param_v = param, table.remove(arg, 1);
+			if value_params[uparam] or array_params[uparam] then
+				param_k, param_v = uparam, table.remove(arg, 1);
 				if not param_v then
 					return nil, "missing-value", raw_param;
 				end
@@ -49,8 +53,11 @@ local function parse(arg, config)
 					end
 				end
 				param_k = param_k:gsub("%-", "_");
+				if strict and not kv_params[param_k] then
+					return nil, "param-not-found", raw_param;
+				end
 			end
-			if array_params[param] then
+			if array_params[uparam] then
 				if parsed_opts[param_k] then
 					table.insert(parsed_opts[param_k], param_v);
 				else
