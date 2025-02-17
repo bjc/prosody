@@ -515,7 +515,7 @@ function subcommands.generate(arg)
 	end
 
 	local roles = opts.role or {};
-	local groups = opts.groups or {};
+	local groups = opts.group or {};
 
 	if opts.admin then
 		-- Insert it first since we don't get order out of argparse
