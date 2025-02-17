@@ -1613,21 +1613,23 @@ local function check(arg)
 					if found then
 						local enabled_component_modules = api(found):get_option_inherited_set("modules_enabled");
 						local recommended_mods = recommended_component_modules[component_module];
-						local missing_mods = {};
-						for _, mod in ipairs(recommended_mods) do
-							if not enabled_component_modules:contains(mod) then
-								table.insert(missing_mods, mod);
+						if recommended_mods then
+							local missing_mods = {};
+							for _, mod in ipairs(recommended_mods) do
+								if not enabled_component_modules:contains(mod) then
+									table.insert(missing_mods, mod);
+								end
 							end
-						end
-						if #missing_mods > 0 then
-							if not current_feature.lacking_component_modules then
-								current_feature.lacking_component_modules = {};
+							if #missing_mods > 0 then
+								if not current_feature.lacking_component_modules then
+									current_feature.lacking_component_modules = {};
+								end
+								table.insert(current_feature.lacking_component_modules, {
+									host = found;
+									component_module = component_module;
+									missing_mods = missing_mods;
+								});
 							end
-							table.insert(current_feature.lacking_component_modules, {
-								host = found;
-								component_module = component_module;
-								missing_mods = missing_mods;
-							});
 						end
 					end
 				end
