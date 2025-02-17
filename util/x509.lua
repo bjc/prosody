@@ -11,7 +11,8 @@
 -- IDN libraries complicate that.
 
 
--- [TLS-CERTS] - https://www.rfc-editor.org/rfc/rfc6125.html
+-- [TLS-CERTS] - https://www.rfc-editor.org/rfc/rfc6125.html -- Obsolete
+-- [TLS-IDENT] - https://www.rfc-editor.org/rfc/rfc9525.html
 -- [XMPP-CORE] - https://www.rfc-editor.org/rfc/rfc6120.html
 -- [SRV-ID]    - https://www.rfc-editor.org/rfc/rfc4985.html
 -- [IDNA]      - https://www.rfc-editor.org/rfc/rfc5890.html
@@ -35,10 +36,8 @@ local oid_subjectaltname = "2.5.29.17"; -- [PKIX] 4.2.1.6
 local oid_xmppaddr = "1.3.6.1.5.5.7.8.5"; -- [XMPP-CORE]
 local oid_dnssrv   = "1.3.6.1.5.5.7.8.7"; -- [SRV-ID]
 
--- Compare a hostname (possibly international) with asserted names
--- extracted from a certificate.
--- This function follows the rules laid out in
--- sections 6.4.1 and 6.4.2 of [TLS-CERTS]
+-- Compare a hostname (possibly international) with asserted names extracted from a certificate.
+-- This function follows the rules laid out in section 6.3 of [TLS-IDENT]
 --
 -- A wildcard ("*") all by itself is allowed only as the left-most label
 local function compare_dnsname(host, asserted_names)
@@ -159,61 +158,25 @@ local function verify_identity(host, service, cert)
 	if ext[oid_subjectaltname] then
 		local sans = ext[oid_subjectaltname];
 
-		-- Per [TLS-CERTS] 6.3, 6.4.4, "a client MUST NOT seek a match for a
-		-- reference identifier if the presented identifiers include a DNS-ID
-		-- SRV-ID, URI-ID, or any application-specific identifier types"
-		local had_supported_altnames = false
-
 		if sans[oid_xmppaddr] then
-			had_supported_altnames = true
 			if service == "_xmpp-client" or service == "_xmpp-server" then
 				if compare_xmppaddr(host, sans[oid_xmppaddr]) then return true end
 			end
 		end
 
 		if sans[oid_dnssrv] then
-			had_supported_altnames = true
 			-- Only check srvNames if the caller specified a service
 			if service and compare_srvname(host, service, sans[oid_dnssrv]) then return true end
 		end
 
 		if sans["dNSName"] then
-			had_supported_altnames = true
 			if compare_dnsname(host, sans["dNSName"]) then return true end
 		end
-
-		-- We don't need URIs, but [TLS-CERTS] is clear.
-		if sans["uniformResourceIdentifier"] then
-			had_supported_altnames = true
-		end
-
-		if had_supported_altnames then return false end
 	end
 
-	-- Extract a common name from the certificate, and check it as if it were
-	-- a dNSName subjectAltName (wildcards may apply for, and receive,
-	-- cat treats)
-	--
-	-- Per [TLS-CERTS] 1.8, a CN-ID is the Common Name from a cert subject
-	-- which has one and only one Common Name
-	local subject = cert:subject()
-	local cn = nil
-	for i=1,#subject do
-		local dn = subject[i]
-		if dn["oid"] == oid_commonname then
-			if cn then
-				log("info", "Certificate has multiple common names")
-				return false
-			end
-
-			cn = dn["value"];
-		end
-	end
-
-	if cn then
-		-- Per [TLS-CERTS] 6.4.4, follow the comparison rules for dNSName SANs.
-		return compare_dnsname(host, { cn })
-	end
+	-- Per [TLS-IDENT] ignore the Common Name
+	-- The server identity can only be expressed in the subjectAltNames extension;
+	-- it is no longer valid to use the commonName RDN, known as CN-ID in [TLS-CERTS].
 
 	-- If all else fails, well, why should we be any different?
 	return false
