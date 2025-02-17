@@ -2,6 +2,9 @@ local function parse(arg, config)
 	local short_params = config and config.short_params or {};
 	local value_params = config and config.value_params or {};
 	local array_params = config and config.array_params or {};
+	local kv_params = config and config.kv_params or {};
+	local strict = config and config.strict;
+	local stop_on_positional = not config or config.stop_on_positional ~= false;
 
 	local parsed_opts = {};
 
@@ -15,51 +18,65 @@ local function parse(arg, config)
 		end
 
 		local prefix = raw_param:match("^%-%-?");
-		if not prefix then
+		if not prefix and stop_on_positional then
 			break;
 		elseif prefix == "--" and raw_param == "--" then
 			table.remove(arg, 1);
 			break;
 		end
-		local param = table.remove(arg, 1):sub(#prefix+1);
-		if #param == 1 and short_params then
-			param = short_params[param];
-		end
 
-		if not param then
-			return nil, "param-not-found", raw_param;
-		end
-
-		local param_k, param_v;
-		if value_params[param] or array_params[param] then
-			param_k, param_v = param, table.remove(arg, 1);
-			if not param_v then
-				return nil, "missing-value", raw_param;
+		if prefix then
+			local param = table.remove(arg, 1):sub(#prefix+1);
+			if #param == 1 and short_params then
+				param = short_params[param];
 			end
-		else
-			param_k, param_v = param:match("^([^=]+)=(.+)$");
-			if not param_k then
-				if param:match("^no%-") then
-					param_k, param_v = param:sub(4), false;
-				else
-					param_k, param_v = param, true;
+
+			if not param then
+				return nil, "param-not-found", raw_param;
+			end
+
+			local uparam = param:match("^[^=]*"):gsub("%-", "_");
+
+			local param_k, param_v;
+			if value_params[uparam] or array_params[uparam] then
+				param_k, param_v = uparam, table.remove(arg, 1);
+				if not param_v then
+					return nil, "missing-value", raw_param;
+				end
+			else
+				param_k, param_v = param:match("^([^=]+)=(.+)$");
+				if not param_k then
+					if param:match("^no%-") then
+						param_k, param_v = param:sub(4), false;
+					else
+						param_k, param_v = param, true;
+					end
+				end
+				param_k = param_k:gsub("%-", "_");
+				if strict and not kv_params[param_k] then
+					return nil, "param-not-found", raw_param;
 				end
 			end
-			param_k = param_k:gsub("%-", "_");
-		end
-		if array_params[param] then
-			if parsed_opts[param_k] then
-				table.insert(parsed_opts[param_k], param_v);
+			if array_params[uparam] then
+				if parsed_opts[param_k] then
+					table.insert(parsed_opts[param_k], param_v);
+				else
+					parsed_opts[param_k] = { param_v };
+				end
 			else
-				parsed_opts[param_k] = { param_v };
+				parsed_opts[param_k] = param_v;
 			end
-		else
-			parsed_opts[param_k] = param_v;
+		elseif not stop_on_positional then
+			table.insert(parsed_opts, table.remove(arg, 1));
 		end
 	end
-	for i = 1, #arg do
-		parsed_opts[i] = arg[i];
+
+	if stop_on_positional then
+		for i = 1, #arg do
+			parsed_opts[i] = arg[i];
+		end
 	end
+
 	return parsed_opts;
 end
 

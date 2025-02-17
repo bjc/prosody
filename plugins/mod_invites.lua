@@ -244,13 +244,38 @@ module:add_item("shell-command", {
 	section_desc = "Create and manage invitations";
 	name = "create_account";
 	desc = "Create an invitation to make an account on this server with the specified JID (supply only a hostname to allow any username)";
-	args = { { name = "user_jid", type = "string" } };
+	args = {
+		{ name = "user_jid", type = "string" };
+	};
 	host_selector = "user_jid";
+	flags = {
+		array_params = { role = true, group = true };
+		value_params = { expires_after = true };
+	};
 
-	handler = function (self, user_jid) --luacheck: ignore 212/self
+	handler = function (self, user_jid, opts) --luacheck: ignore 212/self
 		local username = jid_split(user_jid);
-		local invite, err = create_account(username);
-		if not invite then return nil, err; end
+		local roles = opts.role or {};
+		local groups = opts.group or {};
+
+		if opts.admin then
+			-- Insert it first since we don't get order out of argparse
+			table.insert(roles, 1, "prosody:admin");
+		end
+
+		local ttl;
+		if opts.expires_after then
+			ttl = human_io.parse_duration(opts.expires_after);
+			if not ttl then
+				return false, "Unable to parse duration: "..opts.expires_after;
+			end
+		end
+
+		local invite = assert(create_account(username, {
+			roles = roles;
+			groups = groups;
+		}, ttl));
+
 		return true, invite.landing_page or invite.uri;
 	end;
 });
@@ -260,12 +285,21 @@ module:add_item("shell-command", {
 	section_desc = "Create and manage invitations";
 	name = "create_reset";
 	desc = "Create a password reset link for the specified user";
-	args = { { name = "user_jid", type = "string" }, { name = "duration", type = "string" } };
+	args = { { name = "user_jid", type = "string" } };
 	host_selector = "user_jid";
+	flags = {
+		value_params = { expires_after = true };
+	};
 
-	handler = function (self, user_jid, duration) --luacheck: ignore 212/self
+	handler = function (self, user_jid, opts) --luacheck: ignore 212/self
 		local username = jid_split(user_jid);
-		local duration_sec = require "prosody.util.human.io".parse_duration(duration or "1d");
+		if not username then
+			return nil, "Supply the JID of the account you want to generate a password reset for";
+		end
+		local duration_sec = require "prosody.util.human.io".parse_duration(opts and opts.expires_after or "1d");
+		if not duration_sec then
+			return nil, "Unable to parse duration: "..opts.expires_after;
+		end
 		local invite, err = create_account_reset(username, duration_sec);
 		if not invite then return nil, err; end
 		self.session.print(invite.landing_page or invite.uri);
@@ -278,12 +312,26 @@ module:add_item("shell-command", {
 	section_desc = "Create and manage invitations";
 	name = "create_contact";
 	desc = "Create an invitation to become contacts with the specified user";
-	args = { { name = "user_jid", type = "string" }, { name = "allow_registration" } };
+	args = { { name = "user_jid", type = "string" } };
 	host_selector = "user_jid";
+	flags = {
+		value_params = { expires_after = true };
+		kv_params = { allow_registration = true };
+	};
 
-	handler = function (self, user_jid, allow_registration) --luacheck: ignore 212/self
+	handler = function (self, user_jid, opts) --luacheck: ignore 212/self
 		local username = jid_split(user_jid);
-		local invite, err = create_contact(username, allow_registration);
+		if not username then
+			return nil, "Supply the JID of the account you want the recipient to become a contact of";
+		end
+		local ttl;
+		if opts.expires_after then
+			ttl = require "prosody.util.human.io".parse_duration(opts.expires_after);
+			if not ttl then
+				return nil, "Unable to parse duration: "..opts.expires_after;
+			end
+		end
+		local invite, err = create_contact(username, opts.allow_registration, nil, ttl);
 		if not invite then return nil, err; end
 		return true, invite.landing_page or invite.uri;
 	end;
@@ -442,102 +490,7 @@ function module.command(arg)
 	return subcommands[cmd](arg);
 end
 
-function subcommands.generate(arg)
-	local function help(short)
-		print("usage: prosodyctl mod_" .. module.name .. " generate DOMAIN --reset USERNAME")
-		print("usage: prosodyctl mod_" .. module.name .. " generate DOMAIN [--admin] [--role ROLE] [--group GROUPID]...")
-		if short then return 2 end
-		print()
-		print("This command has two modes: password reset and new account.")
-		print("If --reset is given, the command operates in password reset mode and in new account mode otherwise.")
-		print()
-		print("required arguments in password reset mode:")
-		print()
-		print("    --reset USERNAME  Generate a password reset link for the given USERNAME.")
-		print()
-		print("optional arguments in new account mode:")
-		print()
-		print("    --admin           Make the new user privileged")
-		print("                      Equivalent to --role prosody:admin")
-		print("    --role ROLE       Grant the given ROLE to the new user")
-		print("    --group GROUPID   Add the user to the group with the given ID")
-		print("                      Can be specified multiple times")
-		print("    --expires-after T Time until the invite expires (e.g. '1 week')")
-		print()
-		print("--group can be specified multiple times; the user will be added to all groups.")
-		print()
-		print("--reset and the other options cannot be mixed.")
-		return 2
-	end
-
-	local earlyopts = argparse.parse(arg, { short_params = { h = "help"; ["?"] = "help" } });
-	if earlyopts.help or not earlyopts[1] then
-		return help();
-	end
-
-	local sm = require "prosody.core.storagemanager";
-	local mm = require "prosody.core.modulemanager";
-
-	local host = table.remove(arg, 1); -- pop host
-	if not host then return help(true) end
-	sm.initialize_host(host);
-	module.host = host; --luacheck: ignore 122/module
-	token_storage = module:open_store("invite_token", "map");
-
-	local opts = argparse.parse(arg, {
-		short_params = { h = "help"; ["?"] = "help"; g = "group" };
-		value_params = { group = true; reset = true; role = true };
-		array_params = { group = true; role = true };
-	});
-
-	if opts.help then
-		return help();
-	end
-
-	-- Load mod_invites
-	local invites = module:depends("invites");
-	-- Optional community module that if used, needs to be loaded here
-	local invites_page_module = module:get_option_string("invites_page_module", "invites_page");
-	if mm.get_modules_for_host(host):contains(invites_page_module) then
-		module:depends(invites_page_module);
-	end
-
-	local allow_reset;
-
-	if opts.reset then
-		local nodeprep = require "prosody.util.encodings".stringprep.nodeprep;
-		local username = nodeprep(opts.reset)
-		if not username then
-			print("Please supply a valid username to generate a reset link for");
-			return 2;
-		end
-		allow_reset = username;
-	end
-
-	local roles = opts.role or {};
-	local groups = opts.group or {};
-
-	if opts.admin then
-		-- Insert it first since we don't get order out of argparse
-		table.insert(roles, 1, "prosody:admin");
-	end
-
-	local invite;
-	if allow_reset then
-		if roles[1] then
-			print("--role/--admin and --reset are mutually exclusive")
-			return 2;
-		end
-		if #groups > 0 then
-			print("--group and --reset are mutually exclusive")
-		end
-		invite = assert(invites.create_account_reset(allow_reset));
-	else
-		invite = assert(invites.create_account(nil, {
-			roles = roles,
-			groups = groups
-		}, opts.expires_after and human_io.parse_duration(opts.expires_after)));
-	end
-
-	print(invite.landing_page or invite.uri);
+function subcommands.generate()
+	print("This command is deprecated. Please see 'prosodyctl shell help invite' for available commands.");
+	return 1;
 end
