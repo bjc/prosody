@@ -255,16 +255,16 @@ module:add_item("shell-command", {
 
 	handler = function (self, user_jid, opts) --luacheck: ignore 212/self
 		local username = jid_split(user_jid);
-		local roles = opts.role or {};
-		local groups = opts.group or {};
+		local roles = opts and opts.role or {};
+		local groups = opts and opts.group or {};
 
-		if opts.admin then
+		if opts and opts.admin then
 			-- Insert it first since we don't get order out of argparse
 			table.insert(roles, 1, "prosody:admin");
 		end
 
 		local ttl;
-		if opts.expires_after then
+		if opts and opts.expires_after then
 			ttl = human_io.parse_duration(opts.expires_after);
 			if not ttl then
 				return false, "Unable to parse duration: "..opts.expires_after;
@@ -325,13 +325,13 @@ module:add_item("shell-command", {
 			return nil, "Supply the JID of the account you want the recipient to become a contact of";
 		end
 		local ttl;
-		if opts.expires_after then
+		if opts and opts.expires_after then
 			ttl = require "prosody.util.human.io".parse_duration(opts.expires_after);
 			if not ttl then
 				return nil, "Unable to parse duration: "..opts.expires_after;
 			end
 		end
-		local invite, err = create_contact(username, opts.allow_registration, nil, ttl);
+		local invite, err = create_contact(username, opts and opts.allow_registration, nil, ttl);
 		if not invite then return nil, err; end
 		return true, invite.landing_page or invite.uri;
 	end;
