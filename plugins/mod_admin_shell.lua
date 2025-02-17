@@ -565,9 +565,43 @@ def_env.help = setmetatable({}, {
 				for command, command_help in it.sorted_pairs(section_help.commands or {}) do
 					if not command_help.hidden then
 						c = c + 1;
-						local args = array.pluck(command_help.args, "name"):concat(", ");
 						local desc = command_help.desc or command_help.module and ("Provided by mod_"..command_help.module) or "";
-						print(("%s:%s(%s) - %s"):format(section_name, command, args, desc));
+						if self.session.repl then
+							local args = array.pluck(command_help.args, "name"):concat(", ");
+							print(("%s:%s(%s) - %s"):format(section_name, command, args, desc));
+						else
+							local args = array.pluck(command_help.args, "name"):concat("> <");
+							if args ~= "" then
+								args = "<"..args..">";
+							end
+							print(("%s %s %s"):format(section_name, command, args));
+							print(("    %s"):format(desc));
+							if command_help.flags then
+								local flags = command_help.flags;
+								print("");
+								print(("    Flags:"));
+
+								if flags.kv_params then
+									for name in it.sorted_pairs(flags.kv_params) do
+										print("      --"..name:gsub("_", "-"));
+									end
+								end
+
+								if flags.value_params then
+									for name in it.sorted_pairs(flags.value_params) do
+										print("      --"..name:gsub("_", "-").." <"..name..">");
+									end
+								end
+
+								if flags.array_params then
+									for name in it.sorted_pairs(flags.array_params) do
+										print("      --"..name:gsub("_", "-").." <"..name..">, ...");
+									end
+								end
+
+							end
+							print("");
+						end
 					end
 				end
 			elseif help_topics[section_name] then
