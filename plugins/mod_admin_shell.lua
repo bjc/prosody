@@ -19,6 +19,7 @@ local it = require "prosody.util.iterators";
 local server = require "prosody.net.server";
 local schema = require "prosody.util.jsonschema";
 local st = require "prosody.util.stanza";
+local parse_args = require "prosody.util.argparse".parse;
 
 local _G = _G;
 
@@ -255,6 +256,65 @@ function console:new_session(admin_session)
 	return session;
 end
 
+local function process_cmd_line(arg_line)
+	local chunk = load("return "..arg_line, "=shell", "t", {});
+	local ok, args = pcall(chunk);
+	if not ok then return nil, args; end
+
+	local section_name, command = args[1], args[2];
+
+	local section_mt = getmetatable(def_env[section_name]);
+	local section_help = section_mt and section_mt.help;
+	local command_help = section_help.commands[command];
+
+	local fmt = { "%s"; ":%s("; ")" };
+
+	local flags;
+	if command_help.flags then
+		flags = parse_args(args, command_help.flags);
+
+		table.remove(flags, 2);
+		table.remove(flags, 1);
+
+		local n_fixed_args = #command_help.args;
+
+		local arg_str = {};
+		for i = 1, n_fixed_args do
+			if flags[i] ~= nil then
+				table.insert(arg_str, ("%q"):format(flags[i]));
+			else
+				table.insert(arg_str, "nil");
+			end
+		end
+
+		table.insert(arg_str, "flags");
+
+		for i = n_fixed_args + 1, #flags do
+			if flags[i] ~= nil then
+				table.insert(arg_str, ("%q"):format(flags[i]));
+			else
+				table.insert(arg_str, "nil");
+			end
+		end
+
+		table.insert(fmt, 3, "%s");
+
+		return "local flags = ...; return "..string.format(table.concat(fmt), section_name, command, table.concat(arg_str, ", ")), flags;
+	end
+
+	for i = 3, #args do
+		if args[i]:sub(1, 1) == ":" then
+			table.insert(fmt, i, ")%s(");
+		elseif i > 3 and fmt[i - 1]:match("%%q$") then
+			table.insert(fmt, i, ", %q");
+		else
+			table.insert(fmt, i, "%q");
+		end
+	end
+
+	return "return "..string.format(table.concat(fmt), table.unpack(args));
+end
+
 local function handle_line(event)
 	local session = event.origin.shell_session;
 	if not session then
@@ -295,23 +355,6 @@ local function handle_line(event)
 		session.globalenv = redirect_output(_G, session);
 	end
 
-	local chunkname = "=console";
-	local env = (useglobalenv and session.globalenv) or session.env or nil
-	-- luacheck: ignore 311/err
-	local chunk, err = envload("return "..line, chunkname, env);
-	if not chunk then
-		chunk, err = envload(line, chunkname, env);
-		if not chunk then
-			err = err:gsub("^%[string .-%]:%d+: ", "");
-			err = err:gsub("^:%d+: ", "");
-			err = err:gsub("'<eof>'", "the end of the line");
-			result.attr.type = "error";
-			result:text("Sorry, I couldn't understand that... "..err);
-			event.origin.send(result);
-			return;
-		end
-	end
-
 	local function send_result(taskok, message)
 		if not message then
 			if type(taskok) ~= "string" and useglobalenv then
@@ -328,7 +371,36 @@ local function handle_line(event)
 		event.origin.send(result);
 	end
 
-	local taskok, message = chunk();
+	local taskok, message;
+	local env = (useglobalenv and session.globalenv) or session.env or nil;
+	local flags;
+
+	local source;
+	if line:match("^{") then
+		-- Input is a serialized array of strings, typically from
+		-- a command-line invocation of 'prosodyctl shell something'
+		source, flags = process_cmd_line(line);
+	end
+
+	local chunkname = "=console";
+	-- luacheck: ignore 311/err
+	local chunk, err = envload(source or ("return "..line), chunkname, env);
+	if not chunk then
+		if not source then
+			chunk, err = envload(line, chunkname, env);
+		end
+		if not chunk then
+			err = err:gsub("^%[string .-%]:%d+: ", "");
+			err = err:gsub("^:%d+: ", "");
+			err = err:gsub("'<eof>'", "the end of the line");
+			result.attr.type = "error";
+			result:text("Sorry, I couldn't understand that... "..err);
+			event.origin.send(result);
+			return;
+		end
+	end
+
+	taskok, message = chunk(flags);
 
 	if promise.is_promise(taskok) then
 		taskok:next(function (resolved_message)
@@ -2641,10 +2713,15 @@ local function new_item_handlers(command_host)
 			section_mt.help = section_help;
 		end
 
+		if command.flags and command.flags.stop_on_positional == nil then
+			command.flags.stop_on_positional = false;
+		end
+
 		section_help.commands[command.name] = {
 			desc = command.desc;
 			full = command.help;
 			args = array(command.args);
+			flags = command.flags;
 			module = command._provided_by;
 		};
 

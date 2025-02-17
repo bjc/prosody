@@ -87,17 +87,7 @@ local function start(arg) --luacheck: ignore 212/arg
 
 	if arg[1] then
 		if arg[2] then
-			local fmt = { "%s"; ":%s("; ")" };
-			for i = 3, #arg do
-				if arg[i]:sub(1, 1) == ":" then
-					table.insert(fmt, i, ")%s(");
-				elseif i > 3 and fmt[i - 1]:match("%%q$") then
-					table.insert(fmt, i, ", %q");
-				else
-					table.insert(fmt, i, "%q");
-				end
-			end
-			arg[1] = string.format(table.concat(fmt), table.unpack(arg));
+			arg[1] = ("{"..string.rep("%q", #arg, ", ").."}"):format(table.unpack(arg, 1, #arg));
 		end
 
 		client.events.add_handler("connected", function()
