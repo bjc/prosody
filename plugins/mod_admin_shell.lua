@@ -256,7 +256,7 @@ function console:new_session(admin_session)
 	return session;
 end
 
-local function process_cmd_line(arg_line)
+local function process_cmd_line(session, arg_line)
 	local chunk = load("return "..arg_line, "=shell", "t", {});
 	local ok, args = pcall(chunk);
 	if not ok then return nil, args; end
@@ -268,6 +268,13 @@ local function process_cmd_line(arg_line)
 	local command_help = section_help and section_help.commands[command];
 
 	if not command_help then
+		if commands[section_name] then
+			commands[section_name](session, table.concat(args, " "));
+			return;
+		end
+		if section_help then
+			return nil, "Command not found or necessary module not loaded. Try 'help "..section_name.." for a list of available commands.";
+		end
 		return nil, "Command not found. Is the necessary module loaded?";
 	end
 
@@ -390,9 +397,14 @@ local function handle_line(event)
 	if line:match("^{") then
 		-- Input is a serialized array of strings, typically from
 		-- a command-line invocation of 'prosodyctl shell something'
-		source, flags = process_cmd_line(line);
+		source, flags = process_cmd_line(session, line);
 		if not source then
-			send_result(false, flags);
+			if flags then -- err
+				send_result(false, flags);
+			else -- no err, but nothing more to do
+				-- This happens if it was a "simple" command
+				event.origin.send(result);
+			end
 			return;
 		end
 	end
