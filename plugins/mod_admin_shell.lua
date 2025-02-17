@@ -415,6 +415,10 @@ local function handle_line(event)
 		end
 	end
 
+	if not source then
+		session.repl = true;
+	end
+
 	taskok, message = chunk(flags);
 
 	if promise.is_promise(taskok) then
