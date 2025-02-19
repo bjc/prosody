@@ -36,6 +36,7 @@ local record lib
 	signal : function (integer | Signal, function, boolean) : boolean
 	raise : function (integer | Signal)
 	kill : function (integer, integer | Signal)
+	signalfd : function (integer) : FILE
 	-- enum : integer
 end
 return lib
