@@ -2,7 +2,9 @@ local record lib
 	record key
 		private_pem : function (key) : string
 		public_pem : function (key) : string
+		public_raw : function (key) : string
 		get_type : function (key) : string
+		derive : function (key, key) : string
 	end
 
 	type base_evp_sign = function (key, message : string) : string
@@ -44,9 +46,11 @@ local record lib
 	aes_256_ctr_decrypt : Levp_decrypt
 
 	generate_ed25519_keypair : function () : key
+	generate_p256_keypair : function () : key
 
 	import_private_pem : function (string) : key
 	import_public_pem : function (string) : key
+	import_public_ec_raw : function (string, string) : key
 
 	parse_ecdsa_signature : function (string, integer) : string, string
 	build_ecdsa_signature : function (r : string, s : string) : string
