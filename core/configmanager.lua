@@ -48,7 +48,7 @@ end
 function _M.get(host, key)
 	local v = config[host][key];
 	if v and errors.is_error(v) then
-		log("warn", "%s", v.text);
+		log("warn", "%s:%d: %s", v.context.filename, v.context.fileline, v.text);
 		return nil;
 	end
 	return v;
@@ -376,10 +376,9 @@ do
 		else
 			env.Credential = function()
 				return errors.new({
-						type = "continue",
-						text = ("%s:%d: Credential() requires the $CREDENTIALS_DIRECTORY environment variable to be set")
-							:format(config_file, get_line_number(config_file));
-					});
+						type = "continue";
+						text = "Credential() requires the $CREDENTIALS_DIRECTORY environment variable to be set";
+					}, { filename = config_file; fileline = get_line_number(config_file) });
 			end
 		end
 
