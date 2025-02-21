@@ -34,7 +34,6 @@ local parser = nil;
 
 local config_mt = { __index = function (t, _) return rawget(t, "*"); end};
 local config = setmetatable({ ["*"] = { } }, config_mt);
-local delayed_warnings = {};
 local files = {};
 local credentials_directory = nil;
 local credential_fallback_fatal = true;
@@ -47,11 +46,12 @@ function _M.getconfig()
 end
 
 function _M.get(host, key)
-	if host and key and delayed_warnings[host.."/"..key] then
-		local warning = delayed_warnings[host.."/"..key];
-		log("warn", "%s", warning.text);
+	local v = config[host][key];
+	if v and errors.is_error(v) then
+		log("warn", "%s", v.text);
+		return nil;
 	end
-	return config[host][key];
+	return v;
 end
 function _M.rawget(host, key)
 	local hostconfig = rawget(config, host);
@@ -252,10 +252,6 @@ do
 						t_insert(warnings, ("%s:%d: Duplicate option '%s'"):format(config_file, get_line_number(config_file), k));
 					end
 					set_options[option_path] = true;
-					if errors.is_error(v) then
-						delayed_warnings[option_path] = v;
-						return;
-					end
 					set(config_table, env.__currenthost or "*", k, v);
 				end
 		});
@@ -385,7 +381,6 @@ do
 							:format(config_file, get_line_number(config_file));
 					});
 			end
-
 		end
 
 		local chunk, err = envload(data, "@"..config_file, env);
