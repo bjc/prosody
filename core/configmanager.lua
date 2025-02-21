@@ -36,6 +36,8 @@ local config_mt = { __index = function (t, _) return rawget(t, "*"); end};
 local config = setmetatable({ ["*"] = { } }, config_mt);
 local delayed_warnings = {};
 local files = {};
+local credentials_directory = nil;
+local credential_fallback_fatal = true;
 
 -- When host not found, use global
 local host_mt = { __index = function(_, k) return config["*"][k] end }
@@ -371,9 +373,9 @@ do
 		env.FileLine = filereader(config_path, "*l");
 		env.FileLines = linereader(config_path);
 
-		if _G.prosody.paths.credentials then
-			env.Credential = filereader(_G.prosody.paths.credentials, "*a");
-		elseif _G.prosody.process_type == "prosody" then
+		if credentials_directory then
+			env.Credential = filereader(credentials_directory, "*a");
+		elseif credential_fallback_fatal then
 			env.Credential = function() error("Credential() requires the $CREDENTIALS_DIRECTORY environment variable to be set", 2) end
 		else
 			env.Credential = function()
@@ -403,6 +405,14 @@ do
 		return true, warnings;
 	end
 
+end
+
+function _M.set_credentials_directory(directory)
+	credentials_directory = directory;
+end
+
+function _M.set_credential_fallback_mode(mode)
+	credential_fallback_fatal = mode == "error";
 end
 
 return _M;

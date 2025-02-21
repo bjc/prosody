@@ -89,6 +89,14 @@ function startup.read_config()
 		end
 	end
 	prosody.config_file = filename
+	local credentials_directory = os.getenv("CREDENTIALS_DIRECTORY");
+	if credentials_directory then
+		config.set_credentials_directory(credentials_directory);
+	elseif prosody.process_type == "prosody" then
+		config.set_credential_fallback_mode("error");
+	else
+		config.set_credential_fallback_mode("warn");
+	end
 	local ok, level, err = config.load(filename);
 	if not ok then
 		print("\n");
@@ -271,7 +279,6 @@ function startup.init_global_state()
 		config = CFG_CONFIGDIR or ".";
 		plugins = CFG_PLUGINDIR or "plugins";
 		data = "data";
-		credentials = os.getenv("CREDENTIALS_DIRECTORY");
 	};
 
 	prosody.arg = _G.arg;
