@@ -34,8 +34,9 @@ local parser = nil;
 
 local config_mt = { __index = function (t, _) return rawget(t, "*"); end};
 local config = setmetatable({ ["*"] = { } }, config_mt);
-local delayed_warnings = {};
 local files = {};
+local credentials_directory = nil;
+local credential_fallback_fatal = true;
 
 -- When host not found, use global
 local host_mt = { __index = function(_, k) return config["*"][k] end }
@@ -45,11 +46,12 @@ function _M.getconfig()
 end
 
 function _M.get(host, key)
-	if host and key and delayed_warnings[host.."/"..key] then
-		local warning = delayed_warnings[host.."/"..key];
-		log("warn", "%s", warning.text);
+	local v = config[host][key];
+	if v and errors.is_error(v) then
+		log("warn", "%s:%d: %s", v.context.filename, v.context.fileline, v.text);
+		return nil;
 	end
-	return config[host][key];
+	return v;
 end
 function _M.rawget(host, key)
 	local hostconfig = rawget(config, host);
@@ -250,10 +252,6 @@ do
 						t_insert(warnings, ("%s:%d: Duplicate option '%s'"):format(config_file, get_line_number(config_file), k));
 					end
 					set_options[option_path] = true;
-					if errors.is_error(v) then
-						delayed_warnings[option_path] = v;
-						return;
-					end
 					set(config_table, env.__currenthost or "*", k, v);
 				end
 		});
@@ -371,19 +369,17 @@ do
 		env.FileLine = filereader(config_path, "*l");
 		env.FileLines = linereader(config_path);
 
-		if _G.prosody.paths.credentials then
-			env.Credential = filereader(_G.prosody.paths.credentials, "*a");
-		elseif _G.prosody.process_type == "prosody" then
+		if credentials_directory then
+			env.Credential = filereader(credentials_directory, "*a");
+		elseif credential_fallback_fatal then
 			env.Credential = function() error("Credential() requires the $CREDENTIALS_DIRECTORY environment variable to be set", 2) end
 		else
 			env.Credential = function()
 				return errors.new({
-						type = "continue",
-						text = ("%s:%d: Credential() requires the $CREDENTIALS_DIRECTORY environment variable to be set")
-							:format(config_file, get_line_number(config_file));
-					});
+						type = "continue";
+						text = "Credential() requires the $CREDENTIALS_DIRECTORY environment variable to be set";
+					}, { filename = config_file; fileline = get_line_number(config_file) });
 			end
-
 		end
 
 		local chunk, err = envload(data, "@"..config_file, env);
@@ -403,6 +399,14 @@ do
 		return true, warnings;
 	end
 
+end
+
+function _M.set_credentials_directory(directory)
+	credentials_directory = directory;
+end
+
+function _M.set_credential_fallback_mode(mode)
+	credential_fallback_fatal = mode == "error";
 end
 
 return _M;
