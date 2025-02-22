@@ -1631,6 +1631,7 @@ local function check(arg)
 								});
 							end
 						end
+						break;
 					end
 				end
 				if not found then
