@@ -367,7 +367,9 @@ function module.add_host(module)
 		};
 	});
 
-	module:depends("http_altconnect", true);
+	if module.host ~= "*" then
+		module:depends("http_altconnect", true);
+	end
 
 	module:hook("c2s-read-timeout", keepalive, -0.9);
 end

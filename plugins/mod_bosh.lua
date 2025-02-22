@@ -558,7 +558,9 @@ function module.add_host(module)
 		};
 	});
 
-	module:depends("http_altconnect", true);
+	if module.host ~= "*" then
+		module:depends("http_altconnect", true);
+	end
 end
 
 if require"prosody.core.modulemanager".get_modules_for_host("*"):contains(module.name) then

@@ -239,7 +239,9 @@ function stream_callbacks.handlestanza(session, stanza)
 		end
 		if not stanza.attr.to then
 			session.log("warn", "Rejecting stanza with no 'to' address");
-			session.send(st.error_reply(stanza, "modify", "bad-request", "Components MUST specify a 'to' address on stanzas"));
+			if stanza.attr.type ~= "error" and stanza.attr.type ~= "result" then
+				session.send(st.error_reply(stanza, "modify", "bad-request", "Components MUST specify a 'to' address on stanzas"));
+			end
 			return;
 		end
 	end
