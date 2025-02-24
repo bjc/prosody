@@ -91,7 +91,7 @@ local function index_certs(dir, files_by_name, depth_limit)
 				index_certs(full, files_by_name, depth_limit-1);
 			end
 		elseif file:find("%.crt$") or file:find("fullchain") then -- This should catch most fullchain files
-			local f = io_open(full);
+			local f, err = io_open(full);
 			if f then
 				-- TODO look for chained certificates
 				local firstline = f:read();
@@ -113,13 +113,17 @@ local function index_certs(dir, files_by_name, depth_limit)
 								files_by_name[name] = { [full] = services; };
 							end
 						end
+					else
+						log("debug", "Skipping expired certificate: %s", full);
 					end
 				end
 				f:close();
+			elseif err then
+				log("debug", "Failed to open file for indexing: %s", full);
 			end
 		end
 	end
-	log("debug", "Certificate index: %q", files_by_name);
+	log("debug", "Certificate index in %s: %q", dir, files_by_name);
 	-- | hostname | filename | service |
 	return files_by_name;
 end
