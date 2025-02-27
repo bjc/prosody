@@ -807,7 +807,7 @@ function interface:inittls(tls_ctx, now)
 			self:debug("Enabling DANE with %d TLSA records", #self.extra.tlsa);
 			self:noise("DANE hostname is %q", self.servername or self.extra.dane_hostname);
 			for _, tlsa in ipairs(self.extra.tlsa) do
-				self:noise("TLSA: %q", tlsa);
+				self:noise("TLSA: %s", tlsa);
 				conn:settlsa(tlsa.use, tlsa.select, tlsa.match, tlsa.data);
 			end
 		end
