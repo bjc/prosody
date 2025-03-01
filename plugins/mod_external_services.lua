@@ -35,6 +35,7 @@ end
 
 local algorithms = {
 	turn = behave_turn_rest_credentials;
+	turns = behave_turn_rest_credentials;
 }
 
 -- filter config into well-defined service records
