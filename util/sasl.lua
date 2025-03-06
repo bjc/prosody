@@ -67,7 +67,7 @@ local function registerMechanism(name, backends, f, cb_backends)
 end
 
 -- create a new SASL object which can be used to authenticate clients
-local function new(realm, profile)
+local function new(realm, profile, userdata)
 	local mechanisms = profile.mechanisms;
 	if not mechanisms then
 		mechanisms = {};
@@ -80,7 +80,12 @@ local function new(realm, profile)
 		end
 		profile.mechanisms = mechanisms;
 	end
-	return setmetatable({ profile = profile, realm = realm, mechs = mechanisms }, method);
+	return setmetatable({
+		profile = profile,
+		realm = realm,
+		mechs = mechanisms,
+		userdata = userdata
+	}, method);
 end
 
 -- add a channel binding handler
@@ -94,7 +99,7 @@ end
 
 -- get a fresh clone with the same realm and profile
 function method:clean_clone()
-	return new(self.realm, self.profile)
+	return new(self.realm, self.profile, self.userdata)
 end
 
 -- get a list of possible SASL mechanisms to use
