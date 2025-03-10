@@ -109,6 +109,7 @@ end
 local function set_password(username, password, host, resource)
 	local ok, err = hosts[host].users.set_password(username, password);
 	if ok then
+		log("info", "Account password changed: %s@%s", username, host);
 		prosody.events.fire_event("user-password-changed", { username = username, host = host, resource = resource });
 	end
 	return ok, err;
@@ -126,12 +127,17 @@ local function user_exists(username, host)
 end
 
 local function create_user(username, password, host)
-	return hosts[host].users.create_user(username, password);
+	local ok, err = hosts[host].users.create_user(username, password);
+	if ok then
+		log("info", "User account created: %s@%s", username, host);
+	end
+	return ok, err;
 end
 
 local function delete_user(username, host)
 	local ok, err = hosts[host].users.delete_user(username);
 	if not ok then return nil, err; end
+	log("info", "User account deleted: %s@%s", username, host);
 	prosody.events.fire_event("user-deleted", { username = username, host = host });
 	return storagemanager.purge(username, host);
 end
@@ -158,6 +164,7 @@ local function enable_user(username, host)
 	if not method then return nil, "method not supported"; end
 	local ret, err = method(username);
 	if ret then
+		log("info", "User account enabled: %s@%s", username, host);
 		prosody.events.fire_event("user-enabled", { username = username, host = host });
 	end
 	return ret, err;
@@ -168,6 +175,7 @@ local function disable_user(username, host, meta)
 	if not method then return nil, "method not supported"; end
 	local ret, err = method(username, meta);
 	if ret then
+		log("info", "User account disabled: %s@%s", username, host);
 		prosody.events.fire_event("user-disabled", { username = username, host = host, meta = meta });
 	end
 	return ret, err;
@@ -198,6 +206,7 @@ local function set_user_role(user, host, role_name)
 
 	local role, err = hosts[host].authz.set_user_role(user, role_name);
 	if role then
+		log("info", "Account %s@%s role changed to %s", user, host, role_name);
 		prosody.events.fire_event("user-role-changed", {
 			username = user, host = host, role = role;
 		});
