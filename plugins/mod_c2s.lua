@@ -252,12 +252,16 @@ local function session_close(session, reason)
 				if not session.destroyed then
 					session.log("warn", "Failed to receive a stream close response, closing connection anyway...");
 					sm_destroy_session(session, reason_text);
-					if conn then conn:close(); end
+					if conn then
+						conn:close();
+					end
 				end
 			end);
 		else
 			sm_destroy_session(session, reason_text);
-			if conn then conn:close(); end
+			if conn then
+				conn:close();
+			end
 		end
 	else
 		local reason_text = (reason and (reason.name or reason.text or reason.condition)) or reason;

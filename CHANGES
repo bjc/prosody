@@ -6,6 +6,15 @@ TRUNK
 
 ## New
 
+## Modules
+
+- mod_account_activity
+- mod_cloud_notify
+- mod_flags
+- mod_http_altconnect
+- mod_s2s_auth_dane_in
+- mod_server_info
+
 ### Administration
 
 - Add 'watch log' command to follow live debug logs at runtime (even if disabled)

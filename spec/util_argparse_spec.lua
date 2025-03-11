@@ -54,6 +54,12 @@ describe("parse", function()
 		assert.same({ foo = "bar"; baz = "moo" }, opts);
 	end);
 
+	it("supports value arguments in strict mode", function()
+		local opts, err = parse({ "--foo"; "bar"; "--baz=moo" }, { strict = true, value_params = { foo = true; baz = true } });
+		assert.falsy(err);
+		assert.same({ foo = "bar"; baz = "moo" }, opts);
+	end);
+
 	it("demands values for value params", function()
 		local opts, err, where = parse({ "--foo" }, { value_params = { foo = true } });
 		assert.falsy(opts);

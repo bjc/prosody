@@ -87,6 +87,7 @@ local function session_close(session, reason)
 					end
 				end
 			end
+			stream_error = tostring(stream_error);
 			log("debug", "Disconnecting client, <stream:error> is: %s", stream_error);
 			session.send(stream_error);
 		end
@@ -94,28 +95,33 @@ local function session_close(session, reason)
 		session.send(st.stanza("close", { xmlns = xmlns_framing }));
 		function session.send() return false; end
 
-		-- luacheck: ignore 422/reason
-		-- FIXME reason should be handled in common place
-		local reason = (reason and (reason.name or reason.text or reason.condition)) or reason;
-		session.log("debug", "c2s stream for %s closed: %s", session.full_jid or ("<"..session.ip..">"), reason or "session closed");
+		local reason_text = (reason and (reason.name or reason.text or reason.condition)) or reason;
+		session.log("debug", "c2s stream for %s closed: %s", session.full_jid or session.ip or "<unknown>", reason_text or "session closed");
 
 		-- Authenticated incoming stream may still be sending us stanzas, so wait for </stream:stream> from remote
 		local conn = session.conn;
-		if reason == nil and not session.notopen and session.type == "c2s" then
+		if reason_text == nil and not session.notopen and session.type == "c2s" then
 			-- Grace time to process data from authenticated cleanly-closed stream
 			add_task(stream_close_timeout, function ()
 				if not session.destroyed then
 					session.log("warn", "Failed to receive a stream close response, closing connection anyway...");
-					sm_destroy_session(session, reason);
-					conn:write(build_close(1000, "Stream closed"));
-					conn:close();
+					sm_destroy_session(session, reason_text);
+					if conn then
+						conn:write(build_close(1000, "Stream closed"));
+						conn:close();
+					end
 				end
 			end);
 		else
-			sm_destroy_session(session, reason);
-			conn:write(build_close(1000, "Stream closed"));
-			conn:close();
+			sm_destroy_session(session, reason_text);
+			if conn then
+				conn:write(build_close(1000, "Stream closed"));
+				conn:close();
+			end
 		end
+	else
+		local reason_text = (reason and (reason.name or reason.text or reason.condition)) or reason;
+		sm_destroy_session(session, reason_text);
 	end
 end
 

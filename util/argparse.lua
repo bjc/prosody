@@ -39,9 +39,13 @@ local function parse(arg, config)
 
 			local param_k, param_v;
 			if value_params[uparam] or array_params[uparam] then
-				param_k, param_v = uparam, table.remove(arg, 1);
+				param_k = uparam;
+				param_v = param:match("^=(.*)$", #uparam+1);
 				if not param_v then
-					return nil, "missing-value", raw_param;
+					param_v = table.remove(arg, 1);
+					if not param_v then
+						return nil, "missing-value", raw_param;
+					end
 				end
 			else
 				param_k, param_v = param:match("^([^=]+)=(.+)$");
