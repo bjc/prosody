@@ -342,6 +342,8 @@ local function handle_line(event)
 	local line = event.stanza:get_text();
 	local useglobalenv;
 
+	session.repl = event.stanza.attr.repl ~= "0";
+
 	local result = st.stanza("repl-result");
 
 	if line:match("^>") then
@@ -420,10 +422,6 @@ local function handle_line(event)
 			event.origin.send(result);
 			return;
 		end
-	end
-
-	if not source then
-		session.repl = true;
 	end
 
 	taskok, message = chunk(flags);
