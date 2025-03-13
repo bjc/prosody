@@ -92,13 +92,8 @@ end
 -- Seed with default sections and their description text
 help_topic "console" "Help regarding the console itself" [[
 Hey! Welcome to Prosody's admin console.
-First thing, if you're ever wondering how to get out, simply type 'quit'.
-Secondly, note that we don't support the full telnet protocol yet (it's coming)
-so you may have trouble using the arrow keys, etc. depending on your system.
-
-For now we offer a couple of handy shortcuts:
-!! - Repeat the last command
-!old!new! - repeat the last command, but with 'old' replaced by 'new'
+If you're ever wondering how to get out, simply type 'quit' (ctrl+d should also
+work).
 
 For those well-versed in Prosody's internals, or taking instruction from those who are,
 you can prefix a command with > to escape the console sandbox, and access everything in
