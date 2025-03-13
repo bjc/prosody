@@ -11,6 +11,7 @@ local jid_split = require "prosody.util.jid".prepped_split;
 local modulemanager = require "prosody.core.modulemanager";
 local async = require "prosody.util.async";
 local httputil = require "prosody.util.http";
+local human_units = require "prosody.util.human.units";
 
 local function api(host)
 	return setmetatable({ name = "prosodyctl.check"; host = host; log = prosody.log }, { __index = moduleapi })
@@ -1556,6 +1557,11 @@ local function check(arg)
 					end
 				end
 			end
+			if feature.meta then
+				for k, v in it.sorted_pairs(feature.meta) do
+					print("", "", (" - %s: %s"):format(k, v));
+				end
+			end
 			print("");
 		end
 
@@ -1642,6 +1648,7 @@ local function check(arg)
 					current_feature.lacking_components = current_feature.lacking_components or {};
 					table.insert(current_feature.lacking_components, suggested);
 				end
+				return found;
 			end
 
 			local features = {
@@ -1716,9 +1723,20 @@ local function check(arg)
 				};
 				{
 					name = "File sharing";
-					check = function ()
-						check_component("http_file_share", "http_upload", "http_upload_external");
 					desc = "Sharing of files to groups and offline users";
+					check = function (self)
+						local service = check_component("http_file_share", "http_upload", "http_upload_external");
+						if service then
+							local size_limit;
+							if api(service):get_option("component_module") == "http_file_share" then
+								size_limit = api(service):get_option_number("http_file_share_size_limit", 10*1024*1024);
+							end
+							if size_limit then
+								self.meta = {
+									["Size limit"] = human_units.format(size_limit, "b", "b");
+								};
+							end
+						end
 					end;
 				};
 				{
@@ -1736,7 +1754,7 @@ local function check(arg)
 
 			for _, feature in ipairs(features) do
 				current_feature = feature;
-				feature.check();
+				feature:check();
 				feature.ok = (
 					not feature.lacking_modules and
 					not feature.lacking_components and
