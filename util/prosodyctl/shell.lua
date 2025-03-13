@@ -29,8 +29,8 @@ local function read_line(prompt_string)
 	end
 end
 
-local function send_line(client, line)
-	client.send(st.stanza("repl-input", { width = tostring(term_width()) }):text(line));
+local function send_line(client, line, interactive)
+	client.send(st.stanza("repl-input", { width = tostring(term_width()), repl = interactive == false and "0" or "1" }):text(line));
 end
 
 local function repl(client)
@@ -91,7 +91,7 @@ local function start(arg) --luacheck: ignore 212/arg
 		end
 
 		client.events.add_handler("connected", function()
-			send_line(client, arg[1]);
+			send_line(client, arg[1], false);
 			return true;
 		end, 1);
 
