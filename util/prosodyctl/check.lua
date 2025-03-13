@@ -1493,6 +1493,10 @@ local function check(arg)
 		local function print_feature_status(feature, host)
 			if quiet then return; end
 			print("", feature.ok and "OK" or "(!)", feature.name);
+			if feature.desc then
+				print("", "", feature.desc);
+				print("");
+			end
 			if not feature.ok then
 				if feature.lacking_modules then
 					table.sort(feature.lacking_modules);
@@ -1643,24 +1647,27 @@ local function check(arg)
 			local features = {
 				{
 					name = "Basic functionality";
+					desc = "Support for secure connections, authentication and messaging";
 					check = function ()
 						check_module("disco");
 						check_module("roster");
 						check_module("saslauth");
 						check_module("tls");
-						check_module("pep");
 					end;
 				};
 				{
-					name = "Multi-device sync";
+					name = "Multi-device messaging and data synchronization";
+					desc = "Multiple clients connected to the same account stay in sync";
 					check = function ()
 						check_module("carbons");
 						check_module("mam");
 						check_module("bookmarks");
+						check_module("pep");
 					end;
 				};
 				{
 					name = "Mobile optimizations";
+					desc = "Help mobile clients reduce battery and data usage";
 					check = function ()
 						check_module("smacks");
 						check_module("csi_simple", "csi_battery_saver");
@@ -1668,6 +1675,7 @@ local function check(arg)
 				};
 				{
 					name = "Web connections";
+					desc = "Allow connections from browser-based web clients";
 					check = function ()
 						check_module("bosh");
 						check_module("websocket");
@@ -1675,24 +1683,28 @@ local function check(arg)
 				};
 				{
 					name = "User profiles";
+					desc = "Enable users to publish profile information";
 					check = function ()
 						check_module("vcard_legacy", "vcard");
 					end;
 				};
 				{
 					name = "Blocking";
+					desc = "Block communication with chosen entities";
 					check = function ()
 						check_module("blocklist");
 					end;
 				};
 				{
 					name = "Push notifications";
+					desc = "Receive notifications on platforms that don't support persistent connections";
 					check = function ()
 						check_module("cloud_notify");
 					end;
 				};
 				{
-					name = "Audio/video calls";
+					name = "Audio/video calls and P2P";
+					desc = "Assist clients in setting up connections between each other";
 					check = function ()
 						check_module(
 							"turn_external",
@@ -1706,10 +1718,12 @@ local function check(arg)
 					name = "File sharing";
 					check = function ()
 						check_component("http_file_share", "http_upload", "http_upload_external");
+					desc = "Sharing of files to groups and offline users";
 					end;
 				};
 				{
 					name = "Group chats";
+					desc = "Create group chats and channels";
 					check = function ()
 						check_component("muc");
 					end;
