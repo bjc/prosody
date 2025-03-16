@@ -62,12 +62,33 @@ local upload_errors = errors.init(module.name, namespace, {
 	access = { type = "auth"; condition = "forbidden" };
 	filename = { type = "modify"; condition = "bad-request"; text = "Invalid filename" };
 	filetype = { type = "modify"; condition = "not-acceptable"; text = "File type not allowed" };
-	filesize = { type = "modify"; condition = "not-acceptable"; text = "File too large";
-		extra = {tag = st.stanza("file-too-large", {xmlns = namespace}):tag("max-file-size"):text(tostring(file_size_limit)) };
+	filesize = {
+		code = 413;
+		type = "modify";
+		condition = "not-acceptable";
+		text = "File too large";
+		extra = {
+			tag = st.stanza("file-too-large", { xmlns = namespace }):tag("max-file-size"):text(tostring(file_size_limit));
+		};
 	};
 	filesizefmt = { type = "modify"; condition = "bad-request"; text = "File size must be positive integer"; };
 	quota = { type = "wait"; condition = "resource-constraint"; text = "Daily quota reached"; };
 	outofdisk = { type = "wait"; condition = "resource-constraint"; text = "Server global storage quota reached" };
+	authzmalformed = {
+		code = 401;
+		type = "auth";
+		condition = "not-authorized";
+		text = "Missing or malformed Authorization header";
+	};
+	unauthz = { code = 403; type = "auth"; condition = "forbidden"; text = "Unauthorized or invalid token" };
+	invalidslot = {
+		code = 400;
+		type = "modify";
+		condition = "bad-request";
+		text = "Invalid upload slot, must not contain '/'";
+	};
+	alreadycompleted = { code = 409; type = "cancel"; condition = "conflict"; text = "Upload already completed" };
+	writefail = { code = 500; type = "wait"; condition = "internal-server-error" }
 });
 
 local upload_cache = cache.new(1024);
@@ -260,19 +281,19 @@ function handle_upload(event, path) -- PUT /upload/:slot
 		if not authz then
 			module:log("debug", "Missing or malformed Authorization header");
 			event.response.headers.www_authenticate = "Bearer";
-			return 401;
+			return upload_errors.new("authzmalformed", { request = request });
 		end
 		local authed, authed_upload_info = verify_jwt(authz);
 		if not authed then
 			module:log("debug", "Unauthorized or invalid token: %s, %q", authz, authed_upload_info);
-			return 401;
+			return upload_errors.new("unauthz", { request = request; wrapped_error = authed_upload_info });
 		end
 		if not path or authed_upload_info.slot ~= path:match("^[^/]+") then
 			module:log("debug", "Invalid upload slot: %q, path: %q", authed_upload_info.slot, path);
-			return 400;
+			return upload_errors.new("unauthz", { request = request });
 		end
 		if request.headers.content_length and tonumber(request.headers.content_length) ~= authed_upload_info.filesize then
-			return 413;
+			return upload_errors.new("filesize", { request = request });
 			-- Note: We don't know the size if the upload is streamed in chunked encoding,
 			-- so we also check the final file size on completion.
 		end
@@ -288,7 +309,7 @@ function handle_upload(event, path) -- PUT /upload/:slot
 		local f = io.open(filename, "r");
 		if f then
 			f:close();
-			return 409;
+			return upload_errors.new("alreadycompleted", { request = request });
 		end
 	end
 
@@ -297,7 +318,7 @@ function handle_upload(event, path) -- PUT /upload/:slot
 		local fh, err = io.open(filename.."~", "w");
 		if not fh then
 			module:log("error", "Could not open file for writing: %s", err);
-			return 500;
+			return upload_errors.new("writefail", { request = request; wrapped_error = err });
 		end
 		function event.response:on_destroy() -- luacheck: ignore 212/self
 			-- Clean up incomplete upload
@@ -330,7 +351,7 @@ function handle_upload(event, path) -- PUT /upload/:slot
 		local uploaded, err = errors.coerce(request.body_sink:close());
 		if final_size ~= upload_info.filesize then
 			-- Could be too short as well, but we say the same thing
-			uploaded, err = false, 413;
+			uploaded, err = false, upload_errors.new("filesize", { request = request });
 		end
 		if uploaded then
 			module:log("debug", "Upload of %q completed, %s", filename, B(final_size));
