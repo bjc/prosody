@@ -651,6 +651,15 @@ local function check(arg)
 				break;
 			end
 		end
+
+		for host, host_config in pairs(config) do --luacheck: ignore 213/host
+			if type(rawget(host_config, "storage")) == "string" and rawget(host_config, "default_storage") then
+				print("");
+				print("    The 'default_storage' option is not needed if 'storage' is set to a string.");
+				break;
+			end
+		end
+
 		local require_encryption = set.intersection(all_options, set.new({
 			"require_encryption", "c2s_require_encryption", "s2s_require_encryption"
 		})):empty();
@@ -725,12 +734,17 @@ local function check(arg)
 			local orphan_components = {};
 			local referenced_components = set.new();
 			local enabled_hosts_set = set.new();
+			local invalid_disco_items = {};
 			for host in it.filter("*", pairs(configmanager.getconfig())) do
 				local hostapi = api(host);
 				if hostapi:get_option_boolean("enabled", true) then
 					enabled_hosts_set:add(host);
 					for _, disco_item in ipairs(hostapi:get_option_array("disco_items", {})) do
-						referenced_components:add(disco_item[1]);
+						if type(disco_item[1]) == "string" then
+							referenced_components:add(disco_item[1]);
+						else
+							invalid_disco_items[host] = true;
+						end
 					end
 				end
 			end
@@ -744,6 +758,18 @@ local function check(arg)
 					end
 				end
 			end
+
+			if next(invalid_disco_items) ~= nil then
+				print("");
+				print("    Some hosts in your configuration file have an invalid 'disco_items' option.");
+				print("    This may cause further errors, such as unreferenced components.");
+				print("");
+				for host in it.sorted_pairs(invalid_disco_items) do
+					print("      - "..host);
+				end
+				print("");
+			end
+
 			if #orphan_components > 0 then
 				table.sort(orphan_components);
 				print("");
@@ -1600,9 +1626,11 @@ local function check(arg)
 				-- And components linked explicitly
 				for _, disco_item in ipairs(hostapi:get_option_array("disco_items", {})) do
 					local other_host = disco_item[1];
-					local component_module = configmanager.get(other_host, "component_module");
-					if component_module then
-						table.insert(host_components[component_module], other_host);
+					if type(other_host) == "string" then
+						local component_module = configmanager.get(other_host, "component_module");
+						if component_module then
+							table.insert(host_components[component_module], other_host);
+						end
 					end
 				end
 			end
