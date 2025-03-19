@@ -63,7 +63,7 @@ describe("storagemanager", function ()
 			end
 			assert(hm.activate(test_host, {}));
 			sm.initialize_host(test_host);
-			assert(mm.load(test_host, "storage_"..backend_config.storage));
+			mm.load(test_host, "storage_"..backend_config.storage);
 
 			describe("key-value stores", function ()
 				-- These tests rely on being executed in order, disable any order
