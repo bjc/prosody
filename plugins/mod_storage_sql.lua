@@ -866,38 +866,38 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 		success,err = engine:transaction(function()
 			return engine:execute(check_encoding_query, params.database,
 				engine.charset, engine.charset.."_bin");
-			end);
-			if not success then
-				module:log("error", "Failed to check/upgrade database encoding: %s", err or "unknown error");
-				return false;
+		end);
+		if not success then
+			module:log("error", "Failed to check/upgrade database encoding: %s", err or "unknown error");
+			return false;
+		end
+	else
+		local indices = {};
+		engine:transaction(function ()
+			if params.driver == "SQLite3" then
+				for row in engine:select [[SELECT "name" FROM "sqlite_schema" WHERE "type"='index' AND "tbl_name"='prosody' AND "name"='prosody_index';]] do
+					indices[row[1]] = true;
+				end
+			elseif params.driver == "PostgreSQL" then
+				for row in engine:select [[SELECT "indexname" FROM "pg_indexes" WHERE "tablename"='prosody' AND "indexname"='prosody_index';]] do
+					indices[row[1]] = true;
+				end
 			end
-		else
-			local indices = {};
-			engine:transaction(function ()
-				if params.driver == "SQLite3" then
-					for row in engine:select [[SELECT "name" FROM "sqlite_schema" WHERE "type"='index' AND "tbl_name"='prosody' AND "name"='prosody_index';]] do
-						indices[row[1]] = true;
-					end
-				elseif params.driver == "PostgreSQL" then
-					for row in engine:select [[SELECT "indexname" FROM "pg_indexes" WHERE "tablename"='prosody' AND "indexname"='prosody_index';]] do
-						indices[row[1]] = true;
-					end
+		end)
+		if indices["prosody_index"] then
+			if apply_changes then
+				local success = engine:transaction(function ()
+					return assert(engine:execute([[DROP INDEX "prosody_index";]]));
+				end);
+				if not success then
+					module:log("error", "Failed to delete obsolete index \"prosody_index\"");
+					return false;
 				end
-			end)
-			if indices["prosody_index"] then
-				if apply_changes then
-					local success = engine:transaction(function ()
-						return assert(engine:execute([[DROP INDEX "prosody_index";]]));
-					end);
-					if not success then
-						module:log("error", "Failed to delete obsolete index \"prosody_index\"");
-						return false;
-					end
-				else
-					changes = true;
-				end
+			else
+				changes = true;
 			end
 		end
+	end
 	return changes;
 end
 
