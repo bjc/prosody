@@ -307,7 +307,8 @@ local function is_admin(jid, host)
 	end
 	log("warn", "Usage of legacy is_admin() API, which will be disabled in a future build: %s", debug.traceback());
 	log("warn", "See https://prosody.im/doc/developers/permissions about the new permissions API");
-	return legacy_admin_roles[get_jid_role(jid, host)] or false;
+	local role = get_jid_role(jid, host);
+	return role and legacy_admin_roles[role.name] or false;
 end
 
 local function get_users_with_role(role, host)
