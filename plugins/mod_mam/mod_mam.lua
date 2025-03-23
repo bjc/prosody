@@ -341,7 +341,6 @@ local function should_store(stanza) --> boolean, reason: string
 	end
 	if stanza:get_child("no-store", "urn:xmpp:hints")
 	or stanza:get_child("no-permanent-store", "urn:xmpp:hints") then
-		-- XXX Experimental XEP
 		return false, "hint";
 	end
 	if stanza:get_child("store", "urn:xmpp:hints") then
@@ -365,7 +364,6 @@ local function should_store(stanza) --> boolean, reason: string
 		return true, "receipt";
 	end
 	if stanza:get_child(nil, "urn:xmpp:chat-markers:0") then
-		-- XXX Experimental XEP
 		return true, "marker";
 	end
 	if stanza:get_child("x", "jabber:x:conference")
