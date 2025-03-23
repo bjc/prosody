@@ -885,16 +885,12 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 			end
 		end)
 		if indices["prosody_index"] then
-			if apply_changes then
-				local success = engine:transaction(function ()
-					return assert(engine:execute([[DROP INDEX "prosody_index";]]));
-				end);
-				if not success then
-					module:log("error", "Failed to delete obsolete index \"prosody_index\"");
-					return false;
-				end
-			else
-				changes = true;
+			local success = engine:transaction(function ()
+				return assert(engine:execute([[DROP INDEX "prosody_index";]]));
+			end);
+			if not success then
+				module:log("error", "Failed to delete obsolete index \"prosody_index\"");
+				return false;
 			end
 		end
 	end
