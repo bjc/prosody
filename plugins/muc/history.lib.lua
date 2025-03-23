@@ -218,7 +218,6 @@ module:hook("muc-message-is-historic", function (event)
 		return true, "encrypted";
 	end
 	if stanza:get_child(nil, "urn:xmpp:chat-markers:0") then
-		-- XXX Experimental XEP
 		return true, "marker";
 	end
 end, -1);

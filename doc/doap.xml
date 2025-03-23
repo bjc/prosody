@@ -726,6 +726,15 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0333.html"/>
+        <xmpp:version>1.0.0</xmpp:version>
+        <xmpp:since>0.10.0</xmpp:since>
+        <xmpp:status>partial</xmpp:status>
+        <xmpp:note>Used in mod_mam and mod_muc</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0334.html"/>
         <xmpp:version>1.0.0</xmpp:version>
         <xmpp:since>0.10.0</xmpp:since>
