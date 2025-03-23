@@ -442,6 +442,9 @@ function handle_download(event, path) -- GET /uploads/:slot+filename
 				handle:close();
 				return 416;
 			end
+		else
+			handle:close();
+			return 416;
 		end
 	end
 
