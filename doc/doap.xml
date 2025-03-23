@@ -381,6 +381,15 @@
     </implements>
     <implements>
       <xmpp:SupportedXep>
+        <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0156.html"/>
+        <xmpp:version>1.4.0</xmpp:version>
+        <xmpp:since>13.0.0</xmpp:since>
+        <xmpp:status>complete</xmpp:status>
+        <xmpp:note>mod_http_altconnect</xmpp:note>
+      </xmpp:SupportedXep>
+    </implements>
+    <implements>
+      <xmpp:SupportedXep>
         <xmpp:xep rdf:resource="https://xmpp.org/extensions/xep-0157.html"/>
         <xmpp:version>1.1.1</xmpp:version>
         <xmpp:since>0.10.0</xmpp:since>
