@@ -14,7 +14,7 @@ if not math.type then require "prosody.util.mathcompat" end
 local utf8_enc = rawget(_G, "utf8") or require"prosody.util.encodings".utf8;
 local utf8_len = utf8_enc.len or function(s : string) : integer
 	local _, count = s:gsub("[%z\001-\127\194-\253][\128-\191]*", "");
-	return count;
+	return count
 end;
 
 local json = require "prosody.util.json"
@@ -166,7 +166,7 @@ local record validation_error
 end
 local type errors = { validation_error }
 local function mkerr(sloc:string,iloc:string,err:string) : validation_error
-	return { schemaLocation = sloc; instanceLocation = iloc; error = err };
+	return { schemaLocation = sloc; instanceLocation = iloc; error = err }
 end
 
 local function validate (schema : schema_t, data : any, root : json_schema_object, sloc : string, iloc : string, errs:errors) : boolean, errors
@@ -186,14 +186,14 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 		if referenced ~= nil and referenced ~= root and referenced ~= schema then
 			if not validate(referenced, data, root, schema["$ref"], iloc, errs) then
 				table.insert(errs, mkerr(sloc.."/$ref", iloc, "Subschema failed validation"))
-				return false, errs;
+				return false, errs
 			end
 		end
 	end
 
 	if not simple_validate(schema.type, data) then
 		table.insert(errs, mkerr(sloc.."/type", iloc, "unexpected type"));
-		return false, errs;
+		return false, errs
 	end
 
 	if schema.type == "object" then
@@ -202,7 +202,7 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 			for k in pairs(data) do
 				if not k is string then
 					table.insert(errs, mkerr(sloc.."/type", iloc, "'object' had non-string keys"));
-					return false, errs;
+					return false, errs
 				end
 			end
 		end
@@ -214,7 +214,7 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 			for i in pairs(data) do
 				if not i is integer then
 					table.insert(errs, mkerr(sloc.."/type", iloc, "'array' had non-integer keys"));
-					return false, errs;
+					return false, errs
 				end
 			end
 		end
@@ -231,7 +231,7 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 		end
 		if not match then
 			table.insert(errs, mkerr(sloc.."/enum", iloc, "not one of the enumerated values"));
-			return false, errs;
+			return false, errs
 		end
 	end
 
@@ -240,42 +240,42 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 	if data is string then
 		if schema.maxLength and utf8_len(data) > schema.maxLength then
 			table.insert(errs, mkerr(sloc.."/maxLength", iloc, "string too long"))
-			return false, errs;
+			return false, errs
 		end
 		if schema.minLength and utf8_len(data) < schema.minLength then
 			table.insert(errs, mkerr(sloc.."/maxLength", iloc, "string too short"))
-			return false, errs;
+			return false, errs
 		end
 		if schema.luaPattern and not data:match(schema.luaPattern) then
 			table.insert(errs, mkerr(sloc.."/luaPattern", iloc, "string does not match pattern"))
-			return false, errs;
+			return false, errs
 		end
 	end
 
 	if data is number then
 		if schema.multipleOf and (data == 0 or data % schema.multipleOf ~= 0) then
 			table.insert(errs, mkerr(sloc.."/luaPattern", iloc, "not a multiple"))
-			return false, errs;
+			return false, errs
 		end
 
 		if schema.maximum and not ( data <= schema.maximum ) then
 			table.insert(errs, mkerr(sloc.."/maximum", iloc, "number exceeds maximum"))
-			return false, errs;
+			return false, errs
 		end
 
 		if schema.exclusiveMaximum and not ( data < schema.exclusiveMaximum ) then
 			table.insert(errs, mkerr(sloc.."/exclusiveMaximum", iloc, "number exceeds exclusive maximum"))
-			return false, errs;
+			return false, errs
 		end
 
 		if schema.minimum and not ( data >= schema.minimum ) then
 			table.insert(errs, mkerr(sloc.."/minimum", iloc, "number below minimum"))
-			return false, errs;
+			return false, errs
 		end
 
 		if schema.exclusiveMinimum and not ( data > schema.exclusiveMinimum ) then
 			table.insert(errs, mkerr(sloc.."/exclusiveMinimum", iloc, "number below exclusive minimum"))
-			return false, errs;
+			return false, errs
 		end
 	end
 
@@ -283,7 +283,7 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 		for i, sub in ipairs(schema.allOf) do
 			if not validate(sub, data, root, sloc.."/allOf/"..i, iloc, errs) then
 				table.insert(errs, mkerr(sloc.."/allOf", iloc, "did not match all subschemas"))
-				return false, errs;
+				return false, errs
 			end
 		end
 	end
@@ -297,7 +297,7 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 		end
 		if valid ~= 1 then
 			table.insert(errs, mkerr(sloc.."/oneOf", iloc, "did not match exactly one subschema"))
-			return false, errs;
+			return false, errs
 		end
 	end
 
@@ -311,14 +311,14 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 		end
 		if not match then
 			table.insert(errs, mkerr(sloc.."/anyOf", iloc, "did not match any subschema"))
-			return false, errs;
+			return false, errs
 		end
 	end
 
 	if schema["not"] then
 		if validate(schema["not"], data, root, sloc.."/not", iloc, errs) then
 			table.insert(errs, mkerr(sloc.."/not", iloc, "did match subschema"))
-			return false, errs;
+			return false, errs
 		end
 	end
 
@@ -327,14 +327,14 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 			if schema["then"] then
 				if not validate(schema["then"], data, root, sloc.."/then", iloc, errs) then
 					table.insert(errs, mkerr(sloc.."/then", iloc, "did not match subschema"))
-					return false, errs;
+					return false, errs
 				end
 			end
 		else
 			if schema["else"] then
 				if not validate(schema["else"], data, root, sloc.."/else", iloc, errs) then
 					table.insert(errs, mkerr(sloc.."/else", iloc, "did not match subschema"))
-					return false, errs;
+					return false, errs
 				end
 			end
 		end
@@ -342,7 +342,7 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 
 	if schema.const ~= nil and schema.const ~= data then
 		table.insert(errs, mkerr(sloc.."/const", iloc, "did not match constant value"))
-		return false, errs;
+		return false, errs
 	end
 
 	if data is table then
@@ -352,19 +352,19 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 
 		if schema.maxItems and #(data as {any}) > schema.maxItems then
 			table.insert(errs, mkerr(sloc.."/maxItems", iloc, "too many items"))
-			return false, errs;
+			return false, errs
 		end
 
 		if schema.minItems and #(data as {any}) < schema.minItems then
 			table.insert(errs, mkerr(sloc.."/minItems", iloc, "too few items"))
-			return false, errs;
+			return false, errs
 		end
 
 		if schema.required then
 			for _, k in ipairs(schema.required) do
 				if data[k] == nil then
 					table.insert(errs, mkerr(sloc.."/required", iloc.."/"..tostring(k), "missing required property"))
-					return false, errs;
+					return false, errs
 				end
 			end
 		end
@@ -375,7 +375,7 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 					for _, req in ipairs(reqs) do
 						if data[req] == nil then
 							table.insert(errs, mkerr(sloc.."/dependentRequired", iloc, "missing dependent required property"))
-							return false, errs;
+							return false, errs
 						end
 					end
 				end
@@ -387,7 +387,7 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 			for k in pairs(data) do
 				if not validate(schema.propertyNames, k, root, sloc.."/propertyNames", iloc.."/"..tostring(k), errs) then
 					table.insert(errs, mkerr(sloc.."/propertyNames", iloc.."/"..tostring(k), "a property name did not match subschema"))
-					return false, errs;
+					return false, errs
 				end
 			end
 		end
@@ -401,7 +401,7 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 			for k, sub in pairs(schema.properties) do
 				if data[k] ~= nil and not validate(sub, data[k], root, sloc.."/"..tostring(k), iloc.."/"..tostring(k), errs) then
 					table.insert(errs, mkerr(sloc.."/"..tostring(k), iloc.."/"..tostring(k), "a property did not match subschema"))
-					return false, errs;
+					return false, errs
 				end
 				seen_properties[k] = true
 			end
@@ -414,7 +414,7 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 					if k is string and k:match(pattern) then
 						if not validate(sub, data[k], root, sloc.."/luaPatternProperties", iloc, errs) then
 							table.insert(errs, mkerr(sloc.."/luaPatternProperties/"..pattern, iloc.."/"..tostring(k), "a property did not match subschema"))
-							return false, errs;
+							return false, errs
 						end
 						seen_properties[k] = true
 					end
@@ -427,7 +427,7 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 				if not seen_properties[k as string] then
 					if not validate(schema.additionalProperties, v, root, sloc.."/additionalProperties", iloc.."/"..tostring(k), errs) then
 						table.insert(errs, mkerr(sloc.."/additionalProperties", iloc.."/"..tostring(k), "additional property did not match subschema"))
-						return false, errs;
+						return false, errs
 					end
 				end
 			end
@@ -437,7 +437,7 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 			for k, sub in pairs(schema.dependentSchemas) do
 				if data[k] ~= nil and not validate(sub, data, root, sloc.."/dependentSchemas/"..k, iloc, errs) then
 					table.insert(errs, mkerr(sloc.."/dependentSchemas", iloc.."/"..tostring(k), "did not match dependent subschema"))
-					return false, errs;
+					return false, errs
 				end
 			end
 		end
@@ -448,7 +448,7 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 			for _, v in pairs(data) do
 				if values[v] then
 					table.insert(errs, mkerr(sloc.."/uniqueItems", iloc, "had duplicate items"))
-					return false, errs;
+					return false, errs
 				end
 				values[v] = true
 			end
@@ -463,7 +463,7 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 					p = i
 				else
 					table.insert(errs, mkerr(sloc.."/prefixItems/"..i, iloc.."/"..tostring(i), "did not match subschema"))
-					return false, errs;
+					return false, errs
 				end
 			end
 		end
@@ -472,7 +472,7 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 			for i = p+1, #(data as {any}) do
 				if not validate(schema.items, data[i], root, sloc, iloc.."/"..i, errs) then
 					table.insert(errs, mkerr(sloc.."/prefixItems/"..i, iloc.."/"..i, "did not match subschema"))
-					return false, errs;
+					return false, errs
 				end
 			end
 		end
@@ -488,18 +488,18 @@ local function validate (schema : schema_t, data : any, root : json_schema_objec
 			end
 			if found < (schema.minContains or 1) then
 				table.insert(errs, mkerr(sloc.."/minContains", iloc, "too few matches"))
-				return false, errs;
+				return false, errs
 			elseif found > (schema.maxContains or math.huge) then
 				table.insert(errs, mkerr(sloc.."/maxContains", iloc, "too many matches"))
-				return false, errs;
+				return false, errs
 			end
 		end
 	end
 
-	return true;
+	return true
 end
 
 
 json_schema_object.validate = validate;
 
-return json_schema_object;
+return json_schema_object
