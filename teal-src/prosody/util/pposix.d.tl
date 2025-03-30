@@ -111,7 +111,7 @@ local record pposix
 
 	ENOENT : integer
 	_NAME : string
-	_VESRION : string
+	_VERSION : string
 end
 
 return pposix
