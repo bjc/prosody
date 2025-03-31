@@ -82,7 +82,8 @@ end
 
 local function session_close(session, reason)
 	local log = session.log or log;
-	if session.conn then
+	local conn = session.conn;
+	if conn then
 		if session.notopen then
 			session:open_stream();
 		end
@@ -115,7 +116,6 @@ local function session_close(session, reason)
 		session.log("debug", "c2s stream for %s closed: %s", session.full_jid or session.ip or "<unknown>", reason_text or "session closed");
 
 		-- Authenticated incoming stream may still be sending us stanzas, so wait for </stream:stream> from remote
-		local conn = session.conn;
 		if reason_text == nil and not session.notopen and session.type == "c2s" then
 			-- Grace time to process data from authenticated cleanly-closed stream
 			add_task(stream_close_timeout, function ()
