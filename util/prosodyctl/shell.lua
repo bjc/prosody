@@ -134,7 +134,11 @@ local function start(arg) --luacheck: ignore 212/arg
 		end
 		if stanza.attr.type == "password" then
 			local password = human_io.read_password();
-			client.send(st.stanza("repl-requested-input", { type = stanza.attr.type, id = stanza.attr.id }):text(password));
+			client.send(st.stanza("repl-requested-input", {
+				type = stanza.attr.type;
+				id = stanza.attr.id;
+				status = password and "submit" or "cancel";
+			}):text(password or ""));
 		else
 			io.stderr:write("Internal error - unexpected input request type "..tostring(stanza.attr.type).."\n");
 			os.exit(1);

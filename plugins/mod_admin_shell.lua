@@ -205,7 +205,13 @@ module:hook("admin/repl-requested-input", function (event)
 		event.origin.send(st.stanza("repl-result", { type = "error" }):text("Internal error - unexpected input"));
 		return true;
 	end
-	input_promise.resolve(event.stanza:get_text());
+	local status = event.stanza.attr.status or "submit";
+	local text = event.stanza:get_text();
+	if status == "submit" then
+		input_promise.resolve(text);
+	else
+		input_promise.reject(status == "cancel" and (text ~= "" and text)  or "cancelled");
+	end
 	return true;
 end);
 
