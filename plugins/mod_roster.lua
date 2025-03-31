@@ -162,7 +162,7 @@ function subscribe(user_jid, contact_jid)
 		rostermanager.set_contact_pending_out(user_username, user_host, contact_jid);
 	end
 
-	if prosody.hosts[contact_host] then -- Sending to a local host?
+	if prosody.hosts[contact_host] and prosody.hosts[contact_host].type == "local" then -- Sending to a local host?
 		-- Update contact's roster to say subscription request is pending...
 		rostermanager.set_contact_pending_in(contact_username, contact_host, user_jid);
 		-- Update contact's roster to say subscription request approved...
