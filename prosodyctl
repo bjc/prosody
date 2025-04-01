@@ -195,6 +195,7 @@ local function service_command_warning(service_command)
 			elseif init == "rc.d" then
 				show_warning("          /etc/init.d/prosody %s", service_command);
 			end
+			show_warning("");
 		else
 			show_warning("       it may conflict with your system's service manager.");
 			show_warning("");
