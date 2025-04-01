@@ -63,7 +63,8 @@ function module.load(reload)
 
 	module:log("debug", "Creating context for s2sout");
 	-- for outgoing server connections
-	ssl_ctx_s2sout, err_s2sout, ssl_cfg_s2sout = create_context(host.host, "client", host_s2s, host_ssl, global_s2s, xmpp_alpn);
+	ssl_ctx_s2sout, err_s2sout, ssl_cfg_s2sout = create_context(host.host, "client", host_s2s, host_ssl, global_s2s, xmpp_alpn,
+		custom_cert_verification);
 	if not ssl_ctx_s2sout then module:log("error", "Error creating contexts for s2sout: %s", err_s2sout); end
 
 	module:log("debug", "Creating context for s2sin");
