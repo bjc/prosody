@@ -772,7 +772,7 @@ function interface:starttls(tls_ctx)
 		self.onreadable = interface.inittls;
 		self:set(true, true);
 		self:setreadtimeout(false);
-		self:setwritetimeout(cfg.ssl_handshake_timeout);
+		self:setwritetimeout(self._connected and cfg.ssl_handshake_timeout or cfg.connect_timeout);
 		self:debug("Prepared to start TLS");
 	end
 end
