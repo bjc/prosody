@@ -258,7 +258,7 @@ local function add_sni_host(host, service)
 				log("error", "Error creating TLS context for SNI host %s: %s", host, err);
 			else
 				local ok, err = active_service.server:sslctx():set_sni_host(
-					host,
+					alternate_host or host,
 					cfg.certificate,
 					cfg.key
 					);
