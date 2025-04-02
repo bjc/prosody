@@ -1313,7 +1313,7 @@ local function check(arg)
 							http_loaded = false;
 						end
 						if http_loaded and not x509_verify_identity(http_host, nil, cert) then
-							print("    Not valid for HTTPS connections to "..host..".")
+							print("    Not valid for HTTPS connections to "..http_host..".")
 							cert_ok = false
 						end
 						if use_dane then
