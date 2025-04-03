@@ -122,6 +122,9 @@ integration-test-%: all
 	$(RUNWITH) prosodyctl --config ./spec/scansion/prosody.cfg.lua stop \
 	exit $$R
 
+integration-test-tls: all
+	cd ./spec/tls && ./run.sh
+
 coverage:
 	-rm -- luacov.*
 	$(BUSTED) --lua=$(RUNWITH) -c

@@ -1,0 +1,11 @@
+These tests check that SSL/TLS configuration is working as expected.
+
+Just run ./run.sh in this directory (or from the top level,
+`make integration-test-tls`.
+
+Known issues:
+  - The tests do not thorougly clean up after themselves (certs, logs, etc.).
+    This is partly intentional, so they can be inspected in case of failures.
+  - Certs are regenerated every time. Could be smarter about this. But it also
+    helps to guard against incorrect Prosody instances running and hogging the
+    ports, etc.
