@@ -2410,9 +2410,16 @@ function def_env.debug:cert_index(path)
 
 	local sink = logger.add_simple_sink(function (source, level, message)
 		if source == "certmanager" then
-			self.session.print(source, level, message);
+			if level == "debug" or level == "info" then
+				level = "II";
+			elseif level == "warn" or level == "error" then
+				level = "EE";
+			end
+			self.session.print(level..": "..message);
 		end
 	end);
+
+	print("II: Scanning "..path.."...");
 
 	local index = {};
 	cm.index_certs(path, index)
@@ -2436,7 +2443,7 @@ function def_env.debug:cert_index(path)
 		{ title = "Service", width = 5 };
 	}, self.session.width);
 	print(row());
-
+	print(("-"):rep(self.session.width or 80));
 	for domain, certs in it.sorted_pairs(index) do
 		for cert_file, services in it.sorted_pairs(certs) do
 			for service in it.sorted_pairs(services) do

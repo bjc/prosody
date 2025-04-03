@@ -127,7 +127,6 @@ local function index_certs(dir, files_by_name, depth_limit)
 			log("debug", "Skipping non-certificate (based on filename): %s", full);
 		end
 	end
-	log("debug", "Certificate index in %s: %q", dir, files_by_name);
 	-- | hostname | filename | service |
 	return files_by_name;
 end

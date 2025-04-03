@@ -131,6 +131,11 @@ files["spec/"] = {
 	std = "+busted";
 	globals = { "randomize" };
 }
+files["spec/tls"] = {
+	-- luacheck complains about the config files here,
+	-- but we don't really care about them
+	only = {};
+}
 files["prosody.cfg.lua"] = {
 	ignore = { "131" };
 	globals = {
