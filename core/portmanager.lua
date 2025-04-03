@@ -258,6 +258,7 @@ local function add_sni_host(host, service)
 			if not ssl then
 				log("error", "Error creating TLS context for SNI host %s: %s", host, err);
 			else
+				log("debug", "Using certificate %s for %s (%s) on %s (%s)", cfg.certificate, service or name, name, alternate_host or host, host)
 				local ok, err = active_service.server:sslctx():set_sni_host(
 					alternate_host or host,
 					cfg.certificate,
