@@ -116,11 +116,15 @@ local function index_certs(dir, files_by_name, depth_limit)
 					else
 						log("debug", "Skipping expired certificate: %s", full);
 					end
+				else
+					log("debug", "Skipping non-certificate (based on contents): %s", full);
 				end
 				f:close();
 			elseif err then
-				log("debug", "Failed to open file for indexing: %s", full);
+				log("debug", "Skipping file due to error:  %s", err);
 			end
+		else
+			log("debug", "Skipping non-certificate (based on filename): %s", full);
 		end
 	end
 	log("debug", "Certificate index in %s: %q", dir, files_by_name);
