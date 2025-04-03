@@ -2401,6 +2401,56 @@ function def_env.debug:async(runner_id)
 	return true, ("%d runners pending"):format(c);
 end
 
+describe_command [[debug:cert_index([path]) - Show Prosody's view of a directory of certs]]
+function def_env.debug:cert_index(path)
+	local print = self.session.print;
+	local cm = require "core.certmanager";
+
+	path = path or module:get_option("certificates", "certs");
+
+	local sink = logger.add_simple_sink(function (source, level, message)
+		if source == "certmanager" then
+			self.session.print(source, level, message);
+		end
+	end);
+
+	local index = {};
+	cm.index_certs(path, index)
+
+	if not logger.remove_sink(sink) then
+		module:log("warn", "Unable to remove log sink");
+	end
+
+	local c, max_domain = 0, 8;
+	for domain in pairs(index) do
+		if #domain > max_domain then
+			max_domain = #domain;
+		end
+	end
+
+	print("");
+
+	local row = format_table({
+		{ title = "Domain", width = max_domain };
+		{ title = "Certificate", width = "100%" };
+		{ title = "Service", width = 5 };
+	}, self.session.width);
+	print(row());
+
+	for domain, certs in it.sorted_pairs(index) do
+		for cert_file, services in it.sorted_pairs(certs) do
+			for service in it.sorted_pairs(services) do
+				c = c + 1;
+				print(row({ domain, cert_file, service }));
+			end
+		end
+	end
+
+	print("");
+
+	return true, ("Showing %d certificates in %s"):format(c, path);
+end
+
 def_env.stats = new_section("Commands to show internal statistics");
 
 local short_units = {
