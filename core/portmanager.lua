@@ -253,7 +253,8 @@ local function add_sni_host(host, service)
 				-- TODO should this be some generic thing? e.g. in the service definition
 				alternate_host = config.get(host, "http_host");
 			end
-			local ssl, err, cfg = certmanager.create_context(alternate_host or host, "server", prefix_ssl_config, active_service.tls_cfg);
+			local autocert = certmanager.find_host_cert(alternate_host or host);
+			local ssl, err, cfg = certmanager.create_context(alternate_host or host, "server", prefix_ssl_config, autocert, active_service.tls_cfg);
 			if not ssl then
 				log("error", "Error creating TLS context for SNI host %s: %s", host, err);
 			else
