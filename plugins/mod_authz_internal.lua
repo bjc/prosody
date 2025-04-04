@@ -298,7 +298,11 @@ function add_default_permission(role_name, action, policy)
 end
 
 function get_role_by_name(role_name)
-	return assert(role_registry[role_name], role_name);
+	local role = role_registry[role_name];
+	if not role then
+		return error("Unknown role: "..role_name);
+	end
+	return role, role_name;
 end
 
 function get_all_roles()
