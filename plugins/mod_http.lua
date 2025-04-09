@@ -331,7 +331,7 @@ local trusted_proxies = module:get_option_set("trusted_proxies", { "127.0.0.1", 
 
 --- deal with [ipv6]:port / ip:port format
 local function normal_ip(ip)
-	return ip:match("^%[([%x:]*)%]") or ip:match("^([%d.]+)") or ip;
+	return ip:match("^%[([%x:]*)%]") or ip:match("^%d+%.%d+%.%d+%.%d+") or ip;
 end
 
 local function is_trusted_proxy(ip)
@@ -339,7 +339,8 @@ local function is_trusted_proxy(ip)
 	if trusted_proxies[ip] then
 		return true;
 	end
-	local parsed_ip = new_ip(ip)
+	local parsed_ip, err = new_ip(ip);
+	if not parsed_ip then return nil, err; end
 	for trusted_proxy in trusted_proxies do
 		if match_ip(parsed_ip, parse_cidr(trusted_proxy)) then
 			return true;
@@ -357,10 +358,14 @@ local function get_forwarded_connection_info(request) --> ip:string, secure:bool
 		request.forwarded = forwarded;
 		for i = #forwarded, 1, -1 do
 			local proxy = forwarded[i]
-			if is_trusted_proxy(ip) then
+			local trusted, err = is_trusted_proxy(ip);
+			if trusted then
 				ip = normal_ip(proxy["for"]);
 				secure = secure and proxy.proto == "https";
 			else
+				if err then
+					request.log("warn", "Could not parse forwarded connection details: %s");
+				end
 				break
 			end
 		end
@@ -387,7 +392,10 @@ function get_forwarded_connection_info(request) --> ip:string, secure:boolean
 		-- Case d) If all IPs are in trusted proxies, something went obviously wrong and the logic never overwrites `ip`, leaving it at the original request IP.
 		forwarded_for = forwarded_for..", "..ip;
 		for forwarded_ip in forwarded_for:gmatch("[^%s,]+") do
-			if not is_trusted_proxy(forwarded_ip) then
+			local trusted, err = is_trusted_proxy(forwarded_ip);
+			if err then
+				request.log("warn", "Could not parse forwarded connection details: %s");
+			elseif not trusted then
 				ip = forwarded_ip;
 			end
 		end

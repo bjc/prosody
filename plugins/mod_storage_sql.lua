@@ -13,18 +13,22 @@ local t_concat = table.concat;
 
 local have_dbisql, dbisql = pcall(require, "prosody.util.sql");
 local have_sqlite, sqlite = pcall(require, "prosody.util.sqlite3");
-if not have_dbisql then
-	module:log("debug", "Could not load LuaDBI: %s", dbisql)
-	dbisql = nil;
-end
-if not have_sqlite then
-	module:log("debug", "Could not load LuaSQLite3: %s", sqlite)
-	sqlite = nil;
-end
 if not (have_dbisql or have_sqlite) then
 	module:log("error", "LuaDBI or LuaSQLite3 are required for using SQL databases but neither are installed");
 	module:log("error", "Please install at least one of LuaDBI and LuaSQLite3. See https://prosody.im/doc/depends");
+	module:log("debug", "Could not load LuaDBI: %s", dbisql);
+	module:log("debug", "Could not load LuaSQLite3: %s", sqlite);
 	error("No SQL library available")
+end
+
+local function get_sql_lib(driver)
+	if driver == "SQLite3" and have_sqlite then
+		return sqlite;
+	elseif have_dbisql then
+		return dbisql;
+	else
+		error(dbisql);
+	end
 end
 
 local noop = function() end
@@ -42,11 +46,11 @@ end
 local function has_upsert(engine)
 	if engine.params.driver == "SQLite3" then
 		-- SQLite3 >= 3.24.0
-		return engine.sqlite_version and (engine.sqlite_version[2] or 0) >= 24;
+		return engine.sqlite_version and (engine.sqlite_version[2] or 0) >= 24 and engine.has_upsert_index;
 	elseif engine.params.driver == "PostgreSQL" then
 		-- PostgreSQL >= 9.5
 		-- Versions without support have long since reached end of life.
-		return true;
+		return engine.has_upsert_index;
 	end
 	-- We don't support UPSERT on MySQL/MariaDB, they seem to have a completely different syntax, uncertaint from which versions.
 	return false
@@ -757,7 +761,7 @@ end
 
 
 local function create_table(engine) -- luacheck: ignore 431/engine
-	local sql = engine.params.driver == "SQLite3" and sqlite or dbisql;
+	local sql = get_sql_lib(engine.params.driver);
 	local Table, Column, Index = sql.Table, sql.Column, sql.Index;
 
 	local ProsodyTable = Table {
@@ -798,7 +802,7 @@ end
 local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 431/engine
 	local changes = false;
 	if params.driver == "MySQL" then
-		local sql = dbisql;
+		local sql = get_sql_lib("MySQL");
 		local success,err = engine:transaction(function()
 			do
 				local result = assert(engine:execute("SHOW COLUMNS FROM \"prosody\" WHERE \"Field\"='value' and \"Type\"='text'"));
@@ -893,6 +897,12 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 				return false;
 			end
 		end
+		if not indices["prosody_unique_index"] then
+			module:log("warn", "Index \"prosody_unique_index\" does not exist, performance may be worse than normal!");
+			engine.has_upsert_index = false;
+		else
+			engine.has_upsert_index = true;
+		end
 	end
 	return changes;
 end
@@ -920,7 +930,7 @@ end
 function module.load()
 	local engines = module:shared("/*/sql/connections");
 	local params = normalize_params(module:get_option("sql", default_params));
-	local sql = params.driver == "SQLite3" and sqlite or dbisql;
+	local sql = get_sql_lib(params.driver);
 	local db_uri = sql.db2uri(params);
 	engine = engines[db_uri];
 	if not engine then
@@ -1012,7 +1022,7 @@ function module.command(arg)
 		local uris = {};
 		for host in pairs(prosody.hosts) do -- luacheck: ignore 431/host
 			local params = normalize_params(config.get(host, "sql") or default_params);
-			local sql = engine.params.driver == "SQLite3" and sqlite or dbisql;
+			local sql = get_sql_lib(engine.params.driver);
 			uris[sql.db2uri(params)] = params;
 		end
 		print("We will check and upgrade the following databases:\n");
@@ -1028,7 +1038,7 @@ function module.command(arg)
 		-- Upgrade each one
 		for _, params in pairs(uris) do
 			print("Checking "..params.database.."...");
-			local sql = params.driver == "SQLite3" and sqlite or dbisql;
+			local sql = get_sql_lib(params.driver);
 			engine = sql:create_engine(params);
 			upgrade_table(engine, params, true);
 		end
@@ -1040,3 +1050,32 @@ function module.command(arg)
 		print("","upgrade - Perform database upgrade");
 	end
 end
+
+module:add_item("shell-command", {
+	section = "sql";
+	section_desc = "SQL management commands";
+	name = "create";
+	desc = "Create the tables and indices used by Prosody (again)";
+	args = { { name = "host"; type = "string" } };
+	host_selector = "host";
+	handler = function(shell, _host)
+		local logger = require "prosody.util.logger";
+		local writing = false;
+		local sink = logger.add_simple_sink(function (source, level, message)
+			local print = shell.session.print;
+			if writing or source ~= "sql" then return; end
+			writing = true;
+			print(message);
+			writing = false;
+		end);
+
+		local debug_enabled = engine._debug;
+		engine:debug(true);
+		create_table(engine);
+		engine:debug(debug_enabled);
+
+		if not logger.remove_sink(sink) then
+			module:log("warn", "Unable to remove log sink");
+		end
+	end;
+})
