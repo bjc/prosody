@@ -139,6 +139,8 @@ Built-in roles are:
   prosody:admin      - Host administrator
   prosody:operator   - Server administrator
 
+To view roles and policies, see the commands in 'help role'.
+
 Roles can be assigned using the user management commands (see 'help user').
 ]];
 
@@ -2456,6 +2458,64 @@ function def_env.debug:cert_index(path)
 	print("");
 
 	return true, ("Showing %d certificates in %s"):format(c, path);
+end
+
+def_env.role = new_section("Role and access management");
+
+describe_command [[role:list(host) - List known roles]]
+function def_env.role:list(host)
+	if not host then
+		return nil, "Specify which host to list roles for";
+	end
+	local role_list = {};
+	for _, role in it.sorted_pairs(um.get_all_roles(host)) do
+		table.insert(role_list, role);
+	end
+	table.sort(role_list, function (a, b)
+		if a.priority ~= b.priority then
+			return (a.priority or 0) > (b.priority or 0);
+		end
+		return a.name < b.name;
+	end);
+	for _, role in ipairs(role_list) do
+		self.session.print(role.name);
+	end
+	return true, ("Showing %d roles on %s"):format(#role_list, host);
+end
+
+describe_command [[role:show(host, role_name) - Show information about a role]]
+function def_env.role:show(host, role_name)
+	if not host or not role_name then
+		return nil, "Specify the host and role to show";
+	end
+
+	local print = self.session.print;
+	local role = um.get_role_by_name(role_name, host);
+
+	if not role then
+		return nil, ("Unable to find role %s on host %s"):format(role_name, host);
+	end
+
+	local inherits = {};
+	for _, inherited_role in ipairs(role.inherits or {}) do
+		table.insert(inherits, inherited_role.name);
+	end
+
+	local permissions = {};
+	for permission, is_allowed in role:policies() do
+		permissions[permission] = is_allowed and "allowed" or "denied";
+	end
+
+	print("Name:    ", role.name);
+	print("Inherits:", table.concat(inherits, ", "));
+	print("Policies:");
+	local c = 0;
+	for permission, policy in it.sorted_pairs(permissions) do
+		c = c + 1;
+		print("  ["..(policy == "allowed" and "+" or " ").."] " .. permission);
+	end
+	print("");
+	return true, ("Showing role %s with %d policies"):format(role.name, c);
 end
 
 def_env.stats = new_section("Commands to show internal statistics");

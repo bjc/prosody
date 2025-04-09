@@ -54,50 +54,58 @@ local _G = _G;
 local _ENV = nil;
 -- luacheck: std none
 
-local loader = pluginloader.init({
-	load_filter_cb = function (path, content)
-		local metadata = {};
-		for line in content:gmatch("([^\r\n]+)\r?\n") do
-			local key, value = line:match("^%-%-%% *([%w_]+): *(.+)$");
-			if key then
-				value = value:gsub("%s+$", "");
-				metadata[key] = value;
+local function plugin_load_filter_cb(path, content)
+	local metadata = {};
+	for line in content:gmatch("([^\r\n]+)\r?\n") do
+		local key, value = line:match("^%-%-%% *([%w_]+): *(.+)$");
+		if key then
+			value = value:gsub("%s+$", "");
+			metadata[key] = value;
+		end
+	end
+
+	if metadata.lua then
+		local supported = false;
+		for supported_lua_version in metadata.lua:gmatch("[^, ]+") do
+			if supported_lua_version == lua_version then
+				supported = true;
+				break;
 			end
 		end
-
-		if metadata.lua then
-			local supported = false;
-			for supported_lua_version in metadata.lua:gmatch("[^, ]+") do
-				if supported_lua_version == lua_version then
-					supported = true;
-					break;
-				end
-			end
-			if not supported then
+		if not supported then
+			if prosody.process_type ~= "prosodyctl" then
 				log("warn", "Not loading module, we have Lua %s but the module requires one of (%s): %s", lua_version, metadata.lua, path);
-				return; -- Don't load this module
 			end
+			return nil, "incompatible with Lua "..lua_version; -- Don't load this module
 		end
+	end
 
-		if metadata.conflicts then
-			local conflicts_features = set.new(array.collect(metadata.conflicts:gmatch("[^, ]+")));
-			local conflicted_features = set.intersection(conflicts_features, core_features);
-			if not conflicted_features:empty() then
-				log("warn", "Not loading module, due to conflicting features '%s': %s", conflicted_features, path);
-				return; -- Don't load this module
+	if metadata.conflicts then
+		local conflicts_features = set.new(array.collect(metadata.conflicts:gmatch("[^, ]+")));
+		local conflicted_features = set.intersection(conflicts_features, core_features);
+		if not conflicted_features:empty() then
+			if prosody.process_type ~= "prosodyctl" then
+				log("warn", "Not loading module, due to conflict with built-in features '%s': %s", conflicted_features, path);
 			end
+			return nil, "conflict with built-in feature"; -- Don't load this module
 		end
-		if metadata.requires then
-			local required_features = set.new(array.collect(metadata.requires:gmatch("[^, ]+")));
-			local missing_features = required_features - core_features;
-			if not missing_features:empty() then
+	end
+	if metadata.requires then
+		local required_features = set.new(array.collect(metadata.requires:gmatch("[^, ]+")));
+		local missing_features = required_features - core_features;
+		if not missing_features:empty() then
+			if prosody.process_type ~= "prosodyctl" then
 				log("warn", "Not loading module, due to missing features '%s': %s", missing_features, path);
-				return; -- Don't load this module
 			end
+			return nil, "Prosody version missing required feature"; -- Don't load this module
 		end
+	end
 
-		return path, content, metadata;
-	end;
+	return path, content, metadata;
+end;
+
+local loader = pluginloader.init({
+	load_filter_cb = plugin_load_filter_cb;
 });
 
 local load_modules_for_host, load, unload, reload, get_module, get_items;

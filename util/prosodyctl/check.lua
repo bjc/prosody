@@ -644,6 +644,25 @@ local function check(arg)
 			print("    been deprecated. You can safely remove it.");
 		end
 
+		local load_failures = {};
+		for mod_name in all_modules do
+			local mod, err = modulemanager.loader:load_resource(mod_name, nil);
+			if not mod then
+				load_failures[mod_name] = err;
+			end
+		end
+
+		if next(load_failures) ~= nil then
+			print("");
+			print("    The following modules failed to load:");
+			print("");
+			for mod_name, err in it.sorted_pairs(load_failures) do
+				print(("        mod_%s: %s"):format(mod_name, err));
+			end
+			print("")
+			print("    Check for typos and remove any obsolete/incompatible modules from your config.");
+		end
+
 		for host, host_config in pairs(config) do --luacheck: ignore 213/host
 			if type(rawget(host_config, "storage")) == "string" and rawget(host_config, "default_storage") then
 				print("");
