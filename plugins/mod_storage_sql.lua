@@ -897,6 +897,10 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 				return false;
 			end
 		end
+		if not indices["prosody_unique_index"] then
+			module:log("error", "New index \"prosody_unique_index\" does not exist!");
+			return false;
+		end
 	end
 	return changes;
 end
@@ -1044,3 +1048,32 @@ function module.command(arg)
 		print("","upgrade - Perform database upgrade");
 	end
 end
+
+module:add_item("shell-command", {
+	section = "sql";
+	section_desc = "SQL management commands";
+	name = "create";
+	desc = "Create the tables and indices used by Prosody (again)";
+	args = { { name = "host"; type = "string" } };
+	host_selector = "host";
+	handler = function(shell, _host)
+		local logger = require "prosody.util.logger";
+		local writing = false;
+		local sink = logger.add_simple_sink(function (source, level, message)
+			local print = shell.session.print;
+			if writing or source ~= "sql" then return; end
+			writing = true;
+			print(message);
+			writing = false;
+		end);
+
+		local debug_enabled = engine._debug;
+		engine:debug(true);
+		create_table(engine);
+		engine:debug(debug_enabled);
+
+		if not logger.remove_sink(sink) then
+			module:log("warn", "Unable to remove log sink");
+		end
+	end;
+})
