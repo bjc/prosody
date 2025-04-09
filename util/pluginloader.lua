@@ -25,6 +25,7 @@ local pluginloader_mt = { __index = pluginloader_methods };
 function pluginloader_methods:load_file(names)
 	local file, err, path;
 	local load_filter_cb = self._options.load_filter_cb;
+	local last_filter_path, last_filter_err;
 	for i=1,#plugin_dir do
 		for j=1,#names do
 			path = plugin_dir[i]..names[j];
@@ -36,11 +37,17 @@ function pluginloader_methods:load_file(names)
 				if load_filter_cb then
 					path, content, metadata = load_filter_cb(path, content);
 				end
-				if content and path then
+				if path and content then
 					return content, path, metadata;
+				else
+					last_filter_path = plugin_dir[i]..names[j];
+					last_filter_err = content or "skipped";
 				end
 			end
 		end
+	end
+	if last_filter_err then
+		return nil, err..(" (%s skipped because of %s)"):format(last_filter_path, last_filter_err);
 	end
 	return file, err;
 end
