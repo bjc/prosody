@@ -331,7 +331,7 @@ local trusted_proxies = module:get_option_set("trusted_proxies", { "127.0.0.1", 
 
 --- deal with [ipv6]:port / ip:port format
 local function normal_ip(ip)
-	return ip:match("^%[([%x:]*)%]") or ip:match("^([%d.]+)") or ip;
+	return ip:match("^%[([%x:]*)%]") or ip:match("^%d+%.%d+%.%d+%.%d+") or ip;
 end
 
 local function is_trusted_proxy(ip)
