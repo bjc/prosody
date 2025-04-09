@@ -46,11 +46,11 @@ end
 local function has_upsert(engine)
 	if engine.params.driver == "SQLite3" then
 		-- SQLite3 >= 3.24.0
-		return engine.sqlite_version and (engine.sqlite_version[2] or 0) >= 24;
+		return engine.sqlite_version and (engine.sqlite_version[2] or 0) >= 24 and engine.has_upsert_index;
 	elseif engine.params.driver == "PostgreSQL" then
 		-- PostgreSQL >= 9.5
 		-- Versions without support have long since reached end of life.
-		return true;
+		return engine.has_upsert_index;
 	end
 	-- We don't support UPSERT on MySQL/MariaDB, they seem to have a completely different syntax, uncertaint from which versions.
 	return false
@@ -898,8 +898,10 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 			end
 		end
 		if not indices["prosody_unique_index"] then
-			module:log("error", "New index \"prosody_unique_index\" does not exist!");
-			return false;
+			module:log("warn", "Index \"prosody_unique_index\" does not exist, performance may be worse than normal!");
+			engine.has_upsert_index = false;
+		else
+			engine.has_upsert_index = true;
 		end
 	end
 	return changes;
