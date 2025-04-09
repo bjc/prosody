@@ -1061,7 +1061,7 @@ module:add_item("shell-command", {
 	handler = function(shell, _host)
 		local logger = require "prosody.util.logger";
 		local writing = false;
-		local sink = logger.add_simple_sink(function (source, level, message)
+		local sink = logger.add_simple_sink(function (source, _level, message)
 			local print = shell.session.print;
 			if writing or source ~= "sql" then return; end
 			writing = true;
