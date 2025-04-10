@@ -101,8 +101,20 @@ module:hook("user-registering", function (event)
 		-- for this module to do...
 		return;
 	end
-	if validated_invite and validated_invite.additional_data and validated_invite.additional_data.allow_reset then
-		event.allow_reset = validated_invite.additional_data.allow_reset;
+	if validated_invite then
+		local username = validated_invite.username;
+		if username and username ~= event.username then
+			event.allowed = false;
+			event.reason = "The chosen username is not valid with this invitation";
+		end
+		local reset_username = validated_invite.additional_data and validated_invite.additional_data.allow_reset;
+		if reset_username then
+			if reset_username ~= event.username then
+				event.allowed = false;
+				event.reason = "Incorrect username for password reset";
+			end
+			event.allow_reset = reset_username;
+		end
 	end
 end);
 
