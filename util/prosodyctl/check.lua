@@ -643,6 +643,12 @@ local function check(arg)
 			print("    mod_posix is loaded in your configuration file, but it has");
 			print("    been deprecated. You can safely remove it.");
 		end
+		if all_modules:contains("admin_telnet") then
+			print("");
+			print("    mod_admin_telnet is being replaced by mod_admin_shell (prosodyctl shell).");
+			print("    To update and ensure all commands are available, simply change \"admin_telnet\" to \"admin_shell\"");
+			print("    in your modules_enabled list.");
+		end
 
 		local load_failures = {};
 		for mod_name in all_modules do

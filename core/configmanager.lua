@@ -227,7 +227,17 @@ do
 								host = env.__currenthost or "*";
 								option_name = k;
 							}, config_option_proxy_mt);
+						elseif val == nil then
+							t_insert(
+								warnings,
+								("%s: %d: unrecognized value: %s (you may be missing quotes around it)"):format(
+									config_file,
+									get_line_number(config_file),
+									k
+								)
+							);
 						end
+
 						return val;
 					end
 
