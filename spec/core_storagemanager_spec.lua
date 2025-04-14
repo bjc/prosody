@@ -436,6 +436,44 @@ describe("storagemanager", function ()
 						assert.equal(#test_data - 3, count);
 					end);
 
+					it("by time (start before first item)", function ()
+						-- luacheck: ignore 211/err
+						local data, err = archive:find("user", {
+							["start"] = test_time-5;
+						});
+						assert.truthy(data);
+						local count = 0;
+						for id, item, when in data do
+							count = count + 1;
+							assert.truthy(id);
+							assert(st.is_stanza(item));
+							assert.equal("test", item.name);
+							assert.equal("urn:example:foo", item.attr.xmlns);
+							assert.equal(2, #item.tags);
+							assert(when >= test_time-5, ("%d >= %d"):format(when, test_time-5));
+						end
+						assert.equal(#test_data, count);
+					end);
+
+					it("by time (start after last item)", function ()
+						-- luacheck: ignore 211/err
+						local data, err = archive:find("user", {
+							["start"] = test_time+5;
+						});
+						assert.truthy(data);
+						local count = 0;
+						for id, item, when in data do
+							count = count + 1;
+							assert.truthy(id);
+							assert(st.is_stanza(item));
+							assert.equal("test", item.name);
+							assert.equal("urn:example:foo", item.attr.xmlns);
+							assert.equal(2, #item.tags);
+							assert(when >= test_time+5, ("%d >= %d"):format(when, test_time+5));
+						end
+						assert.equal(0, count);
+					end);
+
 					it("by time (start+end)", function ()
 						-- luacheck: ignore 211/err
 						local data, err = archive:find("user", {
