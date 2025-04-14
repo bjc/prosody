@@ -205,12 +205,11 @@ function archive:find(username, query)
 					return query.start - when;
 				end);
 				i = wi - 1;
-			else
-				iter = it.filter(function(item)
-					local when = item.when or datetime.parse(item.attr.stamp);
-					return when >= query.start;
-				end, iter);
 			end
+			iter = it.filter(function(item)
+				local when = item.when or datetime.parse(item.attr.stamp);
+				return when >= query.start;
+			end, iter);
 		end
 		if query["end"] then
 			if query.reverse then
@@ -221,12 +220,11 @@ function archive:find(username, query)
 				if wi then
 					i = wi + 1;
 				end
-			else
-				iter = it.filter(function(item)
-					local when = item.when or datetime.parse(item.attr.stamp);
-					return when <= query["end"];
-				end, iter);
 			end
+			iter = it.filter(function(item)
+				local when = item.when or datetime.parse(item.attr.stamp);
+				return when <= query["end"];
+			end, iter);
 		end
 		if query.after then
 			local found = false;
