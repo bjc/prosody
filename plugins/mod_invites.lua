@@ -221,7 +221,11 @@ local function add_landing_url(invite)
 	-- Determine whether this type of invitation is supported by the landing page
 	local invite_type;
 	if invite.type == "register" then
-		invite_type = "account";
+		if invite.additional_data and invite.additional_data.allow_reset then
+			invite_type = "password-reset";
+		else
+			invite_type = "account";
+		end
 	elseif invite.type == "roster" then
 		if invite.allow_registration then
 			invite_type = "account-and-contact";
