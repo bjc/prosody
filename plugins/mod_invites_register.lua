@@ -103,7 +103,7 @@ module:hook("user-registering", function (event)
 	end
 	if validated_invite then
 		local username = validated_invite.username;
-		if username and username ~= event.username then
+		if validated_invite.type ~= "roster" and username and username ~= event.username then
 			event.allowed = false;
 			event.reason = "The chosen username is not valid with this invitation";
 		end
