@@ -879,7 +879,7 @@ local function upgrade_table(engine, params, apply_changes) -- luacheck: ignore 
 		local indices = {};
 		engine:transaction(function ()
 			if params.driver == "SQLite3" then
-				for row in engine:select [[SELECT "name" FROM "sqlite_schema" WHERE "type"='index' AND "tbl_name"='prosody' AND "name"='prosody_index';]] do
+				for row in engine:select [[SELECT "name" FROM "sqlite_schema" WHERE "type"='index' AND "tbl_name"='prosody';]] do
 					indices[row[1]] = true;
 				end
 			elseif params.driver == "PostgreSQL" then
