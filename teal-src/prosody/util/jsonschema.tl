@@ -10,12 +10,8 @@
 
 if not math.type then require "prosody.util.mathcompat" end
 
-
-local utf8_enc = rawget(_G, "utf8") or require"prosody.util.encodings".utf8;
-local utf8_len = utf8_enc.len or function(s : string) : integer
-	local _, count = s:gsub("[%z\001-\127\194-\253][\128-\191]*", "");
-	return count
-end;
+-- XXX util.encodings seems to count differently from the Lua builtin
+local utf8_len = rawget(_G, "utf8") and utf8.len or require"prosody.util.encodings".utf8.length;
 
 local json = require "prosody.util.json"
 local null = json.null;
