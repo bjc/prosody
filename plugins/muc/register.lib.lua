@@ -172,9 +172,13 @@ local function handle_register_iq(room, origin, stanza)
 			origin.send(st.error_reply(stanza, "modify", "bad-request", "Error in form"));
 			return true;
 		end
-		local reg_data = registration_form:data(form_tag);
-		if not reg_data then
-			origin.send(st.error_reply(stanza, "modify", "bad-request", "Error in form"));
+		local reg_data, form_err = registration_form:data(form_tag);
+		if form_err then
+			local errs = {};
+			for field, err in pairs(form_err) do
+				table.insert(errs, field..": "..err);
+			end
+			origin.send(st.error_reply(stanza, "modify", "bad-request", "Error in form: "..table.concat(errs)));
 			return true;
 		end
 		-- Is the nickname valid?

@@ -1096,11 +1096,27 @@ local function check(arg)
 				target_hosts:remove("localhost");
 			end
 
+			local function check_record(name, rtype)
+				local res, err = dns.lookup(name, rtype);
+				if err then
+					print("    Problem looking up "..rtype.." record for '"..name.."': "..err);
+				elseif res and res.bogus then
+					print("    Problem looking up "..rtype.." record for '"..name.."': "..res.bogus);
+				elseif res and res.rcode and res.rcode ~= 0 and res.rcode ~= 3 then
+					print("    Problem looking up "..rtype.." record for '"..name.."': "..res.status);
+				end
+				return res and #res > 0;
+			end
+
 			local function check_address(target)
-				local A, AAAA = dns.lookup(idna.to_ascii(target), "A"), dns.lookup(idna.to_ascii(target), "AAAA");
 				local prob = {};
-				if use_ipv4 and not (A and #A > 0) then table.insert(prob, "A"); end
-				if use_ipv6 and not (AAAA and #AAAA > 0) then table.insert(prob, "AAAA"); end
+				local aname = idna.to_ascii(target);
+				if not aname then
+					print("    '" .. target .. "' is not a valid hostname");
+					return prob;
+				end
+				if use_ipv4 and not check_record(aname, "A") then table.insert(prob, "A"); end
+				if use_ipv6 and not check_record(aname, "AAAA") then table.insert(prob, "AAAA"); end
 				return prob;
 			end
 

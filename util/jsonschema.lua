@@ -184,7 +184,7 @@ local function validate(schema, data, root, sloc, iloc, errs)
 		end
 	end
 
-	if schema["not"] then
+	if schema["not"] ~= nil then
 		if validate(schema["not"], data, root, sloc .. "/not", iloc, errs) then
 			table.insert(errs, mkerr(sloc .. "/not", iloc, "did match subschema"))
 			return false, errs
@@ -193,14 +193,14 @@ local function validate(schema, data, root, sloc, iloc, errs)
 
 	if schema["if"] ~= nil then
 		if validate(schema["if"], data, root, sloc .. "/if", iloc, errs) then
-			if schema["then"] then
+			if schema["then"] ~= nil then
 				if not validate(schema["then"], data, root, sloc .. "/then", iloc, errs) then
 					table.insert(errs, mkerr(sloc .. "/then", iloc, "did not match subschema"))
 					return false, errs
 				end
 			end
 		else
-			if schema["else"] then
+			if schema["else"] ~= nil then
 				if not validate(schema["else"], data, root, sloc .. "/else", iloc, errs) then
 					table.insert(errs, mkerr(sloc .. "/else", iloc, "did not match subschema"))
 					return false, errs

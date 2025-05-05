@@ -1587,7 +1587,7 @@ function def_env.s2s:close(from, to, text, condition)
 
 	for _, session in pairs(s2s_sessions) do
 		local id = session.id or (session.type .. tostring(session):match("[a-f0-9]+$"));
-		if (match_id and match_id == id) or ((from and match_wildcard(from, session.to_host)) or (to and match_wildcard(to, session.to_host))) then
+		if (match_id and match_id == id) or ((from and match_wildcard(from, session.from_host)) and (to and match_wildcard(to, session.to_host))) then
 			print(("Closing connection from %s to %s [%s]"):format(session.from_host, session.to_host, id));
 			(session.close or s2smanager.destroy_session)(session, build_reason(text, condition));
 			count = count + 1;

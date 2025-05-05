@@ -90,11 +90,12 @@ local function serve(opts)
 			return 304;
 		end
 
-		local data = cache:get(orig_path);
-		if data and data.etag == etag then
-			response_headers.content_type = data.content_type;
-			data = data.data;
-			cache:set(orig_path, data);
+		local data;
+		local cached = cache:get(orig_path);
+		if cached and cached.etag == etag then
+			response_headers.content_type = cached.content_type;
+			data = cached.data;
+			cache:set(orig_path, cached);
 		elseif attr.mode == "directory" and path then
 			if full_path:sub(-1) ~= "/" then
 				local dir_path = { is_absolute = true, is_directory = true };
