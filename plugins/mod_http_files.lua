@@ -55,37 +55,12 @@ local function get_calling_module()
 end
 
 -- COMPAT -- TODO deprecate
-function serve(opts)
-	if type(opts) ~= "table" then -- assume path string
-		opts = { path = opts };
-	end
-	if opts.directory_index == nil then
-		opts.directory_index = directory_index;
-	end
-	if opts.mime_map == nil then
-		opts.mime_map = mime_map;
-	end
-	if opts.cache_size == nil then
-		opts.cache_size = cache_size;
-	end
-	if opts.cache_max_file_size == nil then
-		opts.cache_max_file_size = cache_max_file_size;
-	end
-	if opts.index_files == nil then
-		opts.index_files = dir_indices;
-	end
-	module:log("warn", "%s should be updated to use 'prosody.net.http.files' instead of mod_http_files", get_calling_module());
-	return fileserver.serve(opts);
+function serve()
+	error(string.format("%s should be updated to use 'prosody.net.http.files' instead of mod_http_files", get_calling_module()));
 end
 
-function wrap_route(routes)
-	module:log("debug", "%s should be updated to use 'prosody.net.http.files' instead of mod_http_files", get_calling_module());
-	for route,handler in pairs(routes) do
-		if type(handler) ~= "function" then
-			routes[route] = fileserver.serve(handler);
-		end
-	end
-	return routes;
+function wrap_route()
+	error(string.format("%s should be updated to use 'prosody.net.http.files' instead of mod_http_files", get_calling_module()));
 end
 
 module:provides("http", {
