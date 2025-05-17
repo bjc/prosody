@@ -171,36 +171,55 @@ function commands.deluser(arg)
 	return shell.shell({ ("user:delete(%q)"):format(arg[1]) });
 end
 
-local function has_init_system() --> which
-	lfs = lfs or require"lfs";
-	if lfs.attributes("/etc/systemd") then
-		return "systemd";
-	elseif lfs.attributes("/etc/init.d/prosody") then
-		return "rc.d";
-	end
+-- Replaced function has_init_system with detect_init_system. 
+-- This function will return one of the following names of the init system:  
+-- init, upstart, openrc, runit, s6, launchd, sysvinit, busybox, finit, smf, initng, sinit, systemd 
+local function detect_init_system()
+    local handle = io.popen("cat /proc/1/comm")
+    local init_system = handle:read("*a")
+    handle:close()
+    init_system = init_system:gsub("^%s*(.-)%s*$", "%1")
+    return init_system
 end
 
+-- New version of service_command_warning that uses detect_init_system
 local function service_command_warning(service_command)
 	if prosody.installed and configmanager.get("*", "prosodyctl_service_warnings") ~= false then
 		show_warning("ERROR: Use of 'prosodyctl %s' is disabled in this installation because", service_command);
 
-		local init = has_init_system()
+		local init = detect_init_system()
 		if init then
 			show_warning("       we detected that this system uses %s for managing services.", init);
-			show_warning("");
+			show_warning("       ");
 			show_warning("       To avoid problems, use that directly instead. For example:");
-			show_warning("");
+			show_warning("       ");
 			if init == "systemd" then
 				show_warning("          systemctl %s prosody", service_command);
+			elseif init == "init" or init == "sysvinit" then
+				show_warning("          service prosody %s", service_command);
+			elseif init == "upstart" then
+				show_warning("          initctl %s prosody", service_command);
+			elseif init == "initng" then
+				show_warning("          initng %s prosody", service_command);
+			elseif init == "smf" then
+				show_warning("          svcadm  %s prosody", service_command);
+			elseif init == "openrc" then
+				show_warning("          rc-service prosody %s", service_command);
+			elseif init == "runit" then
+				show_warning("          sv %s prosody", service_command);
+			elseif init == "s6" then
+				show_warning("          s6-svc -r /var/run/s6/services/prosody", service_command);
+			elseif init == "launchd" then
+				show_warning("          launchctl kickstart -k system/prosody", service_command);
 			elseif init == "rc.d" then
 				show_warning("          /etc/init.d/prosody %s", service_command);
 			end
-			show_warning("");
 		else
 			show_warning("       it may conflict with your system's service manager.");
 			show_warning("");
 		end
 
+		show_warning("       ");
 		show_warning("       Proceeding to use prosodyctl may cause process management issues.");
 		show_warning("       You can pass --force to override this warning, or set");
 		show_warning("       prosodyctl_service_warnings = false in your global config.");
@@ -710,7 +729,7 @@ local command_runner = async.runner(function ()
 
 		local done = {};
 
-		if prosody.installed and has_init_system() then
+		if prosody.installed and detect_init_system() then
 			-- Hide start, stop, restart
 			done[table.remove(commands_order, 2)] = true;
 			done[table.remove(commands_order, 2)] = true;
